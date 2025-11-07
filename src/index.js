@@ -8754,13 +8754,43 @@
 			const item = await this.generateQueueItem(edit, count, warningLevel, ores, blocked, null, null, emptyTalkPage);
 
 			this.queue.push(item);
-			const sorted = this.queue.splice(1)
-				.sort((a, b) => {
-					const bScore = b.ores + (wikishield.highlighted.has(b.user.name) ? 100 : 0);
-					const aScore = a.ores + (wikishield.highlighted.has(a.user.name) ? 100 : 0);
-					return bScore - aScore;
-				});
-			this.queue = [this.queue[0], ...sorted];
+
+			const currentIndex = this.queue.findIndex(e => e.revid === this.currentEdit?.revid);
+			let sorted;
+			if (currentIndex === -1) {
+				sorted = this.queue;
+			} else {
+				sorted = this.queue.slice(0, currentIndex).concat(this.queue.slice(currentIndex + 1));
+			}
+
+			sorted = sorted.sort((a, b) => {
+				const score = +b.fromHistory - +a.fromHistory;
+				if (score !== 0) {
+					return score;
+				}
+
+				let aScore = a.ores;
+				if (wikishield.highlighted.has(a.user.name)) {
+					aScore += 100;
+				} else if (a.mentionsMe) {
+					aScore += 50;
+				}
+
+				let bScore = b.ores;
+				if (wikishield.highlighted.has(b.user.name)) {
+					bScore += 100;
+				} else if (b.mentionsMe) {
+					bScore += 50;
+				}
+
+				return bScore - aScore;
+			});
+
+			if (currentIndex >= 0) {
+				sorted.splice(currentIndex, 0, this.currentEdit);
+			}
+
+			this.queue = [ ...sorted ];
 
 			// Only auto-select first edit if no edit is currently selected
 			if (this.queue.length === 1 && !this.currentEdit) {
@@ -9022,7 +9052,8 @@
 				usernameAnalysis: null, // Will be populated asynchronously
 				isBLP: categories.some(cat => cat.title === "Category:Living people"),
 				reverts: reverts,
-				consecutive: wikishield.api.consecutiveEdits(edit.title, edit.user)
+				consecutive: wikishield.api.consecutiveEdits(edit.title, edit.user),
+				fromHistory: false
 			};
 
 			// Perform AI analysis asynchronously if enabled
@@ -9220,7 +9251,7 @@
 			}
 
 			// Store the edit we left in previousItems
-			this.previousItems.push(editWeAreLeaving);
+			this.previousItems.push({ ...editWeAreLeaving, fromHistory: true });
 
 			wikishield.interface.renderQueue(this.queue, this.currentEdit);
 
@@ -9275,6 +9306,7 @@
 					this.checkAndAutoWelcome(editWeAreLeaving);
 					this.checkAndAutoReportUAA(editWeAreLeaving);
 				}
+
 				return;
 			}
 
