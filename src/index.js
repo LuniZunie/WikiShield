@@ -1503,14 +1503,14 @@ export const __script__ = {
 			}
 
 			return text;
-		}	/**
-		* Build the prompt for AI analysis
-		* @param {Object} edit The edit object
-		* @returns {String} The prompt text
-		*/
-		buildAnalysisPrompt(edit) {
-			return BuildAIAnalysisPrompt(edit);
-		}
+		}		/**
+	* Build the prompt for AI analysis
+	* @param {Object} edit The edit object
+	* @returns {String} The prompt text
+	*/
+	buildAnalysisPrompt(edit) {
+		return BuildAIAnalysisPrompt(edit, this.convertDiffToReadable.bind(this));
+	}
 
 		/**
 		 * Generate prompt for username analysis

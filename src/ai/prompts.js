@@ -4,9 +4,10 @@ import { fullTrim } from '../utils/formatting.js';
 /**
  * Generate prompt for edit analysis
  * @param {Object} edit The edit object to analyze
+ * @param {Function} convertDiffToReadable Function to convert HTML diff to readable text
  * @returns {String} The prompt for analysis
  */
-export const BuildAIAnalysisPrompt = (edit) => {
+export const BuildAIAnalysisPrompt = (edit, convertDiffToReadable) => {
 	const diffHTML = edit.diff;
 	const sizediff = edit.sizediff || 0;
 	const oresScore = edit.ores || 0;
@@ -67,7 +68,7 @@ export const BuildAIAnalysisPrompt = (edit) => {
 	}
 
 	// Convert HTML diff to readable text
-	const readableDiff = wikishield.ollamaAI.convertDiffToReadable(diffHTML);
+	const readableDiff = convertDiffToReadable(diffHTML);
 
 	// Determine user experience level and risk profile
 	let userProfile = "";
