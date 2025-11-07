@@ -7578,7 +7578,7 @@
 					"action": "query",
 					"list": "recentchanges",
 					"rcnamespace": namespaces,
-					"rclimit": 50,
+					"rclimit": 100,
 					"rcprop": "title|ids|sizes|flags|user|tags|comment|timestamp",
 					"rctype": "edit",
 					"format": "json",
@@ -7589,6 +7589,31 @@
 				return response.query.recentchanges;
 			} catch (err) {
 				wikishield.logger.log(`Could not fetch recent changes: ${err}`);
+			}
+		}
+
+		/**
+		 * Get your watchlist from Wikipedia
+		 * @param {String} since The timestamp to start from
+		 * @returns {Promise<Array>} The watchlist
+		 */
+		async watchlist(since) {
+			try {
+				const response = await this.api.get({
+					"action": "query",
+					"list": "watchlist",
+					"rcnamespace": "*",
+					"rclimit": "max",
+					"rcprop": "title|ids|sizes|flags|user|tags|comment|timestamp",
+					"rctype": "edit",
+					"format": "json",
+					"rcstart": since || "",
+					"rcdir": since ? "newer" : "older"
+				});
+
+				return response.query.watchlist;
+			} catch (err) {
+				wikishield.logger.log(`Could not fetch watchlist: ${err}`);
 			}
 		}
 
@@ -13733,7 +13758,7 @@
 				// Create DOM element if it doesn't exist
 				if (!elem) {
 					elem = document.createElement("div");
-					elem.classList.add("queue-edit", "new");
+					elem.classList.add("queue-edit");
 					elem.dataset.revid = edit.revid.toString();
 					elem.innerHTML = this.generateEditHTML(edit);
 
@@ -13857,8 +13882,6 @@
 
 					// Add to DOM (temporarily append)
 					container.appendChild(elem);
-				} else {
-					// elem.classList.remove("new");
 				}
 
 				// Move to correct position in DOM to match queue order
@@ -16422,7 +16445,6 @@
 						hasContinuity = this.executeScript(action, hasContinuity, updateProgress);
 					} else {
 						const event = this.interface.eventManager.events[action.name];
-
 
 						if (hasContinuity || !event.needsContinuity) {
 							if (event.includeInProgress) {
