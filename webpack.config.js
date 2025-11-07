@@ -11,7 +11,7 @@ module.exports = (env, argv) => {
       filename: isDev ? 'build.js' : 'wikishield.js',
       path: path.resolve(__dirname, 'dist'),
       clean: true,
-      pathinfo: false, // Faster builds
+      pathinfo: isDev, // Include module info in dev for better debugging
     },
     module: {
       rules: [
@@ -36,16 +36,16 @@ module.exports = (env, argv) => {
         'react/jsx-runtime': 'preact/jsx-runtime'
       }
     },
-    devtool: isDev ? 'eval-cheap-module-source-map' : false,
+    devtool: isDev ? 'source-map' : false,
     optimization: {
-      minimize: !isDev,
-      minimizer: [
+      minimize: isDev ? false : true, // Explicitly disable minification in dev
+      minimizer: isDev ? [] : [ // Only use minimizer in production
         new TerserPlugin({
           terserOptions: {
             compress: {
               drop_console: false, // Keep console for userscript debugging
               drop_debugger: true,
-              pure_funcs: isDev ? [] : ['console.debug'], // Remove debug logs in prod
+              pure_funcs: ['console.debug'], // Remove debug logs in prod
             },
             mangle: true,
             format: {
@@ -58,7 +58,7 @@ module.exports = (env, argv) => {
       moduleIds: 'deterministic', // Better long-term caching
       runtimeChunk: false, // Single bundle for userscript
       splitChunks: false, // Keep everything in one file for userscript
-      usedExports: true, // Tree shaking
+      usedExports: isDev ? false : true, // Disable tree shaking in dev for easier debugging
       sideEffects: true,
     },
     performance: {
@@ -83,7 +83,7 @@ module.exports = (env, argv) => {
       },
       hot: false, // Disable HMR since we're using eval() reload
       liveReload: false, // We'll handle reload via fetch
-      compress: true,
+      compress: false, // Disable compression for easier debugging in dev
       client: {
         logging: 'error', // Cleaner console output
         overlay: {
