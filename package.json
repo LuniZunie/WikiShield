@@ -1,0 +1,29 @@
+{
+  "name": "wikishield",
+  "version": "1.0.0",
+  "description": "wikipedia anti-vandalism tool, fork of WP:ANTIVANDAL",
+  "license": "ISC",
+  "author": "LuniZunie, pro-anti-air, monkeysmashingkeyboards",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "dev": "webpack serve --mode development",
+    "build": "webpack --mode production",
+    "test": "test"
+  },
+  "dependencies": {
+    "@babel/core": "^7.28.5",
+    "@babel/preset-env": "^7.28.5",
+    "@babel/preset-react": "^7.28.5",
+    "babel-loader": "^10.0.0",
+    "preact": "^10.27.2",
+    "preact-render-to-string": "^6.6.3",
+    "webpack": "^5.102.1",
+    "webpack-cli": "^6.0.1",
+    "webpack-dev-server": "^5.2.2"
+  },
+  "devDependencies": {
+    "@types/jquery": "^3.5.33",
+    "types-mediawiki": "^2.0.0"
+  }
+}
