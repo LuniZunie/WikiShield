@@ -12995,6 +12995,13 @@
 					const menu = document.querySelector(`#${item.dataset.menu}-menu`);
 					const isOpen = menu.classList.contains("show");
 
+					switch (item.dataset.menu) {
+						case "revert": {
+							menu.innerHTML = "";
+							this.createRevertMenu(menu, wikishield.queue.currentEdit?.isBLP);
+						} break;
+					}
+
 					// Close all menus
 					this.closeAllBottomMenus();
 
