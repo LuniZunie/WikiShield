@@ -37,12 +37,3 @@ jobs:
         with:
           name: wikishield
           path: dist/wikishield.js
-
-      - name: Commit and push built file
-        run: |
-          git config --local user.email "robotprocessingbytes[bot]@users.noreply.github.com"
-          git config --local user.name "robotprocessingbytes"
-          git add dist/wikishield.js
-          git diff --staged --quiet || git commit -m "Auto-build: Update wikishield.js"
-          git push
-        if: github.event_name == 'push'
