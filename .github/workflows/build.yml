@@ -32,8 +32,9 @@ jobs:
       - name: Build project
         run: npm run build
 
-      - name: Upload build artifact
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: wikishield
-          path: dist/wikishield.js
+          name: build-output
+          path: dist/
+          retention-days: 30
