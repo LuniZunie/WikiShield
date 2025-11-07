@@ -1,0 +1,366 @@
+/* Base theme configuration */
+			:root {
+				/* Light theme colors */
+				--light-bg-primary: #ffffff;
+				--light-bg-secondary: #f8f9fa;
+				--light-bg-tertiary: #f1f3f5;
+				--light-bg-hover: #e2e8f0;
+				--light-text-primary: #1a1a1a;
+				--light-text-secondary: #4a5568;
+				--light-border: #e2e8f0;
+				--light-primary: #2962ff;
+				--light-primary-hover: #1e88e5;
+				--light-danger: #dc3545;
+				--light-warning: #f59e0b;
+				--light-success: #22c55e;
+				--light-surface: #ffffff;
+				--light-shadow: rgba(0, 0, 0, 0.1);
+				--light-shadow-hover: rgba(0, 0, 0, 0.15);
+				--light-highlight: rgba(41, 98, 255, 0.1);
+
+				/* Dark theme colors */
+				--dark-bg-primary: #1a1a1a;
+				--dark-bg-secondary: #242424;
+				--dark-bg-tertiary: #2d2d2d;
+				--dark-bg-hover: #333333;
+				--dark-text-primary: #f8f9fa;
+				--dark-text-secondary: #a0aec0;
+				--dark-border: #404040;
+				--dark-primary: #60a5fa;
+				--dark-primary-hover: #3b82f6;
+				--dark-danger: #ef4444;
+				--dark-warning: #f59e0b;
+				--dark-success: #10b981;
+				--dark-surface: #242424;
+				--dark-shadow: rgba(0, 0, 0, 0.3);
+				--dark-shadow-hover: rgba(0, 0, 0, 0.4);
+				--dark-highlight: rgba(96, 165, 250, 0.15);
+
+				/* Default fallback values (will be overridden by theme) */
+				--bg-primary: var(--light-bg-primary);
+				--bg-secondary: var(--light-bg-secondary);
+				--bg-tertiary: var(--light-bg-tertiary);
+				--bg-hover: var(--light-bg-hover);
+				--text-primary: var(--light-text-primary);
+				--text-secondary: var(--light-text-secondary);
+				--border-color: var(--light-border);
+				--primary: var(--light-primary);
+				--primary-hover: var(--light-primary-hover);
+				--danger: var(--light-danger);
+				--warning: var(--light-warning);
+				--success: var(--light-success);
+				--surface: var(--light-surface);
+				--shadow: var(--light-shadow);
+				--shadow-hover: var(--light-shadow-hover);
+				--highlight: var(--light-highlight);
+
+				/* Animation durations */
+				--transition-fast: 0.15s;
+				--transition-normal: 0.25s;
+				--transition-slow: 0.4s;
+
+				/* Border radius */
+				--radius-sm: 4px;
+				--radius-md: 8px;
+				--radius-lg: 12px;
+
+				/* Spacing */
+				--space-1: 4px;
+				--space-2: 8px;
+				--space-3: 12px;
+				--space-4: 16px;
+				--space-5: 20px;
+				--space-6: 24px;
+
+				/* Elevation shadows */
+				--shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+				--shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+				--shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+				--shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+			}
+
+			/* Base styles */
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+				transition: background-color var(--transition-normal),
+							border-color var(--transition-normal),
+							color var(--transition-normal),
+							box-shadow var(--transition-normal),
+							transform var(--transition-fast);
+			}
+
+			body {
+				font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+				line-height: 1.5;
+				-webkit-font-smoothing: antialiased;
+				-moz-osx-font-smoothing: grayscale;
+			}
+
+			/* Interactive elements */
+			button,
+			.interactive {
+				cursor: pointer;
+				border-radius: var(--radius-md);
+				border: 1px solid transparent;
+				padding: var(--space-2) var(--space-4);
+				font-weight: 500;
+				transition: all var(--transition-normal);
+			}
+
+			button:hover,
+			.interactive:hover {
+				transform: translateY(-1px);
+			}
+
+			button:active,
+			.interactive:active {
+				transform: translateY(0);
+			}
+
+			/* Accessibility */
+			button:focus-visible,
+			a:focus-visible,
+			input:focus-visible,
+			select:focus-visible {
+				outline: 2px solid var(--light-primary);
+				outline-offset: 2px;
+			}
+
+			[data-theme="dark"] button:focus-visible,
+			[data-theme="dark"] a:focus-visible,
+			[data-theme="dark"] input:focus-visible,
+			[data-theme="dark"] select:focus-visible {
+				outline-color: var(--dark-primary);
+			}
+
+			/* Scrollbars */
+			::-webkit-scrollbar {
+				width: 10px;
+				height: 10px;
+			}
+
+			::-webkit-scrollbar-track {
+				background: transparent;
+			}
+
+			::-webkit-scrollbar-thumb {
+				background: var(--light-border);
+				border-radius: var(--radius-lg);
+				border: 2px solid transparent;
+				background-clip: content-box;
+			}
+
+			::-webkit-scrollbar-thumb:hover {
+				background: var(--light-text-secondary);
+				border: 2px solid transparent;
+				background-clip: content-box;
+			}
+
+			[data-theme="dark"] ::-webkit-scrollbar-thumb {
+				background: var(--dark-border);
+			}
+
+			[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+				background: var(--dark-text-secondary);
+			}
+
+			/* Floating iframe modal */
+			.wiki-iframe-overlay {
+				position: fixed;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				background: rgba(0, 0, 0, 0.6);
+				backdrop-filter: blur(4px);
+				-webkit-backdrop-filter: blur(4px);
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				z-index: 10000;
+				animation: fadeIn 0.2s ease;
+			}
+
+			@keyframes fadeIn {
+				from {
+					opacity: 0;
+				}
+				to {
+					opacity: 1;
+				}
+			}
+
+			.wiki-iframe-container {
+				width: 90%;
+				height: 90%;
+				max-width: 1400px;
+				max-height: 900px;
+				background: var(--bg-primary);
+				border-radius: var(--radius-lg);
+				box-shadow: var(--shadow-xl);
+				display: flex;
+				flex-direction: column;
+				overflow: hidden;
+				animation: slideUp 0.3s ease;
+			}
+
+			@keyframes slideUp {
+				from {
+					transform: translateY(20px);
+					opacity: 0;
+				}
+				to {
+					transform: translateY(0);
+					opacity: 1;
+				}
+			}
+
+			.wiki-iframe-header {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				padding: var(--space-3) var(--space-4);
+				background: var(--bg-secondary);
+				border-bottom: 1px solid var(--border-color);
+			}
+
+			.wiki-iframe-title {
+				font-weight: 600;
+				color: var(--text-primary);
+				font-size: 0.95rem;
+				display: flex;
+				align-items: center;
+				gap: var(--space-2);
+				flex: 1;
+				min-width: 0;
+			}
+
+			.wiki-iframe-title-text {
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+			}
+
+			.wiki-iframe-controls {
+				display: flex;
+				gap: var(--space-2);
+			}
+
+			.wiki-iframe-btn {
+				padding: var(--space-2) var(--space-3);
+				background: transparent;
+				border: 1px solid var(--border-color);
+				border-radius: var(--radius-md);
+				cursor: pointer;
+				color: var(--text-primary);
+				font-size: 0.9rem;
+				transition: all var(--transition-fast);
+				display: flex;
+				align-items: center;
+				gap: var(--space-2);
+			}
+
+			.wiki-iframe-btn:hover {
+				background: var(--bg-hover);
+				border-color: var(--primary);
+			}
+
+			.wiki-iframe-btn.close-btn {
+				color: var(--danger);
+			}
+
+			.wiki-iframe-btn.close-btn:hover {
+				background: var(--danger);
+				color: white;
+				border-color: var(--danger);
+			}
+
+			.wiki-iframe-content {
+				flex: 1;
+				position: relative;
+				overflow: hidden;
+			}
+
+			.wiki-iframe-content iframe {
+				width: 100%;
+				height: 100%;
+				border: none;
+			}
+
+			.wiki-iframe-loading {
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%);
+				color: var(--text-secondary);
+				font-size: 0.95rem;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				gap: var(--space-3);
+			}
+
+			.wiki-iframe-spinner {
+				width: 40px;
+				height: 40px;
+				border: 3px solid var(--border-color);
+				border-top-color: var(--primary);
+				border-radius: 50%;
+				animation: spin 0.8s linear infinite;
+			}
+
+			@keyframes spin {
+				to {
+					transform: rotate(360deg);
+				}
+			}
+
+			/* Dark mode specific overrides for iframe modal */
+			[data-theme="dark"] .wiki-iframe-overlay {
+				background: rgba(0, 0, 0, 0.8);
+			}
+
+			[data-theme="dark"] .wiki-iframe-container {
+				background: var(--dark-bg-primary);
+			}
+
+			[data-theme="dark"] .wiki-iframe-header {
+				background: var(--dark-bg-secondary);
+				border-bottom-color: var(--dark-border);
+			}
+
+			[data-theme="dark"] .wiki-iframe-title {
+				color: var(--dark-text-primary);
+			}
+
+			[data-theme="dark"] .wiki-iframe-btn {
+				color: var(--dark-text-primary);
+				border-color: var(--dark-border);
+				background: transparent;
+			}
+
+			[data-theme="dark"] .wiki-iframe-btn:hover {
+				background: var(--dark-bg-hover);
+				border-color: var(--dark-primary);
+			}
+
+			[data-theme="dark"] .wiki-iframe-btn.close-btn {
+				color: var(--dark-danger);
+			}
+
+			[data-theme="dark"] .wiki-iframe-btn.close-btn:hover {
+				background: var(--dark-danger);
+				color: white;
+				border-color: var(--dark-danger);
+			}
+
+			[data-theme="dark"] .wiki-iframe-loading {
+				color: var(--dark-text-secondary);
+			}
+
+			[data-theme="dark"] .wiki-iframe-spinner {
+				border-color: var(--dark-border);
+				border-top-color: var(--dark-primary);
+			}
