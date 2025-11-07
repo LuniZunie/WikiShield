@@ -1,0 +1,48 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - "**" # Trigger on all branches
+  pull_request:
+    branches:
+      - "**"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20.x]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wikishield
+          path: dist/wikishield.js
+
+      - name: Commit and push built file
+        run: |
+          git config --local user.email "robotprocessingbytes[bot]@users.noreply.github.com"
+          git config --local user.name "robotprocessingbytes"
+          git add dist/wikishield.js
+          git diff --staged --quiet || git commit -m "Auto-build: Update wikishield.js"
+          git push
+        if: github.event_name == 'push'
