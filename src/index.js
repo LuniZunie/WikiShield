@@ -45,7 +45,7 @@ export const __script__ = {
 		namespaces,
 		sounds
 	};
-	
+
 	class WikiShieldUtil {
 		/**
 		 * Given a Date object, return a string in the format YYYY-MM-DDTHH:MM:SS
@@ -868,7 +868,7 @@ export const __script__ = {
 					"action": "query",
 					"list": "recentchanges",
 					"rcnamespace": namespaces,
-					"rclimit": 50,
+					"rclimit": 100,
 					"rcprop": "title|ids|sizes|flags|user|tags|comment|timestamp",
 					"rctype": "edit",
 					"format": "json",
@@ -879,6 +879,31 @@ export const __script__ = {
 				return response.query.recentchanges;
 			} catch (err) {
 				wikishield.logger.log(`Could not fetch recent changes: ${err}`);
+			}
+		}
+
+		/**
+		 * Get your watchlist from Wikipedia
+		 * @param {String} since The timestamp to start from
+		 * @returns {Promise<Array>} The watchlist
+		 */
+		async watchlist(since) {
+			try {
+				const response = await this.api.get({
+					"action": "query",
+					"list": "watchlist",
+					"rcnamespace": "*",
+					"rclimit": "max",
+					"rcprop": "title|ids|sizes|flags|user|tags|comment|timestamp",
+					"rctype": "edit",
+					"format": "json",
+					"rcstart": since || "",
+					"rcdir": since ? "newer" : "older"
+				});
+
+				return response.query.watchlist;
+			} catch (err) {
+				wikishield.logger.log(`Could not fetch watchlist: ${err}`);
 			}
 		}
 
@@ -1478,14 +1503,14 @@ export const __script__ = {
 			}
 
 			return text;
-		}	/**
-		* Build the prompt for AI analysis
-		* @param {Object} edit The edit object
-		* @returns {String} The prompt text
-		*/
-		buildAnalysisPrompt(edit) {
-			return BuildAIAnalysisPrompt(edit);
-		}
+		}		/**
+	* Build the prompt for AI analysis
+	* @param {Object} edit The edit object
+	* @returns {String} The prompt text
+	*/
+	buildAnalysisPrompt(edit) {
+		return BuildAIAnalysisPrompt(edit, this.convertDiffToReadable.bind(this));
+	}
 
 		/**
 		 * Generate prompt for username analysis
@@ -2044,13 +2069,43 @@ export const __script__ = {
 			const item = await this.generateQueueItem(edit, count, warningLevel, ores, blocked, null, null, emptyTalkPage);
 
 			this.queue.push(item);
-			const sorted = this.queue.splice(1)
-				.sort((a, b) => {
-					const bScore = b.ores + (wikishield.highlighted.has(b.user.name) ? 100 : 0);
-					const aScore = a.ores + (wikishield.highlighted.has(a.user.name) ? 100 : 0);
-					return bScore - aScore;
-				});
-			this.queue = [this.queue[0], ...sorted];
+
+			const currentIndex = this.queue.findIndex(e => e.revid === this.currentEdit?.revid);
+			let sorted;
+			if (currentIndex === -1) {
+				sorted = this.queue;
+			} else {
+				sorted = this.queue.slice(0, currentIndex).concat(this.queue.slice(currentIndex + 1));
+			}
+
+			sorted = sorted.sort((a, b) => {
+				const score = +b.fromHistory - +a.fromHistory;
+				if (score !== 0) {
+					return score;
+				}
+
+				let aScore = a.ores;
+				if (wikishield.highlighted.has(a.user.name)) {
+					aScore += 100;
+				} else if (a.mentionsMe) {
+					aScore += 50;
+				}
+
+				let bScore = b.ores;
+				if (wikishield.highlighted.has(b.user.name)) {
+					bScore += 100;
+				} else if (b.mentionsMe) {
+					bScore += 50;
+				}
+
+				return bScore - aScore;
+			});
+
+			if (currentIndex >= 0) {
+				sorted.splice(currentIndex, 0, this.currentEdit);
+			}
+
+			this.queue = [ ...sorted ];
 
 			// Only auto-select first edit if no edit is currently selected
 			if (this.queue.length === 1 && !this.currentEdit) {
@@ -2312,7 +2367,8 @@ export const __script__ = {
 				usernameAnalysis: null, // Will be populated asynchronously
 				isBLP: categories.some(cat => cat.title === "Category:Living people"),
 				reverts: reverts,
-				consecutive: wikishield.api.consecutiveEdits(edit.title, edit.user)
+				consecutive: wikishield.api.consecutiveEdits(edit.title, edit.user),
+				fromHistory: false
 			};
 
 			// Perform AI analysis asynchronously if enabled
@@ -2510,7 +2566,7 @@ export const __script__ = {
 			}
 
 			// Store the edit we left in previousItems
-			this.previousItems.push(editWeAreLeaving);
+			this.previousItems.push({ ...editWeAreLeaving, fromHistory: true });
 
 			wikishield.interface.renderQueue(this.queue, this.currentEdit);
 
@@ -2521,10 +2577,6 @@ export const __script__ = {
 			}
 		}
 
-		/**
-		 * Set the current edit to the previous item in the queue
-		 * This removes the current item and moves to the previous one
-		 */
 		/**
 		 * Set the current edit to the previous item in the queue
 		 * This only changes which edit is selected, it does NOT remove anything
@@ -2565,6 +2617,7 @@ export const __script__ = {
 					this.checkAndAutoWelcome(editWeAreLeaving);
 					this.checkAndAutoReportUAA(editWeAreLeaving);
 				}
+
 				return;
 			}
 
@@ -3329,7 +3382,7 @@ export const __script__ = {
 					func: async (params = {}) => {
 						wikishield.queue.playRollbackSound();
 
-						const result = await wikishield.revert(this.getRelevantEdit(), params.label || "");
+						const result = await wikishield.revert(this.getRelevantEdit(), params.label || "", );
 						if (result === false) {
 							return { wasAtFinalWarning: false }; // don't auto report either
 						}
@@ -3386,7 +3439,12 @@ export const __script__ = {
 					func: async (params) => {
 						wikishield.queue.playRollbackSound();
 						const edit = this.getRelevantEdit();
-						return await wikishield.revert(edit, params.summary || `Reverted good faith edits by ${edit.user.name} ([[WP:WikiShield|WS]])`);
+
+						let summary = "";
+						if (params.summary) {
+							params.summary = `: ${params.summary}`;
+						}
+						return await wikishield.revert(edit, `Reverted good faith edits by ${edit.user.name}${summary} ([[WP:WikiShield|WS]])`);
 					}
 				},
 				undo: {
@@ -6253,6 +6311,13 @@ export const __script__ = {
 					const menu = document.querySelector(`#${item.dataset.menu}-menu`);
 					const isOpen = menu.classList.contains("show");
 
+					switch (item.dataset.menu) {
+						case "revert": {
+							menu.innerHTML = "";
+							this.createRevertMenu(menu, wikishield.queue.currentEdit?.isBLP);
+						} break;
+					}
+
 					// Close all menus
 					this.closeAllBottomMenus();
 
@@ -6972,44 +7037,40 @@ export const __script__ = {
 		 * @param {Object} currentEdit
 		 */
 		renderQueue(queue, currentEdit) {
-			let lastEditElem = null;
-
+			const container = this.elem("#queue-items");
 			this.elem("#queue-top-items").innerText = queue.length + " item" + (queue.length === 1 ? "" : "s");
 
+			// Build a map of existing DOM elements
+			const domMap = new Map();
+			for (const el of container.children) {
+				domMap.set(+el.dataset.revid, el);
+			}
+
+			let previous = null;
 			for (const edit of queue) {
-				// Scope the selector to only search within #queue-items
-				let elem = this.elem(`#queue-items .queue-edit[data-revid="${edit.revid}"]`);
+				let elem = domMap.get(edit.revid);
+
+				// Create DOM element if it doesn't exist
 				if (!elem) {
 					elem = document.createElement("div");
 					elem.classList.add("queue-edit");
-					// Add special class if diff mentions current user
-					if (edit.mentionsMe && wikishield.options.enableUsernameHighlighting) {
-						elem.classList.add("queue-edit-mentions-me");
-                        elem.dataset.tooltip = "This edit contains your username";
-                        this.addTooltipListener(elem);
-					}
 					elem.dataset.revid = edit.revid.toString();
 					elem.innerHTML = this.generateEditHTML(edit);
 
-					if (lastEditElem) {
-						lastEditElem.parentElement.insertBefore(elem, lastEditElem.nextSibling);
-					} else {
-						if (edit === currentEdit) {
-							this.elem("#queue-items").prepend(elem);
-						} else {
-							this.elem("#queue-items").appendChild(elem);
-						}
+					if (edit.mentionsMe && wikishield.options.enableUsernameHighlighting) {
+						elem.classList.add("queue-edit-mentions-me");
+						elem.dataset.tooltip = "This edit contains your username";
+						this.addTooltipListener(elem);
 					}
 
-					[...elem.querySelectorAll("[data-tooltip]")].forEach(e => {
-						this.addTooltipListener(e);
-					});
-
+					// --- Attach context menu ---
 					elem.addEventListener("contextmenu", (event) => {
 						event.preventDefault();
 						wikishield.queue.playClickSound();
 
+						// Remove existing menus
 						[...document.querySelectorAll(".context-menu")].forEach(e => e.remove());
+
 						const contextMenu = document.createElement("div");
 						contextMenu.classList.add("context-menu");
 						contextMenu.innerHTML = wikishieldHTML["edit-context-menu"];
@@ -7021,7 +7082,7 @@ export const __script__ = {
 						contextMenu.querySelector("#context-ores-number").innerText = Math.round(edit.ores * 100) || 0;
 						contextMenu.querySelector("#context-ores-number").style.color = this.getORESColor(edit.ores || 0);
 
-						// Update whitelist button text based on current status
+						// whitelist button text
 						const contextWhitelistBtn = contextMenu.querySelector("#context-whitelist");
 						if (contextWhitelistBtn) {
 							if (wikishield.whitelist.has(edit.user.name)) {
@@ -7031,55 +7092,39 @@ export const __script__ = {
 							}
 						}
 
+						// Remove item
 						contextMenu.querySelector("#context-remove").addEventListener("click", () => {
 							wikishield.queue.playClickSound();
-							// Cancel AI analysis for the edit being removed
 							if (wikishield.ollamaAI) {
 								wikishield.ollamaAI.cancelAnalysis(edit.revid);
 							}
 
-							if (edit === currentEdit) {
-								// Find current edit index
-								const currentIndex = queue.findIndex(e => e.revid === edit.revid);
-								if (currentIndex !== -1) {
-									// Remove the current item from the queue
-									queue.splice(currentIndex, 1);
+							const currentIndex = queue.findIndex(e => e.revid === edit.revid);
+							if (currentIndex !== -1) {
+								queue.splice(currentIndex, 1);
+								this.removeQueueItem(edit.revid);
 
-									// Update currentEdit to the next item, or previous if no next
+								if (edit === currentEdit) {
 									if (queue.length > 0) {
 										if (currentIndex < queue.length) {
-											// Move to the item that's now at the current position
 											wikishield.queue.currentEdit = queue[currentIndex];
 										} else {
-											// We removed the last item, go to the new last item
 											wikishield.queue.currentEdit = queue[queue.length - 1];
 										}
 									} else {
-										// Queue is empty
 										wikishield.queue.currentEdit = null;
 									}
-
-									this.removeQueueItem(edit.revid);
-									wikishield.interface.renderQueue(queue, wikishield.queue.currentEdit);
 								}
-							} else {
-								const length = queue.length;
-								for (let i = 0; i < length; i++) {
-									if (queue[i] === edit) {
-										queue.splice(i, 1);
-										break;
-									}
-								}
-								this.removeQueueItem(edit.revid);
+								wikishield.queue.previousItems.push(edit);
+								this.renderQueue(queue, wikishield.queue.currentEdit);
 							}
-							wikishield.queue.previousItems.push(edit);
 							contextMenu.remove();
 						});
 
+						// Whitelist toggle
 						contextMenu.querySelector("#context-whitelist").addEventListener("click", () => {
 							wikishield.queue.playSparkleSound();
 
-							// Toggle whitelist status
 							if (wikishield.whitelist.has(edit.user.name)) {
 								wikishield.whitelist.delete(edit.user.name);
 								wikishield.saveWhitelist();
@@ -7090,11 +7135,11 @@ export const __script__ = {
 								wikishield.logger.log(`Added ${edit.user.name} to whitelist`);
 							}
 
-							// Refresh the interface to update button text
-							wikishield.interface.renderQueue(wikishield.queue.queue, wikishield.queue.currentEdit);
+							this.renderQueue(wikishield.queue.queue, wikishield.queue.currentEdit);
 							contextMenu.remove();
 						});
 
+						// Open history
 						contextMenu.querySelector("#context-open-history").addEventListener("click", (e) => {
 							wikishield.queue.playClickSound();
 							const url = wikishield.util.pageLink(`Special:PageHistory/${edit.page.title}`);
@@ -7102,6 +7147,7 @@ export const __script__ = {
 							contextMenu.remove();
 						});
 
+						// Open contributions
 						contextMenu.querySelector("#context-open-contribs").addEventListener("click", (e) => {
 							wikishield.queue.playClickSound();
 							const url = wikishield.util.pageLink(`Special:Contributions/${edit.user.name}`);
@@ -7109,36 +7155,46 @@ export const __script__ = {
 							contextMenu.remove();
 						});
 
-						contextMenu.addEventListener("click", (mevent) => {
-							mevent.stopPropagation();
-						});
+						contextMenu.addEventListener("click", (mevent) => mevent.stopPropagation());
 					});
 
+					// --- Click to select ---
 					elem.addEventListener("click", () => {
 						wikishield.queue.currentEdit = edit;
 						this.renderQueue(wikishield.queue.queue, edit);
 
-						// Trigger AI analysis when clicking to view a different edit
 						if (edit && wikishield.options.enableOllamaAI && wikishield.ollamaAI) {
-							wikishield.ollamaAI.analyzeEdit(edit).then(analysis => {
-								edit.aiAnalysis = analysis;
-								if (wikishield.queue.currentEdit === edit && wikishield.interface) {
-									wikishield.interface.updateAIAnalysisDisplay(analysis);
-								}
-							}).catch(err => {
-								console.error("AI analysis failed:", err);
-							});
+							wikishield.ollamaAI.analyzeEdit(edit)
+								.then(analysis => {
+									edit.aiAnalysis = analysis;
+									if (wikishield.queue.currentEdit === edit && wikishield.interface) {
+										wikishield.interface.updateAIAnalysisDisplay(analysis);
+									}
+								})
+								.catch(err => console.error("AI analysis failed:", err));
 						}
 					});
+
+					// Add to DOM (temporarily append)
+					container.appendChild(elem);
 				}
 
-				if (edit === currentEdit) {
-					elem.classList.add("queue-edit-current");
-				} else {
-					elem.classList.remove("queue-edit-current");
+				// Move to correct position in DOM to match queue order
+				if (previous === null) {
+					if (elem !== container.firstChild) {
+						container.insertBefore(elem, container.firstChild);
+					}
+				} else if (elem.previousSibling !== previous) {
+					container.insertBefore(elem, previous.nextSibling);
 				}
 
-				lastEditElem = elem;
+				elem.classList.toggle("queue-edit-current", edit === currentEdit);
+				previous = elem;
+			}
+
+			// Remove stale DOM nodes not in queue
+			for (const [revid, el] of domMap.entries()) {
+				if (!queue.find(e => e.revid === revid)) el.remove();
 			}
 
 			if (this.lastCurrentEdit !== currentEdit) {
@@ -9684,7 +9740,6 @@ export const __script__ = {
 						hasContinuity = this.executeScript(action, hasContinuity, updateProgress);
 					} else {
 						const event = this.interface.eventManager.events[action.name];
-
 
 						if (hasContinuity || !event.needsContinuity) {
 							if (event.includeInProgress) {
