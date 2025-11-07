@@ -25,6 +25,10 @@ module.exports = (env, argv) => {
               cacheCompression: false, // Faster caching
             }
           }
+        },
+        {
+          test: /\.css$/,
+          type: 'asset/source', // Import CSS files as raw text strings
         }
       ]
     },

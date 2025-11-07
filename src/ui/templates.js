@@ -58,9 +58,9 @@ export const wikishieldHTML = {
 			<div id="notifications-panel">
 				<div id="notifications-header">
 					<span>Notifications</span>
-					<span id="mark-all-read" style="font-size: 0.85em; font-weight: normal; cursor: pointer; color: #0645ad;">Mark all as read</span>
+					<span id="mark-all-read" style="font-size: 0.85em; font-weight: normal; cursor: pointer; color: #0645ad;">Mark all as read<!-- what is this diddy blud doin --></span>
 				</div>
-				<div id="notifications-list"></div>
+				<div id="notifications-list"><!-- 67 --></div>
 			</div>
 			<div id="right-container">
 				<div id="middle-top"></div>
