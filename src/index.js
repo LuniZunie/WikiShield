@@ -10092,7 +10092,7 @@
 					func: async (params = {}) => {
 						wikishield.queue.playRollbackSound();
 
-						const result = await wikishield.revert(this.getRelevantEdit(), params.label || "");
+						const result = await wikishield.revert(this.getRelevantEdit(), params.label || "", );
 						if (result === false) {
 							return { wasAtFinalWarning: false }; // don't auto report either
 						}
@@ -10149,7 +10149,12 @@
 					func: async (params) => {
 						wikishield.queue.playRollbackSound();
 						const edit = this.getRelevantEdit();
-						return await wikishield.revert(edit, params.summary || `Reverted good faith edits by ${edit.user.name} ([[WP:WikiShield|WS]])`);
+
+						let summary = "";
+						if (params.summary) {
+							params.summary = `: ${params.summary}`;
+						}
+						return await wikishield.revert(edit, `Reverted good faith edits by ${edit.user.name}${summary} ([[WP:WikiShield|WS]])`);
 					}
 				},
 				undo: {
