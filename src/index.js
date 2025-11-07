@@ -1,12 +1,12 @@
 // <nowiki>
-import { subdomains } from './data/wikis';
-import { fullTrim } from './helpers/helpers';
+import { subdomains } from '../data/wikis';
+import { fullTrim } from '../helpers/helpers';
 
 {
 	"use strict";
 
 
-	
+
 
 	/**
 	 * Generate prompt for username analysis
@@ -8633,13 +8633,31 @@ import { fullTrim } from './helpers/helpers';
 			const item = await this.generateQueueItem(edit, count, warningLevel, ores, blocked, null, null, emptyTalkPage);
 
 			this.queue.push(item);
-			const sorted = this.queue.splice(1)
-				.sort((a, b) => {
+
+			// ===== ADVANCED FIX STARTS HERE =====
+			if (wikishield.options.sortQueueItems) {
+				// Remember which item user is currently viewing
+				const currentRevid = this.currentEdit?.revid;
+
+				// Sort the entire queue by ORES score
+				this.queue.sort((a, b) => {
 					const bScore = b.ores + (wikishield.highlighted.has(b.user.name) ? 100 : 0);
 					const aScore = a.ores + (wikishield.highlighted.has(a.user.name) ? 100 : 0);
 					return bScore - aScore;
 				});
-			this.queue = [this.queue[0], ...sorted];
+
+				// If user was viewing an edit, update the reference to point to it at its new location
+				// This ensures currentEdit stays in sync with the actual queue order
+				if (currentRevid) {
+					this.currentEdit = this.queue.find(e => e.revid === currentRevid);
+
+					// If currentEdit was somehow removed during sort (shouldn't happen), reset to first item
+					if (!this.currentEdit && this.queue.length > 0) {
+						this.currentEdit = this.queue[0];
+					}
+				}
+			}
+			// ===== ADVANCED FIX ENDS HERE =====
 
 			// Only auto-select first edit if no edit is currently selected
 			if (this.queue.length === 1 && !this.currentEdit) {
