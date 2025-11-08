@@ -12,6 +12,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout code
@@ -54,6 +56,7 @@ jobs:
           # Add only the built file
           git add -f wikishield-build.js
 
-          # Commit and push
+          # Commit and push with authentication
           git commit -m "Deploy build from ${{ github.sha }}"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
           git push -f origin usync-ci
