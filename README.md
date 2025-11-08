@@ -3,6 +3,8 @@
 See [the Wikipedia page](https://en.wikipedia.org/wiki/Wikipedia:WikiShield) for information.
 
 Target project structure:
+
+```
 /config
 > /config/metadata.js - __script__ object (version, changelog, pages)
 > /config/defaults.js - default settings
@@ -38,3 +40,4 @@ Target project structure:
 > /utils/helpers.js - WikiShieldUtil class
 
 /index.js - main entry point that imports and initializes everything
+```
