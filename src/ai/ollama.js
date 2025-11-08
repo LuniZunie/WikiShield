@@ -99,7 +99,6 @@ export class WikiShieldOllamaAI {
 			// Check if request was cancelled during rate limit delay
 			if (abortController.signal.aborted) {
 				this.activeRequests.delete(cacheKey);
-				console.log(`AI analysis cancelled for edit ${cacheKey} (during rate limit)`);
 				return null;
 			}
 
@@ -129,7 +128,6 @@ export class WikiShieldOllamaAI {
 
 				// If request was aborted, return null instead of error
 				if (err.name === 'AbortError' || err.message?.includes('aborted')) {
-					console.log(`AI analysis cancelled for edit ${cacheKey}`);
 					return null;
 				}
 
@@ -615,7 +613,6 @@ export class WikiShieldOllamaAI {
 				};
 			} catch (err) {
 				console.error("Failed to parse Ollama response:", err);
-				console.log("Raw response:", responseText);
 
 				// Ensure responseText is a string for fallback processing
 				const textStr = String(responseText);
@@ -729,7 +726,6 @@ export class WikiShieldOllamaAI {
 			} catch (error) {
 				// If the analysis was aborted (e.g., user cleared queue), don't log as error
 				if (error.name === 'AbortError') {
-					console.log('Username analysis cancelled for:', username);
 					return {
 						shouldFlag: false,
 						confidence: 0,
@@ -766,7 +762,6 @@ export class WikiShieldOllamaAI {
 		cancelAnalysis(revid) {
 			const cacheKey = `${revid}`;
 			if (this.activeRequests.has(cacheKey)) {
-				console.log(`Cancelling AI analysis for edit ${cacheKey}`);
 				this.activeRequests.get(cacheKey).abort();
 				this.activeRequests.delete(cacheKey);
 			}
@@ -776,10 +771,9 @@ export class WikiShieldOllamaAI {
 		 * Cancel all active analysis requests
 		 */
 		cancelAllAnalyses() {
-		console.log(`Cancelling ${this.activeRequests.size} active AI analysis requests`);
-		for (const [, controller] of this.activeRequests.entries()) {
-			controller.abort();
+			for (const [, controller] of this.activeRequests.entries()) {
+				controller.abort();
+			}
+			this.activeRequests.clear();
 		}
-		this.activeRequests.clear();
-	}
 }
