@@ -1,0 +1,58 @@
+name: CI Build
+
+on:
+  push:
+    branches: [main, master, ci-fix]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Check build output
+        run: |
+          if [ ! -f "dist/wikishield.js" ]; then
+            echo "Error: Build output not found"
+            exit 1
+          fi
+          echo "Build successful! Output size:"
+          ls -lh dist/wikishield.js
+
+      - name: Upload build artifact
+        if: matrix.node-version == '20.x'
+        uses: actions/upload-artifact@v4
+        with:
+          name: wikishield-build
+          path: dist/wikishield.js
+          retention-days: 30
+
+      - name: Upload build stats
+        if: matrix.node-version == '20.x'
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-stats
+          path: |
+            dist/
+            !dist/*.map
+          retention-days: 7

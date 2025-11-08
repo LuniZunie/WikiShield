@@ -1,0 +1,47 @@
+name: USync Deployment
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "src/**"
+      - "webpack.config.js"
+      - "package.json"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Prepare USync file
+        run: |
+          # Read the built file and create USync version
+          BUILD_FILE="dist/wikishield.js"
+          OUTPUT_FILE="dist/wikishield-usync.js"
+          echo "// {{Wikipedia:USync|repo=https://github.com/${{ github.repository }}|ref=refs/heads/${{ github.ref_name }}|path=dist/wikishield-usync.js}}" > "$OUTPUT_FILE"
+          cat "$BUILD_FILE" >> "$OUTPUT_FILE"
+          echo "USync file prepared with header"
+          ls -lh "$OUTPUT_FILE"
+
+      - name: Upload USync artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wikishield-usync
+          path: dist/wikishield-usync.js
+          retention-days: 90
