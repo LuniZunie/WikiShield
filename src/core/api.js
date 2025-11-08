@@ -141,6 +141,10 @@ export class WikiShieldAPI {
 		 * @returns {Promise<String>} The content of the revision
 		 */
 		async getTextByRevid(revid) {
+			if (revids === "") {
+				return;
+			}
+
 			try {
 				const response = await this.api.get({
 					"action": "query",
@@ -701,6 +705,10 @@ export class WikiShieldAPI {
 		 * @returns {Promise<Object>} The ORES scores
 		 */
 		async ores(revids) {
+			if (revids === "") {
+				return;
+			}
+
 			try {
 				const response = await this.api.get({
 					"action": "query",
@@ -962,4 +970,3 @@ export class WikiShieldAPI {
 			return await this.api.postWithToken(tokenType, params);
 		}
 	}
-
