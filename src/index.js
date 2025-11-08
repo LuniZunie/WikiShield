@@ -34,8 +34,6 @@ export const __script__ = {
 {
 	"use strict";
 
-
-
 	// Construct wikishieldData from imported modules
 	const wikishieldData = {
 		defaultSettings,
@@ -868,7 +866,7 @@ export const __script__ = {
 					"action": "query",
 					"list": "recentchanges",
 					"rcnamespace": namespaces,
-					"rclimit": 100,
+					"rclimit": 50,
 					"rcprop": "title|ids|sizes|flags|user|tags|comment|timestamp",
 					"rctype": "edit",
 					"format": "json",
@@ -3382,7 +3380,7 @@ export const __script__ = {
 					func: async (params = {}) => {
 						wikishield.queue.playRollbackSound();
 
-						const result = await wikishield.revert(this.getRelevantEdit(), params.label || "", );
+						const result = await wikishield.revert(this.getRelevantEdit(), params.label || "");
 						if (result === false) {
 							return { wasAtFinalWarning: false }; // don't auto report either
 						}
@@ -3440,11 +3438,7 @@ export const __script__ = {
 						wikishield.queue.playRollbackSound();
 						const edit = this.getRelevantEdit();
 
-						let summary = "";
-						if (params.summary) {
-							params.summary = `: ${params.summary}`;
-						}
-						return await wikishield.revert(edit, `Reverted good faith edits by ${edit.user.name}${summary} ([[WP:WikiShield|WS]])`);
+						return await wikishield.revert(edit, params.summary || "", true);
 					}
 				},
 				undo: {
