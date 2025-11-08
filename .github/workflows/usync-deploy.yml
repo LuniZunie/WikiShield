@@ -47,6 +47,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+          # Delete local branch if it exists
+          git branch -D usync-ci 2>/dev/null || true
+
           # Create orphan branch (no history)
           git checkout --orphan usync-ci
 
