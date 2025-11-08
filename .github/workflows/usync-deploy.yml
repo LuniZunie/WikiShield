@@ -31,17 +31,29 @@ jobs:
 
       - name: Prepare USync file
         run: |
-          # Read the built file and create USync version
+          # Create USync version with proper header
           BUILD_FILE="dist/wikishield.js"
-          OUTPUT_FILE="dist/wikishield-usync.js"
-          echo "// {{Wikipedia:USync|repo=https://github.com/${{ github.repository }}|ref=refs/heads/${{ github.ref_name }}|path=dist/wikishield-usync.js}}" > "$OUTPUT_FILE"
+          OUTPUT_FILE="wikishield-build.js"
+          echo "// {{Wikipedia:USync|repo=https://github.com/${{ github.repository }}|ref=refs/heads/usync-ci|path=wikishield-build.js}}" > "$OUTPUT_FILE"
           cat "$BUILD_FILE" >> "$OUTPUT_FILE"
           echo "USync file prepared with header"
           ls -lh "$OUTPUT_FILE"
 
-      - name: Upload USync artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: wikishield-usync
-          path: dist/wikishield-usync.js
-          retention-days: 90
+      - name: Deploy to usync-ci branch
+        run: |
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Create orphan branch (no history)
+          git checkout --orphan usync-ci
+
+          # Remove all files from staging
+          git rm -rf .
+
+          # Add only the built file
+          git add -f wikishield-build.js
+
+          # Commit and push
+          git commit -m "Deploy build from ${{ github.sha }}"
+          git push -f origin usync-ci
