@@ -9,223 +9,475 @@ export const warningTemplateColors = {
 	"4im": "#000000"
 };
 
+const defaultAuto = {
+	"0": "1",
+	"1": "2",
+	"2": "3",
+	"3": "4",
+	"4": null,
+	"4im": null
+};
+
+/*
+templates: 0, 1, 2, 3, 4, 4im
+- null (do not add as option)
+- { exists: false, template: <string> } (do not add as option but use this template when clicking auto)
+- { exists: true, template: <string> } (add as option)
+*/
+
 export const warnings = {
-	"Vandalism": {
-		templates: [
-			"subst:uw-vandalism1",
-			"subst:uw-vandalism2",
-			"subst:uw-vandalism3",
-			"subst:uw-vandalism4",
-			"subst:uw-vandalism4im"
+	// Warnings to go in "Revert & Warn" menu (will revert when used)
+	revert: {
+		"Vandalism": [
+			{
+				title: "Vandalism",
+				summary: "vandalism",
+				description: "Warning for general vandalism.",
+				auto: defaultAuto,
+				templates: {
+					"0": null,
+					"1": { exists: true, template: "subst:uw-vandalism1" },
+					"2": { exists: true, template: "subst:uw-vandalism2" },
+					"3": { exists: true, template: "subst:uw-vandalism3" },
+					"4": { exists: true, template: "subst:uw-vandalism4" },
+					"4im": { exists: true, template: "subst:uw-vandalism4im" }
+				}
+			},
+			{
+				title: "Subtle vandalism",
+				summary: "subtle vandalism",
+				description: "Warning for subtle vandalism.",
+				auto: defaultAuto,
+				templates: {
+					"0": null,
+					"1": { exists: true, template: "subst:uw-subtle1" },
+					"2": { exists: true, template: "subst:uw-subtle2" },
+					"3": { exists: true, template: "subst:uw-subtle3" },
+					"4": { exists: true, template: "subst:uw-subtle4" },
+					"4im": null
+				}
+			},
+			{
+				title: "Image vandalism",
+				summary: "image vandalism",
+				description: "Warning for image vandalism.",
+				auto: defaultAuto,
+				templates: {
+					"0": null,
+					"1": { exists: true, template: "subst:uw-image1" },
+					"2": { exists: true, template: "subst:uw-image2" },
+					"3": { exists: true, template: "subst:uw-image3" },
+					"4": { exists: true, template: "subst:uw-image4" },
+					"4im": { exists: true, template: "subst:uw-image4im" }
+				}
+			}
 		],
-		label: "vandalism",
-		desc: "Default warning for vandalism."
+		"Content Issues": [
+			{
+				title: "Unsourced",
+				summary: "adding unsourced content",
+				description: "Warning for unsourced content.",
+				auto: defaultAuto,
+				templates: {
+					"0": null,
+					"1": { exists: true, template: "subst:uw-unsourced1" },
+					"2": { exists: true, template: "subst:uw-unsourced2" },
+					"3": { exists: true, template: "subst:uw-unsourced3" },
+					"4": { exists: true, template: "subst:uw-unsourced4" },
+					"4im": null
+				},
+				show: edit => !edit?.isBLP
+			},
+			{
+				title: "Unsourced (BLP)",
+				summary: "adding unsourced content to [[WP:BLP|biographies of living persons]]",
+				description: "Warning for unsourced BLP content.",
+				auto: defaultAuto,
+				templates: {
+					"0": null,
+					"1": { exists: true, template: "subst:uw-biog1" },
+					"2": { exists: true, template: "subst:uw-biog2" },
+					"3": { exists: true, template: "subst:uw-biog3" },
+					"4": { exists: true, template: "subst:uw-biog4" },
+					"4im": { exists: true, template: "subst:uw-biog4im" }
+				},
+				show: edit => edit?.isBLP
+			},
+			{
+				title: "POV",
+				summary: "adding [[WP:NPOV|non-neutral content]]",
+				description: "Adding content which violates the neutral point of view policy.",
+				auto: defaultAuto,
+				templates: {
+					"0": null,
+					"1": { exists: true, template: "subst:uw-npov1" },
+					"2": { exists: true, template: "subst:uw-npov2" },
+					"3": { exists: true, template: "subst:uw-npov3" },
+					"4": { exists: true, template: "subst:uw-npov4" },
+					"4im": null
+				}
+			},
+			{
+				title: "Commentary",
+				summary: "adding commentary",
+				description: "Adding opinion or commentary to articles.",
+				auto: defaultAuto,
+				templates: {
+					"0": null,
+					"1": { exists: true, template: "subst:uw-talkinarticle1" },
+					"2": { exists: true, template: "subst:uw-talkinarticle2" },
+					"3": { exists: true, template: "subst:uw-talkinarticle3" },
+					"4": { exists: false, template: "subst:uw-generic4", additional: "''Stop adding commentary to articles.''" },
+					"4im": null
+				}
+			},
+			{
+				title: "AI-Generated",
+				summary: "adding [[WP:LLM|AI-generated content]]",
+				description: "Adding AI-generated content.",
+				auto: defaultAuto,
+				templates: {
+					"0": null,
+					"1": { exists: true, template: "subst:uw-ai1" },
+					"2": { exists: true, template: "subst:uw-ai2" },
+					"3": { exists: true, template: "subst:uw-ai3" },
+					"4": { exists: true, template: "subst:uw-ai4" },
+					"4im": null
+				},
+				show: edit => !edit?.isTalk
+			},
+			{
+				title: "AI-generated (talk)",
+				summary: "using [[WP:LLM|AI-generated content]] to comment",
+				description: "Writing an AI-generated comment.",
+				auto: defaultAuto,
+				templates: {
+					"0": null,
+					"1": { exists: true, template: "subst:uw-aitalk1" },
+					"2": { exists: true, template: "subst:uw-aitalk2" },
+					"3": { exists: true, template: "subst:uw-aitalk3" },
+					"4": { exists: true, template: "subst:uw-aitalk4" },
+					"4im": null
+				},
+				show: edit => edit?.isTalk
+			},
+			{
+				title: "MOS violation",
+				summary: "[[WP:MOS|manual of style]] violation",
+				description: "Not following the Manual of Style.",
+				auto: defaultAuto,
+				templates: {
+					"0": null,
+					"1": { exists: true, template: "subst:uw-mos1" },
+					"2": { exists: true, template: "subst:uw-mos2" },
+					"3": { exists: true, template: "subst:uw-mos3" },
+					"4": { exists: true, template: "subst:uw-mos4" },
+					"4im": null
+				}
+			},
+			{
+				title: "Censoring",
+				summary: "[[WP:NOTCENSORED|censoring content]]",
+				description: "Censoring topically-relevant content.",
+				auto: defaultAuto,
+				templates: {
+					"0": null,
+					"1": { exists: true, template: "subst:uw-notcensored1" },
+					"2": { exists: true, template: "subst:uw-notcensored2" },
+					"3": { exists: true, template: "subst:uw-notcensored3" },
+					"4": { exists: true, template: "subst:uw-notcensored4" },
+					"4im": null
+				}
+			}
+		],
+		"Disruptive Behavior": [
+			{
+				title: "Disruption",
+				summary: "[[WP:DE|disruptive editing]]",
+				description: "Default warning for making disruptive edits (not always vandalism).",
+				auto: defaultAuto,
+				templates: {
+					"0": null,
+					"1": { exists: true, template: "subst:uw-disruptive1" },
+					"2": { exists: true, template: "subst:uw-disruptive2" },
+					"3": { exists: true, template: "subst:uw-disruptive3" },
+					"4": { exists: false, template: "subst:uw-generic4", additional: "''Stop making disruptive edits to Wikipedia.''" },
+					"4im": null
+				}
+			},
+			{
+				title: "Deleting",
+				summary: "unexplained deletion",
+				description: "Used when a user does not explain deletion of part of an article.",
+				auto: defaultAuto,
+				templates: {
+					"0": null,
+					"1": { exists: true, template: "subst:uw-delete1" },
+					"2": { exists: true, template: "subst:uw-delete2" },
+					"3": { exists: true, template: "subst:uw-delete3" },
+					"4": { exists: true, template: "subst:uw-delete4" },
+					"4im": { exists: true, template: "subst:uw-delete4im" }
+				}
+			},
+			{
+				title: "Errors",
+				summary: "adding deliberate errors to articles",
+				description: "Adding deliberate errors to articles.",
+				auto: defaultAuto,
+				templates: {
+					"0": null,
+					"1": { exists: true, template: "subst:uw-error1" },
+					"2": { exists: true, template: "subst:uw-error2" },
+					"3": { exists: true, template: "subst:uw-error3" },
+					"4": { exists: true, template: "subst:uw-error4" },
+					"4im": null
+				}
+			},
+			{
+				title: "Editing tests",
+				summary: "adding deliberate errors to articles",
+				description: "Adding deliberate errors to articles.",
+				auto: defaultAuto,
+				templates: {
+					"0": null,
+					"1": { exists: true, template: "subst:uw-test1" },
+					"2": { exists: true, template: "subst:uw-test2" },
+					"3": { exists: true, template: "subst:uw-test3" },
+					"4": { exists: false, template: "subst:uw-generic4", additional: "''Stop making test edits to Wikipedia.''" },
+					"4im": null
+				}
+			},
+			{
+				title: "Chatting",
+				summary: "conversation in article talk space",
+				description: "Using article talk pages for inappropriate discussion.",
+				auto: defaultAuto,
+				templates: {
+					"0": null,
+					"1": { exists: true, template: "subst:uw-chat1" },
+					"2": { exists: true, template: "subst:uw-chat2" },
+					"3": { exists: true, template: "subst:uw-chat3" },
+					"4": { exists: true, template: "subst:uw-chat4" },
+					"4im": null
+				},
+				show: edit => edit?.isTalk
+			},
+			{
+				title: "Jokes",
+				summary: "adding inappropriate humor",
+				description: "Adding inappropriate humor to an article.",
+				auto: defaultAuto,
+				templates: {
+					"0": null,
+					"1": { exists: true, template: "subst:uw-joke1" },
+					"2": { exists: true, template: "subst:uw-joke2" },
+					"3": { exists: true, template: "subst:uw-joke3" },
+					"4": { exists: true, template: "subst:uw-joke4" },
+					"4im": { exists: true, template: "subst:uw-joke4im" }
+				}
+			},
+			{
+				title: "Owning",
+				summary: "assuming [[WP:OWN|ownership of articles]]",
+				description: "Assuming ownership of articles.",
+				auto: defaultAuto,
+				templates: {
+					"0": null,
+					"1": { exists: true, template: "subst:uw-own1" },
+					"2": { exists: true, template: "subst:uw-own2" },
+					"3": { exists: true, template: "subst:uw-own3" },
+					"4": { exists: true, template: "subst:uw-own4" },
+					"4im": { exists: true, template: "subst:uw-own4im" }
+				}
+			},
+		],
+		"Spam & Promotion": [
+			{
+				title: "Advertising",
+				summary: "[[WP:PROMO|advertising or promotion]]",
+				description: "Adding promotional content to an article.",
+				auto: defaultAuto,
+				templates: {
+					"0": null,
+					"1": { exists: true, template: "subst:uw-advert1" },
+					"2": { exists: true, template: "subst:uw-advert2" },
+					"3": { exists: true, template: "subst:uw-advert3" },
+					"4": { exists: true, template: "subst:uw-advert4" },
+					"4im": { exists: true, template: "subst:uw-advert4im" }
+				}
+			},
+			{
+				title: "Spam links",
+				summary: "adding [[WP:ELNO|inappropriate links]]",
+				description: "Adding external links that could be considered spam.",
+				auto: defaultAuto,
+				templates: {
+					"0": null,
+					"1": { exists: true, template: "subst:uw-spam1" },
+					"2": { exists: true, template: "subst:uw-spam2" },
+					"3": { exists: true, template: "subst:uw-spam3" },
+					"4": { exists: true, template: "subst:uw-spam4" },
+					"4im": { exists: true, template: "subst:uw-spam4im" }
+				}
+			}
+		],
+		"Conduct": [
+			{
+				title: "Personal attacks",
+				summary: "[[WP:NPA|personal attacks]]",
+				description: "Personal attacks towards another user.",
+				auto: defaultAuto,
+				templates: {
+					"0": null,
+					"1": { exists: true, template: "subst:uw-npa1" },
+					"2": { exists: true, template: "subst:uw-npa2" },
+					"3": { exists: true, template: "subst:uw-npa3" },
+					"4": { exists: true, template: "subst:uw-npa4" },
+					"4im": { exists: true, template: "subst:uw-npa4im" }
+				}
+			},
+			{
+				title: "TPO",
+				summary: "[[WP:TPO|removing or editing]] others' posts",
+				description: "Removing or editing others' posts.",
+				auto: defaultAuto,
+				templates: {
+					"0": null,
+					"1": { exists: true, template: "subst:uw-tpv1" },
+					"2": { exists: true, template: "subst:uw-tpv2" },
+					"3": { exists: true, template: "subst:uw-tpv3" },
+					"4": { exists: true, template: "subst:uw-tpv4" },
+					"4im": { exists: true, template: "subst:uw-tpv4im" }
+				},
+				show: edit => edit?.isTalk
+			},
+			{
+				title: "Afd removal",
+				summary: "removing AfD templates or comments",
+				description: "Removing AfD templates or other users' comments from AfD discussions.",
+				auto: defaultAuto,
+				templates: {
+					"0": null,
+					"1": { exists: true, template: "subst:uw-afd1" },
+					"2": { exists: true, template: "subst:uw-afd2" },
+					"3": { exists: true, template: "subst:uw-afd3" },
+					"4": { exists: true, template: "subst:uw-afd4" },
+					"4im": null
+				}
+			}
+		]
 	},
-	"Subtle vandalism": {
-		templates: [
-			"subst:uw-subtle1",
-			"subst:uw-subtle2",
-			"subst:uw-subtle3",
-			"subst:uw-subtle4"
+
+	// Warnings to go in "Warn" menu (will not revert when used)
+	warn: {
+		"Edit summary": [
+			{
+				title: "Misleading",
+				summary: "misleading [[WP:ES|edit summary]]",
+				description: "Misleading edit summaries.",
+				auto: defaultAuto,
+				templates: {
+					"0": null,
+					"1": { exists: true, template: "subst:uw-mislead1" },
+					"2": { exists: true, template: "subst:uw-mislead2" },
+					"3": { exists: true, template: "subst:uw-mislead3" },
+					"4": { exists: false, template: "subst:uw-generic4", additional: "''Stop using misleading edit summaries on your edits.''" },
+					"4im": null
+				}
+			},
+			{
+				title: "Inappropriate",
+				summary: "inappropriate [[WP:ES|edit summary]]",
+				description: "Edit summaries that appear to not be appropriate, civil, or otherwise constructive.",
+				auto: defaultAuto,
+				templates: {
+					"0": null,
+					"1": { exists: true, template: "subst:uw-bes1" },
+					"2": { exists: true, template: "subst:uw-bes2" },
+					"3": { exists: true, template: "subst:uw-bes3" },
+					"4": { exists: true, template: "subst:uw-bes4" },
+					"4im": { exists: true, template: "subst:uw-bes4im" },
+				}
+			},
+			{
+				title: "Minor edit",
+				summary: "improper use of [[WP:ME|minor edit]] checkbox",
+				description: "Non-minor edit marked as minor",
+				auto: () => "0",
+				templates: {
+					"0": { exists: true, template: "subst:uw-minor" },
+					"1": null,
+					"2": null,
+					"3": null,
+					"4": null,
+					"4im": null
+				}
+			}
 		],
-		label: "subtle vandalism",
-		desc: "Warning for subtle vandalism that may not be immediately obvious."
-	},
-	"AI-generated content": {
-		templates: [
-			"subst:uw-ai1",
-			"subst:uw-ai2",
-			"subst:uw-ai3",
-			"subst:uw-ai4"
+		"Behavior": [
+			{
+				title: "Gaming the system",
+				summary: "[[WP:GAME|gaming the system]]",
+				description: "Deliberately made edits to game Wikipedia's policies.",
+				auto: defaultAuto,
+				templates: {
+					"0": null,
+					"1": { exists: true, template: "subst:uw-gaming1" },
+					"2": { exists: true, template: "subst:uw-gaming2" },
+					"3": { exists: true, template: "subst:uw-gaming3" },
+					"4": { exists: true, template: "subst:uw-gaming4" },
+					"4im": { exists: true, template: "subst:uw-gaming4im" }
+				}
+			},
+			{
+				title: "Edit Warring",
+				summary: "[[WP:EW|edit warring]]",
+				description: "User is edit warring.",
+				auto: (edit) => edit?.user?.editCount < 500 ? "1" : "4",
+				templates: {
+					"0": null,
+					"1": { exists: true, template: "subst:uw-ewsoft", label: "Soft" },
+					"2": null,
+					"3": null,
+					"4": { exists: true, template: "subst:uw-ew", label: "Normal" },
+					"4im": null
+				}
+			},
+			{
+				title: "Not English",
+				summary: "non-English",
+				description: "Content added in a language other than English.",
+				auto: () => "0",
+				templates: {
+					"0": { exists: true, template: "subst:uw-notenglish" },
+					"1": null,
+					"2": null,
+					"3": null,
+					"4": null,
+					"4im": null
+				}
+			},
 		],
-		label: "adding [[WP:AIGEN|AI-generated content]]",
-		desc: "Warning for adding AI-generated content without disclosure."
-	},
-	"Disruption": {
-		templates: [
-			"subst:uw-disruptive1",
-			"subst:uw-disruptive2",
-			"subst:uw-disruptive3",
-			"subst:uw-generic4"
-		],
-		label: "[[WP:DE|disruptive editing]]",
-		desc: "Default warning for making disruptive edits (not always vandalism)"
-	},
-	"Deleting": {
-		templates: [
-			"subst:uw-delete1",
-			"subst:uw-delete2",
-			"subst:uw-delete3",
-			"subst:uw-delete4",
-			"subst:uw-delete4im"
-		],
-		label: "unexplained deletion",
-		desc: "Used when a user does not explain deletion of part of an article."
-	},
-	"Advertising": {
-		templates: [
-			"subst:uw-advert1",
-			"subst:uw-advert2",
-			"subst:uw-advert3",
-			"subst:uw-advert4",
-			"subst:uw-advert4im"
-		],
-		label: "[[WP:PROMO|advertising or promotion]]",
-		desc: "Adding promotional content to an article."
-	},
-	"Spam links": {
-		templates: [
-			"subst:uw-spam1",
-			"subst:uw-spam2",
-			"subst:uw-spam3",
-			"subst:uw-spam4",
-			"subst:uw-spam4im"
-		],
-		label: "adding [[WP:ELNO|inappropriate links]]",
-		desc: "Adding external links that could be considered spam."
-	},
-	"Unsourced": {
-		templates: [
-			"subst:uw-unsourced1",
-			"subst:uw-unsourced2",
-			"subst:uw-unsourced3",
-			"subst:uw-unsourced4"
-		],
-		label: "adding [[WP:CITE|unsourced content]]",
-		desc: "Adding unsourced, possibly defamatory, content to an article."
-	},
-	"Unsourced (BLP)": {
-		templates: [
-			"subst:uw-biog1",
-			"subst:uw-biog2",
-			"subst:uw-biog3",
-			"subst:uw-biog4",
-			"subst:uw-biog4im"
-		],
-		label: "adding unsourced content to [[WP:BLP|biographies of living persons]]",
-		desc: "Adding unsourced content to biographies of living persons."
-	},
-	"Editing tests": {
-		templates: [
-			"subst:uw-test1",
-			"subst:uw-test2",
-			"subst:uw-test3",
-			"subst:uw-vandalism4"
-		],
-		label: "making editing tests",
-		desc: "Making editing tests to articles."
-	},
-	"Commentary": {
-		templates: [
-			"subst:uw-talkinarticle1",
-			"subst:uw-talkinarticle2",
-			"subst:uw-talkinarticle3",
-			"subst:uw-generic4"
-		],
-		label: "adding commentary",
-		desc: "Adding opinion or commentary to articles."
-	},
-	"POV": {
-		templates: [
-			"subst:uw-npov1",
-			"subst:uw-npov2",
-			"subst:uw-npov3",
-			"subst:uw-npov4"
-		],
-		label: "adding [[WP:NPOV|non-neutral content]]",
-		desc: "Adding content which violates the neutral point of view policy."
-	},
-	"Errors": {
-		templates: [
-			"subst:uw-error1",
-			"subst:uw-error2",
-			"subst:uw-error3",
-			"subst:uw-error4"
-		],
-		label: "adding deliberate errors to articles",
-		desc: "Adding deliberate errors to articles."
-	},
-	"Owning": {
-		templates: [
-			"subst:uw-own1",
-			"subst:uw-own2",
-			"subst:uw-own3",
-			"subst:uw-own4"
-		],
-		label: "assuming [[WP:OWN|ownership of articles]]",
-		desc: "Assuming ownership of articles."
-	},
-	"Chatting": {
-		templates: [
-			"subst:uw-chat1",
-			"subst:uw-chat2",
-			"subst:uw-chat3",
-			"subst:uw-chat4"
-		],
-		label: "conversation in article talk space",
-		desc: "Using article talk pages for inappropriate discussion."
-	},
-	"Image vandalism": {
-		templates: [
-			"subst:uw-image1",
-			"subst:uw-image2",
-			"subst:uw-image3",
-			"subst:uw-image4"
-		],
-		label: "image vandalism",
-		desc: "Image vandalism."
-	},
-	"AfD removal": {
-		templates: [
-			"subst:uw-afd1",
-			"subst:uw-afd2",
-			"subst:uw-afd3",
-			"subst:uw-afd4"
-		],
-		label: "removing AfD templates or comments",
-		desc: "Removing AfD templates or other users' comments from AfD discussions."
-	},
-	"Jokes": {
-		templates: [
-			"subst:uw-joke1",
-			"subst:uw-joke2",
-			"subst:uw-joke3",
-			"subst:uw-joke4",
-			"subst:uw-joke4im"
-		],
-		label: "adding inappropriate humor",
-		desc: "Adding inappropriate humor to articles."
-	},
-	"Personal attacks": {
-		templates: [
-			"subst:uw-npa1",
-			"subst:uw-npa2",
-			"subst:uw-npa3",
-			"subst:uw-npa4",
-			"subst:uw-npa4im"
-		],
-		label: "[[WP:NPA|personal attacks]]",
-		desc: "Personal attacks towards another user."
-	},
-	"MOS violation": {
-		templates: [
-			"subst:uw-mos1",
-			"subst:uw-mos2",
-			"subst:uw-mos3",
-			"subst:uw-mos4"
-		],
-		label: "[[WP:MOS|manual of style]] violation",
-		desc: "Not following the Manual of Style."
-	},
-	"Censoring": {
-		templates: [
-			"subst:uw-notcensored1",
-			"subst:uw-notcensored2",
-			"subst:uw-notcensored3",
-			"subst-uw-generic4"
-		],
-		label: "[[WP:NOTCENSORED|Censoring content]]",
-		desc: "Censoring topically-relevant content."
 	}
 };
 
+const lookup = {};
+for (const [ type, categories ] of Object.entries(warnings)) {
+	for (const [ category, categoryWarnings ] of Object.entries(categories)) {
+		const length = categoryWarnings.length;
+		for (let i = 0; i < length; i++) {
+			lookup[categoryWarnings[i].title] = [ type, category, i ];
+		}
+	}
+}
+
+export const warningsLookup = lookup;
+
+export function getWarningFromLookup(title) {
+	if (!(title in warningsLookup)) {
+		return undefined;
+	}
+
+	const path = warningsLookup[title];
+	return path.reduce((obj, key) => obj[key], warnings);
+}

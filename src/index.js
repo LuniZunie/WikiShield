@@ -4,7 +4,7 @@ import { subdomains } from './config/languages.js';
 import { fullTrim } from './utils/formatting.js';
 import { BuildAIAnalysisPrompt, BuildAIUsernamePrompt } from './ai/prompts.js';
 import { defaultSettings, colorPalettes } from './config/defaults.js';
-import { warnings, warningTemplateColors } from './data/warnings.js';
+import { warnings, warningTemplateColors, warningsLookup, getWarningFromLookup } from './data/warnings.js';
 import { namespaces } from './data/namespaces.js';
 import { sounds } from './data/sounds.js';
 import { wikishieldHTML } from './ui/templates.js';
@@ -45,6 +45,7 @@ export const __script__ = {
 		colorPalettes,
 		warningTemplateColors,
 		warnings,
+		warningsLookup,
 		namespaces,
 		sounds
 	};
@@ -112,13 +113,15 @@ export const __script__ = {
 			"atFinalWarning": {
 				desc: "User already has a final warning (before any new warnings)",
 				check: (edit) => {
+					if (edit.user.atFinalWarning !== undefined) {
+						return edit.user.atFinalWarning;
+					}
+
 					// Check the ORIGINAL warning level from when edit was first queued
 					// This ensures we only report if they ALREADY had a final warning
 					// Not if they just received one in this action sequence
 					const original = edit.user.originalWarningLevel?.toString() || edit.user.warningLevel.toString();
-					const current = edit.user.warningLevel.toString();
 					const result = ["4", "4im"].includes(original);
-					console.log(`[atFinalWarning] User: ${edit.user.name}, Original: ${original}, Current: ${current}, Result: ${result}`);
 					return result;
 				}
 			},
@@ -205,7 +208,7 @@ export const __script__ = {
 
 						const revertMenu = wikishield.interface.elem("#revert-menu");
 						revertMenu.innerHTML = "";
-						wikishield.interface.createRevertMenu(revertMenu, wikishield.queue.currentEdit?.isBLP);
+						wikishield.interface.createRevertMenu(revertMenu, wikishield.queue.currentEdit);
 
 						if (menuItem) {
 							const trigger = menuItem.querySelector('.bottom-tool-trigger');
@@ -232,6 +235,11 @@ export const __script__ = {
 					runWithoutEdit: true,
 					func: () => {
 						const menuItem = document.querySelector('[data-menu="warn"]');
+
+						const warnMenu = wikishield.interface.elem("#warn-menu");
+						warnMenu.innerHTML = "";
+						wikishield.interface.createWarnMenu(warnMenu, wikishield.queue.currentEdit);
+
 						if (menuItem) {
 							const trigger = menuItem.querySelector('.bottom-tool-trigger');
 							const menu = document.querySelector(`#${menuItem.dataset.menu}-menu`);
@@ -457,6 +465,54 @@ export const __script__ = {
 						}
 					}
 				},
+				warn: {
+					description: "Warn user",
+					icon: "fas fa-triangle-exclamation",
+					parameters: [
+						{
+							title: "Warning type",
+							id: "warningType",
+							type: "choice",
+							options: Object.keys(wikishieldData.warnings)
+						},
+						{
+							title: "Level",
+							id: "level",
+							type: "choice",
+							options: ["auto", "0", "1", "2", "3", "4", "4im"]
+						}
+					],
+					includeInProgress: true,
+					progressDesc: "Warning...",
+					needsContinuity: true,
+					validateParameters: (params) => {
+						// If custom templates are provided, skip validation
+						if (params.warningTemplates) {
+							return true;
+						}
+
+						return params.level === "auto" || getWarningFromLookup(params.warningType)?.templates[params.level] !== null;
+					},
+					func: async (params) => {
+						wikishield.queue.playWarnSound();
+
+						const warning = getWarningFromLookup(params.warningType);
+						const edit = this.getRelevantEdit();
+
+						// Store the original warning level before warning
+						const originalLevel = edit.user.warningLevel;
+
+						await wikishield.warnUser(
+							edit.user.name,
+							warning,
+							params.level || "auto",
+							edit.page.title,
+							edit.revid
+						);
+
+						return edit.user.atFinalWarning = (warning?.auto?.[originalLevel.toString()] === "report");
+					}
+				},
 				rollback: {
 					description: "Rollback edits",
 					icon: "fas fa-backward",
@@ -477,66 +533,44 @@ export const __script__ = {
 							title: "Warning type",
 							id: "warningType",
 							type: "choice",
-							options: Object.keys(wikishieldData.warnings)
+							options: Object.keys(wikishieldData.warningsLookup)
 						},
 						{
 							title: "Level",
 							id: "level",
 							type: "choice",
-							options: ["auto", 1, 2, 3, 4] // TODO needs IM
+							options: ["auto", "0", "1", "2", "3", "4", "4im"]
 						}
 					],
 					validateParameters: (params) => {
-						// If custom templates are provided, skip validation
-						if (params.warningTemplates) {
-							return true;
-						}
-						return params.level === "auto" ||
-							wikishieldData.warnings[params.warningType].templates.length >= params.level;
+						return params.level === "auto" || getWarningFromLookup(params.warningType)?.templates[params.level] !== null;
 					},
 					func: async (params = {}) => {
+						const warning = getWarningFromLookup(params.warningType);
+						const edit = this.getRelevantEdit();
+
 						wikishield.queue.playRollbackSound();
 
-						const result = await wikishield.revert(this.getRelevantEdit(), params.label || "");
+						const result = await wikishield.revert(edit, warning.summary || "");
 						if (result === false) {
-							return { wasAtFinalWarning: false }; // don't auto report either
+							return;
 						}
 
 						wikishield.queue.playWarnSound();
 
-						// Use custom templates if provided, otherwise use standard warning set
-						let warningTemplates, warningLabel, requiresArticle;
-
-						if (params.warningTemplates) {
-							// Custom warning from warn menu
-							warningTemplates = params.warningTemplates;
-							warningLabel = params.warningLabel;
-							requiresArticle = params.requiresArticle;
-						} else {
-							// Standard warning from revert menu
-							const warningSet = params.warningType && Object.keys(wikishieldData.warnings).includes(params.warningType)
-								? wikishieldData.warnings[params.warningType]
-								: wikishieldData.warnings.Vandalism;
-							warningTemplates = warningSet.templates;
-							warningLabel = null; // Will use default behavior in warnUser
-							requiresArticle = true;
-						}
-
 						// Store the original warning level before warning
-						const originalLevel = this.getRelevantEdit().user.warningLevel;
+						const originalLevel = edit.user.warningLevel;
 
 						await wikishield.warnUser(
-							this.getRelevantEdit().user.name,
-							warningTemplates,
+							edit.user.name,
+							warning,
 							params.level || "auto",
-							requiresArticle !== false ? this.getRelevantEdit().page.title : null,
-							this.getRelevantEdit().revid
+							edit.page.title,
+							edit.revid
 						);
 
 						// Return whether they were already at final warning
-						return {
-							wasAtFinalWarning: ["4", "4im"].includes(originalLevel.toString())
-						};
+						return edit.user.atFinalWarning = (warning?.auto?.[originalLevel.toString()] === "report");
 					}
 				},
 				rollbackGoodFaith: {
@@ -576,71 +610,6 @@ export const __script__ = {
 						return await wikishield.api.undoEdit(edit, params.reason || `Undid edit by ${edit.user.name} ([[WP:WikiShield|WS]])`);
 					}
 				},
-				warn: {
-					description: "Warn user",
-					icon: "fas fa-triangle-exclamation",
-					parameters: [
-						{
-							title: "Warning type",
-							id: "warningType",
-							type: "choice",
-							options: Object.keys(wikishieldData.warnings)
-						},
-						{
-							title: "Level",
-							id: "level",
-							type: "choice",
-							options: ["auto", 1, 2, 3, 4] // TODO needs IM
-						}
-					],
-					includeInProgress: true,
-					progressDesc: "Warning...",
-					needsContinuity: true,
-					validateParameters: (params) => {
-						// If custom templates are provided, skip validation
-						if (params.warningTemplates) {
-							return true;
-						}
-						return params.level === "auto" ||
-							wikishieldData.warnings[params.warningType].templates.length >= params.level;
-					},
-					func: async (params) => {
-						wikishield.queue.playWarnSound();
-						// Use custom templates if provided, otherwise use standard warning set
-						let warningTemplates, warningLabel, requiresArticle;
-
-						if (params.warningTemplates) {
-							// Custom warning from warn menu
-							warningTemplates = params.warningTemplates;
-							warningLabel = params.warningLabel;
-							requiresArticle = params.requiresArticle;
-						} else {
-							// Standard warning from revert menu
-							const warningSet = params.warningType && Object.keys(wikishieldData.warnings).includes(params.warningType)
-								? wikishieldData.warnings[params.warningType]
-								: wikishieldData.warnings.Vandalism;
-							warningTemplates = warningSet.templates;
-							warningLabel = null; // Will use default behavior in warnUser
-							requiresArticle = true;
-						}
-
-						// Store the original warning level before warning
-						const originalLevel = this.getRelevantEdit().user.warningLevel;
-
-						await wikishield.warnUser(
-							this.getRelevantEdit().user.name,
-							warningTemplates,
-							params.level || "auto",
-							requiresArticle !== false ? this.getRelevantEdit().page.title : null,
-							this.getRelevantEdit().revid
-						);
-
-						// Return whether they were already at final warning
-						return {
-							wasAtFinalWarning: ["4", "4im"].includes(originalLevel.toString())
-						};
-					}
-				},
 				reportToAIV: {
 					description: "Report user to AIV",
 					icon: "fas fa-flag",
@@ -659,7 +628,6 @@ export const __script__ = {
 					includeInProgress: true,
 					progressDesc: "Reporting...",
 					func: async (params) => {
-						console.log(`[reportToAIV] Executing report for user: ${this.getRelevantEdit().user.name}, Message: ${params.reportMessage}`);
 						wikishield.queue.playReportSound();
 						await wikishield.reportToAIV(
 							this.getRelevantEdit().user.name,
@@ -3429,7 +3397,11 @@ export const __script__ = {
 					switch (item.dataset.menu) {
 						case "revert": {
 							menu.innerHTML = "";
-							this.createRevertMenu(menu, wikishield.queue.currentEdit?.isBLP);
+							this.createRevertMenu(menu, wikishield.queue.currentEdit);
+						} break;
+						case "warn": {
+							menu.innerHTML = "";
+							this.createWarnMenu(menu, wikishield.queue.currentEdit);
 						} break;
 					}
 
@@ -3504,9 +3476,7 @@ export const __script__ = {
 					panel.classList.remove("show");
 				}
 
-				// Close bottom menus when clicking outside
-				const bottomTools = document.querySelector("#bottom-tools");
-				if (bottomTools && !bottomTools.contains(e.target)) {
+				if (!e.target.closest(".bottom-tool-menu")) {
 					this.closeAllBottomMenus();
 				}
 			});
@@ -3627,17 +3597,14 @@ export const __script__ = {
 			[...this.elem("#bottom-tools").querySelectorAll("[data-tooltip]")]
 				.forEach(elem => this.addTooltipListener(elem));
 
-			this.createWarnMenu(this.elem("#warn-menu"));
-
 			const queueWidthAdjust = this.elem("#queue-width-adjust");
 			const queue = this.elem("#queue");
 
 			const detailsWidthAdjust = this.elem("#details-width-adjust");
 			const details = this.elem("#right-details");
 
-			// Load saved widths from localStorage
-			const savedQueueWidth = localStorage.getItem("WS:queueWidth");
-			const savedDetailsWidth = localStorage.getItem("WS:detailsWidth");
+			const savedQueueWidth = mw.storage.store.getItem("WikiShield:QueueWidth");
+			const savedDetailsWidth = mw.storage.store.getItem("WikiShield:DetailsWidth");
 
 			if (savedQueueWidth) {
 				queue.style.width = savedQueueWidth;
@@ -3664,12 +3631,11 @@ export const __script__ = {
 			});
 
 			window.addEventListener("mouseup", () => {
-				// Save widths to localStorage when done resizing
 				if (this.selectedWidthAdjust === queueWidthAdjust) {
-					localStorage.setItem("WS:queueWidth", queue.style.width);
+					mw.storage.store.setItem("WikiShield:QueueWidth", queue.style.width);
 				}
 				if (this.selectedWidthAdjust === detailsWidthAdjust) {
-					localStorage.setItem("WS:detailsWidth", details.style.width);
+					mw.storage.store.setItem("WikiShield:DetailsWidth", details.style.width);
 				}
 				this.selectedWidthAdjust = null;
 			});
@@ -3798,17 +3764,45 @@ export const __script__ = {
 		 */
 		positionBottomMenu(button, menu) {
 			// Reset positioning
-			menu.style.bottom = '';
+			menu.style.left = '';
+			menu.style.right = '';
 			menu.style.top = '';
+			menu.style.bottom = '';
 
-			// Wait for next frame to get accurate measurements
-			requestAnimationFrame(() => {
-				const rect = menu.getBoundingClientRect();
-				const buttonRect = button.getBoundingClientRect();
+			const position = () => {
+				if (!menu.classList.contains("show")) return;
 
-				menu.style.left = `${buttonRect.left}px`;
-				menu.style.bottom = `${window.innerHeight - buttonRect.top}px`;
-			});
+				const menuRect = menu.getBoundingClientRect();
+				const btnRect = button.getBoundingClientRect();
+				const vw = window.innerWidth;
+				const vh = window.innerHeight;
+
+				// Horizontal alignment
+				const fitsLeft = btnRect.left + menuRect.width <= vw;
+				if (fitsLeft) {
+					menu.style.left = `${btnRect.left}px`;
+					menu.style.right = 'auto';
+				} else {
+					menu.style.right = `${vw - btnRect.right}px`;
+					menu.style.left = 'auto';
+				}
+
+				// Vertical alignment
+				const fitsAbove = btnRect.top >= menuRect.height;
+				if (fitsAbove) {
+					// Align bottom of menu with top of button
+					menu.style.bottom = `${vh - btnRect.top}px`;
+					menu.style.top = 'auto';
+				} else {
+					// Align top of menu with bottom of button
+					menu.style.top = `${btnRect.bottom}px`;
+					menu.style.bottom = 'auto';
+				}
+
+				requestAnimationFrame(position);
+			};
+
+			requestAnimationFrame(position);
 		}
 
 		/**
@@ -3823,7 +3817,11 @@ export const __script__ = {
 			submenu.style.top = '';
 			submenu.style.bottom = '';
 
-			requestAnimationFrame(() => {
+			const position = () => {
+				if (!submenu.classList.contains("show")) {
+					return;
+				}
+
 				const submenuRect = submenu.getBoundingClientRect();
 				const triggerRect = trigger.getBoundingClientRect();
 				const viewportWidth = window.innerWidth;
@@ -3848,247 +3846,323 @@ export const __script__ = {
 					submenu.style.top = 'auto';
 					submenu.style.bottom = '0';
 				}
-			});
+
+				requestAnimationFrame(() => position());
+			};
+
+			requestAnimationFrame(() => position());
+		}
+
+		/**
+		 * Position submenu based on available space
+		 * @param {HTMLElement} submenu The submenu to position
+		 * @param {HTMLElement} trigger The trigger element
+		 */
+		positionLevelsMenu(button, menu) {
+			// Reset previous positioning
+			menu.style.left = '';
+			menu.style.right = '';
+			menu.style.top = '';
+			menu.style.bottom = '';
+
+			const position = () => {
+				if (!menu.classList.contains("show")) return;
+
+				const menuRect = menu.getBoundingClientRect();
+				const btnRect = button.getBoundingClientRect();
+				const vw = window.innerWidth;
+				const vh = window.innerHeight;
+
+				// Horizontal alignment
+				const fitsRight = btnRect.right + menuRect.width <= vw;
+				if (fitsRight) {
+					// Align menu's left with button's right
+					menu.style.left = `${btnRect.right + 8}px`;
+					menu.style.right = 'auto';
+				} else {
+					// Align menu's right with button's left
+					menu.style.right = `${vw - btnRect.left - 8}px`;
+					menu.style.left = 'auto';
+				}
+
+				// Vertical alignment - centered
+				let top = btnRect.top + (btnRect.height - menuRect.height) / 2;
+				// Prevent menu from going off the top
+				if (top < 0) top = 0;
+				// Prevent menu from going off the bottom
+				if (top + menuRect.height > vh) top = vh - menuRect.height;
+
+				menu.style.top = `${top}px`;
+				menu.style.bottom = 'auto';
+
+				requestAnimationFrame(position);
+			};
+
+			requestAnimationFrame(position);
 		}
 
 		/**
 		 * Create the menu for warning types
 		 * @param {HTMLElement} container
 		 */
-		createRevertMenu(container, isBLP = false) {
-			const table = document.createElement("table");
-			table.classList.add("revert-menu-table");
-			container.appendChild(table);
+		createRevertMenu(container, currentEdit) {
+			document.querySelectorAll(".levels-menu").forEach(menu => menu.remove());
 
-			// Organize warnings by category
-			const categories = {
-				"Vandalism": ["Vandalism", "Subtle vandalism", "Editing tests", "Deleting", "Image vandalism", "Errors"],
-				"Content Issues": [isBLP ? "Unsourced (BLP)" : "Unsourced", "POV", "Commentary", "MOS violation", "AI-generated content", "Censoring"],
-				"Spam & Promotion": ["Advertising", "Spam links"],
-				"Disruptive Behavior": ["Disruption", "Owning", "Chatting", "AfD removal", "Jokes"],
-				"Personal Conduct": ["Personal attacks"]
+			const menu = document.createElement("div");
+			menu.className = "warning-menu";
+			container.appendChild(menu);
+
+			menu.addEventListener("click", (e) => {
+				document.body.querySelectorAll(".levels-menu.show").forEach(menu => menu.classList.remove("show"));
+			});
+
+			const execute = async (warningType, level) => {
+				await wikishield.executeScript({
+					actions: [
+						{
+							name: "rollbackAndWarn",
+							params: {
+								warningType,
+								level,
+							}
+						},
+						{
+							name: "highlight",
+							params: {}
+						},
+						{
+							name: "if",
+							condition: "atFinalWarning",
+							actions: [
+								{
+									name: "if",
+									condition: "operatorNonAdmin",
+									actions: [
+										{
+											name: "reportToAIV",
+											params: {
+												reportMessage: "Vandalism past final warning"
+											}
+										}
+									]
+								}
+							]
+						},
+						{
+							name: "nextEdit",
+							params: {}
+						}
+					]
+				});
+
+				this.selectedMenu = null;
+				this.updateMenuElements();
 			};
 
-			for (const categoryName in categories) {
-				// Add category header
-				const categoryRow = document.createElement("tr");
-				const categoryCell = document.createElement("td");
-				categoryCell.colSpan = 8; // Span all columns
-				categoryCell.classList.add("revert-menu-category");
-				categoryCell.innerText = categoryName;
-				categoryRow.appendChild(categoryCell);
-				table.appendChild(categoryRow);
+			for (const [ title, category ] of Object.entries(warnings.revert)) {
+				const section = document.createElement("div");
+				section.className = "warning-menu-section";
 
-				// Add warnings in this category
-				for (const warningType of categories[categoryName]) {
-					if (!wikishieldData.warnings[warningType]) continue; // Skip if warning doesn't exist
+				const header = document.createElement("h2");
+				header.textContent = title;
+				section.appendChild(header);
 
-					const row = document.createElement("tr");
-					table.appendChild(row);
-					const levels = ["Auto", "1", "2", "3", "4", "4im"];
-					row.innerHTML += `
-						<td class="revert-menu-title">${warningType}</td>
-						<td class="revert-menu-info" data-tooltip="${wikishieldData.warnings[warningType].desc}">
-							<span class="fas fa-circle-question"></span>
-						</td>
-					`;
+				const divider = document.createElement("div");
+				divider.className = "menu-divider";
+				section.appendChild(divider);
 
-					const templates = ["Auto", ...wikishieldData.warnings[warningType].templates];
-					for (const template in templates) {
-						const level = levels[template];
+				for (const warning of category) {
+					if (typeof warning.show === "function" && !warning.show(currentEdit)) {
+						continue;
+					}
 
-						const elem = document.createElement("td");
-						row.appendChild(elem);
-						elem.innerText = level;
-						if (level === "Auto") {
-							elem.style.backgroundColor = "#00a000";
-						} else {
-							elem.style.backgroundColor = wikishieldData.warningTemplateColors[level];
-						}
+					const item = document.createElement("div");
+					item.className = "warning-menu-item";
 
-						elem.classList.add("revert-menu-item");
+					const label = document.createElement("span");
+					label.className = "warning-menu-title";
+					label.textContent = warning.title;
+					item.appendChild(label);
 
-						elem.addEventListener("click", async () => {
-							await wikishield.executeScript({
-								actions: [
-									{
-										name: "rollbackAndWarn",
-										params: {
-											"label": wikishieldData.warnings[warningType].label,
+					const helpIcon = document.createElement("span");
+					helpIcon.className = "fas fa-circle-question";
+					helpIcon.setAttribute("data-tooltip", warning.description);
+					item.appendChild(helpIcon);
+					this.addTooltipListener(helpIcon);
 
-											warningType,
-											level: level === "Auto" ? "auto" : (level === "4im" ? "4im" : Number(template) + 1)
-										}
-									},
-									{
-										name: "highlight",
-										params: {}
-									},
-									{
-										name: "if",
-										condition: "atFinalWarning",
-										actions: [
-											{
-												name: "if",
-												condition: "operatorNonAdmin",
-												actions: [
-													{
-														name: "reportToAIV",
-														params: {
-															reportMessage: "Vandalism past final warning"
-														}
-													}
-												]
-											}
-										]
-									},
-									{
-										name: "nextEdit",
-										params: {}
-									}
-								]
-							});
+					const levelsButton = document.createElement("span");
+					levelsButton.className = "warning-menu-button warning-menu-levels-button";
+					levelsButton.textContent = "advanced";
+					item.appendChild(levelsButton);
 
-							this.selectedMenu = null;
-							this.updateMenuElements();
+					const levelsMenu = document.createElement("div");
+					levelsMenu.className = "levels-menu bottom-tool-menu";
+
+					for (const [ templateLabel, template ] of Object.entries(warning.templates || { })) {
+						if (template === null || template.exists === false) continue;
+
+						const levelButton = document.createElement("span");
+						levelButton.className = "levels-menu-item";
+						levelButton.textContent = template.label || templateLabel;
+						levelButton.style.backgroundColor = warningTemplateColors[templateLabel];
+						levelsMenu.appendChild(levelButton);
+
+						levelButton.addEventListener("click", async () => {
+							await execute(warning.title, templateLabel);
 						});
 					}
-				}
-			}
 
-			[...container.querySelectorAll("[data-tooltip]")].forEach(e => {
-				this.addTooltipListener(e);
-			});
+					document.body.appendChild(levelsMenu);
+
+					levelsButton.addEventListener("click", e => {
+						e.stopPropagation();
+
+						levelsMenu.classList.toggle("show");
+						document.body.querySelectorAll(".levels-menu.show").forEach(menu => {
+							if (menu !== levelsMenu) {
+								menu.classList.remove("show");
+							}
+						});
+
+						this.positionLevelsMenu(levelsButton, levelsMenu);
+					});
+
+					item.addEventListener("click", async e => {
+						if (e.target.closest(".warning-menu-levels-button")) {
+							return;
+						}
+
+						await execute(warning.title, "auto");
+					});
+
+					section.appendChild(item);
+				}
+
+				menu.appendChild(section);
+			}
 		}
 
 		/**
 		 * Create the warn menu (without rollback)
 		 * @param {HTMLElement} container Container element for the menu
 		 */
-		createWarnMenu(container) {
-			// Organize warnings by category with their data
-			const categories = {
-				"Disruptive Behavior": {
-					"Gaming the system": {
-						templates: [
-							"subst:uw-gaming1",
-							"subst:uw-gaming2",
-							"subst:uw-gaming3",
-							"subst:uw-gaming4",
-							"subst:uw-gaming4im"
-						],
-						label: "[[WP:GAME|gaming the system]]",
-						desc: "Warning for gaming the system or manipulating Wikipedia processes.",
-						requiresArticle: true
-					},
-					"Misleading edit summaries": {
-						templates: [
-							"subst:uw-mislead1",
-							"subst:uw-mislead2",
-							"subst:uw-mislead3",
-							"subst:uw-mislead4"
-						],
-						label: "using [[WP:EDITSUMMARY|misleading edit summaries]]",
-						desc: "Warning for using misleading or false edit summaries.",
-						requiresArticle: true
-					}
-				},
-				"Editing Practice": {
-					"Incorrect minor edits": {
-						templates: [
-							"subst:uw-minor"
-						],
-						label: "incorrect use of [[Help:Minor edit|minor edits]]",
-						desc: "Warning for incorrectly marking edits as minor.",
-						requiresArticle: false
-					}
-				}
+		createWarnMenu(container, currentEdit) {
+			document.querySelectorAll(".levels-menu").forEach(menu => menu.remove());
+
+			const menu = document.createElement("div");
+			menu.className = "warning-menu";
+			container.appendChild(menu);
+
+			menu.addEventListener("click", (e) => {
+				document.body.querySelectorAll(".levels-menu.show").forEach(menu => menu.classList.remove("show"));
+			});
+
+			const execute = async (warningType, level) => {
+				await wikishield.executeScript({
+					actions: [
+						{
+							name: "warn",
+							params: {
+								warningType,
+								level,
+							}
+						},
+						{
+							name: "highlight",
+							params: {}
+						},
+						{
+							name: "nextEdit",
+							params: {}
+						}
+					]
+				});
+
+				this.selectedMenu = null;
+				this.updateMenuElements();
 			};
 
-			const table = document.createElement("table");
-			table.classList.add("revert-menu-table");
-			container.appendChild(table);
+			for (const [ title, category ] of Object.entries(warnings.warn)) {
+				const section = document.createElement("div");
+				section.className = "warning-menu-section";
 
-			for (const categoryName in categories) {
-				// Add category header
-				const categoryRow = document.createElement("tr");
-				const categoryCell = document.createElement("td");
-				categoryCell.colSpan = 8; // Span all columns
-				categoryCell.classList.add("revert-menu-category");
-				categoryCell.innerText = categoryName;
-				categoryRow.appendChild(categoryCell);
-				table.appendChild(categoryRow);
+				const header = document.createElement("h2");
+				header.textContent = title;
+				section.appendChild(header);
 
-				// Add warnings in this category
-				const warnTypes = categories[categoryName];
-				for (const warningType in warnTypes) {
+				const divider = document.createElement("div");
+				divider.className = "menu-divider";
+				section.appendChild(divider);
 
-					const row = document.createElement("tr");
-					table.appendChild(row);
-					const warningData = warnTypes[warningType];
-					const templatesLength = warningData.templates.length;
-					const levels = templatesLength === 1 ? ["0"] : ["1", "2", "3", "4", "4im"];
+				for (const warning of category) {
+					if (typeof warning.show === "function" && !warning.show(currentEdit)) {
+						continue;
+					}
 
-					row.innerHTML += `
-						<td class="revert-menu-title">${warningType}</td>
-						<td class="revert-menu-info" data-tooltip="${warningData.desc}">
-							<span class="fas fa-circle-question"></span>
-						</td>
-					`;
+					const item = document.createElement("div");
+					item.className = "warning-menu-item";
 
-					for (let i = 0; i < templatesLength; i++) {
-						const template = warningData.templates[i];
-						const level = levels[i];
+					const label = document.createElement("span");
+					label.className = "warning-menu-title";
+					label.textContent = warning.title;
+					item.appendChild(label);
 
-						const elem = document.createElement("td");
-						row.appendChild(elem);
-						elem.innerText = level;
+					const helpIcon = document.createElement("span");
+					helpIcon.className = "fas fa-circle-question";
+					helpIcon.setAttribute("data-tooltip", warning.description);
+					item.appendChild(helpIcon);
+					this.addTooltipListener(helpIcon);
 
-						// Color coding for levels
-						if (templatesLength === 1) {
-							elem.style.backgroundColor = "#4a90e2";
-						} else if (level === "4im") {
-							elem.style.backgroundColor = wikishieldData.warningTemplateColors["4im"];
-						} else {
-							elem.style.backgroundColor = wikishieldData.warningTemplateColors[level];
-						}
+					const levelsButton = document.createElement("span");
+					levelsButton.className = "warning-menu-button warning-menu-levels-button";
+					levelsButton.textContent = "advanced";
+					item.appendChild(levelsButton);
 
-						elem.classList.add("revert-menu-item");
+					const levelsMenu = document.createElement("div");
+					levelsMenu.className = "levels-menu bottom-tool-menu";
 
-						elem.addEventListener("click", async () => {
-							await wikishield.executeScript({
-								actions: [
-									{
-										name: "warn",
-										params: {
-											warningType: warningType,
-											level: i + 1,
-											warningTemplates: warningData.templates,
-											warningLabel: warningData.label,
-											requiresArticle: warningData.requiresArticle
-										}
-									},
-									{
-										name: "highlight",
-										params: {}
-									},
-									{
-										name: "nextEdit",
-										params: {}
-									}
-								]
-							});
+					for (const [ templateLabel, template ] of Object.entries(warning.templates || { })) {
+						if (template === null || template.exists === false) continue;
 
-							this.selectedMenu = null;
-							this.updateMenuElements();
+						const levelButton = document.createElement("span");
+						levelButton.className = "levels-menu-item";
+						levelButton.textContent = template.label || templateLabel;
+						levelButton.style.backgroundColor = warningTemplateColors[templateLabel];
+						levelsMenu.appendChild(levelButton);
+
+						levelButton.addEventListener("click", async () => {
+							await execute(warning.title, templateLabel);
 						});
 					}
-				}
-			}
 
-			[...container.querySelectorAll("[data-tooltip]")].forEach(e => {
-				this.addTooltipListener(e);
-			});
+					document.body.appendChild(levelsMenu);
+
+					levelsButton.addEventListener("click", e => {
+						e.stopPropagation();
+
+						levelsMenu.classList.toggle("show");
+						document.body.querySelectorAll(".levels-menu.show").forEach(menu => {
+							if (menu !== levelsMenu) {
+								menu.classList.remove("show");
+							}
+						});
+
+						this.positionLevelsMenu(levelsButton, levelsMenu);
+					});
+
+					item.addEventListener("click", async e => {
+						if (e.target.closest(".warning-menu-levels-button")) {
+							return;
+						}
+
+						await execute(warning.title, "auto");
+					});
+
+					section.appendChild(item);
+				}
+
+				menu.appendChild(section);
+			}
 		}
 
 		/**
@@ -5682,12 +5756,14 @@ export const __script__ = {
 
 	class WikiShield {
 		constructor() {
+			this.__script__ = __script__;
+
 			this.options = this.loadOptions();
 			this.statistics = this.loadStats();
 			this.interface = new WikiShieldInterface();
 			this.logger = new WikiShieldLog();
 			this.util = new WikiShieldUtil();
-			
+
 			// Initialize API with dependencies
 			this.api = new WikiShieldAPI(new mw.Api(), {
 				testingMode: this.testingMode || false,
@@ -5695,7 +5771,7 @@ export const __script__ = {
 				util: this.util,
 				historyCount: __script__.config.historyCount
 			});
-			
+
 			// Initialize queue - will be set after wikishield global is assigned
 			this.queue = null;
 
@@ -5709,19 +5785,19 @@ export const __script__ = {
 				this.cleanupExpiredHighlights();
 			}, 30000);
 
-		// Initialize Ollama AI if enabled (preserves last saved state)
-		this.ollamaAI = null;
-		if (this.options.enableOllamaAI) {
-			this.ollamaAI = new WikiShieldOllamaAI(
-				this.options.ollamaServerUrl,
-				this.options.ollamaModel,
-				{
-					enableOllamaAI: this.options.enableOllamaAI,
-					enableEditAnalysis: this.options.enableEditAnalysis
-				}
-			);
-			this.logger.log("Ollama AI integration enabled");
-		}
+			// Initialize Ollama AI if enabled (preserves last saved state)
+			this.ollamaAI = null;
+			if (this.options.enableOllamaAI) {
+				this.ollamaAI = new WikiShieldOllamaAI(
+					this.options.ollamaServerUrl,
+					this.options.ollamaModel,
+					{
+						enableOllamaAI: this.options.enableOllamaAI,
+						enableEditAnalysis: this.options.enableEditAnalysis
+					}
+				);
+				this.logger.log("Ollama AI integration enabled");
+			}
 
 			this.aivReports = [];
 			this.uaaReports = [];
@@ -5738,6 +5814,9 @@ export const __script__ = {
 			this.tempCurrentEdit = null;
 			this.notifications = [];
 			this.lastSeenRevision = null;
+
+			this.wikishieldData = wikishieldData;
+			this.WikiShieldProgressBar = WikiShieldProgressBar;
 		}
 
 		/**
@@ -5827,7 +5906,7 @@ export const __script__ = {
 		loadOptions() {
 			let options = {};
 			try {
-				options = JSON.parse(mw.storage.store.getItem("wikishieldSettings"));
+				options = JSON.parse(mw.storage.store.getItem("WikiShield:Settings") || mw.storage.store.getItem("wikishieldSettings")); // TEMP
 			} catch (err) { }
 
 			if (!options) {
@@ -5866,7 +5945,7 @@ export const __script__ = {
 		 * @param {Object} options The options object
 		 */
 		saveOptions(options) {
-			mw.storage.store.setItem("wikishieldSettings", JSON.stringify(options));
+			mw.storage.store.setItem("WikiShield:Settings", JSON.stringify(options));
 		}
 
 		/**
@@ -5874,7 +5953,7 @@ export const __script__ = {
 		 */
 		saveWhitelist() {
 			const data = [...this.whitelist.entries()]; // Convert Map to array of [key, value] pairs
-			mw.storage.store.setItem("wikishieldWhitelist", JSON.stringify(data));
+			mw.storage.store.setItem("WikiShield:Whitelist", JSON.stringify(data));
 		}
 
 		/**
@@ -5883,7 +5962,7 @@ export const __script__ = {
 		 */
 		loadWhitelist() {
 			try {
-				const data = JSON.parse(mw.storage.store.getItem("wikishieldWhitelist"));
+				const data = JSON.parse(mw.storage.store.getItem("WikiShield:Whitelist") || mw.storage.store.getItem("wikishieldWhitelist")); // TEMP
 				// Support old Set format (array of usernames) and new Map format (array of [username, timestamp])
 				if (data && data.length > 0) {
 					if (typeof data[0] === 'string') {
@@ -5905,7 +5984,7 @@ export const __script__ = {
 		 */
 		saveHighlighted() {
 			const data = [...this.highlighted.entries()]; // Convert Map to array of [key, value] pairs
-			mw.storage.store.setItem("wikishieldHighlighted", JSON.stringify(data));
+			mw.storage.store.setItem("WikiShield:Highlighted", JSON.stringify(data));
 		}
 
 		/**
@@ -5914,7 +5993,7 @@ export const __script__ = {
 		 */
 		loadHighlighted() {
 			try {
-				const data = JSON.parse(mw.storage.store.getItem("wikishieldHighlighted"));
+				const data = JSON.parse(mw.storage.store.getItem("WikiShield:Highlighted") || mw.storage.store.getItem("wikishieldHighlighted")); // TEMP
 				return new Map(data || []);
 			} catch (err) {
 				return new Map();
@@ -5926,10 +6005,10 @@ export const __script__ = {
 		 * @returns {String} The changelog version
 		 */
 		getChangelogVersion() {
-			const version = mw.storage.store.getItem("__script__.changelog.version");
+			const version = mw.storage.store.getItem("WikiShield:ChangelogVersion");
 
 			if (!version) {
-				mw.storage.store.setItem("__script__.changelog.version", 0);
+				mw.storage.store.setItem("WikiShield:ChangelogVersion", 0);
 				return 0;
 			}
 
@@ -5940,7 +6019,7 @@ export const __script__ = {
 		 * Update changelog version to hide popup
 		 */
 		updateChangelogVersion() {
-			mw.storage.store.setItem("__script__.changelog.version", __script__.changelog.version);
+			mw.storage.store.setItem("WikiShield:ChangelogVersion", __script__.changelog.version);
 		}
 
 		/**
@@ -5950,7 +6029,7 @@ export const __script__ = {
 		loadStats() {
 			let stats;
 			try {
-				stats = JSON.parse(mw.storage.store.getItem("wikishieldStats"));
+				stats = JSON.parse(mw.storage.store.getItem("WikiShield:Statistics") || mw.storage.store.getItem("wikishieldStats")); // TEMP
 			} catch (err) { }
 
 			if (!stats) {
@@ -5984,7 +6063,7 @@ export const __script__ = {
 		 * @param {Object} stats The statistics object
 		 */
 		saveStats(stats) {
-			mw.storage.store.setItem("wikishieldStats", JSON.stringify(stats));
+			mw.storage.store.setItem("WikiShield:Statistics", JSON.stringify(stats));
 		}
 
 		/**
@@ -6032,8 +6111,8 @@ export const __script__ = {
 		 * @param {String} articleName The article name to use in the warning
 		 * @param {Number} revid Edit revid to use in edit summary
 		 */
-		async warnUser(user, warningTemplates, warnLevel, articleName, revid) {
-			if (!warningTemplates) {
+		async warnUser(user, warningObject, warnLevel, articleName, revid) {
+			if (!warningObject) {
 				return;
 			}
 
@@ -6042,30 +6121,18 @@ export const __script__ = {
 
 			// Handle manual level selection (not "auto")
 			if (warnLevel !== "auto") {
-				if (warnLevel === "4im") {
-					// 4im is the 5th template (index 4)
-					if (warningTemplates.length >= 5) {
-						warnTemplate = warningTemplates[4];
-					} else {
-						// If no 4im template exists, use the last available template
-						warnTemplate = warningTemplates[warningTemplates.length - 1];
-					}
-				} else if (warnLevel > 0 && warnLevel <= warningTemplates.length) {
-					// Standard numbered level (1-4)
-					warnTemplate = warningTemplates[warnLevel - 1];
-				}
+				warnTemplate = warningObject.templates[warnLevel];
 			}
 
 			// Handle auto level selection
 			if (warnLevel === "auto") {
-				const warningLevel = this.queue.getWarningLevel(userTalkContent);
-				const levelAsNumber = warningLevel === "4im" ? 5 : Number(warningLevel);
+				const warningLevel = this.queue.getWarningLevel(userTalkContent).toString();
 
-				if (warningLevel === "4" || warningLevel === "4im" || levelAsNumber >= warningTemplates.length) {
-					return;
+				if (typeof warningObject.auto === "function") {
+					warnTemplate = warningObject.templates[warningObject.auto(this.queue.currentEdit)];
+				} else {
+					warnTemplate = warningObject.templates[warningObject.auto[warningLevel]];
 				}
-
-				warnTemplate = warningTemplates[levelAsNumber];
 			}
 
 			if (!warnTemplate) {
@@ -6081,11 +6148,7 @@ export const __script__ = {
 			for (let section in sections) {
 				if (sections[section].match(new RegExp("== ?" + wikishield.util.monthSectionName() + " ?=="))) {
 					// If articleName is null, template doesn't take a parameter
-					if (articleName) {
-						sections[section] += `\n\n{{${warnTemplate}|${articleName}}} ~~~~`;
-					} else {
-						sections[section] += `\n\n{{${warnTemplate}}} ~~~~`;
-					}
+					sections[section] += `\n\n{{${warnTemplate.template}|${articleName}|${warnTemplate.additional || ""}}} ~~~~`;
 					break;
 				}
 			}
@@ -6093,7 +6156,7 @@ export const __script__ = {
 			const newContent = sections.join("")
 				.replace(/(\n){3,}/g, "\n\n");
 
-			const levelMatch = warnTemplate.match(/(\d(?:im)?)$/);
+			const levelMatch = warnTemplate.template.match(/(\d(?:im)?)$/);
 			const levelName = levelMatch ? levelMatch[1] : null;
 
 			// Create edit summary based on whether article name is provided
@@ -6117,19 +6180,19 @@ export const __script__ = {
 
 			// Add user talk page to watchlist with configured expiry
 			try {
-				await this.api.postWithToken("watch", {
-					"action": "watch",
-					"titles": `User talk:${user}`,
-					"expiry": wikishield.options.watchlistExpiry
-				});
+				if (wikishield.options.watchlistExpiry > 0) {
+					await this.api.postWithToken("watch", {
+						"action": "watch",
+						"titles": `User talk:${user}`,
+						"expiry": wikishield.options.watchlistExpiry
+					});
+				}
 			} catch (err) {
 				console.log(`Could not add User talk:${user} to watchlist:`, err);
 			}
 
 			// Update the warning level in the current edit object (only if the template has a numbered level)
 			if (levelName && this.queue.currentEdit && this.queue.currentEdit.user.name === user) {
-				console.log(`[warnUser] Updating warning level for ${user} from ${this.queue.currentEdit.user.warningLevel} to ${levelName}`);
-				console.log(`[warnUser] Original warning level: ${this.queue.currentEdit.user.originalWarningLevel}`);
 				this.queue.currentEdit.user.warningLevel = levelName;
 			}
 		}
@@ -6857,10 +6920,6 @@ export const __script__ = {
 
 			const ifAndTrue = script.name && script.name === "if"
 				&& wikishieldEventData.conditions[script.condition].check(this.tempCurrentEdit);
-
-			if (script.name === "if") {
-				console.log(`[executeScript] Evaluating condition: ${script.condition}, Result: ${ifAndTrue}`);
-			}
 
 			if (ifAndTrue || !script.name) {
 				for (const action of script.actions) {
