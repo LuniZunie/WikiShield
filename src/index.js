@@ -3979,6 +3979,10 @@ export const __script__ = {
 					const item = document.createElement("div");
 					item.className = "warning-menu-item";
 
+					const mouseIcon = document.createElement("span");
+					mouseIcon.className = "fas fa-mouse-pointer";
+					item.appendChild(mouseIcon);
+
 					const label = document.createElement("span");
 					label.className = "warning-menu-title";
 					label.textContent = warning.title;
@@ -3986,7 +3990,7 @@ export const __script__ = {
 
 					const helpIcon = document.createElement("span");
 					helpIcon.className = "fas fa-circle-question";
-					helpIcon.setAttribute("data-tooltip", warning.description);
+					helpIcon.dataset.tooltip = warning.description;
 					item.appendChild(helpIcon);
 					this.addTooltipListener(helpIcon);
 
