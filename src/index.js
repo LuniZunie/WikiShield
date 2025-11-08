@@ -1,6 +1,4 @@
 // <nowiki>
-// what is this 67 diddy blud doin
-
 
 import { subdomains } from './config/languages.js';
 import { fullTrim } from './utils/formatting.js';
