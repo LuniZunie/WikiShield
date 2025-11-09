@@ -3,6 +3,7 @@ const TerserPlugin = require('terser-webpack-plugin');
 
 module.exports = (env, argv) => {
   const isDev = argv.mode === 'development';
+  const isReadable = process.env.READABLE === 'true'; // Unminified production build
 
   return {
     mode: isDev ? 'development' : 'production',
@@ -11,7 +12,12 @@ module.exports = (env, argv) => {
       filename: isDev ? 'build.js' : 'wikishield.js',
       path: path.resolve(__dirname, 'dist'),
       clean: true,
-      pathinfo: isDev, // Include module info in dev for better debugging
+      pathinfo: isDev || isReadable, // Include module info in dev and readable builds
+      environment: {
+        // Ensure proper string escaping in output
+        arrowFunction: false,
+        const: false,
+      },
     },
     module: {
       rules: [
@@ -40,20 +46,22 @@ module.exports = (env, argv) => {
         'react/jsx-runtime': 'preact/jsx-runtime'
       }
     },
-    devtool: isDev ? 'source-map' : false,
+    devtool: (isDev || isReadable) ? 'source-map' : false,
     optimization: {
-      minimize: isDev ? false : true, // Explicitly disable minification in dev
-      minimizer: isDev ? [] : [ // Only use minimizer in production
+      minimize: true, // Always use minimizer for proper string escaping
+      minimizer: [
         new TerserPlugin({
           terserOptions: {
-            compress: {
+            compress: (isDev || isReadable) ? false : {
               drop_console: false, // Keep console for userscript debugging
               drop_debugger: true,
               pure_funcs: ['console.debug'], // Remove debug logs in prod
             },
-            mangle: true,
+            mangle: (isDev || isReadable) ? false : true, // No mangling in dev/readable
             format: {
-              comments: false, // Remove comments in production
+              comments: (isDev || isReadable) ? true : false, // Keep comments in dev/readable
+              beautify: (isDev || isReadable) ? true : false, // Beautify in dev/readable
+              indent_level: 2, // Readable indentation
             },
           },
           extractComments: false,
@@ -62,7 +70,7 @@ module.exports = (env, argv) => {
       moduleIds: 'deterministic', // Better long-term caching
       runtimeChunk: false, // Single bundle for userscript
       splitChunks: false, // Keep everything in one file for userscript
-      usedExports: isDev ? false : true, // Disable tree shaking in dev for easier debugging
+      usedExports: isDev ? false : true, // Enable tree shaking in production (even readable)
       sideEffects: true,
     },
     performance: {

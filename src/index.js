@@ -14,6 +14,7 @@ import { WikiShieldLog } from './utils/logger.js';
 import { WikiShieldAPI } from './core/api.js';
 import { WikiShieldOllamaAI } from './ai/ollama.js';
 import { WikiShieldQueue } from './core/queue.js';
+import { createConditions, welcomeTemplates } from './data/events.js';
 
 export const __script__ = {
 	version: "1.0.0",
@@ -51,104 +52,9 @@ export const __script__ = {
 	};
 
 	// Classes moved to separate files - see imports at top
-
-	const wikishieldEventData = {
-		conditions: {
-			"operatorNonAdmin": {
-				desc: "You are not an admin",
-				check: (_) => !wikishield.rights.block
-			},
-			"operatorAdmin": {
-				desc: "You are an admin",
-				check: (_) => wikishield.rights.block
-			},
-			"userIsHighlighted": {
-				desc: "User is highlighted",
-				check: (edit) => wikishield.highlighted.has(edit.user.name)
-			},
-			"userIsWhitelisted": {
-				desc: "User is whitelisted",
-				check: (edit) => wikishield.whitelist.has(edit.user.name)
-			},
-			"userIsAnon": {
-				desc: "User is anonymous (temporary account)",
-				check: (edit) => mw.util.isTemporaryUser(edit.user.name)
-			},
-			"userIsRegistered": {
-				desc: "User is registered (not temporary account)",
-				check: (edit) => !mw.util.isTemporaryUser(edit.user.name)
-			},
-			"userHasEmptyTalkPage": {
-				desc: "User has an empty talk page",
-				check: (edit) => edit.user.emptyTalkPage
-			},
-			"editIsMinor": {
-				desc: "Edit is marked as minor",
-				check: (edit) => edit.minor
-			},
-			"editIsMajor": {
-				desc: "Edit is not marked as minor",
-				check: (edit) => !edit.minor
-			},
-			"editSizeNegative": {
-				desc: "Edit removes content (negative bytes)",
-				check: (edit) => (edit.sizediff || 0) < 0
-			},
-			"editSizePositive": {
-				desc: "Edit adds content (positive bytes)",
-				check: (edit) => (edit.sizediff || 0) > 0
-			},
-			"editSizeLarge": {
-				desc: "Edit is large (>1000 bytes change)",
-				check: (edit) => Math.abs(edit.sizediff || 0) > 1000
-			},
-			"userEditCountLow": {
-				desc: "User has less than 10 edits",
-				check: (edit) => edit.user.editCount < 10 && edit.user.editCount >= 0
-			},
-			"userEditCountHigh": {
-				desc: "User has 100 or more edits",
-				check: (edit) => edit.user.editCount >= 100
-			},
-			"atFinalWarning": {
-				desc: "User already has a final warning (before any new warnings)",
-				check: (edit) => {
-					if (edit.user.atFinalWarning !== undefined) {
-						return edit.user.atFinalWarning;
-					}
-
-					// Check the ORIGINAL warning level from when edit was first queued
-					// This ensures we only report if they ALREADY had a final warning
-					// Not if they just received one in this action sequence
-					const original = edit.user.originalWarningLevel?.toString() || edit.user.warningLevel.toString();
-					const result = ["4", "4im"].includes(original);
-					return result;
-				}
-			},
-			"userHasWarnings": {
-				desc: "User has received warnings (level 1+)",
-				check: (edit) => {
-					const level = edit.user.warningLevel?.toString() || "0";
-					return !["0", ""].includes(level);
-				}
-			},
-			"userNoWarnings": {
-				desc: "User has no warnings (level 0)",
-				check: (edit) => {
-					const level = edit.user.warningLevel?.toString() || "0";
-					return ["0", ""].includes(level);
-				}
-			}
-		},
-		welcomeTemplates: {
-			"Default": "{{subst:Welcome}} ~~~~",
-			"Basic": "{{subst:W-basic}}",
-			"Links": "{{subst:W-graphical}}",
-			"Latin": "{{subst:welcome non-latin|LuniZunie}} ~~~~",
-			"COI": "{{subst:welcome-coi}} ~~~~",
-			"Mentor": "{{subst:Mentor welcome-autosign}}"
-		}
-	};
+	// wikishieldEventData will be created after wikishield instance is initialized
+	// This avoids circular dependency issues
+	let wikishieldEventData;
 
 	class WikiShieldEventManager {
 		constructor() {
@@ -175,6 +81,16 @@ export const __script__ = {
 				window.open(url, "_blank");
 			};
 
+			// Events object will be initialized later via initializeEvents()
+			// This avoids circular dependency with wikishieldEventData
+			this.events = null;
+		}
+
+		/**
+		 * Initialize the events object with event data
+		 * Must be called after wikishieldEventData is created
+		 */
+		initializeEvents(eventData) {
 			this.events = {
 				prevEdit: {
 					description: "Go to the previous edit in the queue",
@@ -763,7 +679,7 @@ export const __script__ = {
 							title: "Template",
 							id: "template",
 							type: "choice",
-							options: Object.keys(wikishieldEventData.welcomeTemplates)
+							options: Object.keys(eventData.welcomeTemplates)
 						}
 					],
 					includeInProgress: true,
@@ -6967,6 +6883,16 @@ export const __script__ = {
 		wikishield = new WikiShield();
 		// Initialize queue after wikishield is created (needs reference to wikishield)
 		wikishield.queue = new WikiShieldQueue(wikishield);
+		
+		// Initialize event data after wikishield is created (avoids circular dependency)
+		wikishieldEventData = {
+			conditions: createConditions(wikishield),
+			welcomeTemplates: welcomeTemplates
+		};
+		
+		// Initialize event manager's events with the event data
+		wikishield.interface.eventManager.initializeEvents(wikishieldEventData);
+		
 		wikishield.startInterface();
 
 		window.addEventListener("keydown", wikishield.keyPressed.bind(wikishield));
