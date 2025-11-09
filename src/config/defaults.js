@@ -78,6 +78,10 @@ export const defaultSettings = {
 			keys: ["q"],
 			actions: [
 				{
+					name: "nextEdit",
+					params: {}
+				},
+				{
 					name: "rollbackAndWarn",
 					params: {
 						warningType: "Vandalism",
@@ -104,10 +108,6 @@ export const defaultSettings = {
 				},
 				{
 					name: "highlight",
-					params: {}
-				},
-				{
-					name: "nextEdit",
 					params: {}
 				}
 			]
