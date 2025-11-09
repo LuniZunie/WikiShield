@@ -390,6 +390,7 @@ export class WikiShieldQueue {
 				dateFormat: metadata.dateFormat,
 				englishVariant: metadata.englishVariant,
 				categories: categories,
+				namespace: edit.ns
 			},
 			user: {
 				name: edit.user,
@@ -415,7 +416,8 @@ export class WikiShieldQueue {
 			isBLP: categories.some(cat => cat.title === "Category:Living people"),
 			reverts: reverts,
 			consecutive: this.wikishield.api.consecutiveEdits(edit.title, edit.user),
-			fromHistory: false
+			fromHistory: false,
+			isTalk: edit.ns % 2 === 1
 		};
 
 		// Perform AI analysis asynchronously if enabled
