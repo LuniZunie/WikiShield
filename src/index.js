@@ -178,6 +178,8 @@ export const __script__ = {
 					runWithoutEdit: true,
 					func: () => {
 						wikishield.queue.prevItem();
+
+						return true;
 					}
 				},
 				nextEdit: {
@@ -185,6 +187,8 @@ export const __script__ = {
 					icon: "fas fa-arrow-right",
 					func: () => {
 						wikishield.queue.nextItem();
+
+						return true;
 					}
 				},
 				deleteQueue: {
@@ -193,6 +197,8 @@ export const __script__ = {
 					runWithoutEdit: true,
 					func: () => {
 						wikishield.queue.delete();
+
+						return true;
 					}
 				},
 				openRevertMenu: {
@@ -223,6 +229,8 @@ export const __script__ = {
 								}
 							}
 						}
+
+						return true;
 					}
 				},
 				openWarnMenu: {
@@ -253,6 +261,8 @@ export const __script__ = {
 								}
 							}
 						}
+
+						return true;
 					}
 				},
 				openReportMenu: {
@@ -278,6 +288,8 @@ export const __script__ = {
 								}
 							}
 						}
+
+						return true;
 					}
 				},
 				openSettings: {
@@ -286,6 +298,8 @@ export const __script__ = {
 					runWithoutEdit: true,
 					func: () => {
 						wikishield.interface.settings.openSettings();
+
+						return true;
 					}
 				},
 				openUserPage: {
@@ -295,6 +309,8 @@ export const __script__ = {
 						const username = this.getRelevantEdit().user.name;
 						const url = wikishield.util.pageLink(`User:${username}`);
 						this.openWikipediaLink(url, `User:${username}`, event);
+
+						return true;
 					}
 				},
 				openUserTalk: {
@@ -304,6 +320,8 @@ export const __script__ = {
 						const username = this.getRelevantEdit().user.name;
 						const url = wikishield.util.pageLink(`User talk:${username}`);
 						this.openWikipediaLink(url, `User talk:${username}`, event);
+
+						return true;
 					}
 				},
 				openUserContribs: {
@@ -313,6 +331,8 @@ export const __script__ = {
 						const username = this.getRelevantEdit().user.name;
 						const url = wikishield.util.pageLink(`Special:Contributions/${username}`);
 						this.openWikipediaLink(url, `Contributions: ${username}`, event);
+
+						return true;
 					}
 				},
 				openFilterLog: {
@@ -326,6 +346,8 @@ export const __script__ = {
 						);
 						const username = this.getRelevantEdit().user.name;
 						this.openWikipediaLink(url, `Filter Log: ${username}`, event);
+
+						return true;
 					}
 				},
 				addToWhitelist: {
@@ -352,6 +374,8 @@ export const __script__ = {
 
 						// Refresh the interface to update button text
 						wikishield.interface.renderQueue(wikishield.queue.queue, wikishield.queue.currentEdit);
+
+						return true;
 					}
 				},
 				highlight: {
@@ -381,6 +405,8 @@ export const __script__ = {
 
 						// Trigger immediate UI refresh
 						wikishield.interface.renderQueue(wikishield.queue.queue, wikishield.queue.currentEdit);
+
+						return true;
 					}
 				},
 				openPage: {
@@ -390,6 +416,8 @@ export const __script__ = {
 						const page = this.getRelevantEdit().page;
 						const url = wikishield.util.pageLink(page.title);
 						this.openWikipediaLink(url, page.title, event);
+
+						return true;
 					}
 				},
 				openTalk: {
@@ -406,6 +434,8 @@ export const __script__ = {
 						const talkTitle = `${talkNamespace}:${pageTitle.length === 1 ? pageTitle[0] : pageTitle[1]}`;
 						const url = wikishield.util.pageLink(talkTitle);
 						this.openWikipediaLink(url, talkTitle, event);
+
+						return true;
 					}
 				},
 				openHistory: {
@@ -415,6 +445,8 @@ export const __script__ = {
 						const page = this.getRelevantEdit().page;
 						const url = wikishield.util.pageLink(`Special:PageHistory/${page.title}`);
 						this.openWikipediaLink(url, `History: ${page.title}`, event);
+
+						return true;
 					}
 				},
 				openRevision: {
@@ -424,6 +456,8 @@ export const __script__ = {
 						const revid = this.getRelevantEdit().revid;
 						const url = wikishield.util.pageLink(`Special:PermanentLink/${revid}`);
 						this.openWikipediaLink(url, `Revision ${revid}`, event);
+
+						return true;
 					}
 				},
 				openDiff: {
@@ -433,6 +467,8 @@ export const __script__ = {
 						const revid = this.getRelevantEdit().revid;
 						const url = wikishield.util.pageLink(`Special:Diff/${revid}`);
 						this.openWikipediaLink(url, `Diff ${revid}`, event);
+
+						return true;
 					}
 				},
 				thankUser: {
@@ -455,9 +491,13 @@ export const __script__ = {
 								talkPageContent + `\n{{subst:Thanks-autosign}}`,
 								`Thanking for edit to [[${edit.page.title}]] ([[WP:WikiShield|WS]])`
 							);
+
+							return true;
 						} else {
 							// For registered users, use the API thank function
 							await wikishield.api.thank(edit.revid);
+
+							return true;
 						}
 					}
 				},
@@ -497,16 +537,15 @@ export const __script__ = {
 
 						// Store the original warning level before warning
 						const originalLevel = edit.user.warningLevel;
+						edit.user.atFinalWarning = (warning?.auto?.[originalLevel.toString()] === "report");
 
-						await wikishield.warnUser(
+						return await wikishield.warnUser(
 							edit.user.name,
 							warning,
 							params.level || "auto",
 							edit.page.title,
 							edit.revid
 						);
-
-						return edit.user.atFinalWarning = (warning?.auto?.[originalLevel.toString()] === "report");
 					}
 				},
 				rollback: {
@@ -549,7 +588,7 @@ export const __script__ = {
 
 						const result = await wikishield.revert(edit, warning.summary || "");
 						if (result === false) {
-							return;
+							return false;
 						}
 
 						wikishield.queue.playWarnSound();
@@ -557,16 +596,15 @@ export const __script__ = {
 						// Store the original warning level before warning
 						const originalLevel = edit.user.warningLevel;
 
-						await wikishield.warnUser(
+						// Return whether they were already at final warning
+						edit.user.atFinalWarning = (warning?.auto?.[originalLevel.toString()] === "report");
+						return await wikishield.warnUser(
 							edit.user.name,
 							warning,
 							params.level || "auto",
 							edit.page.title,
 							edit.revid
 						);
-
-						// Return whether they were already at final warning
-						return edit.user.atFinalWarning = (warning?.auto?.[originalLevel.toString()] === "report");
 					}
 				},
 				rollbackGoodFaith: {
@@ -622,6 +660,7 @@ export const __script__ = {
 						}
 					],
 					includeInProgress: true,
+					needsContinuity: true,
 					progressDesc: "Reporting...",
 					func: async (params) => {
 						wikishield.queue.playReportSound();
@@ -629,6 +668,8 @@ export const __script__ = {
 							this.getRelevantEdit().user.name,
 							params.reportMessage
 						);
+
+						return true;
 					}
 				},
 				reportToUAA: {
@@ -655,6 +696,8 @@ export const __script__ = {
 							this.getRelevantEdit().user.name,
 							params.reportMessage
 						);
+
+						return true;
 					}
 				},
 				requestProtection: {
@@ -693,6 +736,8 @@ export const __script__ = {
 							params.level,
 							params.reason
 						);
+
+						return true;
 					}
 				},
 				block: {
@@ -740,6 +785,8 @@ export const __script__ = {
 							wikishield.statistics.blocks++;
 							wikishield.saveStats(wikishield.statistics);
 						}
+
+						return true;
 					}
 				},
 				protect: {
@@ -749,6 +796,8 @@ export const __script__ = {
 					progressDesc: "Protecting...",
 					func: async () => {
 						wikishield.queue.playProtectionSound();
+
+						return true;
 					}
 				},
 				welcome: {
@@ -770,6 +819,8 @@ export const __script__ = {
 							this.getRelevantEdit().user.name,
 							params.template
 						);
+
+						return true;
 					}
 				}
 			};
@@ -1911,10 +1962,10 @@ export const __script__ = {
 					wikishield.ollamaAI.cancelAllAnalyses();
 				}
 
-			modelsStatus.innerHTML = '<span style="color: #ffc107;">Loading...</span>';
-			refreshBtn.disabled = true;
+				modelsStatus.innerHTML = '<span style="color: #ffc107;">Loading...</span>';
+				refreshBtn.disabled = true;
 
-			try {
+				try {
 				const tempAI = new WikiShieldOllamaAI(wikishield.options.ollamaServerUrl, "", {});
 				const models = await tempAI.fetchModels();
 
@@ -6074,7 +6125,7 @@ export const __script__ = {
 		 */
 		async revert(edit, message, goodFaith = false) {
 			if (!edit) {
-				return;
+				return false;
 			}
 
 			const gfStr = goodFaith ? "[[WP:AGF|good faith]] " : "";
