@@ -14,6 +14,7 @@ import { WikiShieldLog } from './utils/logger.js';
 import { WikiShieldAPI } from './core/api.js';
 import { WikiShieldOllamaAI } from './ai/ollama.js';
 import { WikiShieldQueue } from './core/queue.js';
+import { createConditions, welcomeTemplates } from './data/events.js';
 
 export const __script__ = {
 	version: "1.0.0",
@@ -171,6 +172,16 @@ export const __script__ = {
 				window.open(url, "_blank");
 			};
 
+			// Events object will be initialized later via initializeEvents()
+			// This avoids circular dependency with wikishieldEventData
+			this.events = null;
+		}
+
+		/**
+		 * Initialize the events object with event data
+		 * Must be called after wikishieldEventData is created
+		 */
+		initializeEvents(eventData) {
 			this.events = {
 				prevEdit: {
 					description: "Go to the previous edit in the queue",
@@ -808,7 +819,7 @@ export const __script__ = {
 							title: "Template",
 							id: "template",
 							type: "choice",
-							options: Object.keys(wikishieldEventData.welcomeTemplates)
+							options: Object.keys(eventData.welcomeTemplates)
 						}
 					],
 					includeInProgress: true,
@@ -7014,6 +7025,16 @@ export const __script__ = {
 		wikishield = new WikiShield();
 		// Initialize queue after wikishield is created (needs reference to wikishield)
 		wikishield.queue = new WikiShieldQueue(wikishield);
+		
+		// Initialize event data after wikishield is created (avoids circular dependency)
+		wikishieldEventData = {
+			conditions: createConditions(wikishield),
+			welcomeTemplates: welcomeTemplates
+		};
+		
+		// Initialize event manager's events with the event data
+		wikishield.interface.eventManager.initializeEvents(wikishieldEventData);
+		
 		wikishield.startInterface();
 
 		window.addEventListener("keydown", wikishield.keyPressed.bind(wikishield));
