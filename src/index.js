@@ -6541,7 +6541,7 @@ export const __script__ = {
 							this.markNotificationRead(notifId);
 						});
 
-						item.addEventListener("click", event => {
+						item.addEventListener("click", e => {
 							e?.stopPropagation();
 
 							const notifId = item.dataset.notifId;
@@ -6805,7 +6805,7 @@ export const __script__ = {
 							this.markWathlistItemRead(watchlistId);
 						});
 
-						item.addEventListener("click", event => {
+						item.addEventListener("click", e => {
 							e?.stopPropagation();
 
 							const watchlistId = item.dataset.watchlistId;
