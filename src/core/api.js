@@ -688,13 +688,14 @@ export class WikiShieldAPI {
 				const response = await this.api.get({
 					"action": "query",
 					"list": "watchlist",
-					"rcnamespace": "*",
-					"rclimit": "max",
-					"rcprop": "title|ids|sizes|flags|user|tags|comment|timestamp",
-					"rctype": "edit",
+					"wlnamespace": "*",
+					"allrev": true,
+					"wllimit": 25,
+					"wlprop": "title|ids|sizes|flags|user|tags|comment|timestamp",
+					"wltype": "edit",
 					"format": "json",
-					"rcstart": since || "",
-					"rcdir": since ? "newer" : "older"
+					"wlstart": since || "",
+					"wldir": since ? "newer" : "older"
 				});
 
 				return response.query.watchlist;

@@ -45,6 +45,9 @@ export const wikishieldHTML = {
 						<span id="queue-top-items">0 items</span>
 					</div>
 					<div id="queue-top-right">
+						<span class="fa fa-book-bookmark" id="watchlist-icon" data-tooltip="Watchlist" style="position: relative;">
+							<span id="watchlist-count" style="display: none; position: absolute; top: -5px; right: -5px; background: dodgerblue; color: white; border-radius: 50%; width: 16px; height: 16px; font-size: 10px; text-align: center; line-height: 16px; font-family: sans-serif;"></span>
+						</span>
 						<span class="fa fa-bell" id="notifications-icon" data-tooltip="Notifications" style="position: relative;">
 							<span id="notification-count" style="display: none; position: absolute; top: -5px; right: -5px; background: red; color: white; border-radius: 50%; width: 16px; height: 16px; font-size: 10px; text-align: center; line-height: 16px; font-family: sans-serif;"></span>
 						</span>
@@ -58,9 +61,16 @@ export const wikishieldHTML = {
 			<div id="notifications-panel">
 				<div id="notifications-header">
 					<span>Notifications</span>
-					<span id="mark-all-read" style="font-size: 0.85em; font-weight: normal; cursor: pointer; color: #0645ad;">Mark all as read<!-- what is this diddy blud doin --></span>
+					<span id="mark-all-notifications-read" style="font-size: 0.85em; font-weight: normal; cursor: pointer; color: dodgerblue;">Mark all as read</span>
 				</div>
-				<div id="notifications-list"><!-- 67 --></div>
+				<div id="notifications-list"></div>
+			</div>
+			<div id="watchlist-panel">
+				<div id="watchlist-header">
+					<span>Watchlist</span>
+					<span id="mark-all-watchlist-read" style="font-size: 0.85em; font-weight: normal; cursor: pointer; color: dodgerblue;">Mark all as read</span>
+				</div>
+				<div id="watchlist-list"></div>
 			</div>
 			<div id="right-container">
 				<div id="middle-top"></div>
@@ -331,4 +341,3 @@ export const wikishieldHTML = {
 		</div>
 	`
 };
-

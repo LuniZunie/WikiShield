@@ -17,6 +17,7 @@ export const defaultSettings = {
 	volumes: {
 		click: 0.5,
 		notification: 0.5,
+		watchlist: 0.5,
 		alert: 0.5,
 		whoosh: 0.5,
 		warn: 0.5,
@@ -30,6 +31,7 @@ export const defaultSettings = {
 	soundMappings: {
 		click: 'click',
 		notification: 'notify',
+		watchlist: 'ping',
 		alert: 'alert',
 		whoosh: 'whoosh',
 		warn: 'warn',
@@ -168,4 +170,3 @@ export const colorPalettes = [
 	["#bfbfbf", "#d9ffd9", "#c9ffc9", "#b0ffb0", "#97ff97", "#7dff7d", "#64ff64", "#4bff4b", "#31ff31", "#18ff18"],
 	["#bfbfbf", "#d9d9ff", "#c9c9ff", "#b0b0ff", "#9797ff", "#7d7dff", "#6464ff", "#4b4bff", "#3131ff", "#1818ff"]
 ];
-
