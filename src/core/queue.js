@@ -243,6 +243,13 @@ export class WikiShieldQueue {
 	}
 
 	/**
+	 * Play a pleasant watchlist sound (two-tone chime)
+	 */
+	playWatchlistSound() {
+		this.playSound('watchlist');
+	}
+
+	/**
 	 * Play a click sound (short pop)
 	 */
 	playClickSound() {

@@ -103,7 +103,7 @@ body.dark-mode #queue-top-right span:hover {
 	color: #8fa3ff;
 }
 
-#notifications-panel {
+#notifications-panel, #watchlist-panel {
 	position: absolute;
 	top: 55px;
 	right: 15px;
@@ -121,13 +121,13 @@ body.dark-mode #queue-top-right span:hover {
 	overflow: hidden;
 }
 
-body.dark-mode #notifications-panel {
+body.dark-mode #notifications-panel, body.dark-mode #watchlist-panel {
 	background: rgba(30, 33, 42, 0.97);
 	border: 1px solid rgba(255, 255, 255, 0.12);
 	box-shadow: 0 12px 48px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
-#notifications-panel.show {
+#notifications-panel.show, #watchlist-panel.show {
 	display: flex;
 	animation: slideDownFancy 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -143,7 +143,7 @@ body.dark-mode #notifications-panel {
 	}
 }
 
-#notifications-header {
+#notifications-header, #watchlist-header {
 	padding: 16px 18px;
 	border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 	font-weight: 700;
@@ -154,17 +154,17 @@ body.dark-mode #notifications-panel {
 	background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
 }
 
-body.dark-mode #notifications-header {
+body.dark-mode #notifications-header, body.dark-mode #watchlist-header {
 	border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 	color: #e8e8e8;
 }
 
-#notifications-list {
+#notifications-list, #watchlist-list {
 	overflow: hidden auto;
 	max-height: 500px;
 }
 
-.notification-item {
+.notification-item, .watchlist-item {
 	padding: 14px 18px;
 	border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 	cursor: pointer;
@@ -172,26 +172,26 @@ body.dark-mode #notifications-header {
 	position: relative;
 }
 
-body.dark-mode .notification-item {
+body.dark-mode .notification-item, body.dark-mode .watchlist-item {
 	border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.notification-item:hover {
+.notification-item:hover, .watchlist-item:hover {
 	background: rgba(255, 255, 255, 0.06);
 	transform: translateX(4px);
 }
 
-body.dark-mode .notification-item:hover {
+body.dark-mode .notification-item:hover, body.dark-mode .watchlist-item:hover {
 	background: rgba(255, 255, 255, 0.06);
 }
 
-.notification-item.unread {
+.notification-item.unread, .watchlist-item.unread {
 	background: linear-gradient(90deg, rgba(102, 126, 234, 0.2) 0%, rgba(102, 126, 234, 0.05) 100%);
 	border-left: 3px solid #8fa3ff;
 	padding-left: 15px;
 }
 
-.notification-item.unread::before {
+.notification-item.unread::before, .watchlist-item.unread::before {
 	content: '';
 	position: absolute;
 	left: 0;
@@ -201,19 +201,19 @@ body.dark-mode .notification-item:hover {
 	background: linear-gradient(180deg, #8fa3ff 0%, rgba(143, 163, 255, 0.5) 100%);
 }
 
-body.dark-mode .notification-item.unread {
+body.dark-mode .notification-item.unread, body.dark-mode .watchlist-item.unread {
 	background: linear-gradient(90deg, rgba(102, 126, 234, 0.2) 0%, rgba(102, 126, 234, 0.05) 100%);
 	border-left: 3px solid #8fa3ff;
 }
 
-.notification-header {
+.notification-header, .watchlist-header {
 	display: flex;
 	justify-content: space-between;
 	align-items: flex-start;
 	margin-bottom: 6px;
 }
 
-.notification-type {
+.notification-type, .watchlist-type {
 	font-size: 0.7em;
 	text-transform: uppercase;
 	font-weight: 700;
@@ -224,7 +224,7 @@ body.dark-mode .notification-item.unread {
 	border-radius: 4px;
 }
 
-.notification-title {
+.notification-title, .watchlist-title {
 	font-weight: 600;
 	margin-bottom: 4px;
 	font-size: 0.98em;
@@ -232,22 +232,22 @@ body.dark-mode .notification-item.unread {
 	color: #222;
 }
 
-body.dark-mode .notification-title {
+body.dark-mode .notification-title, body.dark-mode .watchlist-title {
 	color: #e8e8e8;
 }
 
-.notification-subtitle {
+.notification-subtitle, .watchlist-subtitle {
 	font-size: 0.88em;
 	color: #555;
 	margin-bottom: 6px;
 	line-height: 1.45;
 }
 
-body.dark-mode .notification-subtitle {
+body.dark-mode .notification-subtitle, body.dark-mode .watchlist-subtitle {
 	color: #aaa;
 }
 
-.notification-time {
+.notification-time, .watchlist-time {
 	font-size: 0.78em;
 	color: #888;
 	display: flex;
@@ -256,11 +256,11 @@ body.dark-mode .notification-subtitle {
 	font-style: italic;
 }
 
-body.dark-mode .notification-time {
+body.dark-mode .notification-time, body.dark-mode .watchlist-time {
 	color: #777;
 }
 
-.notification-time::before {
+.notification-time::before, .watchlist-time::before {
 	content: '🕒';
 	font-size: 1.1em;
 	filter: grayscale(0.3);
@@ -3652,6 +3652,9 @@ body.dark-mode .queue-edit-mentions-me:hover {
 }
 
 .changelog {
+	width: 100%;
+	margin: 20px 20px 0 20px;
+
 	font-size: 0.9em;
 	line-height: 1.6em;
 }

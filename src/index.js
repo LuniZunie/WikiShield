@@ -1282,7 +1282,8 @@ export const __script__ = {
 
 			const sounds = [
 				{ key: "click", title: "Click Sound", desc: "Played when clicking buttons and UI elements", fn: wikishield.queue.playClickSound },
-				{ key: "notification", title: "Notification Sound", desc: "Played when you recieve an alert or notice", fn: wikishield.queue.playNotificationSound },
+				{ key: "notification", title: "Notification Sound", desc: "Played when you receive an alert or notice", fn: wikishield.queue.playNotificationSound },
+				{ key: "watchlist", title: "Watchlist Sound", desc: "Played when you your watchlist is updated", fn: wikishield.queue.playWatchlistSound },
 				{ key: "alert", title: "Alert Sound", desc: "Played when a high ORES score edit is added to the queue", fn: wikishield.queue.playAlertSound },
 				{ key: "whoosh", title: "Whoosh Sound", desc: "Played when items are removed or cleared", fn: wikishield.queue.playWhooshSound },
 				{ key: "warn", title: "Warn Sound", desc: "Played when issuing a warning to a user", fn: wikishield.queue.playWarnSound },
@@ -3321,7 +3322,9 @@ export const __script__ = {
 
 			if (wikishield.rights.rollback) {
 				this.elem("#rollback-needed").style.display = "none";
+				this.elem("#start-button").style.display = "";
 			} else {
+				this.elem("#rollback-needed").style.display = "";
 				this.elem("#start-button").style.display = "none";
 			}
 
@@ -3417,27 +3420,40 @@ export const __script__ = {
 				this.elem("#delete-queue"),
 				this.elem("#open-settings"),
 				this.elem("#notifications-icon"),
+				this.elem("#watchlist-icon"),
 				this.elem("#user-contribs-level")
 			].forEach(e => this.addTooltipListener(e));
 
 			// Notification icon click handler
 			this.elem("#notifications-icon").addEventListener("click", (e) => {
-				e.stopPropagation();
 				const panel = this.elem("#notifications-panel");
 				panel.classList.toggle("show");
 			});
 
 			// Mark all as read handler
-			this.elem("#mark-all-read").addEventListener("click", () => {
+			this.elem("#mark-all-notifications-read").addEventListener("click", () => {
 				wikishield.markAllNotificationsRead();
+			});
+
+			// Watchlist icon click handler
+			this.elem("#watchlist-icon").addEventListener("click", (e) => {
+				const panel = this.elem("#watchlist-panel");
+				panel.classList.toggle("show");
+			});
+
+			// Mark all as read handler
+			this.elem("#mark-all-watchlist-read").addEventListener("click", () => {
+				wikishield.markAllWatchlistRead();
 			});
 
 			// Close notifications panel when clicking outside
 			document.addEventListener("click", (e) => {
-				const panel = this.elem("#notifications-panel");
-				const icon = this.elem("#notifications-icon");
-				if (panel && !panel.contains(e.target) && !icon.contains(e.target)) {
-					panel.classList.remove("show");
+				for (const id of [ "notifications", "watchlist" ]) {
+					const panel = this.elem(`#${id}-panel`);
+					const icon = this.elem(`#${id}-icon`);
+					if (panel && !panel.contains(e.target) && !icon.contains(e.target)) {
+						panel.classList.remove("show");
+					}
 				}
 
 				if (!e.target.closest(".bottom-tool-menu")) {
@@ -5776,11 +5792,16 @@ export const __script__ = {
 				block: false
 			};
 			this.username = mw.config.values.wgUserName;
+			this.mostRecentWatchlist = this.util?.utcString(new Date());
+			this.notifications = [];
+			this.watchlist = [];
 			this.handleLoadingReported();
 			this.handleLoadingNotifications();
+			this.handleLoadingWatchlist();
+			this.updateNotificationDisplay();
+			this.updateWatchlistDisplay();
 			this.testingMode = false;
 			this.tempCurrentEdit = null;
-			this.notifications = [];
 			this.lastSeenRevision = null;
 
 			this.wikishieldData = wikishieldData;
@@ -6632,6 +6653,168 @@ export const __script__ = {
 		}
 
 		/**
+		 * Load watchlist from Wikipedia
+		 */
+		async loadWatchlist() {
+			try {
+				const items = await this.api.watchlist(this.mostRecentWatchlist);
+
+				const watchlist = [];
+				for (const item of items ?? []) {
+					let categoryLabel = "Alert";
+					if (item.type === "edit") {
+						categoryLabel = "Edit";
+					} else if (item.type === "new") {
+						categoryLabel = "New";
+					} else if (item.type === "log") {
+						categoryLabel = "Log";
+					} else if (item.type === "external") {
+						categoryLabel = "External";
+					} else if (item.type === "categorize") {
+						categoryLabel = "Categorize";
+					}
+
+					watchlist.push({
+						id: `item-${item.revid}`,
+						type: item.type,
+						timestamp: item.timestamp,
+						title: item.title || "Unknown page",
+						agent: item.user || "Someone",
+						category: categoryLabel,
+						read: false,
+						comment: item.comment
+					});
+				}
+
+				// Merge with existing watchlist and remove duplicates
+				let hasNewWatchlistItems = false;
+				for (const item of watchlist) {
+					const existingItem = this.watchlist.find(n => n.id === item.id);
+					if (!existingItem) {
+						this.watchlist.unshift(item);
+						hasNewWatchlistItems = true;
+					}
+				}
+
+				// Play sound if there are new watchlist
+				if (hasNewWatchlistItems && this.watchlist.length > 0) {
+					wikishield.queue.playWatchlistSound();
+				}
+
+				// Sort by timestamp
+				this.watchlist.sort((a, b) => {
+					const timeA = new Date(a.timestamp);
+					const timeB = new Date(b.timestamp);
+					return timeB - timeA;
+				});
+
+				// Keep only last 25 watchlist
+				if (this.watchlist.length > 25) {
+					this.watchlist = this.watchlist.slice(0, 25);
+				}
+
+				if (this.watchlist[0]) {
+					this.mostRecentWatchlist = this.watchlist[0].timestamp;
+				}
+
+				this.updateWatchlistDisplay();
+			} catch (err) {
+				console.log("Error while fetching watchlist", err);
+			}
+		}
+
+		/**
+		 * Every 10 seconds, call loadWatchlist
+		 */
+		async handleLoadingWatchlist() {
+			await this.loadWatchlist();
+
+			window.setTimeout(() => {
+				this.handleLoadingWatchlist();
+			}, 10000);
+		}
+
+		/**
+		 * Update the watchlist count and list display
+		 */
+		updateWatchlistDisplay() {
+			const unreadCount = this.watchlist.filter(w => !w.read).length;
+			const countElem = document.querySelector("#watchlist-count");
+			const listElem = document.querySelector("#watchlist-list");
+
+			// Check if elements exist (UI might not be ready yet)
+			if (!countElem || !listElem) {
+				return;
+			}
+
+			if (unreadCount > 0) {
+				countElem.textContent = unreadCount > 9 ? "9+" : unreadCount;
+				countElem.style.display = "block";
+			} else {
+				countElem.style.display = "none";
+			}
+
+			// Update list
+			if (listElem) {
+				if (this.watchlist.length === 0) {
+					listElem.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">No new watchlist items</div>';
+				} else {
+					listElem.innerHTML = this.watchlist.map(item => {
+						// Parse timestamp
+						const time = new Date(item.timestamp);
+						const timeStr = this.formatNotificationTime(time);
+
+						const title = item.title;
+						const subtitle = item.comment;
+						const typeLabel = item.category || "Watchlist item";
+						const clickData = `data-page="${this.escapeHtml(item.title)}"`;
+
+						const readClass = item.read ? "" : "unread";
+
+						return `
+							<div class="watchlist-item ${readClass}" data-watchlist-id="${item.id}" ${clickData}>
+								<div class="watchlist-header">
+									<span class="watchlist-type">${typeLabel}</span>
+									<span class="watchlist-time">${timeStr}</span>
+								</div>
+								<div class="watchlist-title">${this.escapeHtml(title)}</div>
+								<div class="watchlist-subtitle">By ${this.escapeHtml(item.agent)}${subtitle ? `<br>${this.escapeHtml(subtitle)}` : ''}</div>
+							</div>
+						`;
+					}).join("");
+
+					// Add click handlers
+					listElem.querySelectorAll(".watchlist-item").forEach(item => {
+						item.addEventListener("click", () => {
+							const watchlistId = item.dataset.watchlistId;
+
+							this.markWathlistItemRead(watchlistId);
+						});
+					});
+				}
+			}
+		}
+
+		/**
+		 * Mark a notification as read
+		 */
+		markWathlistItemRead(watchlistId) {
+			const item = this.watchlist.find(w => w.id === watchlistId);
+			if (item) {
+				item.read = true;
+			}
+			this.updateWatchlistDisplay();
+		}
+
+		/**
+		 * Mark all watchlist as read
+		 */
+		markAllWatchlistRead() {
+			this.watchlist.forEach(w => w.read = true);
+			this.updateWatchlistDisplay();
+		}
+
+		/**
 		 * Check if a user is reported to AIV
 		 * @param {String} name The username to check
 		 * @param {Boolean} recheck Whether to recheck the reports
@@ -6932,16 +7115,16 @@ export const __script__ = {
 		wikishield = new WikiShield();
 		// Initialize queue after wikishield is created (needs reference to wikishield)
 		wikishield.queue = new WikiShieldQueue(wikishield);
-		
+
 		// Initialize event data after wikishield is created (avoids circular dependency)
 		wikishieldEventData = {
 			conditions: createConditions(wikishield),
 			welcomeTemplates: welcomeTemplates
 		};
-		
+
 		// Initialize event manager's events with the event data
 		wikishield.interface.eventManager.initializeEvents(wikishieldEventData);
-		
+
 		wikishield.startInterface();
 
 		window.addEventListener("keydown", wikishield.keyPressed.bind(wikishield));
