@@ -4,7 +4,7 @@ See [the Wikipedia page](https://en.wikipedia.org/wiki/Wikipedia:WikiShield) for
 
 Target project structure:
 
-```
+```txt
 /config
 > /config/metadata.js - __script__ object (version, changelog, pages)
 > /config/defaults.js - default settings

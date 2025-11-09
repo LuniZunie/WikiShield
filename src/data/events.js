@@ -67,10 +67,6 @@ export const createConditions = (wikishield) => ({
 	"atFinalWarning": {
 		desc: "User already has a final warning (before any new warnings)",
 		check: (edit) => {
-			if (edit.user.atFinalWarning !== undefined) {
-				return edit.user.atFinalWarning;
-			}
-
 			// Check the ORIGINAL warning level from when edit was first queued
 			// This ensures we only report if they ALREADY had a final warning
 			// Not if they just received one in this action sequence
