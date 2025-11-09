@@ -5792,7 +5792,7 @@ export const __script__ = {
 				block: false
 			};
 			this.username = mw.config.values.wgUserName;
-			this.mostRecentWatchlist = this.util?.utcString(new Date());
+			// this.mostRecentWatchlist = this.util?.utcString(new Date());
 			this.notifications = [];
 			this.watchlist = [];
 			this.handleLoadingReported();
@@ -6526,18 +6526,28 @@ export const __script__ = {
 								</div>
 								<div class="notification-title">${this.escapeHtml(title)}</div>
 								${subtitle ? `<div class="notification-subtitle">${this.escapeHtml(subtitle)}</div>` : ''}
+								${notif.read ? "" : '<div class="notification-read">Mark as read</div>'}
 							</div>
 						`;
 					}).join("");
 
 					// Add click handlers
 					listElem.querySelectorAll(".notification-item").forEach(item => {
-						item.addEventListener("click", () => {
-							const notifId = item.dataset.notifId;
-							const notifType = item.dataset.notifType;
+						const read = item.querySelector(".notification-read");
+						read?.addEventListener("click", e => {
+							e?.stopPropagation();
 
+							const notifId = item.dataset.notifId;
+							this.markNotificationRead(notifId);
+						});
+
+						item.addEventListener("click", event => {
+							e?.stopPropagation();
+
+							const notifId = item.dataset.notifId;
 							this.markNotificationRead(notifId);
 
+							const notifType =  item.dataset.notifType;
 							if (notifType === "alert" || notifType === "notice") {
 								// Open the page for Echo notifications
 								const page = item.dataset.page;
@@ -6682,7 +6692,8 @@ export const __script__ = {
 						agent: item.user || "Someone",
 						category: categoryLabel,
 						read: false,
-						comment: item.comment
+						comment: item.comment,
+						revid: item.revid
 					});
 				}
 
@@ -6772,23 +6783,36 @@ export const __script__ = {
 						const readClass = item.read ? "" : "unread";
 
 						return `
-							<div class="watchlist-item ${readClass}" data-watchlist-id="${item.id}" ${clickData}>
+							<div class="watchlist-item ${readClass}" data-watchlist-id="${item.id}" data-revid="${item.revid}" data-title="${item.title}" ${clickData}>
 								<div class="watchlist-header">
 									<span class="watchlist-type">${typeLabel}</span>
 									<span class="watchlist-time">${timeStr}</span>
 								</div>
 								<div class="watchlist-title">${this.escapeHtml(title)}</div>
 								<div class="watchlist-subtitle">By ${this.escapeHtml(item.agent)}${subtitle ? `<br>${this.escapeHtml(subtitle)}` : ''}</div>
+								${item.read ? "" : '<div class="watchlist-read">Mark as read</div>'}
 							</div>
 						`;
 					}).join("");
 
 					// Add click handlers
 					listElem.querySelectorAll(".watchlist-item").forEach(item => {
-						item.addEventListener("click", () => {
-							const watchlistId = item.dataset.watchlistId;
+						const read = item.querySelector(".watchlist-read");
+						read?.addEventListener("click", e => {
+							e?.stopPropagation();
 
+							const watchlistId = item.dataset.watchlistId;
 							this.markWathlistItemRead(watchlistId);
+						});
+
+						item.addEventListener("click", event => {
+							e?.stopPropagation();
+
+							const watchlistId = item.dataset.watchlistId;
+							this.markWathlistItemRead(watchlistId);
+
+							const url = wikishield.util.pageLink(`Special:Diff/${item.dataset.revid}`);
+							wikishield.interface.eventManager.openWikipediaLink(url, item.dataset.title, event);
 						});
 					});
 				}
