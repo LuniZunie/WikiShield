@@ -5792,7 +5792,7 @@ export const __script__ = {
 				block: false
 			};
 			this.username = mw.config.values.wgUserName;
-			// this.mostRecentWatchlist = this.util?.utcString(new Date());
+			this.mostRecentWatchlist = this.util?.utcString(new Date());
 			this.notifications = [];
 			this.watchlist = [];
 			this.handleLoadingReported();
