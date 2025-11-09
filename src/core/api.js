@@ -78,6 +78,10 @@ export class WikiShieldAPI {
 		 * @returns {Promise<Object>} The content of the pages
 		 */
 		async getText(titles) {
+			if (titles === "") {
+				return;
+			}
+
 			try {
 				const response = await this.api.get({
 					"action": "query",
