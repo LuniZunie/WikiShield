@@ -25,8 +25,11 @@ export class WikiShieldQueue {
 		try {
 			this.editsSince = this.wikishield.util.utcString(new Date());
 
+			const whitelistedTags = this.wikishield.__script__.tags.whitelisted;
+
 			const namespaceString = this.wikishield.options.namespacesShown.join("|");
 			const recentChanges = (await this.wikishield.api.recentChanges(namespaceString))
+				.filter(edit => !edit.tags?.some(tag => whitelistedTags.includes(tag)))
 				.filter(edit => edit.revid > this.lastRevid);
 
 			this.lastRevid = Math.max(...recentChanges.map(edit => edit.revid));

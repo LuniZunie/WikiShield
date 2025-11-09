@@ -70,6 +70,20 @@ export const warnings = {
 					"4": { exists: true, template: "subst:uw-image4" },
 					"4im": { exists: true, template: "subst:uw-image4im" }
 				}
+			},
+			{
+				title: "Sandbox",
+				summary: "[[WP:BADSAND|inappropriate]] use of sandbox",
+				description: "Warning for vandalism, libelous, or defamatory content added to sandbox",
+				auto: defaultAuto,
+				templates: {
+					"0": null,
+					"1": { exists: true, template: "subst:uw-sandbox1" },
+					"2": { exists: true, template: "subst:uw-sandbox2" },
+					"3": { exists: true, template: "subst:uw-sandbox3" },
+					"4": { exists: true, template: "subst:uw-sandbox4" },
+					"4im": { exists: true, template: "subst:uw-sandbox4im" }
+				}
 			}
 		],
 		"Content Issues": [
@@ -102,6 +116,20 @@ export const warnings = {
 					"4im": { exists: true, template: "subst:uw-biog4im" }
 				},
 				show: edit => edit?.isBLP
+			},
+			{
+				title: "Unsourced genre",
+				summary: "unsourced genre changes",
+				description: "Warning for unsourced genre changes.",
+				auto: defaultAuto,
+				templates: {
+					"0": null,
+					"1": { exists: true, template: "subst:uw-genre1" },
+					"2": { exists: true, template: "subst:uw-genre2" },
+					"3": { exists: true, template: "subst:uw-genre3" },
+					"4": { exists: true, template: "subst:uw-genre4" },
+					"4im": null
+				}
 			},
 			{
 				title: "POV",
@@ -415,6 +443,20 @@ export const warnings = {
 			}
 		],
 		"Behavior": [
+			{
+				title: "Conflict of interest",
+				summary: "[[WP:COI|conflict of interest]]",
+				description: "Edits or username suggest an external relationship with the article.",
+				auto: () => "0",
+				templates: {
+					"0": { exists: true, template: "subst:uw-coi", label: "Notice" },
+					"1": { exists: true, template: "subst:uw-coi-username", label: "Username" },
+					"2": null,
+					"3": null,
+					"4": { exists: true, template: "subst:uw-coi-warn", label: "Warn" },
+					"4im": null
+				}
+			},
 			{
 				title: "Gaming the system",
 				summary: "[[WP:GAME|gaming the system]]",

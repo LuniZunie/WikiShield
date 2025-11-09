@@ -34,6 +34,12 @@ export const __script__ = {
 	config: {
 		refresh: 1000,
 		historyCount: 10,
+	},
+
+	tags: {
+		whitelisted: [
+			"OAuth CID: 4978", // dashboard.wikiedu.org [2.3]
+		],
 	}
 };
 
@@ -3900,6 +3906,10 @@ export const __script__ = {
 				await wikishield.executeScript({
 					actions: [
 						{
+							name: "nextEdit",
+							params: {}
+						},
+						{
 							name: "rollbackAndWarn",
 							params: {
 								warningType,
@@ -3927,10 +3937,6 @@ export const __script__ = {
 									]
 								}
 							]
-						},
-						{
-							name: "nextEdit",
-							params: {}
 						}
 					]
 				});
@@ -4054,10 +4060,6 @@ export const __script__ = {
 						{
 							name: "highlight",
 							params: {}
-						},
-						{
-							name: "nextEdit",
-							params: {}
 						}
 					]
 				});
@@ -4085,6 +4087,10 @@ export const __script__ = {
 
 					const item = document.createElement("div");
 					item.className = "warning-menu-item";
+
+					const mouseIcon = document.createElement("span");
+					mouseIcon.className = "fas fa-mouse-pointer";
+					item.appendChild(mouseIcon);
 
 					const label = document.createElement("span");
 					label.className = "warning-menu-title";
@@ -4456,6 +4462,9 @@ export const __script__ = {
 		 * @param {Object} edit
 		 */
 		async newEditSelected(edit) {
+			this.hide3RRNotice();
+			this.hideNewerEditButton();
+
 			// Close all bottom menu popups when switching pages
 			this.closeAllMenus();
 
