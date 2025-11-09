@@ -247,6 +247,24 @@ body.dark-mode .notification-subtitle, body.dark-mode .watchlist-subtitle {
 	color: #aaa;
 }
 
+.notification-read, .watchlist-read {
+	display: inline-block;
+	padding: 6px 10px;
+	border-radius: 8px;
+	font-size: 0.85em;
+	font-weight: 500;
+	cursor: pointer;
+	-webkit-user-select: none;
+	user-select: none;
+	background: rgba(102, 126, 234, 0.08);
+	transition: all 0.15s ease;
+}
+
+.notification-read:hover, .watchlist-read:hover {
+	background: rgba(102, 126, 234, 0.25);
+	color: #667eea;
+}
+
 .notification-time, .watchlist-time {
 	font-size: 0.78em;
 	color: #888;
