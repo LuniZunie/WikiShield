@@ -617,36 +617,63 @@ body.dark-mode .notification-time, body.dark-mode .watchlist-time {
 	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
 }
 #right-top {
+	gap: 5px;
 	font-size: 0.8em;
 	width: 300px;
 	box-shadow: 0 2px 0px rgba(0, 0, 0, 0.08) !important;
 }
+#right-top > .left-label,
+#right-top > .right-label {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 12px;
+	border-radius: 8px;
+	background: rgba(0, 0, 0, 0.03); /* subtle light-mode tint to match menus */
+	color: #333; /* dark text in light mode for contrast */
+	font-weight: 700;
+	font-size: 0.9em;
+	transition: background 0.15s ease, color 0.15s ease, transform 0.12s ease;
+}
 
-#middle-top a, #right-top a {
+body.dark-mode #right-top > .left-label,
+body.dark-mode #right-top > .right-label {
+	background: rgba(255, 255, 255, 0.06); /* subtle dark-mode tint */
+	color: #e0e0e0;
+}
+
+#right-top > .left-label:hover,
+#right-top > .right-label:hover {
+	transform: translateY(-1px);
+	background: rgba(102, 126, 234, 0.06);
+	color: #667eea;
+}
+
+#middle-top a {
 	text-decoration: none;
 	color: #0645ad;
 	font-weight: 500;
 	transition: color 0.2s ease;
 }
 
-#middle-top a:hover, #right-top a:hover {
+#middle-top a:hover {
 	color: #0b7ad1;
 }
 
-#middle-top div, #right-top div {
+#middle-top div {
 	padding: 0 6px;
 	display: flex;
 	align-items: center;
 	gap: 0px;
 }
 
-#middle-top .fa, #right-top .fa {
+#middle-top .fa {
 	margin-right: 6px;
 	color: #555;
 	font-size: 0.95em;
 }
 
-.middle-top-comment, .right-top-comment {
+.middle-top-comment {
 	flex-basis: 100%;
 	text-align: center;
 	justify-content: center;

@@ -425,7 +425,7 @@ export class WikiShieldQueue {
 			usernameAnalysis: null, // Will be populated asynchronously
 			isBLP: categories.some(cat => cat.title === "Category:Living people"),
 			reverts: reverts,
-			consecutive: this.wikishield.api.consecutiveEdits(edit.title, edit.user),
+			consecutive: this.wikishield.api.consecutive(edit.title, edit.user),
 			fromHistory: false,
 			isTalk: edit.ns % 2 === 1
 		};

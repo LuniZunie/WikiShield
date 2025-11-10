@@ -13,6 +13,8 @@ export const defaultSettings = {
 	enableEditAnalysis: false,
 	enableUsernameAnalysis: false,
 
+	enableConsecutiveDiff: false,
+
 	masterVolume: 0.5,
 	volumes: {
 		click: 0.5,
