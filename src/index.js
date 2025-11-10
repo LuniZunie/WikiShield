@@ -495,10 +495,12 @@ export const __script__ = {
 			// Add user talk page to watchlist with configured expiry
 			try {
 				if (wikishield.options.watchlistExpiry > 0) {
+					const toExpire = new Date(Date.now() + wikishield.options.watchlistExpiry);
+
 					await this.api.postWithToken("watch", {
 						"action": "watch",
 						"titles": `User talk:${user}`,
-						"expiry": wikishield.options.watchlistExpiry
+						"expiry": wikishield.util?.utcString(toExpire)
 					});
 				}
 			} catch (err) {
