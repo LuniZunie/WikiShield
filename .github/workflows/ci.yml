@@ -1,4 +1,6 @@
 name: CI Build
+permissions:
+  contents: read
 
 on:
   push:
