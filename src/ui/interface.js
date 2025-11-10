@@ -1880,7 +1880,6 @@ export class WikiShieldInterface {
 							blockHistory.forEach(block => {
 								// Extract plain text from blocker name (remove any HTML tags)
 								let blockerName = block.user || "Unknown";
-								blockerName = blockerName.replace(/<[^>]*>/g, '');
 
 								const timestamp = new Date(block.timestamp).toLocaleString('en-US', {
 									month: 'short',
@@ -1892,11 +1891,9 @@ export class WikiShieldInterface {
 
 								// Extract plain text from duration (remove any HTML tags)
 								let duration = block.params?.duration || "Unknown duration";
-								duration = duration.replace(/<[^>]*>/g, '');
 
 								// Extract plain text from reason (remove any HTML tags)
 								let reason = block.comment || "No reason specified";
-								reason = reason.replace(/<[^>]*>/g, '');
 
 								tooltipHtml += `<div class="tooltip-item">`;
 								tooltipHtml += `<span class="tooltip-item-level">By ${this.wikishield.util.escapeHtml(blockerName)}</span><br>`;
