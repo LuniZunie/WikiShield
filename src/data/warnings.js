@@ -31,7 +31,7 @@ export const warnings = {
 		"Vandalism": [
 			{
 				title: "Vandalism",
-				summary: "vandalism",
+				summary: "",
 				description: "Warning for general vandalism.",
 				auto: defaultAuto,
 				templates: {
@@ -176,7 +176,7 @@ export const warnings = {
 			},
 			{
 				title: "AI-generated (talk)",
-				summary: "using [[WP:LLM|AI-generated content]] to comment",
+				summary: "adding [[WP:LLM|AI-generated content]] to a discussion",
 				description: "Writing an AI-generated comment.",
 				auto: defaultAuto,
 				templates: {
