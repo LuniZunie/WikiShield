@@ -8,6 +8,8 @@ import { WikiShieldSettingsInterface } from './settings.js';
 import { wikishieldStyling } from './styles.js';
 import { wikishieldHTML } from './templates.js';
 import { __script__ } from '../index.js';
+import { warnings, warningTemplateColors } from '../data/warnings.js';
+import { colorPalettes } from '../config/defaults.js';
 
 export class WikiShieldInterface {
 	constructor(wikishield) {
@@ -1634,9 +1636,9 @@ export class WikiShieldInterface {
 			// Start checking for newer revisions on THIS Wikipedia page
 			this.startNewerRevisionCheck(edit);
 
-			userContribsLevel.style.display = "initial";
-			userContribsLevel.style.background = wikishieldData.warningTemplateColors[edit.user.warningLevel] || "grey";
-			userContribsLevel.innerText = edit.user.warningLevel;
+		userContribsLevel.style.display = "initial";
+		userContribsLevel.style.background = warningTemplateColors[edit.user.warningLevel] || "grey";
+		userContribsLevel.innerText = edit.user.warningLevel;
 
 			const addToolipToWarningLevel = () => {
 				// Clone and replace the element to remove old event listeners (prevents memory leak/crash)
@@ -2508,15 +2510,15 @@ export class WikiShieldInterface {
 			}
 		}
 
-		/**
-		 * From the ORES score, get the color to display
-		 * @param {Number} ores The ORES score
-		 * @returns {String} The color to display
-		 */
-		getORESColor(ores) {
-			const colors = wikishieldData.colorPalettes[this.wikishield.options.selectedPalette];
-			return colors[Math.floor(ores * colors.length)];
-		}
+	/**
+	 * From the ORES score, get the color to display
+	 * @param {Number} ores The ORES score
+	 * @returns {String} The color to display
+	 */
+	getORESColor(ores) {
+		const colors = colorPalettes[this.wikishield.options.selectedPalette];
+		return colors[Math.floor(ores * colors.length)];
+	}
 
 		/**
 		 * Return a specific element

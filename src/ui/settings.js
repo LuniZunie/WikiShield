@@ -3,6 +3,11 @@
  * Handles the settings interface and user configuration
  */
 
+import { defaultSettings, colorPalettes } from '../config/defaults.js';
+import { namespaces } from '../data/namespaces.js';
+import { sounds } from '../data/sounds.js';
+import { wikishieldHTML } from './templates.js';
+
 // Allowed keys for keyboard shortcuts
 export const wikishieldSettingsAllowedKeys = [
 	"!", "@", "#", "$", "%", "^", "&", "*", "(", ")",
@@ -69,13 +74,13 @@ export class WikiShieldSettingsInterface {
 			const value = this.wikishield.options.volumes?.[triggerKey] ?? 0.5;
 			const currentSound = this.wikishield.options.soundMappings?.[triggerKey] || triggerKey;
 
-			// Build sound selector options grouped by category
-			const soundsByCategory = {};
-			Object.entries(wikishieldData.sounds).forEach(([key, sound]) => {
-				const category = sound.category || 'other';
-				if (!soundsByCategory[category]) soundsByCategory[category] = [];
-				soundsByCategory[category].push({ key, sound });
-			});
+		// Build sound selector options grouped by category
+		const soundsByCategory = {};
+		Object.entries(sounds).forEach(([key, sound]) => {
+			const category = sound.category || 'other';
+			if (!soundsByCategory[category]) soundsByCategory[category] = [];
+			soundsByCategory[category].push({ key, sound });
+		});
 
 			const categoryOrder = ['ui', 'alert', 'warning', 'action', 'notification', 'positive', 'negative', 'other'];
 			const categoryNames = {
@@ -359,11 +364,11 @@ export class WikiShieldSettingsInterface {
 				this.wikishield.options.highlightedExpiry = highlightedSelect.value;
 				this.wikishield.saveOptions(this.wikishield.options);
 			});
-			highlightedContainer.appendChild(highlightedSelect);
+		highlightedContainer.appendChild(highlightedSelect);
 
-			wikishieldData.namespaces.forEach(ns => {
-				this.contentContainer.querySelector("#namespace-container").innerHTML += `
-					<div>
+		namespaces.forEach(ns => {
+			this.contentContainer.querySelector("#namespace-container").innerHTML += `
+				<div>
 						<input
 							type="checkbox"
 							data-nsid="${ns.id}"
@@ -1657,12 +1662,12 @@ export class WikiShieldSettingsInterface {
 			if (!importedSettings || typeof importedSettings !== 'object') {
 				result.error = 'Invalid settings format';
 				return result;
-			}
+		}
 
-			const defaults = wikishieldData.defaultSettings;
-			const soundKeys = Object.keys(wikishieldData.sounds);
-			const namespaceIds = wikishieldData.namespaces.map(ns => ns.id);
-			const expiryOptions = ["none", "1 hour", "1 day", "1 week", "1 month", "3 months", "6 months", "indefinite"];
+		const defaults = defaultSettings;
+		const soundKeys = Object.keys(sounds);
+		const namespaceIds = namespaces.map(ns => ns.id);
+		const expiryOptions = ["none", "1 hour", "1 day", "1 week", "1 month", "3 months", "6 months", "indefinite"];
 
 			// Validate and apply each setting
 			for (const [key, value] of Object.entries(importedSettings)) {
@@ -1826,14 +1831,14 @@ export class WikiShieldSettingsInterface {
 							}
 							break;
 
-						case 'selectedPalette':
-							if (typeof value === 'number' && value >= 0 && value < wikishieldData.colorPalettes.length) {
-								result.settings[key] = Math.floor(value);
-								result.appliedCount++;
-							} else {
-								result.warnings.push(`${key}: Invalid value (${value}), must be 0-${wikishieldData.colorPalettes.length - 1}`);
-							}
-							break;
+					case 'selectedPalette':
+						if (typeof value === 'number' && value >= 0 && value < colorPalettes.length) {
+							result.settings[key] = Math.floor(value);
+							result.appliedCount++;
+						} else {
+							result.warnings.push(`${key}: Invalid value (${value}), must be 0-${colorPalettes.length - 1}`);
+						}
+						break;
 
 						case 'theme':
 							const validThemes = ['theme-light', 'theme-dark'];
@@ -2052,10 +2057,10 @@ export class WikiShieldSettingsInterface {
 				}
 			});
 
-			resetBtn.addEventListener('click', () => {
-				if (confirm('Are you sure you want to reset all settings to default? This cannot be undone.')) {
-					this.wikishield.options = JSON.parse(JSON.stringify(wikishieldData.defaultSettings));
-					this.wikishield.saveOptions(this.wikishield.options);
+		resetBtn.addEventListener('click', () => {
+			if (confirm('Are you sure you want to reset all settings to default? This cannot be undone.')) {
+				this.wikishield.options = JSON.parse(JSON.stringify(defaultSettings));
+				this.wikishield.saveOptions(this.wikishield.options);
 
 					statusDiv.style.display = 'block';
 					statusDiv.style.background = 'rgba(255, 193, 7, 0.2)';
