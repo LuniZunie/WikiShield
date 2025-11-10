@@ -383,51 +383,51 @@ export const __script__ = {
 			this.queue.fetchRecentChanges();
 		}
 
-	/**
-	 * Revert an edit
-	 * @param {Object} edit The edit to revert
-	 * @param {String} summary Additional summary text
-	 * @param {Boolean} goodFaith Whether this is a good faith revert
-	 * @returns {Boolean} Whether the revert was successful
-	 */
-	async revert(edit, summary, goodFaith = false) {
-		if (!edit) {
-			return false;
-		}
+		/**
+		 * Revert an edit
+		 * @param {Object} edit The edit to revert
+		 * @param {String} summary Additional summary text
+		 * @param {Boolean} goodFaith Whether this is a good faith revert
+		 * @returns {Boolean} Whether the revert was successful
+		 */
+		async revert(edit, summary, goodFaith = false) {
+			if (!edit) {
+				return false;
+			}
 
-		const revertSummary = `Reverted ${goodFaith ? "[[WP:AGF|good faith]] " : ""}edits by [[Special:Contributions/${edit.user.name}|${edit.user.name}]] ([[User talk:${edit.user.name}|talk]])${summary ? ": " + summary : ""} ([[WP:WikiShield|WS]])`;
+			const revertSummary = `Reverted ${goodFaith ? "[[WP:AGF|good faith]] " : ""}edits by [[Special:Contributions/${edit.user.name}|${edit.user.name}]] ([[User talk:${edit.user.name}|talk]])${summary ? ": " + summary : ""} ([[WP:WikiShield|WS]])`;
 
-		// Check if we have rollback rights
-		if (!this.rights.rollback) {
-			return false;
-		}
+			// Check if we have rollback rights
+			if (!this.rights.rollback) {
+				return false;
+			}
 
-		// Attempt rollback
-		const success = await this.api.rollback(
-			edit.page.title,
-			edit.user.name,
-			revertSummary
-		);
-
-		if (!success) {
-			this.interface.showToast(
-				"Revert Failed",
-				`Could not revert edits on "${edit.page.title}" - a newer edit may have been made`,
-				5000,
-				"error"
+			// Attempt rollback
+			const success = await this.api.rollback(
+				edit.page.title,
+				edit.user.name,
+				revertSummary
 			);
-			return false;
+
+			if (!success) {
+				this.interface.showToast(
+					"Revert Failed",
+					`Could not revert edits on "${edit.page.title}" - a newer edit may have been made`,
+					5000,
+					"error"
+				);
+				return false;
+			}
+
+			// Update statistics
+			this.statistics.reverts++;
+			this.saveStats(this.statistics);
+			this.updateMyContributions();
+
+			return true;
 		}
 
-		// Update statistics
-		this.statistics.reverts++;
-		this.saveStats(this.statistics);
-		this.updateMyContributions();
-
-		return true;
-	}
-
-	async warnUser(user, warning, level, articleName, revid) {
+		async warnUser(user, warning, level, articleName, revid) {
 			// Get current talk page content
 			let talkPageContent = await this.api.getSinglePageContent(`User talk:${user}`);
 
@@ -494,13 +494,14 @@ export const __script__ = {
 
 			// Add user talk page to watchlist with configured expiry
 			try {
-				if (wikishield.options.watchlistExpiry > 0) {
-					const toExpire = new Date(Date.now() + wikishield.options.watchlistExpiry);
+				const expiry = wikishield.util.expiryToMilliseconds(wikishield.options.watchlistExpiry);
+				if (expiry > 0) {
+					const toExpire = new Date(Date.now() + expiry);
 
 					await this.api.postWithToken("watch", {
 						"action": "watch",
 						"titles": `User talk:${user}`,
-						"expiry": wikishield.util?.utcString(toExpire)
+						"expiry": expiry === Infinity ? "infinity" : wikishield.util?.utcString(toExpire)
 					});
 				}
 			} catch (err) {
