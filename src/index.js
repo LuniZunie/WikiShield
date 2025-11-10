@@ -228,8 +228,8 @@ export const __script__ = {
 				openUserPage: {
 					description: "Open user page in a new tab",
 					icon: "fas fa-circle-user",
-					func: (event) => {
-						const username = this.getRelevantEdit().user.name;
+					func: (event, currentEdit) => {
+						const username = currentEdit.user.name;
 						const url = wikishield.util.pageLink(`User:${username}`);
 						this.openWikipediaLink(url, `User:${username}`, event);
 
@@ -239,8 +239,8 @@ export const __script__ = {
 				openUserTalk: {
 					description: "Open user talk page in a new tab",
 					icon: "fas fa-comment",
-					func: (event) => {
-						const username = this.getRelevantEdit().user.name;
+					func: (event, currentEdit) => {
+						const username = currentEdit.user.name;
 						const url = wikishield.util.pageLink(`User talk:${username}`);
 						this.openWikipediaLink(url, `User talk:${username}`, event);
 
@@ -250,8 +250,8 @@ export const __script__ = {
 				openUserContribs: {
 					description: "Open user contributions page in a new tab",
 					icon: "fas fa-list",
-					func: (event) => {
-						const username = this.getRelevantEdit().user.name;
+					func: (event, currentEdit) => {
+						const username = currentEdit.user.name;
 						const url = wikishield.util.pageLink(`Special:Contributions/${username}`);
 						this.openWikipediaLink(url, `Contributions: ${username}`, event);
 
@@ -261,13 +261,13 @@ export const __script__ = {
 				openFilterLog: {
 					description: "Open user filter log in a new tab",
 					icon: "fas fa-filter",
-					func: (event) => {
-						const encodedName = wikishield.util.encodeuri(this.getRelevantEdit().user.name);
+					func: (event, currentEdit) => {
+						const encodedName = wikishield.util.encodeuri(currentEdit.user.name);
 						const url = wikishield.util.pageLink(
 							`?title=Special:AbuseLog&wpSearchUser=${encodedName}`,
 							true
 						);
-						const username = this.getRelevantEdit().user.name;
+						const username = currentEdit.user.name;
 						this.openWikipediaLink(url, `Filter Log: ${username}`, event);
 
 						return true;
@@ -278,9 +278,9 @@ export const __script__ = {
 					icon: "fas fa-thumbs-up",
 					includeInProgress: true,
 					progressDesc: "Whitelisting...",
-					func: () => {
+					func: (event, currentEdit) => {
 						wikishield.queue.playSparkleSound();
-						const username = this.getRelevantEdit().user.name;
+						const username = currentEdit.user.name;
 
 						// Toggle whitelist status
 						if (wikishield.whitelist.has(username)) {
@@ -306,9 +306,9 @@ export const __script__ = {
 					icon: "fas fa-highlighter",
 					includeInProgress: true,
 					progressDesc: "Highlighting...",
-					func: () => {
+					func: (event, currentEdit) => {
 						wikishield.queue.playSparkleSound();
-						const username = this.getRelevantEdit().user.name;
+						const username = currentEdit.user.name;
 
 						// Toggle highlight status
 						if (wikishield.highlighted.has(username)) {
@@ -335,8 +335,8 @@ export const __script__ = {
 				openPage: {
 					description: "Open page being edited in new tab",
 					icon: "fas fa-file-lines",
-					func: (event) => {
-						const page = this.getRelevantEdit().page;
+					func: (event, currentEdit) => {
+						const page = currentEdit.page;
 						const url = wikishield.util.pageLink(page.title);
 						this.openWikipediaLink(url, page.title, event);
 
@@ -346,8 +346,8 @@ export const __script__ = {
 				openTalk: {
 					description: "Open talk page in new tab",
 					icon: "fas fa-comments",
-					func: (event) => {
-						const pageTitle = this.getRelevantEdit().page.title.split(":");
+					func: (event, currentEdit) => {
+						const pageTitle = currentEdit.page.title.split(":");
 						let talkNamespace = "Talk";
 						if (pageTitle.length > 1) {
 							talkNamespace = pageTitle[0].toLowerCase().includes("talk")
@@ -364,8 +364,8 @@ export const __script__ = {
 				openHistory: {
 					description: "Open page history in new tab",
 					icon: "fas fa-clock-rotate-left",
-					func: (event) => {
-						const page = this.getRelevantEdit().page;
+					func: (event, currentEdit) => {
+						const page = currentEdit.page;
 						const url = wikishield.util.pageLink(`Special:PageHistory/${page.title}`);
 						this.openWikipediaLink(url, `History: ${page.title}`, event);
 
@@ -375,8 +375,8 @@ export const __script__ = {
 				openRevision: {
 					description: "Open revision in new tab",
 					icon: "fas fa-pen-to-square",
-					func: (event) => {
-						const revid = this.getRelevantEdit().revid;
+					func: (event, currentEdit) => {
+						const revid = currentEdit.revid;
 						const url = wikishield.util.pageLink(`Special:PermanentLink/${revid}`);
 						this.openWikipediaLink(url, `Revision ${revid}`, event);
 
@@ -386,8 +386,8 @@ export const __script__ = {
 				openDiff: {
 					description: "Open diff in new tab",
 					icon: "fas fa-code-commit",
-					func: (event) => {
-						const revid = this.getRelevantEdit().revid;
+					func: (event, currentEdit) => {
+						const revid = currentEdit.revid;
 						const url = wikishield.util.pageLink(`Special:Diff/${revid}`);
 						this.openWikipediaLink(url, `Diff ${revid}`, event);
 
@@ -399,26 +399,25 @@ export const __script__ = {
 					icon: "fas fa-user-check",
 					includeInProgress: true,
 					progressDesc: "Thanking...",
-					func: async () => {
+					func: async (event, currentEdit) => {
 						wikishield.queue.playThankSound();
-						const edit = this.getRelevantEdit();
 
 						// Check if user is an TEMP
-						if (mw.util.isTemporaryUser(edit.user.name)) {
+						if (mw.util.isTemporaryUser(currentEdit.user.name)) {
 							// For TEMP users, leave a thank you message on their talk page
-							const talkPageName = `User talk:${edit.user.name}`;
+							const talkPageName = `User talk:${currentEdit.user.name}`;
 							const talkPageContent = await wikishield.api.getSinglePageContent(talkPageName) || "";
 
 							await wikishield.api.edit(
 								talkPageName,
 								talkPageContent + `\n{{subst:Thanks-autosign}}`,
-								`Thanking for edit to [[${edit.page.title}]] ([[WP:WikiShield|WS]])`
+								`Thanking for edit to [[${currentEdit.page.title}]] ([[WP:WikiShield|WS]])`
 							);
 
 							return true;
 						} else {
 							// For registered users, use the API thank function
-							await wikishield.api.thank(edit.revid);
+							await wikishield.api.thank(currentEdit.revid);
 
 							return true;
 						}
@@ -444,7 +443,7 @@ export const __script__ = {
 					includeInProgress: true,
 					progressDesc: "Warning...",
 					needsContinuity: true,
-					validateParameters: (params) => {
+					validateParameters: (params, currentEdit) => {
 						// If custom templates are provided, skip validation
 						if (params.warningTemplates) {
 							return true;
@@ -452,22 +451,21 @@ export const __script__ = {
 
 						return params.level === "auto" || getWarningFromLookup(params.warningType)?.templates[params.level] !== null;
 					},
-					func: async (params) => {
+					func: async (params, currentEdit) => {
 						wikishield.queue.playWarnSound();
 
 						const warning = getWarningFromLookup(params.warningType);
-						const edit = this.getRelevantEdit();
 
 						// Store the original warning level before warning
-						const originalLevel = edit.user.warningLevel;
-						edit.user.atFinalWarning = (warning?.auto?.[originalLevel.toString()] === "report");
+						const originalLevel = currentEdit.user.warningLevel;
+						currentEdit.user.atFinalWarning = (warning?.auto?.[originalLevel.toString()] === "report");
 
 						return await wikishield.warnUser(
-							edit.user.name,
+							currentEdit.user.name,
 							warning,
 							params.level || "auto",
-							edit.page.title,
-							edit.revid
+							currentEdit.page.title,
+							currentEdit.revid
 						);
 					}
 				},
@@ -476,9 +474,9 @@ export const __script__ = {
 					icon: "fas fa-backward",
 					includeInProgress: true,
 					progressDesc: "Rolling back...",
-					func: async (params = {}) => {
+					func: async (params = {}, currentEdit) => {
 						wikishield.queue.playRollbackSound();
-						return await wikishield.revert(this.getRelevantEdit(), params.label || "");
+						return await wikishield.revert(currentEdit, params.label || "");
 					}
 				},
 				rollbackAndWarn: {
@@ -503,13 +501,12 @@ export const __script__ = {
 					validateParameters: (params) => {
 						return params.level === "auto" || getWarningFromLookup(params.warningType)?.templates[params.level] !== null;
 					},
-					func: async (params = {}) => {
+					func: async (params = {}, currentEdit) => {
 						const warning = getWarningFromLookup(params.warningType);
-						const edit = this.getRelevantEdit();
 
 						wikishield.queue.playRollbackSound();
 
-						const result = await wikishield.revert(edit, warning.summary || "");
+						const result = await wikishield.revert(currentEdit, warning.summary || "");
 						if (result === false) {
 							return false;
 						}
@@ -517,16 +514,16 @@ export const __script__ = {
 						wikishield.queue.playWarnSound();
 
 						// Store the original warning level before warning
-						const originalLevel = edit.user.warningLevel;
+						const originalLevel = currentEdit.user.warningLevel;
 
 						// Return whether they were already at final warning
-						edit.user.atFinalWarning = (warning?.auto?.[originalLevel.toString()] === "report");
+						currentEdit.user.atFinalWarning = (warning?.auto?.[originalLevel.toString()] === "report");
 						return await wikishield.warnUser(
-							edit.user.name,
+							currentEdit.user.name,
 							warning,
 							params.level || "auto",
-							edit.page.title,
-							edit.revid
+							currentEdit.page.title,
+							currentEdit.revid
 						);
 					}
 				},
@@ -542,11 +539,9 @@ export const __script__ = {
 					],
 					includeInProgress: true,
 					progressDesc: "Rolling back...",
-					func: async (params) => {
+					func: async (params, currentEdit) => {
 						wikishield.queue.playRollbackSound();
-						const edit = this.getRelevantEdit();
-
-						return await wikishield.revert(edit, params.summary || "", true);
+						return await wikishield.revert(currentEdit, params.summary || "", true);
 					}
 				},
 				undo: {
@@ -561,10 +556,9 @@ export const __script__ = {
 					],
 					includeInProgress: true,
 					progressDesc: "Undoing...",
-					func: async (params) => {
+					func: async (params, currentEdit) => {
 						wikishield.queue.playRollbackSound();
-						const edit = this.getRelevantEdit();
-						return await wikishield.api.undoEdit(edit, params.reason || `Undid edit by ${edit.user.name} ([[WP:WikiShield|WS]])`);
+						return await wikishield.api.undoEdit(currentEdit, params.reason || `Undid edit by ${currentEdit.user.name} ([[WP:WikiShield|WS]])`);
 					}
 				},
 				reportToAIV: {
@@ -585,10 +579,10 @@ export const __script__ = {
 					includeInProgress: true,
 					needsContinuity: true,
 					progressDesc: "Reporting...",
-					func: async (params) => {
+					func: async (params, currentEdit) => {
 						wikishield.queue.playReportSound();
 						await wikishield.reportToAIV(
-							this.getRelevantEdit().user.name,
+							currentEdit.user.name,
 							params.reportMessage
 						);
 
@@ -613,10 +607,10 @@ export const __script__ = {
 					],
 					includeInProgress: true,
 					progressDesc: "Reporting...",
-					func: async (params) => {
+					func: async (params, currentEdit) => {
 						wikishield.queue.playReportSound();
 						await wikishield.reportToUAA(
-							this.getRelevantEdit().user.name,
+							currentEdit.user.name,
 							params.reportMessage
 						);
 
@@ -652,10 +646,10 @@ export const __script__ = {
 					],
 					includeInProgress: true,
 					progressDesc: "Requesting protection...",
-					func: async (params) => {
+					func: async (params, currentEdit) => {
 						wikishield.queue.playProtectionSound();
 						await wikishield.requestProtection(
-							this.getRelevantEdit().page.title,
+							currentEdit.page.title,
 							params.level,
 							params.reason
 						);
@@ -696,10 +690,10 @@ export const __script__ = {
 					],
 					includeInProgress: true,
 					progressDesc: "Blocking...",
-					func: async (params) => {
+					func: async (params, currentEdit) => {
 						wikishield.queue.playBlockSound();
 						const success = await wikishield.api.block(
-							this.getRelevantEdit().user.name,
+							currentEdit.user.name,
 							params.blockSummary,
 							params.duration,
 							true, false, false, true
@@ -736,24 +730,19 @@ export const __script__ = {
 					],
 					includeInProgress: true,
 					progressDesc: "Welcoming...",
-					func: async (params) => {
+					func: async (params, currentEdit) => {
 						wikishield.queue.playSparkleSound();
 						await wikishield.welcomeUser(
-							this.getRelevantEdit().user.name,
+							currentEdit.user.name,
 							params.template
 						);
+
+						currentEdit.user.emptyTalkPage = false;
 
 						return true;
 					}
 				}
 			};
-		}
-
-		/**
-		 * Returns the edit events should be actioned on
-		 */
-		getRelevantEdit() {
-			return wikishield.tempCurrentEdit || wikishield.queue.currentEdit;
 		}
 
 		/**
@@ -5804,13 +5793,12 @@ export const __script__ = {
 			this.mostRecentWatchlist = this.util?.utcString(new Date());
 			this.notifications = [];
 			this.watchlist = [];
+			this.updateNotificationDisplay();
+			this.updateWatchlistDisplay();
 			this.handleLoadingReported();
 			this.handleLoadingNotifications();
 			this.handleLoadingWatchlist();
-			this.updateNotificationDisplay();
-			this.updateWatchlistDisplay();
 			this.testingMode = false;
-			this.tempCurrentEdit = null;
 			this.lastSeenRevision = null;
 
 			this.wikishieldData = wikishieldData;
@@ -6899,17 +6887,6 @@ export const __script__ = {
 				this.statistics.welcomes++;
 				this.saveStats(this.statistics);
 
-				// Update all edits from this user to reflect that the talk page is no longer empty
-				// Update tempCurrentEdit if it exists (during script execution)
-				if (this.tempCurrentEdit && this.tempCurrentEdit.user && this.tempCurrentEdit.user.name === name) {
-					this.tempCurrentEdit.user.emptyTalkPage = false;
-				}
-
-				// Update currentEdit
-				if (this.queue.currentEdit && this.queue.currentEdit.user.name === name) {
-					this.queue.currentEdit.user.emptyTalkPage = false;
-				}
-
 				// Update all edits in the queue from this user
 				this.queue.queue.forEach(edit => {
 					if (edit.user && edit.user.name === name) {
@@ -7045,11 +7022,9 @@ export const __script__ = {
 				event.preventDefault();
 			}
 
-			if (!this.tempCurrentEdit) {
-				for (const script of this.options.controlScripts) {
-					if (script.keys.includes(event.key.toLowerCase())) {
-						this.executeScript(script);
-					}
+			for (const script of this.options.controlScripts) {
+				if (script.keys.includes(event.key.toLowerCase())) {
+					this.executeScript(script);
 				}
 			}
 		}
@@ -7058,12 +7033,8 @@ export const __script__ = {
 		 * Execute a control script
 		 * @param {Object} script
 		 */
-		async executeScript(script, hasContinuity = true, updateProgress = null) {
+		async executeScript(script, hasContinuity = true, updateProgress = null, currentEdit) {
 			const base = updateProgress === null;
-
-			if (base && this.tempCurrentEdit) {
-				return;
-			}
 
 			if (base) {
 				const allScripts = [script];
@@ -7099,16 +7070,16 @@ export const __script__ = {
 					updateProgress = (_) => { };
 				}
 
-				this.tempCurrentEdit = this.queue.currentEdit || 1;
+				currentEdit = this.queue.currentEdit || 1;
 			}
 
 			const ifAndTrue = script.name && script.name === "if"
-				&& wikishieldEventData.conditions[script.condition].check(this.tempCurrentEdit);
+				&& wikishieldEventData.conditions[script.condition].check(currentEdit);
 
 			if (ifAndTrue || !script.name) {
 				for (const action of script.actions) {
 					if (action.name === "if") {
-						hasContinuity = this.executeScript(action, hasContinuity, updateProgress);
+						hasContinuity = this.executeScript(action, hasContinuity, updateProgress, currentEdit);
 					} else {
 						const event = this.interface.eventManager.events[action.name];
 
@@ -7117,8 +7088,8 @@ export const __script__ = {
 								updateProgress(event.progressDesc);
 							}
 
-							if (this.tempCurrentEdit !== 1 || event.runWithoutEdit) {
-								const result = await event.func(action.params);
+							if (currentEdit !== 1 || event.runWithoutEdit) {
+								const result = await event.func(action.params, currentEdit);
 
 								if (result === false) {
 									hasContinuity = false;
@@ -7131,10 +7102,6 @@ export const __script__ = {
 
 			if (!script.name) {
 				updateProgress("Done");
-			}
-
-			if (base) {
-				this.tempCurrentEdit = null;
 			}
 
 			return hasContinuity;
