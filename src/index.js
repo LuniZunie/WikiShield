@@ -18,6 +18,7 @@ import { createConditions, welcomeTemplates } from './data/events.js';
 import { WikiShieldEventManager } from './core/event-manager.js';
 import { WikiShieldSettingsInterface, wikishieldSettingsAllowedKeys } from './ui/settings.js';
 import { WikiShieldInterface } from './ui/interface.js';
+import { WikiShieldProgressBar } from './ui/progress-bar.jsx';
 
 export const __script__ = {
 	version: "1.0.0",
@@ -67,61 +68,7 @@ export const __script__ = {
 
 	// WikiShieldSettingsInterface moved to src/ui/settings.js
 	// WikiShieldInterface moved to src/ui/interface.js
-
-	class WikiShieldProgressBar {
-		constructor() {
-			this.element = document.createElement("div");
-			this.element.className = "progress-bar";
-
-			this.overlay = document.createElement("div");
-			this.overlay.className = "progress-bar-overlay";
-
-			this.text = document.createElement("div");
-			this.text.className = "progress-bar-text";
-
-			wikishield.interface.elem("#progress-bar-container").appendChild(this.element);
-			this.element.appendChild(this.overlay);
-			this.element.appendChild(this.text);
-
-			this.nextChangeTime = 0;
-		}
-
-		/**
-		 * Set the progress bar
-		 * @param {String} text The text to display
-		 * @param {Number} width Percentage (0-1)
-		 * @param {String} color CSS color for the bar
-		 */
-		set(text, width, color) {
-			const delay = Math.max(0, this.nextChangeTime - Date.now());
-
-			window.setTimeout(() => {
-				this.text.innerHTML = text;
-				this.overlay.style.width = `${Math.round(width * 100)}%`;
-				this.overlay.style.background = color;
-
-				if (width === 1) {
-					this.remove(2000);
-				}
-			}, delay);
-
-			this.nextChangeTime = Math.max(Date.now() + 200, this.nextChangeTime + 200);
-		}
-
-		/**
-		 * Remove the progress bar after a given time
-		 * @param {Number} time The time to wait before removing the progress bar
-		 */
-		remove(time) {
-			window.setTimeout(() => {
-				this.element.style.opacity = "0";
-			}, time - 300);
-
-			window.setTimeout(() => {
-				this.element.remove();
-			}, time);
-		}
-	}
+	// WikiShieldProgressBar moved to src/ui/progress-bar.jsx (React component)
 
 	class WikiShield {
 		constructor() {
@@ -329,6 +276,28 @@ export const __script__ = {
 	 */
 	saveStats(stats) {
 		mw.storage.store.setItem("WikiShield:Statistics", JSON.stringify(stats));
+	}
+
+	/**
+	 * Load the changelog version from storage
+	 * @returns {String} The changelog version
+	 */
+	getChangelogVersion() {
+		const version = mw.storage.store.getItem("WikiShield:ChangelogVersion");
+
+		if (!version) {
+			mw.storage.store.setItem("WikiShield:ChangelogVersion", 0);
+			return 0;
+		}
+
+		return version;
+	}
+
+	/**
+	 * Update changelog version to hide popup
+	 */
+	updateChangelogVersion() {
+		mw.storage.store.setItem("WikiShield:ChangelogVersion", __script__.changelog.version);
 	}
 
 	/**
