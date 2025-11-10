@@ -282,36 +282,87 @@ export class WikiShieldAPI {
 		}
 
 		/**
-		 * Check for consecutive edits
-		 * @param {String} title The title of the page
-		 * @param {String} user The user
-		 * @returns {Promise<Object>} Return the consecutive edit object
+		 * Counts consecutive edits by the latest editor using the MediaWiki API.
+		 * @param {string} page - Page title to analyze.
+		 * @param {object} api - MediaWiki API object with a `.get()` method.
+		 * @returns {object} Result containing count, totalSizediff, oldestTimestamp, oldestRev, priorRev (or 'created').
 		 */
-		async consecutiveEdits(title, user) {
-			try {
-				const history = await this.history(title);
-				if (history.length > 0 && history[0].user === user) {
-					let count = 0;
-					let sizediff = 0;
-					let oldest;
-					for (const item of history) {
-						if (item.user !== user) {
-							break;
+		async consecutive(page, user) {
+			let consecutiveCount = 0;
+			let totalSizediff = 0;
+			let newestRevision = null;
+			let oldestTimestamp = null;
+			let oldestRevision = null;
+			let priorRevision = null;
+			let latestEditor = user;
+			let continueObj = {};
+			let foundEnd = false;
+
+			while (!foundEnd) {
+				// Fetch 10 revisions at a time
+				const response = await this.api.get({
+					action: "query",
+					prop: "revisions",
+					titles: page,
+					rvprop: "ids|timestamp|user|size",
+					rvlimit: 10,
+					format: "json",
+					formatversion: 2,
+					...continueObj
+				});
+				const revisions = response.query.pages[0].revisions;
+
+				for (let i = 0; i < revisions.length; i++) {
+					const rev = revisions[i];
+					if (rev.user === latestEditor) {
+						if (newestRevision === null) {
+							newestRevision = rev;
 						}
 
-						count++;
-						sizediff += item.sizediff;
-						oldest = item;
-					}
+						consecutiveCount++;
+						oldestTimestamp = rev.timestamp;
+						oldestRevision = rev;
 
-					return { timestamp: oldest.timestamp, count, sizediff };
+						let sizediff;
+						if (i + 1 < revisions.length) {
+							sizediff = rev.size - revisions[i + 1].size;
+						} else if (!response.continue) {
+							sizediff = rev.size;
+						} else {
+							sizediff = null;
+						}
+
+						if (sizediff !== null) totalSizediff += sizediff;
+					} else {
+						// Streak broke, set priorRevision
+						priorRevision = rev;
+						foundEnd = true;
+						break;
+					}
 				}
 
-				return null;
-			} catch (err) {
-				console.log("Error geting consecutive edits:", err);
-				return null;
+				if (!foundEnd && response.continue) {
+					continueObj = response.continue;
+				} else if (!foundEnd) {
+					priorRevision = "User created this page.";
+					foundEnd = true;
+				}
 			}
+
+			if (newestRevision === null) {
+				priorRevision = "No consecutive edits.";
+			}
+
+			// Return results
+			return {
+				count: consecutiveCount,
+				totalSizediff: totalSizediff,
+				newestRevision: newestRevision,
+				oldestTimestamp: oldestTimestamp,
+				oldestRev: oldestRevision,
+				priorRev: priorRevision,
+				diff: typeof priorRevision === "string" ? null : await this.diff(page, priorRevision.revid, newestRevision.revid)
+			};
 		}
 
 		/**

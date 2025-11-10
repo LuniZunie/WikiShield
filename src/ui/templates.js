@@ -74,7 +74,17 @@ export const wikishieldHTML = {
 			</div>
 			<div id="right-container">
 				<div id="middle-top"></div>
-				<div id="right-top"></div>
+				<div id="right-top">
+					<div class="left-label">
+						<i class="fas fa-stopwatch"></i>
+						<span>Latest Edits</span>
+					</div>
+					<div id="consecutive-diff-toggle"></div>
+					<div class="right-label">
+						<i class="fas fa-calendar-days"></i>
+						<span>Consecutive Edits</span>
+					</div>
+				</div>
 				<div id="right-content">
 					<div id="main-container">
 						<div id="diff-container"></div>
