@@ -20,6 +20,9 @@ export class WikiShieldInterface {
 		this.lastCurrentEdit = null;
 		this.newerRevisionInterval = null; // For periodic newer revision checking
 
+		this.queueWidth = undefined;
+		this.detailsWidth = undefined;
+
 		this.eventManager = new WikiShieldEventManager(this.wikishield);
 		this.settings = new WikiShieldSettingsInterface(this.wikishield);
 		this.selectedMenu = null;
@@ -53,7 +56,7 @@ export class WikiShieldInterface {
 
 		// Save the theme preference (always dark)
 		this.wikishield.options.theme = "theme-dark";
-		this.wikishield.saveOptions(this.wikishield.options);
+		this.wikishield.save();
 	}
 
 	/**
@@ -717,8 +720,8 @@ export class WikiShieldInterface {
 		const detailsWidthAdjust = this.elem("#details-width-adjust");
 		const details = this.elem("#right-details");
 
-		const savedQueueWidth = mw.storage.store.getItem("WikiShield:QueueWidth");
-		const savedDetailsWidth = mw.storage.store.getItem("WikiShield:DetailsWidth");
+		const savedQueueWidth = this.wikishield.queueWidth;
+		const savedDetailsWidth = this.wikishield.detailsWidth;
 
 		if (savedQueueWidth) {
 			queue.style.width = savedQueueWidth;
@@ -746,12 +749,13 @@ export class WikiShieldInterface {
 
 		window.addEventListener("mouseup", () => {
 			if (this.selectedWidthAdjust === queueWidthAdjust) {
-				mw.storage.store.setItem("WikiShield:QueueWidth", queue.style.width);
+				this.queueWidth = queue.style.width;
 			}
 			if (this.selectedWidthAdjust === detailsWidthAdjust) {
-				mw.storage.store.setItem("WikiShield:DetailsWidth", details.style.width);
+				this.detailsWidth = details.style.width;
 			}
 			this.selectedWidthAdjust = null;
+			this.wikishield.save();
 		});
 
 		window.addEventListener("mousemove", (event) => {
@@ -827,7 +831,7 @@ export class WikiShieldInterface {
 			}
 		}, true);
 
-		if (this.wikishield.getChangelogVersion() !== __script__.changelog.version) {
+		if (this.wikishield.loadedChangelog !== __script__.changelog.version) {
 			const container = document.createElement("div");
 			container.classList.add("settings-container");
 			document.body.appendChild(container);
@@ -843,7 +847,7 @@ export class WikiShieldInterface {
 
 			document.getElementById("close-changelog").addEventListener("click", () => {
 				container.remove();
-				this.wikishield.updateChangelogVersion();
+				this.wikishield.save();
 			});
 		}
 	}
@@ -1434,11 +1438,11 @@ export class WikiShieldInterface {
 
 						if (this.wikishield.whitelist.has(edit.user.name)) {
 							this.wikishield.whitelist.delete(edit.user.name);
-							this.wikishield.saveWhitelist();
+							this.wikishield.save();
 							this.wikishield.logger.log(`Removed ${edit.user.name} from whitelist`);
 						} else {
 							this.wikishield.whitelist.set(edit.user.name, Date.now());
-							this.wikishield.saveWhitelist();
+							this.wikishield.save();
 							this.wikishield.logger.log(`Added ${edit.user.name} to whitelist`);
 						}
 
