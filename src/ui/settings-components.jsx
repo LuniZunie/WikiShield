@@ -460,8 +460,21 @@ export class AudioSettings extends Component {
  * Appearance Settings Panel Component
  */
 export class AppearanceSettings extends Component {
+	constructor(props) {
+		super(props);
+		this.state = {
+			selectedPalette: props.selectedPalette
+		};
+	}
+
+	handlePaletteChange = (index) => {
+		this.setState({ selectedPalette: index });
+		this.props.onPaletteChange(index);
+	}
+
 	render() {
-		const { selectedPalette, colorPalettes, onPaletteChange } = this.props;
+		const { colorPalettes } = this.props;
+		const { selectedPalette } = this.state;
 
 		return (
 			<div>
@@ -470,11 +483,11 @@ export class AppearanceSettings extends Component {
 					description="Choose how ORES scores are displayed visually"
 				>
 					<div class="palette-selector">
-						{Object.entries(colorPalettes).map(([key, colors]) => (
+						{colorPalettes.map((colors, index) => (
 							<div 
-								key={key}
-								class={`palette-option ${selectedPalette === key ? 'selected' : ''}`}
-								onClick={() => onPaletteChange(key)}
+								key={index}
+								class={`palette-option ${selectedPalette === index ? 'selected' : ''}`}
+								onClick={() => this.handlePaletteChange(index)}
 							>
 								<div class="palette-preview">
 									{colors.map((color, i) => (
@@ -485,7 +498,7 @@ export class AppearanceSettings extends Component {
 										/>
 									))}
 								</div>
-								<div class="palette-name">{key}</div>
+								<div class="palette-name">Palette {index + 1}</div>
 							</div>
 						))}
 					</div>

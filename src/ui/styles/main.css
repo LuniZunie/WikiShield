@@ -2610,6 +2610,76 @@ body.dark-mode .stat-sublabel {
 	color: #777;
 }
 
+/* Color Palette Selector */
+.palette-selector {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+	gap: 16px;
+	margin-top: 20px;
+}
+
+.palette-option {
+	background: rgba(255, 255, 255, 0.5);
+	border: 2px solid rgba(0, 0, 0, 0.1);
+	border-radius: 12px;
+	padding: 16px;
+	cursor: pointer;
+	transition: all 0.3s ease;
+}
+
+body.dark-mode .palette-option {
+	background: rgba(35, 38, 48, 0.5);
+	border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.palette-option:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+	border-color: rgba(102, 126, 234, 0.5);
+}
+
+.palette-option.selected {
+	border-color: #667eea;
+	border-width: 3px;
+	background: rgba(102, 126, 234, 0.1);
+}
+
+body.dark-mode .palette-option.selected {
+	background: rgba(102, 126, 234, 0.2);
+	border-color: #667eea;
+}
+
+.palette-preview {
+	display: flex;
+	gap: 4px;
+	margin-bottom: 12px;
+	height: 40px;
+	border-radius: 8px;
+	overflow: hidden;
+	pointer-events: none;
+}
+
+.palette-color {
+	flex: 1;
+	transition: all 0.2s ease;
+}
+
+.palette-color:hover {
+	flex: 1.5;
+}
+
+.palette-name {
+	text-align: center;
+	font-weight: 600;
+	font-size: 0.9em;
+	color: #666;
+	pointer-events: none;
+}
+
+body.dark-mode .palette-name {
+	color: #aaa;
+}
+
 .danger-button {
 	background: linear-gradient(135deg, #ff5252 0%, #f44336 100%) !important;
 	color: white !important;

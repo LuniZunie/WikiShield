@@ -41,17 +41,22 @@ export class WikiShieldSettingsInterface {
 			this.keypressCallback = null;
 		}
 
-		/**
-		 * Render a React component into a container
-		 * @param {Component} component The React component to render
-		 * @param {HTMLElement} container The container element (defaults to this.contentContainer)
-		 */
-		renderComponent(component, container = null) {
-			const target = container || this.contentContainer;
-			if (target) {
-				render(component, target);
+	/**
+	 * Render a React component into a container
+	 * @param {Component} component The React component to render
+	 * @param {HTMLElement} container The container element (defaults to this.contentContainer)
+	 */
+	renderComponent(component, container = null) {
+		const target = container || this.contentContainer;
+		if (target) {
+			// Completely clear the container (handles both React and innerHTML content)
+			while (target.firstChild) {
+				target.removeChild(target.firstChild);
 			}
+			// Render the new component
+			render(component, target);
 		}
+	}
 
 		/**
 		 * Create a toggle switch
@@ -269,16 +274,22 @@ export class WikiShieldSettingsInterface {
 				["#settings-statistics-button", this.openStatistics.bind(this)],
 				["#settings-about-button", this.openAbout.bind(this)],
 				["#settings-import-export-button", this.openImportExport.bind(this)],
-			].forEach(([sel, func]) => container.querySelector(sel).addEventListener("click", () => {
-				this.wikishield.queue.playClickSound();
-				this.contentContainer.innerHTML = "";
+		].forEach(([sel, func]) => container.querySelector(sel).addEventListener("click", () => {
+			this.wikishield.queue.playClickSound();
+			
+			// Clear the content container before switching tabs
+			if (this.contentContainer) {
+				while (this.contentContainer.firstChild) {
+					this.contentContainer.removeChild(this.contentContainer.firstChild);
+				}
+			}
 
-				[...document.querySelectorAll(".settings-left-menu-item.selected")]
-					.forEach(e => e.classList.remove("selected"));
-				container.querySelector(sel).classList.add("selected");
+			[...document.querySelectorAll(".settings-left-menu-item.selected")]
+				.forEach(e => e.classList.remove("selected"));
+			container.querySelector(sel).classList.add("selected");
 
-				func();
-			}));
+			func();
+		}));
 
 			this.openGeneral();
 		}
@@ -469,8 +480,10 @@ export class WikiShieldSettingsInterface {
 			h(AppearanceSettings, {
 				selectedPalette: this.wikishield.options.selectedPalette,
 				colorPalettes,
-				onPaletteChange: (paletteKey) => {
-					this.wikishield.options.selectedPalette = paletteKey;
+				onPaletteChange: (paletteIndex) => {
+					console.log('Palette changed to:', paletteIndex);
+					this.wikishield.queue.playClickSound();
+					this.wikishield.options.selectedPalette = paletteIndex;
 					this.wikishield.saveOptions(this.wikishield.options);
 					// Re-render queue to show new colors
 					if (this.wikishield.interface) {
