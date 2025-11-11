@@ -124,13 +124,22 @@ export const __script__ = {
 				block: false
 			};
 			this.username = mw.config.values.wgUserName;
+
+			this.mostRecentWatchlist = this.util.utcString(new Date());
+
+			this.notifications = [];
+			this.watchlist = [];
+
+			this.loadNotifications();
+			this.loadWatchlist();
+
 			this.handleLoadingReported();
 			this.handleLoadingNotifications();
+			this.handleLoadingWatchlist();
 
 			this.testingMode = false;
 			this.tempCurrentEdit = null;
 
-			this.notifications = [];
 			this.lastSeenRevision = null;
 
 		this.wikishieldData = wikishieldData;
