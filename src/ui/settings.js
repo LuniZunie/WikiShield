@@ -3,10 +3,23 @@
  * Handles the settings interface and user configuration
  */
 
+import { h, render } from 'preact';
 import { defaultSettings, colorPalettes } from '../config/defaults.js';
 import { namespaces } from '../data/namespaces.js';
 import { sounds } from '../data/sounds.js';
 import { wikishieldHTML } from './templates.js';
+// import { wikishieldEventData } from '../core/event-manager.js';
+import {
+	GeneralSettings,
+	AudioSettings,
+	AppearanceSettings,
+	WhitelistSettings,
+	HighlightedSettings,
+	StatisticsSettings,
+	AISettings,
+	ImportExportSettings,
+	AboutSettings
+} from './settings-components.jsx';
 
 // Allowed keys for keyboard shortcuts
 export const wikishieldSettingsAllowedKeys = [
@@ -27,6 +40,23 @@ export class WikiShieldSettingsInterface {
 			this.isOpen = false;
 			this.keypressCallback = null;
 		}
+
+	/**
+	 * Render a React component into a container
+	 * @param {Component} component The React component to render
+	 * @param {HTMLElement} container The container element (defaults to this.contentContainer)
+	 */
+	renderComponent(component, container = null) {
+		const target = container || this.contentContainer;
+		if (target) {
+			// Completely clear the container (handles both React and innerHTML content)
+			while (target.firstChild) {
+				target.removeChild(target.firstChild);
+			}
+			// Render the new component
+			render(component, target);
+		}
+	}
 
 		/**
 		 * Create a toggle switch
@@ -244,155 +274,78 @@ export class WikiShieldSettingsInterface {
 				["#settings-statistics-button", this.openStatistics.bind(this)],
 				["#settings-about-button", this.openAbout.bind(this)],
 				["#settings-import-export-button", this.openImportExport.bind(this)],
-			].forEach(([sel, func]) => container.querySelector(sel).addEventListener("click", () => {
-				this.wikishield.queue.playClickSound();
-				this.contentContainer.innerHTML = "";
+		].forEach(([sel, func]) => container.querySelector(sel).addEventListener("click", () => {
+			this.wikishield.queue.playClickSound();
+			
+			// Clear the content container before switching tabs
+			if (this.contentContainer) {
+				while (this.contentContainer.firstChild) {
+					this.contentContainer.removeChild(this.contentContainer.firstChild);
+				}
+			}
 
-				[...document.querySelectorAll(".settings-left-menu-item.selected")]
-					.forEach(e => e.classList.remove("selected"));
-				container.querySelector(sel).classList.add("selected");
+			[...document.querySelectorAll(".settings-left-menu-item.selected")]
+				.forEach(e => e.classList.remove("selected"));
+			container.querySelector(sel).classList.add("selected");
 
-				func();
-			}));
+			func();
+		}));
 
 			this.openGeneral();
 		}
 
-		/**
-		 * Open general settings section
-		 */
-		openGeneral() {
-			this.contentContainer.innerHTML = `
-				<div class="settings-compact-grid">
-					<div class="settings-section compact" id="maximum-edit-count">
-						<div class="settings-section-title">Maximum edit count</div>
-						<div class="settings-section-desc">Edits from users with more than this edit count will not be shown</div>
-					</div>
-					<div class="settings-section compact" id="maximum-queue-size">
-						<div class="settings-section-title">Maximum queue size</div>
-						<div class="settings-section-desc">The queue will not load additional edits after reaching this size</div>
-					</div>
-					<div class="settings-section compact" id="minimum-ores-score">
-						<div class="settings-section-title">Minimum ORES score</div>
-						<div class="settings-section-desc">Edits with an <a href="https://www.mediawiki.org/wiki/ORES" target="_blank">ORES score</a> below this threshold will not be shown</div>
-					</div>
-				</div>
-
-				<div class="settings-section">
-					<div class="settings-section-title">Expiries</div>
-					<div class="settings-compact-grid">
-						<div class="settings-section compact" id="watchlist-expiry">
-							<div class="settings-section-title">Watchlist expiry for warned users</div>
-							<div class="settings-section-desc">How long to watch user talk pages after issuing warnings</div>
-						</div>
-						<div class="settings-section compact" id="highlighted-expiry">
-							<div class="settings-section-title">Highlighted user expiry</div>
-							<div class="settings-section-desc">How long to keep users highlighted before expiration</div>
-						</div>
-					</div>
-				</div>
-
-				<div class="settings-section">
-					<div class="settings-section-title">Namespaces to show</div>
-					<div class="settings-section-desc">Only edits from the selected namespaces will be shown in your queue.</div>
-					<div id="namespace-container"></div>
-				</div>
-			`;
-
-			this.createNumericInput(
-				this.contentContainer.querySelector("#maximum-edit-count"),
-				this.wikishield.options.maxEditCount, 0, 500, 5,
-				(newValue) => {
-					this.wikishield.options.maxEditCount = newValue;
+	/**
+	 * Open general settings section
+	 */
+	openGeneral() {
+		this.renderComponent(
+			h(GeneralSettings, {
+				maxEditCount: this.wikishield.options.maxEditCount,
+				maxQueueSize: this.wikishield.options.maxQueueSize,
+				minOresScore: this.wikishield.options.minimumORESScore,
+				watchlistExpiry: this.wikishield.options.watchlistExpiry,
+				highlightedExpiry: this.wikishield.options.highlightedExpiry,
+				namespaces,
+				selectedNamespaces: this.wikishield.options.namespacesShown,
+				enableUsernameHighlighting: this.wikishield.options.enableUsernameHighlighting,
+				onMaxEditCountChange: (value) => {
+					this.wikishield.options.maxEditCount = value;
 					this.wikishield.saveOptions(this.wikishield.options);
-				}
-			);
-
-			this.createNumericInput(
-				this.contentContainer.querySelector("#maximum-queue-size"),
-				this.wikishield.options.maxQueueSize, 10, 100, 5,
-				(newValue) => {
-					this.wikishield.options.maxQueueSize = newValue;
+				},
+				onMaxQueueSizeChange: (value) => {
+					this.wikishield.options.maxQueueSize = value;
 					this.wikishield.saveOptions(this.wikishield.options);
-				}
-			);
-
-			this.createNumericInput(
-				this.contentContainer.querySelector("#minimum-ores-score"),
-				this.wikishield.options.minimumORESScore, 0, 1, 0.05,
-				(newValue) => {
-					this.wikishield.options.minimumORESScore = newValue;
+				},
+				onMinOresScoreChange: (value) => {
+					this.wikishield.options.minimumORESScore = value;
 					this.wikishield.saveOptions(this.wikishield.options);
-				}
-			);
-
-			// Create watchlist expiry dropdown
-			const watchlistContainer = this.contentContainer.querySelector("#watchlist-expiry");
-			const watchlistSelect = document.createElement("select");
-			watchlistSelect.innerHTML = `
-				<option value="none">None</option>
-				<option value="1 hour">1 hour</option>
-				<option value="1 day">1 day</option>
-				<option value="1 week">1 week</option>
-				<option value="1 month">1 month</option>
-				<option value="3 months">3 months</option>
-				<option value="6 months">6 months</option>
-				<option value="indefinite">Indefinite</option>
-			`;
-			watchlistSelect.value = this.wikishield.options.watchlistExpiry;
-			watchlistSelect.addEventListener("change", () => {
-				this.wikishield.options.watchlistExpiry = watchlistSelect.value;
-				this.wikishield.saveOptions(this.wikishield.options);
-			});
-			watchlistContainer.appendChild(watchlistSelect);
-
-			// Create highlighted expiry dropdown
-			const highlightedContainer = this.contentContainer.querySelector("#highlighted-expiry");
-			const highlightedSelect = document.createElement("select");
-			highlightedSelect.innerHTML = `
-				<option value="none">None</option>
-				<option value="1 hour">1 hour</option>
-				<option value="1 day">1 day</option>
-				<option value="1 week">1 week</option>
-				<option value="1 month">1 month</option>
-				<option value="3 months">3 months</option>
-				<option value="6 months">6 months</option>
-				<option value="indefinite">Indefinite</option>
-			`;
-			highlightedSelect.value = this.wikishield.options.highlightedExpiry;
-			highlightedSelect.addEventListener("change", () => {
-				this.wikishield.options.highlightedExpiry = highlightedSelect.value;
-				this.wikishield.saveOptions(this.wikishield.options);
-			});
-		highlightedContainer.appendChild(highlightedSelect);
-
-		namespaces.forEach(ns => {
-			this.contentContainer.querySelector("#namespace-container").innerHTML += `
-				<div>
-						<input
-							type="checkbox"
-							data-nsid="${ns.id}"
-							class="ns-checkbox"
-							${this.wikishield.options.namespacesShown.includes(ns.id) ? "checked" : ""}>
-						<label>${ns.name}</label>
-					</div>
-				`;
-			});
-
-			[...this.contentContainer.querySelectorAll(".ns-checkbox")].forEach(elem => {
-				elem.addEventListener("change", () => {
-					if (elem.checked) {
+				},
+				onWatchlistExpiryChange: (value) => {
+					this.wikishield.options.watchlistExpiry = value;
+					this.wikishield.saveOptions(this.wikishield.options);
+				},
+				onHighlightedExpiryChange: (value) => {
+					this.wikishield.options.highlightedExpiry = value;
+					this.wikishield.saveOptions(this.wikishield.options);
+				},
+				onNamespaceToggle: (nsid, checked) => {
+					if (checked) {
 						const set = new Set(this.wikishield.options.namespacesShown);
-						set.add(Number(elem.dataset.nsid));
+						set.add(nsid);
 						this.wikishield.options.namespacesShown = [...set];
 					} else {
 						this.wikishield.options.namespacesShown = this.wikishield.options.namespacesShown
-							.filter(n => n !== Number(elem.dataset.nsid));
+							.filter(n => n !== nsid);
 					}
 					this.wikishield.saveOptions(this.wikishield.options);
-				});
-			});
-		}
+				},
+				onUsernameHighlightingChange: (value) => {
+					this.wikishield.options.enableUsernameHighlighting = value;
+					this.wikishield.saveOptions(this.wikishield.options);
+				}
+			})
+		);
+	}
 
 		/**
 		 * Open audio settings section
@@ -519,31 +472,30 @@ export class WikiShieldSettingsInterface {
 			});
 		}
 
-		/**
-		 * Open appearance settings section (Dark mode only)
-		 */
-		openAppearance() {
-			this.contentContainer.innerHTML = `
-				<div class="settings-section">
-					<div class="settings-section-title">Appearance</div>
-					<div class="settings-section-desc">
-						Light mode will come to WikiShield in a future release.
-					</div>
-					<div style="
-						margin-top: 24px;
-						padding: 20px;
-						background: linear-gradient(135deg, rgba(102, 126, 234, 0.15), rgba(240, 147, 251, 0.15));
-						border: 1px solid rgba(102, 126, 234, 0.3);
-						border-radius: 12px;
-						text-align: center;
-					">
-						<div style="font-size: 2em; margin-bottom: 12px;">🌙</div>
-						<div style="font-weight: 600; font-size: 1.1em; margin-bottom: 8px; color: #e0e0e0;">Dark Mode Active</div>
-						<div style="opacity: 0.8; font-size: 0.9em; color: #c0c0c0;">The ultimate viewing experience</div>
-					</div>
-				</div>
-			`;
-		}
+	/**
+	 * Open appearance settings section (Dark mode only)
+	 */
+	openAppearance() {
+		this.renderComponent(
+			h(AppearanceSettings, {
+				selectedPalette: this.wikishield.options.selectedPalette,
+				colorPalettes,
+				onPaletteChange: (paletteIndex) => {
+					console.log('Palette changed to:', paletteIndex);
+					this.wikishield.queue.playClickSound();
+					this.wikishield.options.selectedPalette = paletteIndex;
+					this.wikishield.saveOptions(this.wikishield.options);
+					// Re-render queue to show new colors
+					if (this.wikishield.interface) {
+						this.wikishield.interface.renderQueue(
+							this.wikishield.queue.queue,
+							this.wikishield.queue.currentEdit
+						);
+					}
+				}
+			})
+		);
+	}
 
 		/**
 		 * Open controls settings section
@@ -801,11 +753,11 @@ export class WikiShieldSettingsInterface {
 					</div>
 				`;
 
-				const select = itemContainer.querySelector("select");
+			const select = itemContainer.querySelector("select");
 
-				for (const key in wikishieldEventData.conditions) {
-					select.innerHTML += `<option value=${key}>${wikishieldEventData.conditions[key].desc}</option>`;
-				}
+			for (const key in this.wikishield.interface.eventManager.events.conditions) {
+				select.innerHTML += `<option value=${key}>${this.wikishield.interface.eventManager.events.conditions[key].desc}</option>`;
+			}
 
 				select.value = action.condition;
 
@@ -1575,75 +1527,17 @@ export class WikiShieldSettingsInterface {
 			});
 		}
 
-		/**
-		 * Open about settings section
-		 */
-		openAbout() {
-			this.contentContainer.innerHTML = `
-				<div class="settings-section" style="text-align: center; padding: 40px 20px;">
-					<div style="margin-bottom: 24px;">
-						<div style="font-size: 3em; margin-bottom: 12px;">🛡️</div>
-						<div style="font-size: 2em; font-weight: 700; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 8px;">
-							WikiShield
-						</div>
-						<div style="font-size: 1.1em; color: #666; font-weight: 500;">
-							Advanced Anti-Vandalism Tool
-						</div>
-					</div>
-
-					<div style="display: inline-flex; gap: 12px; margin: 24px 0; flex-wrap: wrap; justify-content: center;">
-						<div style="padding: 8px 16px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1)); border-radius: 12px; border: 1px solid rgba(102, 126, 234, 0.2);">
-							<span style="font-weight: 600;">Version</span>
-							<span style="margin-left: 8px; color: #667eea;">${__script__.version}</span>
-						</div>
-						<div style="padding: 8px 16px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1)); border-radius: 12px; border: 1px solid rgba(102, 126, 234, 0.2);">
-							<span style="font-weight: 600;">Created by</span>
-							<a href="https://en.wikipedia.org/wiki/User:LuniZunie" target="_blank" style="margin-left: 8px; color: #667eea; text-decoration: none; font-weight: 600;">User:LuniZunie</a>
-						</div>
-					</div>
-
-					<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin: 32px 0; text-align: center;">
-						<div style="padding: 24px 16px; background: rgba(102, 126, 234, 0.05); border-radius: 12px; border: 1px solid rgba(102, 126, 234, 0.15);">
-							<div style="font-size: 2em; margin-bottom: 8px;">⚡</div>
-							<div style="font-weight: 600; margin-bottom: 4px; color: #aaa;">Real-time Detection</div>
-							<div style="font-size: 0.9em; color: #888;">Monitor edits as they happen</div>
-						</div>
-						<div style="padding: 24px 16px; background: rgba(102, 126, 234, 0.05); border-radius: 12px; border: 1px solid rgba(102, 126, 234, 0.15);">
-							<div style="font-size: 2em; margin-bottom: 8px;">🤖</div>
-							<div style="font-weight: 600; margin-bottom: 4px; color: #aaa;">AI-Powered ORES</div>
-							<div style="font-size: 0.9em; color: #888;">Intelligent edit scoring</div>
-						</div>
-						<div style="padding: 24px 16px; background: rgba(102, 126, 234, 0.05); border-radius: 12px; border: 1px solid rgba(102, 126, 234, 0.15);">
-							<div style="font-size: 2em; margin-bottom: 8px;">🎨</div>
-							<div style="font-weight: 600; margin-bottom: 4px; color: #aaa;">Modern Interface</div>
-							<div style="font-size: 0.9em; color: #888;">Beautiful and intuitive</div>
-						</div>
-					</div>
-				</div>
-
-				<div class="settings-section">
-					<div class="settings-section-title">Changelog</div>
-					<div style="max-height: 400px; overflow-y: auto; padding: 16px; background: rgba(248, 249, 252, 0.15); border-radius: 8px;">
-						${__script__.changelog.HTML || "<p style='text-align: center; opacity: 0.6;'>No changelog is available.</p>"}
-					</div>
-				</div>
-			`;
-
-			// Add hover effects to links
-			const links = this.contentContainer.querySelectorAll('a');
-			links.forEach(link => {
-				if (link.style.padding) { // Only for buttons
-					link.addEventListener('mouseenter', () => {
-						link.style.transform = 'translateY(-2px)';
-						link.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
-					});
-					link.addEventListener('mouseleave', () => {
-						link.style.transform = 'translateY(0)';
-						link.style.boxShadow = 'none';
-					});
-				}
-			});
-		}
+	/**
+	 * Open about settings section
+	 */
+	openAbout() {
+		this.renderComponent(
+			h(AboutSettings, {
+				version: this.wikishield.__script__.version,
+				changelog: this.wikishield.__script__.changelog.HTML
+			})
+		);
+	}
 
 		/**
 		 * Validate and merge imported settings with current settings
