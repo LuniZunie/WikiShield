@@ -10,9 +10,9 @@ import { h, Component } from 'preact';
 export class Toggle extends Component {
 	render() {
 		const { value, onChange, label, description } = this.props;
-		
+
 		return (
-			<div 
+			<div
 				class={`settings-toggle ${value ? 'active' : ''}`}
 				onClick={() => onChange(!value)}
 			>
@@ -60,7 +60,7 @@ export class NumericInput extends Component {
 	handleInputChange = () => {
 		const { min, max, step, onChange } = this.props;
 		const { inputValue } = this.state;
-		
+
 		if (isNaN(Number(inputValue))) {
 			this.setState({ inputValue: this.props.value });
 			return;
@@ -68,7 +68,7 @@ export class NumericInput extends Component {
 
 		let newValue = Math.round(Math.min(Math.max(Number(inputValue), min), max) * 100) / 100;
 		newValue = step >= 1 ? Math.round(newValue) : newValue;
-		
+
 		this.setState({ inputValue: newValue });
 		onChange(newValue);
 	}
@@ -82,14 +82,14 @@ export class NumericInput extends Component {
 
 	render() {
 		const { inputValue } = this.state;
-		
+
 		return (
 			<div class="numeric-input-container">
-				<span 
+				<span
 					class="fa fa-minus numeric-input-button"
 					onClick={this.handleMinus}
 				></span>
-				<input 
+				<input
 					type="text"
 					class="numeric-input"
 					value={inputValue}
@@ -97,7 +97,7 @@ export class NumericInput extends Component {
 					onBlur={this.handleInputChange}
 					onKeyUp={this.handleKeyUp}
 				/>
-				<span 
+				<span
 					class="fa fa-plus numeric-input-button"
 					onClick={this.handlePlus}
 				></span>
@@ -133,7 +133,7 @@ export class VolumeControl extends Component {
 						<div class="volume-control-title">{title}</div>
 						<div class="volume-control-desc">{description}</div>
 					</div>
-					<button 
+					<button
 						class="volume-control-preview"
 						onClick={this.playSound}
 						title="Preview sound"
@@ -141,9 +141,9 @@ export class VolumeControl extends Component {
 						<span class="fa fa-play"></span>
 					</button>
 				</div>
-				
+
 				<div class="volume-control-main">
-					<select 
+					<select
 						class="volume-control-sound-select"
 						value={currentSound}
 						onChange={(e) => {
@@ -153,10 +153,10 @@ export class VolumeControl extends Component {
 					>
 						{soundOptions}
 					</select>
-					
+
 					<div class="volume-control-slider-container">
 						<span class="fa fa-volume-down"></span>
-						<input 
+						<input
 							type="range"
 							class="volume-control-slider"
 							min="0"
@@ -180,7 +180,7 @@ export class VolumeControl extends Component {
 export class SettingsSection extends Component {
 	render() {
 		const { title, description, compact, children, id } = this.props;
-		
+
 		return (
 			<div class={`settings-section ${compact ? 'compact' : ''}`} id={id}>
 				{title && <div class="settings-section-title">{title}</div>}
@@ -209,9 +209,9 @@ export class SettingsCompactGrid extends Component {
  */
 export class GeneralSettings extends Component {
 	render() {
-		const { 
-			maxEditCount, 
-			maxQueueSize, 
+		const {
+			maxEditCount,
+			maxQueueSize,
 			minOresScore,
 			watchlistExpiry,
 			highlightedExpiry,
@@ -230,13 +230,13 @@ export class GeneralSettings extends Component {
 		return (
 			<div>
 				<SettingsCompactGrid>
-					<SettingsSection 
-						compact 
+					<SettingsSection
+						compact
 						id="maximum-edit-count"
 						title="Maximum edit count"
 						description="Edits from users with more than this edit count will not be shown"
 					>
-						<NumericInput 
+						<NumericInput
 							value={maxEditCount}
 							min={0}
 							max={100000}
@@ -244,14 +244,14 @@ export class GeneralSettings extends Component {
 							onChange={onMaxEditCountChange}
 						/>
 					</SettingsSection>
-					
-					<SettingsSection 
-						compact 
+
+					<SettingsSection
+						compact
 						id="maximum-queue-size"
 						title="Maximum queue size"
 						description="The queue will not load additional edits after reaching this size"
 					>
-						<NumericInput 
+						<NumericInput
 							value={maxQueueSize}
 							min={1}
 							max={500}
@@ -259,9 +259,9 @@ export class GeneralSettings extends Component {
 							onChange={onMaxQueueSizeChange}
 						/>
 					</SettingsSection>
-					
-					<SettingsSection 
-						compact 
+
+					<SettingsSection
+						compact
 						id="minimum-ores-score"
 						title="Minimum ORES score"
 						description={
@@ -270,7 +270,7 @@ export class GeneralSettings extends Component {
 							</span>
 						}
 					>
-						<NumericInput 
+						<NumericInput
 							value={minOresScore}
 							min={0}
 							max={1}
@@ -282,13 +282,13 @@ export class GeneralSettings extends Component {
 
 				<SettingsSection title="Expiries">
 					<SettingsCompactGrid>
-						<SettingsSection 
-							compact 
+						<SettingsSection
+							compact
 							id="watchlist-expiry"
 							title="Watchlist expiry for warned users"
 							description="How long to watch user talk pages after issuing warnings"
 						>
-							<select 
+							<select
 								value={watchlistExpiry}
 								onChange={(e) => onWatchlistExpiryChange(e.target.value)}
 							>
@@ -302,14 +302,14 @@ export class GeneralSettings extends Component {
 								<option value="indefinite">Indefinite</option>
 							</select>
 						</SettingsSection>
-						
-						<SettingsSection 
-							compact 
+
+						<SettingsSection
+							compact
 							id="highlighted-expiry"
 							title="Highlighted user expiry"
 							description="How long to keep users highlighted before expiration"
 						>
-							<select 
+							<select
 								value={highlightedExpiry}
 								onChange={(e) => onHighlightedExpiryChange(e.target.value)}
 							>
@@ -326,7 +326,7 @@ export class GeneralSettings extends Component {
 					</SettingsCompactGrid>
 				</SettingsSection>
 
-				<SettingsSection 
+				<SettingsSection
 					title="Namespaces to show"
 					description="Only edits from the selected namespaces will be shown in your queue."
 				>
@@ -334,7 +334,7 @@ export class GeneralSettings extends Component {
 						{Object.entries(namespaces).map(([key, namespace]) => (
 							<div class="namespace-item" key={key}>
 								<label>
-									<input 
+									<input
 										type="checkbox"
 										checked={selectedNamespaces.includes(parseInt(key))}
 										onChange={(e) => onNamespaceToggle(parseInt(key), e.target.checked)}
@@ -346,11 +346,11 @@ export class GeneralSettings extends Component {
 					</div>
 				</SettingsSection>
 
-				<SettingsSection 
+				<SettingsSection
 					title="Username Highlighting"
 					description="Highlight edits that contain your username in the diff"
 				>
-					<Toggle 
+					<Toggle
 						value={enableUsernameHighlighting}
 						onChange={onUsernameHighlightingChange}
 					/>
@@ -365,7 +365,7 @@ export class GeneralSettings extends Component {
  */
 export class AudioSettings extends Component {
 	render() {
-		const { 
+		const {
 			volumes,
 			soundMappings,
 			sounds,
@@ -397,7 +397,7 @@ export class AudioSettings extends Component {
 		const buildSoundOptions = () => {
 			const options = [];
 			options.push(<option value="none">🔇 Disabled</option>);
-			
+
 			categoryOrder.forEach(category => {
 				if (soundsByCategory[category]) {
 					const categoryItems = soundsByCategory[category].map(({ key, sound }) => (
@@ -412,7 +412,7 @@ export class AudioSettings extends Component {
 					);
 				}
 			});
-			
+
 			return options;
 		};
 
@@ -431,12 +431,12 @@ export class AudioSettings extends Component {
 
 		return (
 			<div>
-				<SettingsSection 
+				<SettingsSection
 					title="Audio Controls"
 					description="Configure volume and sounds for different actions"
 				>
 					{audioControls.map(({ key, title, description }) => (
-						<VolumeControl 
+						<VolumeControl
 							key={key}
 							triggerKey={key}
 							title={title}
@@ -478,20 +478,20 @@ export class AppearanceSettings extends Component {
 
 		return (
 			<div>
-				<SettingsSection 
+				<SettingsSection
 					title="Color Palette"
 					description="Choose how ORES scores are displayed visually"
 				>
 					<div class="palette-selector">
 						{colorPalettes.map((colors, index) => (
-							<div 
+							<div
 								key={index}
 								class={`palette-option ${selectedPalette === index ? 'selected' : ''}`}
 								onClick={() => this.handlePaletteChange(index)}
 							>
 								<div class="palette-preview">
 									{colors.map((color, i) => (
-										<div 
+										<div
 											key={i}
 											class="palette-color"
 											style={{ backgroundColor: color }}
@@ -514,7 +514,7 @@ export class AppearanceSettings extends Component {
 export class UserList extends Component {
 	render() {
 		const { users, onRemove, showDates } = this.props;
-		
+
 		if (users.length === 0) {
 			return <div class="user-list-empty">No users in this list</div>;
 		}
@@ -527,7 +527,7 @@ export class UserList extends Component {
 						{showDates && user.date && (
 							<span class="user-list-date">{new Date(user.date).toLocaleDateString()}</span>
 						)}
-						<button 
+						<button
 							class="user-list-remove"
 							onClick={() => onRemove(user.name)}
 							title="Remove user"
@@ -566,12 +566,12 @@ export class WhitelistSettings extends Component {
 
 		return (
 			<div>
-				<SettingsSection 
+				<SettingsSection
 					title="Whitelist"
 					description="Users on the whitelist will not appear in your queue"
 				>
 					<div class="user-list-controls">
-						<input 
+						<input
 							type="text"
 							class="user-list-input"
 							placeholder="Enter username..."
@@ -581,14 +581,14 @@ export class WhitelistSettings extends Component {
 								if (e.key === 'Enter') this.handleAdd();
 							}}
 						/>
-						<button 
+						<button
 							class="user-list-add-button"
 							onClick={this.handleAdd}
 						>
 							<span class="fa fa-plus"></span> Add User
 						</button>
 					</div>
-					<UserList 
+					<UserList
 						users={users}
 						onRemove={onRemove}
 						showDates={true}
@@ -624,12 +624,12 @@ export class HighlightedSettings extends Component {
 
 		return (
 			<div>
-				<SettingsSection 
+				<SettingsSection
 					title="Highlighted Users"
 					description="Edits from highlighted users will be shown with a yellow indicator"
 				>
 					<div class="user-list-controls">
-						<input 
+						<input
 							type="text"
 							class="user-list-input"
 							placeholder="Enter username..."
@@ -639,14 +639,14 @@ export class HighlightedSettings extends Component {
 								if (e.key === 'Enter') this.handleAdd();
 							}}
 						/>
-						<button 
+						<button
 							class="user-list-add-button"
 							onClick={this.handleAdd}
 						>
 							<span class="fa fa-plus"></span> Add User
 						</button>
 					</div>
-					<UserList 
+					<UserList
 						users={users}
 						onRemove={onRemove}
 						showDates={true}
@@ -666,7 +666,7 @@ export class StatisticsSettings extends Component {
 
 		return (
 			<div>
-				<SettingsSection 
+				<SettingsSection
 					title="Your Statistics"
 					description="Your WikiShield usage statistics"
 				>
@@ -720,9 +720,9 @@ export class AISettings extends Component {
 	testConnection = async () => {
 		const { ollamaServerUrl, onTestConnection } = this.props;
 		this.setState({ testingConnection: true, connectionStatus: 'Testing...' });
-		
+
 		const result = await onTestConnection();
-		
+
 		this.setState({
 			testingConnection: false,
 			connectionStatus: result ? 'Connected!' : 'Failed to connect'
@@ -732,9 +732,9 @@ export class AISettings extends Component {
 	refreshModels = async () => {
 		const { onRefreshModels } = this.props;
 		this.setState({ loadingModels: true, modelsStatus: 'Loading...' });
-		
+
 		const models = await onRefreshModels();
-		
+
 		this.setState({
 			loadingModels: false,
 			availableModels: models || [],
@@ -743,36 +743,36 @@ export class AISettings extends Component {
 	}
 
 	render() {
-		const { 
-			enableOllamaAI, 
+		const {
+			enableOllamaAI,
 			ollamaServerUrl,
 			selectedModel,
 			onEnableChange,
 			onServerUrlChange,
 			onModelSelect
 		} = this.props;
-		
+
 		const { connectionStatus, modelsStatus, availableModels, testingConnection, loadingModels } = this.state;
 
 		return (
 			<div>
-				<SettingsSection 
+				<SettingsSection
 					id="enable-ollama-ai"
 					title="Enable Ollama AI Analysis"
 					description="Use local AI models with complete privacy. Free & fast."
 				>
-					<Toggle 
+					<Toggle
 						value={enableOllamaAI}
 						onChange={onEnableChange}
 					/>
 				</SettingsSection>
 
-				<SettingsSection 
+				<SettingsSection
 					id="ollama-server-url"
 					title="Server URL"
 				>
 					<div class="ollama-url-controls">
-						<input 
+						<input
 							type="text"
 							id="ollama-url-input"
 							value={ollamaServerUrl}
@@ -780,7 +780,7 @@ export class AISettings extends Component {
 							placeholder="http://localhost:11434"
 							style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; margin-bottom: 8px;"
 						/>
-						<button 
+						<button
 							id="test-connection-btn"
 							onClick={this.testConnection}
 							disabled={testingConnection}
@@ -794,12 +794,12 @@ export class AISettings extends Component {
 					</div>
 				</SettingsSection>
 
-				<SettingsSection 
+				<SettingsSection
 					id="ollama-model-select"
 					title="Model Selection"
 				>
 					<div class="ollama-model-controls">
-						<button 
+						<button
 							id="refresh-models-btn"
 							onClick={this.refreshModels}
 							disabled={loadingModels}
@@ -818,7 +818,7 @@ export class AISettings extends Component {
 							) : (
 								<div class="models-list">
 									{availableModels.map((model) => (
-										<div 
+										<div
 											key={model.name}
 											class={`model-item ${selectedModel === model.name ? 'selected' : ''}`}
 											onClick={() => onModelSelect(model.name)}
@@ -919,7 +919,7 @@ export class ImportExportSettings extends Component {
 
 	handleImportApply = () => {
 		const { importValue } = this.state;
-		
+
 		if (!importValue.trim()) {
 			this.setState({
 				statusMessage: {
@@ -933,7 +933,7 @@ export class ImportExportSettings extends Component {
 
 		try {
 			const result = this.props.onImport(importValue);
-			
+
 			let warningsHtml = '';
 			if (result.warnings && result.warnings.length > 0) {
 				warningsHtml = `<div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(40, 167, 69, 0.3);">
@@ -982,12 +982,12 @@ export class ImportExportSettings extends Component {
 
 		return (
 			<div>
-				<SettingsSection 
+				<SettingsSection
 					title="Import/Export Settings"
 					description="Import, export, or reset your WikiShield settings. Settings are encoded as a base64 string for easy sharing."
 				>
 					<div style="display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap;">
-						<button 
+						<button
 							id="export-settings-btn"
 							class="add-action-button"
 							onClick={this.handleExport}
@@ -995,16 +995,16 @@ export class ImportExportSettings extends Component {
 						>
 							<span class="fa fa-download"></span> Export Settings
 						</button>
-						<button 
+						<button
 							id="import-settings-btn"
 							class="add-action-button"
 							onClick={this.handleImportToggle}
 							style={`flex: 1; min-width: 120px; ${showImportInput ? 'background: #28a745;' : ''}`}
 						>
-							<span class={`fa ${showImportInput ? 'fa-check' : 'fa-upload'}`}></span> 
+							<span class={`fa ${showImportInput ? 'fa-check' : 'fa-upload'}`}></span>
 							{showImportInput ? ' Apply Import' : ' Import Settings'}
 						</button>
-						<button 
+						<button
 							id="reset-settings-btn"
 							class="add-action-button"
 							onClick={this.handleReset}
@@ -1015,11 +1015,11 @@ export class ImportExportSettings extends Component {
 					</div>
 
 					{statusMessage && (
-						<div 
+						<div
 							id="import-export-status"
 							style={`
-								margin-top: 12px; 
-								padding: 12px; 
+								margin-top: 12px;
+								padding: 12px;
 								border-radius: 6px;
 								background: ${statusMessage.type === 'success' ? 'rgba(40, 167, 69, 0.2)' : 'rgba(220, 53, 69, 0.2)'};
 								border: 2px solid ${statusMessage.type === 'success' ? '#28a745' : '#dc3545'};
@@ -1040,7 +1040,7 @@ export class ImportExportSettings extends Component {
 					)}
 
 					{showImportInput && (
-						<textarea 
+						<textarea
 							id="import-settings-input"
 							placeholder="Paste base64 settings string here..."
 							value={importValue}
@@ -1097,7 +1097,7 @@ export class AboutSettings extends Component {
 						</div>
 					</div>
 				</SettingsSection>
-				
+
 				{changelog && (
 					<SettingsSection title="Changelog">
 						<div class="changelog-content" dangerouslySetInnerHTML={{ __html: changelog }} />
@@ -1107,4 +1107,3 @@ export class AboutSettings extends Component {
 		);
 	}
 }
-

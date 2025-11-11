@@ -49,12 +49,34 @@ export class WikiShieldSettingsInterface {
 	renderComponent(component, container = null) {
 		const target = container || this.contentContainer;
 		if (target) {
-			// Completely clear the container (handles both React and innerHTML content)
+			// Unmount any previously-mounted Preact component and clear DOM to avoid
+			// mixing manual innerHTML edits with Preact-managed DOM (causes
+			// intermittent blank tabs).
+			try {
+				render(null, target);
+			} catch (err) {
+				// ignore unmount errors
+			}
 			while (target.firstChild) {
 				target.removeChild(target.firstChild);
 			}
 			// Render the new component
 			render(component, target);
+		}
+	}
+
+	/**
+	 * Unmount any Preact component mounted in the content container and clear it.
+	 */
+	clearContent() {
+		if (!this.contentContainer) return;
+		try {
+			render(null, this.contentContainer);
+		} catch (err) {
+			// ignore
+		}
+		while (this.contentContainer.firstChild) {
+			this.contentContainer.removeChild(this.contentContainer.firstChild);
 		}
 	}
 
@@ -277,12 +299,8 @@ export class WikiShieldSettingsInterface {
 		].forEach(([sel, func]) => container.querySelector(sel).addEventListener("click", () => {
 			this.wikishield.queue.playClickSound();
 			
-			// Clear the content container before switching tabs
-			if (this.contentContainer) {
-				while (this.contentContainer.firstChild) {
-					this.contentContainer.removeChild(this.contentContainer.firstChild);
-				}
-			}
+			// Clear/unmount any previous content before switching tabs
+			this.clearContent();
 
 			[...document.querySelectorAll(".settings-left-menu-item.selected")]
 				.forEach(e => e.classList.remove("selected"));
@@ -351,6 +369,7 @@ export class WikiShieldSettingsInterface {
 		 * Open audio settings section
 		 */
 		openAudio() {
+			this.clearContent();
 			this.contentContainer.innerHTML = `
 				<div class="settings-section">
 					<div class="settings-section-title">Master Volume</div>
@@ -501,6 +520,7 @@ export class WikiShieldSettingsInterface {
 		 * Open controls settings section
 		 */
 		openControls() {
+			this.clearContent();
 			this.contentContainer.innerHTML = `
 				<div class="settings-section">
 					<div class="settings-section-title">Control scripts</div>
@@ -898,6 +918,7 @@ export class WikiShieldSettingsInterface {
 		 * Open AI Analysis settings section
 		 */
 		openAI() {
+			this.clearContent();
 			this.contentContainer.innerHTML = `
 				<div class="settings-section" id="enable-ollama-ai">
 					<div class="settings-section-title">Enable Ollama AI Analysis</div>
@@ -1154,6 +1175,7 @@ export class WikiShieldSettingsInterface {
 		 * Open gadgets settings seciton
 		 */
 		openGadgets() {
+			this.clearContent();
 			this.contentContainer.innerHTML = `
 				<div class="settings-toggles-section">
 					<div class="settings-section-header">
@@ -1248,6 +1270,7 @@ export class WikiShieldSettingsInterface {
 		 * Open whitelist settings section
 		 */
 		openWhitelist() {
+			this.clearContent();
 			this.contentContainer.innerHTML = `
 				<div class="settings-section">
 					<div class="settings-section-title">Whitelisted users</div>
@@ -1356,6 +1379,7 @@ export class WikiShieldSettingsInterface {
 		 */
 		openHighlighted() {
 			const expiryString = this.wikishield.options.highlightedExpiry;
+			this.clearContent();
 			this.contentContainer.innerHTML = `
 				<div class="settings-section">
 					<div class="settings-section-title">Highlighted users</div>
@@ -1458,6 +1482,7 @@ export class WikiShieldSettingsInterface {
 			const minutes = Math.floor((sessionTime % (1000 * 60 * 60)) / (1000 * 60));
 			const editsPerHour = hours > 0 ? Math.round(stats.reviewed / hours * 10) / 10 : 0;
 
+			this.clearContent();
 			this.contentContainer.innerHTML = `
 				<div class="settings-section">
 					<div class="settings-section-title">Statistics Overview</div>
@@ -1770,6 +1795,7 @@ export class WikiShieldSettingsInterface {
 		 * Open import/export settings section
 		 */
 		openImportExport() {
+			this.clearContent();
 			this.contentContainer.innerHTML = `
 				<div class="settings-section">
 					<div class="settings-section-title">Import/Export Settings</div>
