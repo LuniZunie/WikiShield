@@ -298,7 +298,7 @@ export class WikiShieldSettingsInterface {
 				["#settings-import-export-button", this.openImportExport.bind(this)],
 		].forEach(([sel, func]) => container.querySelector(sel).addEventListener("click", () => {
 			this.wikishield.queue.playClickSound();
-			
+
 			// Clear/unmount any previous content before switching tabs
 			this.clearContent();
 
