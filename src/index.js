@@ -210,7 +210,6 @@ export const __script__ = {
 				}
 			}
 
-			this.save();
 			return options;
 		}
 
@@ -279,7 +278,6 @@ export const __script__ = {
 			if (stats.blocks === undefined) stats.blocks = 0;
 			if (stats.sessionStart === undefined) stats.sessionStart = Date.now();
 
-			this.save();
 			return stats;
 		}
 
@@ -350,7 +348,6 @@ export const __script__ = {
 			}
 
 			if (changed) {
-				this.save();
 				// Refresh the queue display if needed
 				if (this.queue && this.interface) {
 					this.interface.renderQueue(this.queue.queue, this.queue.currentEdit);
@@ -404,7 +401,6 @@ export const __script__ = {
 
 			// Update statistics
 			this.statistics.reverts++;
-			this.save();
 			this.updateMyContributions();
 
 			return true;
@@ -473,7 +469,6 @@ export const __script__ = {
 
 			// Increment warning statistic
 			this.statistics.warnings++;
-			this.save();
 
 			// Add user talk page to watchlist with configured expiry
 			try {
@@ -1199,7 +1194,6 @@ export const __script__ = {
 
 				// Increment welcome statistic
 				this.statistics.welcomes++;
-				this.save();
 
 				// Update all edits in the queue from this user
 				this.queue.queue.forEach(edit => {
@@ -1250,7 +1244,6 @@ export const __script__ = {
 			`.replaceAll("\t", ""), `Requesting protection for [[${title}]] ([[WP:WikiShield|WS]])`);
 
 			this.statistics.reports++;
-			this.save();
 		}
 
 		/**
@@ -1278,7 +1271,6 @@ export const __script__ = {
 			);
 
 			this.statistics.reports++;
-			this.save();
 		}
 
 		/**
@@ -1311,7 +1303,6 @@ export const __script__ = {
 			this.noAutoWelcomeList.add(user);
 
 			this.statistics.reports++;
-			this.save();
 		}
 
 		/**
@@ -1466,7 +1457,9 @@ export const __script__ = {
 		// Initialize event manager's events with the event data
 		wikishield.interface.eventManager.initializeEvents(wikishieldEventData);
 
-		wikishield.init();
+		wikishield.init().then(() => {
+			window.addEventListener("beforeunload", () => wikishield.save());
+		});
 
 		window.addEventListener("keydown", wikishield.keyPressed.bind(wikishield));
 	} else {

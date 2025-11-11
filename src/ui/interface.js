@@ -56,7 +56,6 @@ export class WikiShieldInterface {
 
 		// Save the theme preference (always dark)
 		this.wikishield.options.theme = "theme-dark";
-		this.wikishield.save();
 	}
 
 	/**
@@ -755,7 +754,6 @@ export class WikiShieldInterface {
 				this.wikishield.detailsWidth = details.style.width;
 			}
 			this.selectedWidthAdjust = null;
-			this.wikishield.save();
 		});
 
 		window.addEventListener("mousemove", (event) => {
@@ -847,7 +845,6 @@ export class WikiShieldInterface {
 
 			document.getElementById("close-changelog").addEventListener("click", () => {
 				container.remove();
-				this.wikishield.save();
 			});
 		}
 	}
@@ -1438,11 +1435,9 @@ export class WikiShieldInterface {
 
 						if (this.wikishield.whitelist.has(edit.user.name)) {
 							this.wikishield.whitelist.delete(edit.user.name);
-							this.wikishield.save();
 							this.wikishield.logger.log(`Removed ${edit.user.name} from whitelist`);
 						} else {
 							this.wikishield.whitelist.set(edit.user.name, Date.now());
-							this.wikishield.save();
 							this.wikishield.logger.log(`Added ${edit.user.name} to whitelist`);
 						}
 

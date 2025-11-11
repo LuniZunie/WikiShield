@@ -234,13 +234,10 @@ export class WikiShieldEventManager {
 					// Toggle whitelist status
 					if (wikishield.whitelist.has(username)) {
 						wikishield.whitelist.delete(username);
-						wikishield.save();
 						wikishield.logger.log(`Removed ${username} from whitelist`);
 					} else {
 						wikishield.whitelist.set(username, Date.now());
-						wikishield.save();
 						wikishield.statistics.whitelisted++;
-						wikishield.save(wikishield.statistics);
 						wikishield.logger.log(`Added ${username} to whitelist`);
 					}
 
@@ -262,16 +259,13 @@ export class WikiShieldEventManager {
 					// Toggle highlight status
 					if (wikishield.highlighted.has(username)) {
 						wikishield.highlighted.delete(username);
-						wikishield.save();
 						wikishield.logger.log(`Removed highlight from ${username}`);
 					} else {
 						// Set highlight to expire based on user setting
 						const expiryMs = wikishield.util.expiryToMilliseconds(wikishield.options.highlightedExpiry);
 						const expirationTime = Date.now() + expiryMs;
 						wikishield.highlighted.set(username, expirationTime);
-						wikishield.save();
 						wikishield.statistics.highlighted++;
-						wikishield.save(wikishield.statistics);
 						wikishield.logger.log(`Highlighted user ${username} until ${new Date(expirationTime).toLocaleString()}`);
 					}
 
@@ -649,7 +643,6 @@ export class WikiShieldEventManager {
 					);
 					if (success) {
 						wikishield.statistics.blocks++;
-						wikishield.save();
 					}
 
 					return true;
