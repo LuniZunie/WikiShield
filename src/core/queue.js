@@ -130,9 +130,14 @@ export class WikiShieldQueue {
 		}
 
 		sorted = sorted.sort((a, b) => {
-			const score = +b.fromHistory - +a.fromHistory;
-			if (score !== 0) {
-				return score;
+			const aHistory = a.fromHistory;
+			const bHistory = b.fromHistory;
+			if (aHistory && bHistory) { // both are from history
+				return aHistory - bHistory;
+			} else if (aHistory) { // only a is from history
+				return -1;
+			} else if (bHistory) { // only b is from history
+				return 1;
 			}
 
 			let aScore = a.ores;
@@ -625,7 +630,7 @@ export class WikiShieldQueue {
 		}
 
 		// Store the edit we left in previousItems
-		this.previousItems.push({ ...editWeAreLeaving, fromHistory: true });
+		this.previousItems.push({ ...editWeAreLeaving, fromHistory: Date.now() });
 
 		this.wikishield.interface.renderQueue(this.queue, this.currentEdit);
 
