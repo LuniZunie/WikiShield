@@ -686,13 +686,18 @@ export class WikiShieldEventManager {
 						params.template
 					);
 
-					currentEdit.user.emptyTalkPage = false;
+				currentEdit.user.emptyTalkPage = false;
 
-					return true;
-				}
+				return true;
 			}
-		};
+		}
+	};
+	
+	// Merge the eventData (conditions, welcomeTemplates, etc.) into this.events
+	if (eventData) {
+		Object.assign(this.events, eventData);
 	}
+}
 
 	/**
 	 * When a button is clicked, trigger the given event
