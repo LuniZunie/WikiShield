@@ -68,7 +68,7 @@ export class WikiShieldUtil {
 			"6 months": 4 * 7 * 24 * 60 * 60 * 1000,
 			"indefinite": Infinity,
 		};
-		return conversions[expiryString] || conversions["1 hour"]; // Default to 1 hour
+		return conversions[expiryString] ?? conversions["1 hour"]; // Default to 1 hour
 	}
 
 	/**
@@ -164,4 +164,3 @@ export class WikiShieldUtil {
 		return seconds + " second" + (seconds !== 1 ? "s" : "") + " ago";
 	}
 }
-

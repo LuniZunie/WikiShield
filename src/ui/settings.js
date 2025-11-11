@@ -500,9 +500,11 @@ export class WikiShieldSettingsInterface {
 				selectedPalette: this.wikishield.options.selectedPalette,
 				colorPalettes,
 				onPaletteChange: (paletteIndex) => {
-					console.log('Palette changed to:', paletteIndex);
 					this.wikishield.queue.playClickSound();
 					this.wikishield.options.selectedPalette = paletteIndex;
+					document.querySelectorAll(".queue-edit-color").forEach(el => {
+						el.style.background = this.wikishield.interface.getORESColor(+el.dataset.rawOresScore);
+					});
 					this.wikishield.saveOptions(this.wikishield.options);
 					// Re-render queue to show new colors
 					if (this.wikishield.interface) {

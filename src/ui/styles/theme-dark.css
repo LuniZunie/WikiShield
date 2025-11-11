@@ -8,8 +8,8 @@ body {
 
 button {
 	background: rgba(74, 125, 204, 0.95) !important;
-	backdrop-filter: blur(8px) !important;
 	-webkit-backdrop-filter: blur(8px) !important;
+	backdrop-filter: blur(8px) !important;
 	border: 1px solid rgba(74, 125, 204, 0.3) !important;
 	box-shadow: 0 2px 8px rgba(74, 125, 204, 0.3) !important;
 }
@@ -21,23 +21,23 @@ button:hover {
 
 .queue-edit-current, .progress-bar, .queue-edit-tag {
 	background: rgba(41, 47, 60, 0.95) !important;
-	backdrop-filter: blur(8px) !important;
 	-webkit-backdrop-filter: blur(8px) !important;
+	backdrop-filter: blur(8px) !important;
 	border: 1px solid rgba(255, 255, 255, 0.06) !important;
 }
 
 .queue-edit-tag-minor {
 	background: rgba(31, 36, 48, 0.95) !important;
-	backdrop-filter: blur(8px) !important;
 	-webkit-backdrop-filter: blur(8px) !important;
+	backdrop-filter: blur(8px) !important;
 	border: 1px solid rgba(255, 255, 255, 0.08) !important;
 	color: #a8b0c0 !important;
 }
 
 .minor-indicator {
 	background: rgba(54, 62, 81, 0.9) !important;
-	backdrop-filter: blur(8px) !important;
 	-webkit-backdrop-filter: blur(8px) !important;
+	backdrop-filter: blur(8px) !important;
 	border: 1px solid rgba(255, 255, 255, 0.08) !important;
 	color: #a8b0c0 !important;
 }
@@ -68,8 +68,8 @@ button:hover {
 
 .toast-notification {
 	background: rgba(211, 47, 47, 0.96) !important;
-	backdrop-filter: blur(12px) !important;
 	-webkit-backdrop-filter: blur(12px) !important;
+	backdrop-filter: blur(12px) !important;
 	border: 1px solid rgba(255, 255, 255, 0.15) !important;
 	box-shadow: 0 6px 20px rgba(211, 47, 47, 0.4) !important;
 }
@@ -80,8 +80,8 @@ button:hover {
 
 .confirmation-modal {
 	background: rgba(41, 47, 60, 0.98) !important;
-	backdrop-filter: blur(20px) !important;
 	-webkit-backdrop-filter: blur(20px) !important;
+	backdrop-filter: blur(20px) !important;
 	box-shadow: 0 12px 48px rgba(0, 0, 0, 0.7) !important;
 	border: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
@@ -168,24 +168,24 @@ button:hover {
 
 .context-menu {
 	background: rgba(41, 47, 60, 0.95) !important;
-	backdrop-filter: blur(12px) !important;
 	-webkit-backdrop-filter: blur(12px) !important;
+	backdrop-filter: blur(12px) !important;
 	border: 1px solid rgba(255, 255, 255, 0.08) !important;
 	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
 }
 
 .settings {
 	background: rgba(41, 47, 60, 0.95) !important;
-	backdrop-filter: blur(12px) !important;
 	-webkit-backdrop-filter: blur(12px) !important;
+	backdrop-filter: blur(12px) !important;
 	border: 1px solid rgba(255, 255, 255, 0.08) !important;
 	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
 }
 
 #notifications-panel {
 	background: rgba(41, 47, 60, 0.95) !important;
-	backdrop-filter: blur(12px) !important;
 	-webkit-backdrop-filter: blur(12px) !important;
+	backdrop-filter: blur(12px) !important;
 	border: 1px solid rgba(255, 255, 255, 0.08) !important;
 	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
 }
@@ -263,8 +263,8 @@ select:hover, input[type=text]:focus, .bottom-subcontent-button:hover {
 
 #notifications-panel {
 	background: rgba(34, 38, 47, 0.95) !important;
-	backdrop-filter: blur(12px) !important;
 	-webkit-backdrop-filter: blur(12px) !important;
+	backdrop-filter: blur(12px) !important;
 	border: 1px solid rgba(255, 255, 255, 0.08) !important;
 	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
 }
@@ -310,8 +310,8 @@ select:hover, input[type=text]:focus, .bottom-subcontent-button:hover {
 	color: #f4c430 !important;
 	font-weight: 600 !important;
 	background: none !important;
-	backdrop-filter: none !important;
 	-webkit-backdrop-filter: none !important;
+	backdrop-filter: none !important;
 	border: none !important;
 	padding: 0 !important;
 	border-radius: 0 !important;
@@ -322,8 +322,8 @@ select:hover, input[type=text]:focus, .bottom-subcontent-button:hover {
 	color: #ff6b6b !important;
 	font-weight: 600 !important;
 	background: none !important;
-	backdrop-filter: none !important;
 	-webkit-backdrop-filter: none !important;
+	backdrop-filter: none !important;
 	border: none !important;
 	padding: 0 !important;
 	border-radius: 0 !important;
@@ -375,21 +375,21 @@ select:hover, input[type=text]:focus, .bottom-subcontent-button:hover {
 
 #middle-top, #right-top {
 	background: rgba(41, 47, 60, 0.98) !important;
-	backdrop-filter: blur(8px) !important;
 	-webkit-backdrop-filter: blur(8px) !important;
+	backdrop-filter: blur(8px) !important;
 	border-bottom: 2px solid #363e51 !important;
 }
 
 #queue-top {
 	background: rgba(41, 47, 60, 0.98) !important;
-	backdrop-filter: blur(8px) !important;
 	-webkit-backdrop-filter: blur(8px) !important;
+	backdrop-filter: blur(8px) !important;
 }
 
 #bottom-tools {
 	background: rgba(41, 47, 60, 0.98) !important;
-	backdrop-filter: blur(8px) !important;
 	-webkit-backdrop-filter: blur(8px) !important;
+	backdrop-filter: blur(8px) !important;
 }
 
 #middle-top a, #right-top a {

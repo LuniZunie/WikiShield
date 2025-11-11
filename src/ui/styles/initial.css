@@ -61,8 +61,8 @@ body, html, #container {
 	text-align: center;
 	padding: 60px;
 	background: linear-gradient(135deg, rgba(15, 12, 41, 0.8), rgba(48, 43, 99, 0.8));
-	backdrop-filter: blur(20px);
 	-webkit-backdrop-filter: blur(20px);
+	backdrop-filter: blur(20px);
 	border-radius: 24px;
 	box-shadow:
 		0 20px 60px rgba(0, 0, 0, 0.5),
@@ -195,10 +195,10 @@ body, html, #container {
 	filter: drop-shadow(0 10px 20px rgba(102, 126, 234, 0.4));
 	animation: shieldFloat 3s ease-in-out infinite;
 
-	user-select: none;
+	-ms-user-select: none;
 	-webkit-user-select: none;
 	-moz-user-select: none;
-	-ms-user-select: none;
+	user-select: none;
 }
 
 @keyframes shieldFloat {
@@ -471,8 +471,8 @@ button:active {
 	color: white;
 	animation: soundButtonFadeIn 1s ease-out 1.2s both;
 	box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-	backdrop-filter: blur(10px);
 	-webkit-backdrop-filter: blur(10px);
+	backdrop-filter: blur(10px);
 }
 
 .sound-toggle::before {
