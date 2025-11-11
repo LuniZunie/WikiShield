@@ -749,10 +749,10 @@ export class WikiShieldInterface {
 
 		window.addEventListener("mouseup", () => {
 			if (this.selectedWidthAdjust === queueWidthAdjust) {
-				this.queueWidth = queue.style.width;
+				this.wikishield.queueWidth = queue.style.width;
 			}
 			if (this.selectedWidthAdjust === detailsWidthAdjust) {
-				this.detailsWidth = details.style.width;
+				this.wikishield.detailsWidth = details.style.width;
 			}
 			this.selectedWidthAdjust = null;
 			this.wikishield.save();

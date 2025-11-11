@@ -1429,8 +1429,8 @@ export const __script__ = {
 				whitelist: [ ...this.whitelist.entries() ],
 				highlighted: [...this.highlighted.entries() ],
 
-				queueWidth: this.interface.queueWidth,
-				detailsWidth: this.interface.detailsWidth,
+				queueWidth: this.queueWidth,
+				detailsWidth: this.detailsWidth,
 
 				statistics: this.statistics
 			};
