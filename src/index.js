@@ -1447,7 +1447,8 @@ export const __script__ = {
 			return await this.api.edit(
 				`User:${mw.config.values.wgUserName}/ws-save.js`,
 				btoa(stringify),
-				"Updating WikiShield save ([[WP:WikiShield|WS]])"
+				"Updating WikiShield save ([[WP:WikiShield|WS]])",
+				{ minor: true }
 			);
 		}
 
