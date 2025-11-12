@@ -106,7 +106,7 @@ body.dark-mode #queue-top-right span:hover {
 #notifications-panel, #watchlist-panel {
 	position: absolute;
 	top: 55px;
-	right: 15px;
+	left: 15px;
 	width: 380px;
 	max-height: 550px;
 	background: rgba(30, 33, 42, 0.97);
@@ -1700,6 +1700,12 @@ body.dark-mode .revert-menu-category {
 	border-radius: 8px;
 	transition: background 0.15s ease;
 	position: relative;
+
+	& > .icon {
+		height: 1em;
+		text-align: center;
+		aspect-ratio: 1 / 1;
+	}
 }
 
 .warning-menu-item:hover {

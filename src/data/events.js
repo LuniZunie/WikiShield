@@ -102,4 +102,3 @@ export const welcomeTemplates = {
 	"COI": "{{subst:welcome-coi}} ~~~~",
 	"Mentor": "{{subst:Mentor welcome-autosign}}"
 };
-

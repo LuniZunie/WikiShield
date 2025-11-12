@@ -5,15 +5,12 @@ export const defaultSettings = {
 	maxEditCount: 50,
 	minimumORESScore: 0,
 	soundAlertORESScore: 0.95,
-	enableSoundAlerts: false,
 
 	enableUsernameHighlighting: true,
 	enableWelcomeLatin: false,
 	enableAutoWelcome: false,
 	enableEditAnalysis: false,
 	enableUsernameAnalysis: false,
-
-	enableConsecutiveDiff: false,
 
 	masterVolume: 0.5,
 	volumes: {

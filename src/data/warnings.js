@@ -33,6 +33,7 @@ export const warnings = {
 				title: "Vandalism",
 				summary: "",
 				description: "Warning for general vandalism.",
+				icon: "fas fa-skull-crossbones",
 				auto: defaultAuto,
 				templates: {
 					"0": null,
@@ -47,6 +48,7 @@ export const warnings = {
 				title: "Subtle vandalism",
 				summary: "subtle vandalism",
 				description: "Warning for subtle vandalism.",
+				icon: "fas fa-user-secret",
 				auto: defaultAuto,
 				templates: {
 					"0": null,
@@ -61,6 +63,7 @@ export const warnings = {
 				title: "Image vandalism",
 				summary: "image vandalism",
 				description: "Warning for image vandalism.",
+				icon: "fas fa-image",
 				auto: defaultAuto,
 				templates: {
 					"0": null,
@@ -75,6 +78,7 @@ export const warnings = {
 				title: "Sandbox",
 				summary: "[[WP:BADSAND|inappropriate]] use of sandbox",
 				description: "Warning for vandalism, libelous, or defamatory content added to sandbox",
+				icon: "fas fa-vial",
 				auto: defaultAuto,
 				templates: {
 					"0": null,
@@ -91,6 +95,7 @@ export const warnings = {
 				title: "Unsourced",
 				summary: "adding unsourced content",
 				description: "Warning for unsourced content.",
+				icon: "fas fa-question",
 				auto: defaultAuto,
 				templates: {
 					"0": null,
@@ -106,6 +111,7 @@ export const warnings = {
 				title: "Unsourced (BLP)",
 				summary: "adding unsourced content to [[WP:BLP|biographies of living persons]]",
 				description: "Warning for unsourced BLP content.",
+				icon: "fas fa-user-question",
 				auto: defaultAuto,
 				templates: {
 					"0": null,
@@ -121,6 +127,7 @@ export const warnings = {
 				title: "Unsourced genre",
 				summary: "unsourced genre changes",
 				description: "Warning for unsourced genre changes.",
+				icon: "fas fa-music",
 				auto: defaultAuto,
 				templates: {
 					"0": null,
@@ -135,6 +142,7 @@ export const warnings = {
 				title: "POV",
 				summary: "adding [[WP:NPOV|non-neutral content]]",
 				description: "Adding content which violates the neutral point of view policy.",
+				icon: "fas fa-balance-scale-left",
 				auto: defaultAuto,
 				templates: {
 					"0": null,
@@ -149,6 +157,7 @@ export const warnings = {
 				title: "Commentary",
 				summary: "adding commentary",
 				description: "Adding opinion or commentary to articles.",
+				icon: "fas fa-comment-alt",
 				auto: defaultAuto,
 				templates: {
 					"0": null,
@@ -163,6 +172,7 @@ export const warnings = {
 				title: "AI-Generated",
 				summary: "adding [[WP:LLM|AI-generated content]]",
 				description: "Adding AI-generated content.",
+				icon: "fas fa-robot",
 				auto: defaultAuto,
 				templates: {
 					"0": null,
@@ -178,6 +188,7 @@ export const warnings = {
 				title: "AI-generated (talk)",
 				summary: "adding [[WP:LLM|AI-generated content]] to a discussion",
 				description: "Writing an AI-generated comment.",
+				icon: "fas fa-robot",
 				auto: defaultAuto,
 				templates: {
 					"0": null,
@@ -193,6 +204,7 @@ export const warnings = {
 				title: "MOS violation",
 				summary: "[[WP:MOS|manual of style]] violation",
 				description: "Not following the Manual of Style.",
+				icon: "fas fa-spell-check",
 				auto: defaultAuto,
 				templates: {
 					"0": null,
@@ -207,6 +219,7 @@ export const warnings = {
 				title: "Censoring",
 				summary: "[[WP:NOTCENSORED|censoring content]]",
 				description: "Censoring topically-relevant content.",
+				icon: "fas fa-ban",
 				auto: defaultAuto,
 				templates: {
 					"0": null,
@@ -223,6 +236,7 @@ export const warnings = {
 				title: "Disruption",
 				summary: "[[WP:DE|disruptive editing]]",
 				description: "Default warning for making disruptive edits (not always vandalism).",
+				icon: "fas fa-exclamation",
 				auto: defaultAuto,
 				templates: {
 					"0": null,
@@ -237,6 +251,7 @@ export const warnings = {
 				title: "Deleting",
 				summary: "unexplained deletion",
 				description: "Used when a user does not explain deletion of part of an article.",
+				icon: "fas fa-trash",
 				auto: defaultAuto,
 				templates: {
 					"0": null,
@@ -251,6 +266,7 @@ export const warnings = {
 				title: "Errors",
 				summary: "adding deliberate errors to articles",
 				description: "Adding deliberate errors to articles.",
+				icon: "fas fa-bug",
 				auto: defaultAuto,
 				templates: {
 					"0": null,
@@ -265,6 +281,7 @@ export const warnings = {
 				title: "Editing tests",
 				summary: "adding deliberate errors to articles",
 				description: "Adding deliberate errors to articles.",
+				icon: "fas fa-flask",
 				auto: defaultAuto,
 				templates: {
 					"0": null,
@@ -279,6 +296,7 @@ export const warnings = {
 				title: "Chatting",
 				summary: "conversation in article talk space",
 				description: "Using article talk pages for inappropriate discussion.",
+				icon: "fas fa-comments",
 				auto: defaultAuto,
 				templates: {
 					"0": null,
@@ -294,6 +312,7 @@ export const warnings = {
 				title: "Jokes",
 				summary: "adding inappropriate humor",
 				description: "Adding inappropriate humor to an article.",
+				icon: "fas fa-grin-squint",
 				auto: defaultAuto,
 				templates: {
 					"0": null,
@@ -308,6 +327,7 @@ export const warnings = {
 				title: "Owning",
 				summary: "assuming [[WP:OWN|ownership of articles]]",
 				description: "Assuming ownership of articles.",
+				icon: "fas fa-user-shield",
 				auto: defaultAuto,
 				templates: {
 					"0": null,
@@ -324,6 +344,7 @@ export const warnings = {
 				title: "Advertising",
 				summary: "[[WP:PROMO|advertising or promotion]]",
 				description: "Adding promotional content to an article.",
+				icon: "fas fa-bullhorn",
 				auto: defaultAuto,
 				templates: {
 					"0": null,
@@ -338,6 +359,7 @@ export const warnings = {
 				title: "Spam links",
 				summary: "adding [[WP:ELNO|inappropriate links]]",
 				description: "Adding external links that could be considered spam.",
+				icon: "fas fa-link",
 				auto: defaultAuto,
 				templates: {
 					"0": null,
@@ -354,6 +376,7 @@ export const warnings = {
 				title: "Personal attacks",
 				summary: "[[WP:NPA|personal attacks]]",
 				description: "Personal attacks towards another user.",
+				icon: "fas fa-bomb",
 				auto: defaultAuto,
 				templates: {
 					"0": null,
@@ -368,6 +391,7 @@ export const warnings = {
 				title: "TPO",
 				summary: "[[WP:TPO|removing or editing]] others' posts",
 				description: "Removing or editing others' posts.",
+				icon: "fas fa-hand-paper",
 				auto: defaultAuto,
 				templates: {
 					"0": null,
@@ -383,6 +407,7 @@ export const warnings = {
 				title: "Afd removal",
 				summary: "removing AfD templates or comments",
 				description: "Removing AfD templates or other users' comments from AfD discussions.",
+				icon: "fas fa-gavel",
 				auto: defaultAuto,
 				templates: {
 					"0": null,
@@ -403,6 +428,7 @@ export const warnings = {
 				title: "Misleading",
 				summary: "misleading [[WP:ES|edit summary]]",
 				description: "Misleading edit summaries.",
+				icon: "fas fa-eye-slash",
 				auto: defaultAuto,
 				templates: {
 					"0": null,
@@ -417,6 +443,7 @@ export const warnings = {
 				title: "Inappropriate",
 				summary: "inappropriate [[WP:ES|edit summary]]",
 				description: "Edit summaries that appear to not be appropriate, civil, or otherwise constructive.",
+				icon: "fas fa-exclamation-circle",
 				auto: defaultAuto,
 				templates: {
 					"0": null,
@@ -431,6 +458,7 @@ export const warnings = {
 				title: "Minor edit",
 				summary: "improper use of [[WP:ME|minor edit]] checkbox",
 				description: "Non-minor edit marked as minor",
+				icon: "fas fa-pen",
 				auto: () => "0",
 				templates: {
 					"0": { exists: true, template: "subst:uw-minor" },
@@ -447,6 +475,7 @@ export const warnings = {
 				title: "Conflict of interest",
 				summary: "[[WP:COI|conflict of interest]]",
 				description: "Edits or username suggest an external relationship with the article.",
+				icon: "fas fa-user-tie",
 				auto: () => "0",
 				templates: {
 					"0": { exists: true, template: "subst:uw-coi", label: "Notice" },
@@ -461,6 +490,7 @@ export const warnings = {
 				title: "Gaming the system",
 				summary: "[[WP:GAME|gaming the system]]",
 				description: "Deliberately made edits to game Wikipedia's policies.",
+				icon: "fas fa-chess-knight",
 				auto: defaultAuto,
 				templates: {
 					"0": null,
@@ -475,6 +505,7 @@ export const warnings = {
 				title: "Edit Warring",
 				summary: "[[WP:EW|edit warring]]",
 				description: "User is edit warring.",
+				icon: "fas fa-people-arrows",
 				auto: (edit) => edit?.user?.editCount < 500 ? "1" : "4",
 				templates: {
 					"0": null,
@@ -489,6 +520,7 @@ export const warnings = {
 				title: "Not English",
 				summary: "non-English",
 				description: "Content added in a language other than English.",
+				icon: "fas fa-globe",
 				auto: () => "0",
 				templates: {
 					"0": { exists: true, template: "subst:uw-notenglish" },
