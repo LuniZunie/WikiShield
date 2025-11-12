@@ -8,7 +8,6 @@ export const wikishieldHTML = {
 	"initial": (version) => `
 		<div id="container">
 			<canvas id="dots-canvas"></canvas>
-			<div class="sound-toggle" id="sound-toggle" title="Toggle sound"></div>
 			<div id="welcome-container">
 				<div class="shield-container">
 					<div class="glow-ring"></div>
@@ -207,7 +206,7 @@ export const wikishieldHTML = {
 			</div>
 			<div class="menu-divider"></div>
 			<div id="user-welcome" class="menu-option submenu-trigger">
-				<i class="fas fa-hand-wave"></i>
+				<i class="fas fa-paper-plane"></i>
 				<span>Welcome</span>
 				<i class="fas fa-chevron-right menu-option-chevron"></i>
 				<div class="submenu"></div>

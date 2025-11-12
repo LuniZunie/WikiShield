@@ -168,11 +168,7 @@ export class WikiShieldQueue {
 			this.currentEdit = this.queue[0];
 		}
 
-		// Play sound alert if ORES score is above threshold (but not on welcome screen)
-		const welcomeScreen = document.getElementById("welcome-container");
-		const isOnWelcomeScreen = welcomeScreen && welcomeScreen.style.display !== "none";
-
-		if (this.wikishield.options.enableSoundAlerts && ores >= this.wikishield.options.soundAlertORESScore && !isOnWelcomeScreen) {
+		if (ores >= this.wikishield.options.soundAlertORESScore) {
 			this.playAlertSound();
 		}
 
@@ -184,7 +180,9 @@ export class WikiShieldQueue {
 	 * @param {String} triggerKey The trigger key (e.g., 'click', 'alert', etc.)
 	 */
 	playSound(triggerKey) {
-		if (!this.wikishield.soundEnabled) return;
+		const welcomeScreen = document.getElementById("welcome-container");
+		const isOnWelcomeScreen = welcomeScreen && welcomeScreen.style.display !== "none";
+		if (isOnWelcomeScreen) return;
 
 		const soundKey = this.wikishield.options.soundMappings?.[triggerKey] || triggerKey;
 		const soundConfig = this.wikishield.wikishieldData.sounds[soundKey];

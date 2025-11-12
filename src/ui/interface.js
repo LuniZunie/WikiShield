@@ -334,11 +334,10 @@ export class WikiShieldInterface {
 
 		// Sound design - create audio context for sound effects
 		let audioContext = null;
-		this.wikishield.soundEnabled = true; // Make sound state globally accessible
 
 		// Function to play a synth tone
 		const playSynthTone = (frequency, duration, volume = 0.15, type = 'sine') => {
-			if (!this.wikishield.soundEnabled || !audioContext) return;
+			if (!audioContext) return;
 
 			const oscillator = audioContext.createOscillator();
 			const gainNode = audioContext.createGain();
@@ -397,18 +396,6 @@ export class WikiShieldInterface {
 				}
 			}
 		};
-
-		// Sound toggle button
-		const soundToggle = this.elem("#sound-toggle");
-		soundToggle.addEventListener("click", () => {
-			this.wikishield.soundEnabled = !this.wikishield.soundEnabled;
-			soundToggle.classList.toggle("muted");
-
-			if (this.wikishield.soundEnabled) {
-				initAudio();
-				playClickSound();
-			}
-		});
 
 		// Add sound effects to buttons and links
 		const addSoundToElement = (selector, soundType) => {
@@ -1098,9 +1085,9 @@ export class WikiShieldInterface {
 				const item = document.createElement("div");
 				item.className = "warning-menu-item";
 
-				const mouseIcon = document.createElement("span");
-				mouseIcon.className = "fas fa-mouse-pointer";
-				item.appendChild(mouseIcon);
+				const icon = document.createElement("span");
+				icon.className = `icon ${warning.icon}` ?? "icon fas fa-mouse-pointer";
+				item.appendChild(icon);
 
 				const label = document.createElement("span");
 				label.className = "warning-menu-title";
@@ -1221,9 +1208,9 @@ export class WikiShieldInterface {
 				const item = document.createElement("div");
 				item.className = "warning-menu-item";
 
-				const mouseIcon = document.createElement("span");
-				mouseIcon.className = "fas fa-mouse-pointer";
-				item.appendChild(mouseIcon);
+				const icon = document.createElement("span");
+				icon.className = `icon ${warning.icon}` ?? "icon fas fa-mouse-pointer";
+				item.appendChild(icon);
 
 				const label = document.createElement("span");
 				label.className = "warning-menu-title";
@@ -1306,15 +1293,15 @@ export class WikiShieldInterface {
 
 			switch (param.type) {
 				case "choice":
-					const optionHTML = param.options.reduce((prev, cur) => prev + `<option>${cur}</option>`, "");
-					container.innerHTML += `
+				const optionHTML = param.options.reduce((prev, cur) => prev + `<option>${cur}</option>`, "");
+				container.innerHTML += `
 							<select data-paramid="${param.id}">
 								${optionHTML}
 							</select>
 						`;
 				break;
 				case "text":
-					container.innerHTML += `<input type="text" data-paramid="${param.id}">`;
+				container.innerHTML += `<input type="text" data-paramid="${param.id}">`;
 				break;
 				default:
 				break;
@@ -2200,7 +2187,7 @@ export class WikiShieldInterface {
 			'review': 'fa-eye',
 			'approve': 'fa-check-circle',
 			'thank': 'fa-heart',
-			'welcome': 'fa-hand-wave'
+			'welcome': 'fa-paper-plane'
 		};
 
 		const action = analysis.action || 'review';
@@ -2450,8 +2437,8 @@ export class WikiShieldInterface {
 	}
 
 	/**
-	 * Create a tooltip when an element is hovered over
-	 * @param {HTMLElement} elem
+	* Create a tooltip when an element is hovered over
+	* @param {HTMLElement} elem
 	*/
 	addTooltipListener(elem) {
 		elem.addEventListener("mouseenter", () => {

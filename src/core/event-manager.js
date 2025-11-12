@@ -1,7 +1,7 @@
 /**
- * WikiShieldEventManager - Manages user interface events and actions
- * Handles all user-triggered events like reverting, warning, reporting, etc.
- */
+* WikiShieldEventManager - Manages user interface events and actions
+* Handles all user-triggered events like reverting, warning, reporting, etc.
+*/
 import { warnings, getWarningFromLookup, warningsLookup } from '../data/warnings.js';
 
 export class WikiShieldEventManager {
@@ -9,11 +9,11 @@ export class WikiShieldEventManager {
 		this.wikishield = wikishield;
 
 		/**
-		 * Helper function to open Wikipedia links in iframe or new tab
-		 * @param {String} url - The URL to open
-		 * @param {String} title - The title to display in iframe
-		 * @param {Event} event - Optional event object for middle-click detection
-		 */
+		* Helper function to open Wikipedia links in iframe or new tab
+		* @param {String} url - The URL to open
+		* @param {String} title - The title to display in iframe
+		* @param {Event} event - Optional event object for middle-click detection
+		*/
 		this.openWikipediaLink = (url, title, event = null) => {
 			// Middle click should open in new tab
 			if (event && event.button === 1) {
@@ -37,9 +37,9 @@ export class WikiShieldEventManager {
 	}
 
 	/**
-	 * Initialize the events object with event data
-	 * Must be called after wikishieldEventData is created
-	 */
+	* Initialize the events object with event data
+	* Must be called after wikishieldEventData is created
+	*/
 	initializeEvents(eventData) {
 		const wikishield = this.wikishield;
 
@@ -294,8 +294,8 @@ export class WikiShieldEventManager {
 					let talkNamespace = "Talk";
 					if (pageTitle.length > 1) {
 						talkNamespace = pageTitle[0].toLowerCase().includes("talk")
-							? pageTitle[0]
-							: pageTitle[0] + " talk";
+						? pageTitle[0]
+						: pageTitle[0] + " talk";
 					}
 					const talkTitle = `${talkNamespace}:${pageTitle.length === 1 ? pageTitle[0] : pageTitle[1]}`;
 					const url = wikishield.util.pageLink(talkTitle);
@@ -653,25 +653,25 @@ export class WikiShieldEventManager {
 						params.template
 					);
 
-				currentEdit.user.emptyTalkPage = false;
+					currentEdit.user.emptyTalkPage = false;
 
-				return true;
+					return true;
+				}
 			}
-		}
-	};
+		};
 
-	// Merge the eventData (conditions, welcomeTemplates, etc.) into this.events
-	if (eventData) {
-		Object.assign(this.events, eventData);
+		// Merge the eventData (conditions, welcomeTemplates, etc.) into this.events
+		if (eventData) {
+			Object.assign(this.events, eventData);
+		}
 	}
-}
 
 	/**
-	 * When a button is clicked, trigger the given event
-	 * @param {HTMLElement} elem Button to add listener to
-	 * @param {String} event Event to trigger
-	 * @param {Boolean} runWithoutEdit Whether this event can be run with no edit selected
-	 */
+	* When a button is clicked, trigger the given event
+	* @param {HTMLElement} elem Button to add listener to
+	* @param {String} event Event to trigger
+	* @param {Boolean} runWithoutEdit Whether this event can be run with no edit selected
+	*/
 	linkButton(elem, event, runWithoutEdit) {
 		const wikishield = this.wikishield;
 
