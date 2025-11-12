@@ -200,7 +200,7 @@ export const __script__ = {
 			}
 
 			// Ensure controls are in the right format (array of arrays of strings)
-			for (const script of options.controlScripts) {
+			for (const script of options.controlScripts ?? []) {
 				if (typeof script.keys === "string") {
 					script.keys = [ script.keys ];
 					script.keys = script.keys.map(key => key.toLowerCase());
