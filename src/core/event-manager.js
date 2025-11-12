@@ -2,7 +2,7 @@
  * WikiShieldEventManager - Manages user interface events and actions
  * Handles all user-triggered events like reverting, warning, reporting, etc.
  */
-import { warnings, getWarningFromLookup } from '../data/warnings.js';
+import { warnings, getWarningFromLookup, warningsLookup } from '../data/warnings.js';
 
 export class WikiShieldEventManager {
 	constructor(wikishield) {
@@ -374,7 +374,7 @@ export class WikiShieldEventManager {
 						title: "Warning type",
 						id: "warningType",
 						type: "choice",
-						options: Object.keys(warnings)
+						options: Object.keys(warningsLookup)
 					},
 					{
 						title: "Level",
@@ -420,54 +420,6 @@ export class WikiShieldEventManager {
 				func: async (params = {}, currentEdit) => {
 					wikishield.queue.playRollbackSound();
 					return await wikishield.revert(currentEdit, params.label || "");
-				}
-			},
-			rollbackAndWarn: {
-				description: "Rollback and warn for edits",
-				icon: "fas fa-backward",
-				includeInProgress: true,
-				progressDesc: "Rolling back and warning...",
-				parameters: [
-					{
-						title: "Warning type",
-						id: "warningType",
-						type: "choice",
-						options: Object.keys(warnings)
-					},
-					{
-						title: "Level",
-						id: "level",
-						type: "choice",
-						options: ["auto", "0", "1", "2", "3", "4", "4im"]
-					}
-				],
-				validateParameters: (params) => {
-					return params.level === "auto" || getWarningFromLookup(params.warningType)?.templates[params.level] !== null;
-				},
-				func: async (params = {}, currentEdit) => {
-					const warning = getWarningFromLookup(params.warningType);
-
-					wikishield.queue.playRollbackSound();
-
-					const result = await wikishield.revert(currentEdit, warning.summary || "");
-					if (result === false) {
-						return false;
-					}
-
-					wikishield.queue.playWarnSound();
-
-					// Store the original warning level before warning
-					const originalLevel = currentEdit.user.warningLevel;
-
-					// Return whether they were already at final warning
-					currentEdit.user.atFinalWarning = (warning?.auto?.[originalLevel.toString()] === "report");
-					return await wikishield.warnUser(
-						currentEdit.user.name,
-						warning,
-						params.level || "auto",
-						currentEdit.page.title,
-						currentEdit.revid
-					);
 				}
 			},
 			rollbackGoodFaith: {
@@ -517,6 +469,11 @@ export class WikiShieldEventManager {
 							"Vandalism-only account",
 							"Long-term abuse"
 						]
+					},
+					{
+						title: "Comment (optional)",
+						id: "comment",
+						type: "text",
 					}
 				],
 				includeInProgress: true,
@@ -524,9 +481,11 @@ export class WikiShieldEventManager {
 				progressDesc: "Reporting...",
 				func: async (params, currentEdit) => {
 					wikishield.queue.playReportSound();
-					await wikishield.reportToAIV(
+
+					const reason = params.comment ? `${params.reportMessage}: ${params.comment}` : params.reportMessage;
+					await wikishield.reportToUAA(
 						currentEdit.user.name,
-						params.reportMessage
+						reason
 					);
 
 					return true;
@@ -546,15 +505,22 @@ export class WikiShieldEventManager {
 							"Promotional username",
 							"Misleading username"
 						]
+					},
+					{
+						title: "Comment (optional)",
+						id: "comment",
+						type: "text",
 					}
 				],
 				includeInProgress: true,
 				progressDesc: "Reporting...",
 				func: async (params, currentEdit) => {
 					wikishield.queue.playReportSound();
+
+					const reason = params.comment ? `${params.reportMessage}: ${params.comment}` : params.reportMessage;
 					await wikishield.reportToUAA(
 						currentEdit.user.name,
-						params.reportMessage
+						reason
 					);
 
 					return true;
@@ -586,16 +552,23 @@ export class WikiShieldEventManager {
 							"Sockpuppetry",
 							"Arbitration enforcement"
 						]
+					},
+					{
+						title: "Comment (optional)",
+						id: "comment",
+						type: "text",
 					}
 				],
 				includeInProgress: true,
 				progressDesc: "Requesting protection...",
 				func: async (params, currentEdit) => {
 					wikishield.queue.playProtectionSound();
+
+					const reason = params.comment ? `${params.reason}: ${params.comment}` : params.reason;
 					await wikishield.requestProtection(
 						currentEdit.page.title,
 						params.level,
-						params.reason
+						reason
 					);
 
 					return true;
