@@ -344,13 +344,13 @@ export class WikiShieldAPI {
 				if (!foundEnd && response.continue) {
 					continueObj = response.continue;
 				} else if (!foundEnd) {
-					priorRevision = "User created this page.";
+					priorRevision = "created";
 					foundEnd = true;
 				}
 			}
 
 			if (newestRevision === null) {
-				priorRevision = "No consecutive edits.";
+				priorRevision = "outdated";
 			}
 
 			// Return results

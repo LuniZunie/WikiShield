@@ -190,7 +190,6 @@ export class WikiShieldSettingsInterface {
 
 				if (!this.wikishield.options.volumes) this.wikishield.options.volumes = {};
 				this.wikishield.options.volumes[triggerKey] = val;
-				this.wikishield.saveOptions(this.wikishield.options);
 			};
 
 			slider.addEventListener("input", () => updateVolume(slider.value));
@@ -200,7 +199,6 @@ export class WikiShieldSettingsInterface {
 			soundSelector.addEventListener("change", () => {
 				if (!this.wikishield.options.soundMappings) this.wikishield.options.soundMappings = {};
 				this.wikishield.options.soundMappings[triggerKey] = soundSelector.value;
-				this.wikishield.saveOptions(this.wikishield.options);
 			});
 
 			// Preview button - do NOT play click sound
@@ -328,23 +326,18 @@ export class WikiShieldSettingsInterface {
 				enableUsernameHighlighting: this.wikishield.options.enableUsernameHighlighting,
 				onMaxEditCountChange: (value) => {
 					this.wikishield.options.maxEditCount = value;
-					this.wikishield.saveOptions(this.wikishield.options);
 				},
 				onMaxQueueSizeChange: (value) => {
 					this.wikishield.options.maxQueueSize = value;
-					this.wikishield.saveOptions(this.wikishield.options);
 				},
 				onMinOresScoreChange: (value) => {
 					this.wikishield.options.minimumORESScore = value;
-					this.wikishield.saveOptions(this.wikishield.options);
 				},
 				onWatchlistExpiryChange: (value) => {
 					this.wikishield.options.watchlistExpiry = value;
-					this.wikishield.saveOptions(this.wikishield.options);
 				},
 				onHighlightedExpiryChange: (value) => {
 					this.wikishield.options.highlightedExpiry = value;
-					this.wikishield.saveOptions(this.wikishield.options);
 				},
 				onNamespaceToggle: (nsid, checked) => {
 					if (checked) {
@@ -355,11 +348,9 @@ export class WikiShieldSettingsInterface {
 						this.wikishield.options.namespacesShown = this.wikishield.options.namespacesShown
 							.filter(n => n !== nsid);
 					}
-					this.wikishield.saveOptions(this.wikishield.options);
 				},
 				onUsernameHighlightingChange: (value) => {
 					this.wikishield.options.enableUsernameHighlighting = value;
-					this.wikishield.saveOptions(this.wikishield.options);
 				}
 			})
 		);
@@ -436,7 +427,6 @@ export class WikiShieldSettingsInterface {
 				masterSlider.value = val;
 				masterInput.value = val.toFixed(2);
 				this.wikishield.options.masterVolume = val;
-				this.wikishield.saveOptions(this.wikishield.options);
 			};
 
 			masterSlider.addEventListener("input", () => updateMasterVolume(masterSlider.value));
@@ -448,7 +438,6 @@ export class WikiShieldSettingsInterface {
 				this.wikishield.options.enableSoundAlerts,
 				(newValue) => {
 					this.wikishield.options.enableSoundAlerts = newValue;
-					this.wikishield.saveOptions(this.wikishield.options);
 				}
 			);
 
@@ -458,7 +447,6 @@ export class WikiShieldSettingsInterface {
 				this.wikishield.options.soundAlertORESScore, 0, 1, 0.05,
 				(newValue) => {
 					this.wikishield.options.soundAlertORESScore = newValue;
-					this.wikishield.saveOptions(this.wikishield.options);
 				}
 			);
 
@@ -500,10 +488,11 @@ export class WikiShieldSettingsInterface {
 				selectedPalette: this.wikishield.options.selectedPalette,
 				colorPalettes,
 				onPaletteChange: (paletteIndex) => {
-					console.log('Palette changed to:', paletteIndex);
 					this.wikishield.queue.playClickSound();
 					this.wikishield.options.selectedPalette = paletteIndex;
-					this.wikishield.saveOptions(this.wikishield.options);
+					document.querySelectorAll(".queue-edit-color").forEach(el => {
+						el.style.background = this.wikishield.interface.getORESColor(+el.dataset.rawOresScore);
+					});
 					// Re-render queue to show new colors
 					if (this.wikishield.interface) {
 						this.wikishield.interface.renderQueue(
@@ -626,7 +615,6 @@ export class WikiShieldSettingsInterface {
 					control.keys = [...set];
 					this.createControlInterface(container, control);
 					this.updateDuplicateControls();
-					this.wikishield.saveOptions(this.wikishield.options);
 				});
 			}
 
@@ -651,7 +639,6 @@ export class WikiShieldSettingsInterface {
 					this.createControlInterface(container, control);
 					this.updateDuplicateControls();
 					this.keypressCallback = null;
-					this.wikishield.saveOptions(this.wikishield.options);
 				};
 			});
 
@@ -661,7 +648,6 @@ export class WikiShieldSettingsInterface {
 					action,
 					control,
 					() => {
-						this.wikishield.saveOptions(this.wikishield.options);
 						this.createControlInterface(container, control);
 					}
 				);
@@ -680,7 +666,6 @@ export class WikiShieldSettingsInterface {
 			bottomContainer.querySelector(".control-delete").addEventListener("click", () => {
 				this.wikishield.queue.playClickSound();
 				this.wikishield.options.controlScripts.splice(this.wikishield.options.controlScripts.indexOf(control), 1);
-				this.wikishield.saveOptions(this.wikishield.options);
 				this.openControls();
 			});
 
@@ -720,7 +705,6 @@ export class WikiShieldSettingsInterface {
 						}
 
 						control.actions.push(action);
-						this.wikishield.saveOptions(this.wikishield.options);
 						this.createControlInterface(container, control);
 					});
 				});
@@ -804,7 +788,6 @@ export class WikiShieldSettingsInterface {
 				for (const param of (event.parameters || [])) {
 					this.createItemParameter(itemContainer, param, action.params[param.id] || "", (value) => {
 						action.params[param.id] = value;
-						this.wikishield.saveOptions(this.wikishield.options);
 					});
 				}
 			}
@@ -996,22 +979,21 @@ export class WikiShieldSettingsInterface {
 				this.wikishield.options.enableOllamaAI,
 				(newValue) => {
 					this.wikishield.options.enableOllamaAI = newValue;
-					this.wikishield.saveOptions(this.wikishield.options);
 
-				// Initialize or destroy Ollama AI instance
-				if (newValue) {
-					this.wikishield.ollamaAI = new WikiShieldOllamaAI(
-						this.wikishield.options.ollamaServerUrl,
-						this.wikishield.options.ollamaModel,
-						{
-							enableOllamaAI: this.wikishield.options.enableOllamaAI,
-							enableEditAnalysis: this.wikishield.options.enableEditAnalysis
-						}
-					);
-					this.wikishield.logger.log("Ollama AI integration enabled");
-				} else {
-					this.wikishield.ollamaAI = null;
-					this.wikishield.logger.log("Ollama AI integration disabled");
+					// Initialize or destroy Ollama AI instance
+					if (newValue) {
+						this.wikishield.ollamaAI = new WikiShieldOllamaAI(
+							this.wikishield.options.ollamaServerUrl,
+							this.wikishield.options.ollamaModel,
+							{
+								enableOllamaAI: this.wikishield.options.enableOllamaAI,
+								enableEditAnalysis: this.wikishield.options.enableEditAnalysis
+							}
+						);
+						this.wikishield.logger.log("Ollama AI integration enabled");
+					} else {
+						this.wikishield.ollamaAI = null;
+						this.wikishield.logger.log("Ollama AI integration disabled");
 					}
 				}
 			);
@@ -1020,7 +1002,6 @@ export class WikiShieldSettingsInterface {
 			const urlInput = this.contentContainer.querySelector("#ollama-url-input");
 			urlInput.addEventListener('change', () => {
 				this.wikishield.options.ollamaServerUrl = urlInput.value.trim();
-				this.wikishield.saveOptions(this.wikishield.options);
 				if (this.wikishield.ollamaAI) {
 					this.wikishield.ollamaAI.serverUrl = this.wikishield.options.ollamaServerUrl;
 				}
@@ -1116,7 +1097,6 @@ export class WikiShieldSettingsInterface {
 
 								const modelName = item.dataset.model;
 								this.wikishield.options.ollamaModel = modelName;
-								this.wikishield.saveOptions(this.wikishield.options);
 								if (this.wikishield.ollamaAI) {
 									this.wikishield.ollamaAI.model = modelName;
 								}
@@ -1227,7 +1207,6 @@ export class WikiShieldSettingsInterface {
 				this.wikishield.options.enableUsernameHighlighting,
 				(newValue) => {
 					this.wikishield.options.enableUsernameHighlighting = newValue;
-					this.wikishield.saveOptions(this.wikishield.options);
 				}
 			);
 
@@ -1236,7 +1215,6 @@ export class WikiShieldSettingsInterface {
 				this.wikishield.options.enableWelcomeLatin,
 				(newValue) => {
 					this.wikishield.options.enableWelcomeLatin = newValue;
-					this.wikishield.saveOptions(this.wikishield.options);
 				}
 			);
 			this.createToggle(
@@ -1244,7 +1222,6 @@ export class WikiShieldSettingsInterface {
 				this.wikishield.options.enableAutoWelcome,
 				(newValue) => {
 					this.wikishield.options.enableAutoWelcome = newValue;
-					this.wikishield.saveOptions(this.wikishield.options);
 				}
 			);
 
@@ -1253,7 +1230,6 @@ export class WikiShieldSettingsInterface {
 				this.wikishield.options.enableEditAnalysis,
 				(newValue) => {
 					this.wikishield.options.enableEditAnalysis = newValue;
-					this.wikishield.saveOptions(this.wikishield.options);
 				}
 			);
 			this.createToggle(
@@ -1261,7 +1237,6 @@ export class WikiShieldSettingsInterface {
 				this.wikishield.options.enableUsernameAnalysis,
 				(newValue) => {
 					this.wikishield.options.enableUsernameAnalysis = newValue;
-					this.wikishield.saveOptions(this.wikishield.options);
 				}
 			);
 		}
@@ -1293,7 +1268,6 @@ export class WikiShieldSettingsInterface {
 				const username = input.value.trim();
 				if (username) {
 					this.wikishield.whitelist.set(username, Date.now());
-					this.wikishield.saveWhitelist();
 					input.value = "";
 					this.openWhitelist(); // Refresh the list
 					this.wikishield.sounds.success();
@@ -1305,7 +1279,7 @@ export class WikiShieldSettingsInterface {
 				if (e.key === "Enter") addUser();
 			});
 
-			this.createUserListWithDates(container, this.wikishield.whitelist, this.wikishield.saveWhitelist.bind(this.wikishield));
+			this.createUserListWithDates(container, this.wikishield.whitelist, this.wikishield.save.bind(this.wikishield));
 		}
 
 		/**
@@ -1404,7 +1378,6 @@ export class WikiShieldSettingsInterface {
 					const expiryMs = this.wikishield.util.expiryToMilliseconds(this.wikishield.options.highlightedExpiry);
 					const expirationTime = Date.now() + expiryMs;
 					this.wikishield.highlighted.set(username, expirationTime);
-					this.wikishield.saveHighlighted();
 					input.value = "";
 					this.openHighlighted(); // Refresh the list
 					this.wikishield.sounds.success();
@@ -1462,7 +1435,6 @@ export class WikiShieldSettingsInterface {
 				userItem.querySelector(".remove-button").addEventListener("click", () => {
 					this.wikishield.highlighted.delete(user);
 					userItem.remove();
-					this.wikishield.saveHighlighted();
 				});
 			}
 
@@ -1545,7 +1517,6 @@ export class WikiShieldSettingsInterface {
 						blocks: 0,
 						sessionStart: Date.now()
 					};
-					this.wikishield.saveStats(this.wikishield.statistics);
 					this.openStatistics();
 					this.wikishield.sounds.success();
 				}
@@ -1920,7 +1891,6 @@ export class WikiShieldSettingsInterface {
 
 						if (validationResult.success) {
 							this.wikishield.options = validationResult.settings;
-							this.wikishield.saveOptions(this.wikishield.options);
 
 							statusDiv.style.display = 'block';
 							statusDiv.style.background = 'rgba(40, 167, 69, 0.2)';
@@ -1977,10 +1947,9 @@ export class WikiShieldSettingsInterface {
 				}
 			});
 
-		resetBtn.addEventListener('click', () => {
-			if (confirm('Are you sure you want to reset all settings to default? This cannot be undone.')) {
-				this.wikishield.options = JSON.parse(JSON.stringify(defaultSettings));
-				this.wikishield.saveOptions(this.wikishield.options);
+			resetBtn.addEventListener('click', () => {
+				if (confirm('Are you sure you want to reset all settings to default? This cannot be undone.')) {
+					this.wikishield.options = JSON.parse(JSON.stringify(defaultSettings));
 
 					statusDiv.style.display = 'block';
 					statusDiv.style.background = 'rgba(255, 193, 7, 0.2)';

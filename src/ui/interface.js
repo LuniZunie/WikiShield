@@ -20,6 +20,9 @@ export class WikiShieldInterface {
 		this.lastCurrentEdit = null;
 		this.newerRevisionInterval = null; // For periodic newer revision checking
 
+		this.queueWidth = undefined;
+		this.detailsWidth = undefined;
+
 		this.eventManager = new WikiShieldEventManager(this.wikishield);
 		this.settings = new WikiShieldSettingsInterface(this.wikishield);
 		this.selectedMenu = null;
@@ -53,7 +56,6 @@ export class WikiShieldInterface {
 
 		// Save the theme preference (always dark)
 		this.wikishield.options.theme = "theme-dark";
-		this.wikishield.saveOptions(this.wikishield.options);
 	}
 
 	/**
@@ -581,15 +583,19 @@ export class WikiShieldInterface {
 			}
 		});
 
-		this.settings.createToggle(
-			this.elem("#consecutive-diff-toggle"),
-			this.wikishield.options.enableConsecutiveDiff,
-			(newValue) => {
-				this.wikishield.options.enableConsecutiveDiff = newValue;
-				this.wikishield.saveOptions(this.wikishield.options);
-				this.updateDiffContainer(this.wikishield.queue.currentEdit);
-			}
-		);
+		const $latestTab = this.elem("#latest-edits-tab");
+		$latestTab.addEventListener("click", event => {
+			this.updateDiffContainer(this.wikishield.queue.currentEdit, false);
+		});
+		this.addTooltipListener($latestTab);
+
+		const $consecutiveTab = this.elem("#consecutive-edits-tab");
+		$consecutiveTab.addEventListener("click", event => {
+			this.updateDiffContainer(this.wikishield.queue.currentEdit, true);
+		});
+		this.addTooltipListener($consecutiveTab);
+
+		this.addTooltipListener(this.elem("#right-top > .icons > .created-page"));
 
 		this.eventManager.linkButton(
 			this.elem("#delete-queue"),
@@ -713,8 +719,8 @@ export class WikiShieldInterface {
 		const detailsWidthAdjust = this.elem("#details-width-adjust");
 		const details = this.elem("#right-details");
 
-		const savedQueueWidth = mw.storage.store.getItem("WikiShield:QueueWidth");
-		const savedDetailsWidth = mw.storage.store.getItem("WikiShield:DetailsWidth");
+		const savedQueueWidth = this.wikishield.queueWidth;
+		const savedDetailsWidth = this.wikishield.detailsWidth;
 
 		if (savedQueueWidth) {
 			queue.style.width = savedQueueWidth;
@@ -742,10 +748,10 @@ export class WikiShieldInterface {
 
 		window.addEventListener("mouseup", () => {
 			if (this.selectedWidthAdjust === queueWidthAdjust) {
-				mw.storage.store.setItem("WikiShield:QueueWidth", queue.style.width);
+				this.wikishield.queueWidth = queue.style.width;
 			}
 			if (this.selectedWidthAdjust === detailsWidthAdjust) {
-				mw.storage.store.setItem("WikiShield:DetailsWidth", details.style.width);
+				this.wikishield.detailsWidth = details.style.width;
 			}
 			this.selectedWidthAdjust = null;
 		});
@@ -823,7 +829,7 @@ export class WikiShieldInterface {
 			}
 		}, true);
 
-		if (this.wikishield.getChangelogVersion() !== __script__.changelog.version) {
+		if (this.wikishield.loadedChangelog !== __script__.changelog.version) {
 			const container = document.createElement("div");
 			container.classList.add("settings-container");
 			document.body.appendChild(container);
@@ -839,7 +845,6 @@ export class WikiShieldInterface {
 
 			document.getElementById("close-changelog").addEventListener("click", () => {
 				container.remove();
-				this.wikishield.updateChangelogVersion();
 			});
 		}
 	}
@@ -1430,11 +1435,9 @@ export class WikiShieldInterface {
 
 						if (this.wikishield.whitelist.has(edit.user.name)) {
 							this.wikishield.whitelist.delete(edit.user.name);
-							this.wikishield.saveWhitelist();
 							this.wikishield.logger.log(`Removed ${edit.user.name} from whitelist`);
 						} else {
 							this.wikishield.whitelist.set(edit.user.name, Date.now());
-							this.wikishield.saveWhitelist();
 							this.wikishield.logger.log(`Added ${edit.user.name} to whitelist`);
 						}
 
@@ -1535,7 +1538,7 @@ export class WikiShieldInterface {
 		const oresPercent = Math.round(oresScore * 100);
 		const oresLabel = oresPercent < 30 ? "Good" : oresPercent < 70 ? "Review" : "Likely Bad";
 
-		const oresHTML = includeORES ? `<div class="queue-edit-color" data-ores-score="${oresPercent}%" style="background: ${this.getORESColor(oresScore)};"></div>` : "";
+		const oresHTML = includeORES ? `<div class="queue-edit-color" data-ores-score="${oresPercent}%" data-raw-ores-score="${oresScore}" style="background: ${this.getORESColor(oresScore)};"></div>` : "";
 		const titleHTML = includeTitle ? `
 				<div class="queue-edit-title" data-tooltip="${edit.page ? edit.page.title : edit.title}">
 					<span class="fa fa-file-lines queue-edit-icon"></span>
@@ -1556,7 +1559,7 @@ export class WikiShieldInterface {
 					${!edit.user ? "<em>Username removed</em>" : typeof edit.user === "string" ? edit.user : edit.user.name}
 				</div>` : "";
 		const timeHTML = includeTime ? `
-				<div class="queue-edit-time" data-tooltip="${edit.timestamp}">
+				<div class="queue-edit-time" data-tooltip="${new Date(edit.timestamp).toUTCString()}">
 					<span class="fa fa-clock queue-edit-icon"></span>
 					${this.wikishield.util.timeAgo(edit.timestamp)}
 				</div>` : "";
@@ -1586,6 +1589,11 @@ export class WikiShieldInterface {
 	* @param {Object} edit
 	*/
 	async newEditSelected(edit) {
+		this.elem("#latest-edits-tab").classList.add("hidden");
+		this.elem("#consecutive-edits-tab").classList.add("hidden");
+
+		document.querySelectorAll("#right-top > .icons > :not(.hidden)").forEach(el => el.classList.add("hidden"));
+
 		this.hide3RRNotice();
 		this.hideNewerEditButton();
 
@@ -1641,6 +1649,27 @@ export class WikiShieldInterface {
 
 		// Start checking for newer revisions on THIS Wikipedia page
 		this.startNewerRevisionCheck(edit);
+
+		if (edit !== null) {
+			edit.consecutive.then(data => {
+				// no longer most recent edit
+				if (!Object.is(this.wikishield.queue.currentEdit, edit)) {
+					return;
+				}
+
+				// don't show button if user created page, no longer most recent, or if there is only 1 edit
+				if (data.count <= 1 || typeof data.priorRev === "string") {
+					if (data.priorRev === "created") {
+						this.elem("#right-top > .icons > .created-page").classList.remove("hidden");
+					}
+
+					return;
+				}
+
+				this.elem("#latest-edits-tab").classList.remove("hidden");
+				this.elem("#consecutive-edits-tab").classList.remove("hidden");
+			});
+		}
 
 		userContribsLevel.style.display = "initial";
 		userContribsLevel.style.background = warningTemplateColors[edit.user.warningLevel] || "grey";
@@ -1976,20 +2005,24 @@ export class WikiShieldInterface {
 			this.show3RRNotice(edit.reverts);
 		}
 
-		this.updateDiffContainer(edit);
+		this.updateDiffContainer(edit, false);
 	}
 
-	updateDiffContainer(edit) {
+	updateDiffContainer(edit, showConsecutive = false) {
 		if (!edit) {
 			return;
 		}
 
-		if (this.wikishield.options.enableConsecutiveDiff) {
+		document.querySelectorAll("#right-top > .tabs > .tab.selected").forEach(el => el.classList.remove("selected"));
+
+		if (showConsecutive) {
+			this.elem("#consecutive-edits-tab").classList.add("selected");
+
 			this.elem("#diff-container").innerHTML = `<table></table>`;
 
 			edit.consecutive.then(data => {
-				if (!this.wikishield.options.enableConsecutiveDiff) {
-					return;
+				if (!Object.is(this.wikishield.queue.currentEdit, edit)) {
+					return; // no longer most recent edit
 				}
 
 				const $diffSize = this.elem("#diff-size-text");
@@ -2008,13 +2041,11 @@ export class WikiShieldInterface {
 				`;
 				this.addTooltipListener(this.elem("#consecutive-time"));
 
-				if (typeof data.priorRev === "string") {
-					this.elem("#diff-container").innerHTML = `<table>${data.priorRev}</table>`;
-				} else {
-					this.elem("#diff-container").innerHTML = `<table>${data.diff}</table>`;
-				}
+				this.elem("#diff-container").innerHTML = `<table>${data.diff}</table>`;
 			});
 		} else {
+			this.elem("#latest-edits-tab").classList.add("selected");
+
 			this.elem("#diff-container").innerHTML = `<table>${edit.diff}</table>`;
 
 			const $diffSize = this.elem("#diff-size-text");
@@ -2066,8 +2097,8 @@ export class WikiShieldInterface {
 						rgba(102, 126, 234, 0.95) 0%,
 						rgba(118, 75, 162, 0.95) 50%,
 						rgba(102, 126, 234, 0.9) 100%);
-					backdrop-filter: blur(20px);
 					-webkit-backdrop-filter: blur(20px);
+					backdrop-filter: blur(20px);
 					color: white;
 					box-shadow:
 						0 8px 24px rgba(102, 126, 234, 0.4),

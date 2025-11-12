@@ -75,14 +75,17 @@ export const wikishieldHTML = {
 			<div id="right-container">
 				<div id="middle-top"></div>
 				<div id="right-top">
-					<div class="left-label">
-						<i class="fas fa-stopwatch"></i>
-						<span>Latest Edits</span>
+					<div class="tabs">
+						<div id="latest-edits-tab" class="tab hidden selected" data-tooltip="Latest edit">
+							<i class="fas fa-user"></i>
+						</div>
+						<div id="consecutive-edits-tab" class="tab hidden" data-tooltip="Consecutive edits">
+							<i class="fas fa-users"></i>
+						</div>
 					</div>
-					<div id="consecutive-diff-toggle"></div>
-					<div class="right-label">
-						<i class="fas fa-calendar-days"></i>
-						<span>Consecutive Edits</span>
+
+					<div class="icons">
+						<i class="created-page hidden fas fa-file-circle-plus" data-tooltip="No other users have edited this page"></i>
 					</div>
 				</div>
 				<div id="right-content">

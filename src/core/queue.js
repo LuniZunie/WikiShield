@@ -608,7 +608,6 @@ export class WikiShieldQueue {
 		if (currentIndex === 0 && !editWeAreLeaving.reviewed) {
 			editWeAreLeaving.reviewed = true;
 			this.wikishield.statistics.reviewed += 1;
-			this.wikishield.saveStats(this.wikishield.statistics);
 		}
 
 		// Remove the current item from the queue

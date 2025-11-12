@@ -7,7 +7,7 @@ import { warnings, getWarningFromLookup } from '../data/warnings.js';
 export class WikiShieldEventManager {
 	constructor(wikishield) {
 		this.wikishield = wikishield;
-		
+
 		/**
 		 * Helper function to open Wikipedia links in iframe or new tab
 		 * @param {String} url - The URL to open
@@ -42,7 +42,7 @@ export class WikiShieldEventManager {
 	 */
 	initializeEvents(eventData) {
 		const wikishield = this.wikishield;
-		
+
 		this.events = {
 			prevEdit: {
 				description: "Go to the previous edit in the queue",
@@ -234,13 +234,10 @@ export class WikiShieldEventManager {
 					// Toggle whitelist status
 					if (wikishield.whitelist.has(username)) {
 						wikishield.whitelist.delete(username);
-						wikishield.saveWhitelist();
 						wikishield.logger.log(`Removed ${username} from whitelist`);
 					} else {
 						wikishield.whitelist.set(username, Date.now());
-						wikishield.saveWhitelist();
 						wikishield.statistics.whitelisted++;
-						wikishield.saveStats(wikishield.statistics);
 						wikishield.logger.log(`Added ${username} to whitelist`);
 					}
 
@@ -262,16 +259,13 @@ export class WikiShieldEventManager {
 					// Toggle highlight status
 					if (wikishield.highlighted.has(username)) {
 						wikishield.highlighted.delete(username);
-						wikishield.saveHighlighted();
 						wikishield.logger.log(`Removed highlight from ${username}`);
 					} else {
 						// Set highlight to expire based on user setting
 						const expiryMs = wikishield.util.expiryToMilliseconds(wikishield.options.highlightedExpiry);
 						const expirationTime = Date.now() + expiryMs;
 						wikishield.highlighted.set(username, expirationTime);
-						wikishield.saveHighlighted();
 						wikishield.statistics.highlighted++;
-						wikishield.saveStats(wikishield.statistics);
 						wikishield.logger.log(`Highlighted user ${username} until ${new Date(expirationTime).toLocaleString()}`);
 					}
 
@@ -649,7 +643,6 @@ export class WikiShieldEventManager {
 					);
 					if (success) {
 						wikishield.statistics.blocks++;
-						wikishield.saveStats(wikishield.statistics);
 					}
 
 					return true;
@@ -692,7 +685,7 @@ export class WikiShieldEventManager {
 			}
 		}
 	};
-	
+
 	// Merge the eventData (conditions, welcomeTemplates, etc.) into this.events
 	if (eventData) {
 		Object.assign(this.events, eventData);
@@ -707,7 +700,7 @@ export class WikiShieldEventManager {
 	 */
 	linkButton(elem, event, runWithoutEdit) {
 		const wikishield = this.wikishield;
-		
+
 		const handleClick = (e, forceNewTab = false) => {
 			// Check if this is an action that opens a page
 			const pageOpenEvents = ["openUserPage", "openUserTalk", "openUserContribs", "openFilterLog", "openPage", "openPageHistory", "openDiff"];
@@ -747,4 +740,3 @@ export class WikiShieldEventManager {
 		});
 	}
 }
-
