@@ -197,6 +197,9 @@ export class WikiShieldQueue {
 			const masterVol = this.wikishield.options.masterVolume ?? 0.5;
 			const soundVol = this.wikishield.options.volumes?.[triggerKey] ?? 0.5;
 			const volume = masterVol * soundVol * (soundConfig.volume ?? 1);
+			if (volume === 0) {
+				return;
+			}
 
 			const repeats = soundConfig.repeats || [0];
 			const freqs = soundConfig.frequencies;

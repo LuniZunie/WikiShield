@@ -1039,7 +1039,11 @@ export class WikiShieldInterface {
 						params: {}
 					},
 					{
-						name: "rollbackAndWarn",
+						name: "rollback",
+						params: {}
+					},
+					{
+						name: "warn",
 						params: {
 							warningType,
 							level,
@@ -1302,15 +1306,15 @@ export class WikiShieldInterface {
 
 			switch (param.type) {
 				case "choice":
-				const optionHTML = param.options.reduce((prev, cur) => prev + `<option>${cur}</option>`, "");
-				container.innerHTML += `
+					const optionHTML = param.options.reduce((prev, cur) => prev + `<option>${cur}</option>`, "");
+					container.innerHTML += `
 							<select data-paramid="${param.id}">
 								${optionHTML}
 							</select>
 						`;
 				break;
 				case "text":
-				container.innerHTML += `<input type="text" data-paramid="${param.id}">`;
+					container.innerHTML += `<input type="text" data-paramid="${param.id}">`;
 				break;
 				default:
 				break;

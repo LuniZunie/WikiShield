@@ -84,7 +84,11 @@ export const defaultSettings = {
 					params: {}
 				},
 				{
-					name: "rollbackAndWarn",
+					name: "rollback",
+					params: {}
+				},
+				{
+					name: "warn",
 					params: {
 						warningType: "Vandalism",
 						level: "auto"

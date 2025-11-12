@@ -187,7 +187,7 @@ export const __script__ = {
 			// Fill in missing options with defaults
 			for (const key in defaultSettings) {
 				const value = options[key];
-				if (value == null) {
+				if (value === null) {
 					options[key] = defaultSettings[key];
 				} else if (typeof value === "object" && !Array.isArray(value)) {
 					// For nested objects, fill in missing nested keys
@@ -200,14 +200,31 @@ export const __script__ = {
 			}
 
 			// Ensure controls are in the right format (array of arrays of strings)
-			for (const controlKey in options.controls) {
-				if (typeof options.controls[controlKey] === "string") {
-					options.controls[controlKey] = [options.controls[controlKey]];
+			for (const script of options.controlScripts) {
+				if (typeof script.keys === "string") {
+					script.keys = [ script.keys ];
+					script.keys = script.keys.map(key => key.toLowerCase());
 				}
-				const keysLength = options.controls[controlKey].length;
-				for (let i = 0; i < keysLength; i++) {
-					options.controls[controlKey][i] = options.controls[controlKey][i].toLowerCase();
-				}
+
+				script.actions = script.actions.flatMap(action => {
+					if (action.name === "rollbackAndWarn") {
+						action = [
+							{
+								name: "rollback",
+								params: {}
+							},
+							{
+								name: "warn",
+								params: {
+									warningType: action.params.warningType || "Vandalism",
+									level: action.params.level || "auto"
+								}
+							},
+						];
+					}
+
+					return action;
+				});
 			}
 
 			return options;
