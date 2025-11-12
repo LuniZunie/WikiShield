@@ -583,7 +583,8 @@ export class WikiShieldEventManager {
 							"Persistent vandalism",
 							"Edit warring",
 							"BLP violations",
-							"Sockpuppetry"
+							"Sockpuppetry",
+							"Arbitration enforcement"
 						]
 					}
 				],

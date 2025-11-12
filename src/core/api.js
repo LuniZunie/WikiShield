@@ -3,7 +3,8 @@
  * Provides methods for interacting with the Wikipedia/MediaWiki API
  */
 export class WikiShieldAPI {
-	constructor(api, options = {}) {
+	constructor(wikishield, api, options = {}) {
+		this.wikishield = wikishield;
 		this.api = api;
 		this.testingMode = options.testingMode || false;
 		this.logger = options.logger;
@@ -11,14 +12,14 @@ export class WikiShieldAPI {
 		this.historyCount = options.historyCount || 10;
 	}
 
-		/**
-		 * Edit the given page with the given content and summary
-		 * @param {String} title The title of the page to edit
-		 * @param {String} content The content to edit the page with
-		 * @param {String} summary The edit summary
-		 * @param {Object} params Any additional parameters to pass to the API
-		 * @returns {Promise<Boolean>}
-		 */
+	/**
+	 * Edit the given page with the given content and summary
+	 * @param {String} title The title of the page to edit
+	 * @param {String} content The content to edit the page with
+	 * @param {String} summary The edit summary
+	 * @param {Object} params Any additional parameters to pass to the API
+	 * @returns {Promise<Boolean>}
+	 */
 	async edit(title, content, summary, params = {}) {
 		if (this.testingMode) {
 			console.log("Edit", { title, content, summary });
@@ -746,7 +747,8 @@ export class WikiShieldAPI {
 					"wltype": "edit",
 					"format": "json",
 					"wlstart": since || "",
-					"wldir": since ? "newer" : "older"
+					"wldir": since ? "newer" : "older",
+					"wlexcludeuser": this.wikishield.username
 				});
 
 				return response.query.watchlist;

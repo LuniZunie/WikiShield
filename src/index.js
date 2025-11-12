@@ -79,7 +79,7 @@ export const __script__ = {
 			this.util = new WikiShieldUtil();
 
 			// Initialize API with dependencies
-			this.api = new WikiShieldAPI(new mw.Api(), {
+			this.api = new WikiShieldAPI(this, new mw.Api(), {
 				testingMode: this.testingMode || false,
 				logger: this.logger,
 				util: this.util,
