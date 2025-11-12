@@ -111,7 +111,7 @@ export const warnings = {
 				title: "Unsourced (BLP)",
 				summary: "adding unsourced content to [[WP:BLP|biographies of living persons]]",
 				description: "Warning for unsourced BLP content.",
-				icon: "fas fa-user-question",
+				icon: "fas fa-person-circle-question",
 				auto: defaultAuto,
 				templates: {
 					"0": null,
