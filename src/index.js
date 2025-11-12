@@ -127,8 +127,8 @@ export const __script__ = {
 			this.whitelist = this.loadWhitelist(obj.whitelist);
 			this.highlighted = this.loadHighlighted(obj.highlighted);
 
-			this.queueWidth = obj.queueWidth || mw.storage.store.getItem("WikiShield:QueueWidth");
-			this.detailsWidth = obj.detailsWidth || mw.storage.store.getItem("WikiShield:DetailsWidth");
+			this.queueWidth = obj.queueWidth || mw.storage.store.getItem("WikiShield:QueueWidth") || "15vw";
+			this.detailsWidth = obj.detailsWidth || mw.storage.store.getItem("WikiShield:DetailsWidth") || "15vw";
 
 			this.statistics = this.loadStats(obj.statistics);
 
@@ -187,7 +187,7 @@ export const __script__ = {
 			// Fill in missing options with defaults
 			for (const key in defaultSettings) {
 				const value = options[key];
-				if (value === null) {
+				if (value === undefined) {
 					options[key] = defaultSettings[key];
 				} else if (typeof value === "object" && !Array.isArray(value)) {
 					// For nested objects, fill in missing nested keys
