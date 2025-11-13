@@ -257,10 +257,10 @@ export class WikiShieldEventManager {
 					const username = currentEdit.user.name;
 
 					// Toggle highlight status
-					if (wikishield.highlighted.has(username)) {
+					/* if (wikishield.highlighted.has(username)) {
 						wikishield.highlighted.delete(username);
 						wikishield.logger.log(`Removed highlight from ${username}`);
-					} else {
+					} else  */{ // temp fix holy
 						// Set highlight to expire based on user setting
 						const expiryMs = wikishield.util.expiryToMilliseconds(wikishield.options.highlightedExpiry);
 						const expirationTime = Date.now() + expiryMs;

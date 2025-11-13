@@ -1085,13 +1085,13 @@ export class AboutSettings extends Component {
 							<p>Developed with ❤️ for the Wikipedia community.</p>
 						</div>
 						<div class="about-links">
-							<a href="https://en.wikipedia.org/wiki/User:MonkeysmashingKeyboards/WikiShield" target="_blank">
+							<a href="https://en.wikipedia.org/wiki/Wikipedia:WikiShield" target="_blank">
 								<span class="fa fa-book"></span> Documentation
 							</a>
-							<a href="https://github.com/monkeysmashingkeyboards/WikiShield" target="_blank">
+							<a href="https://github.com/LuniZunie/WikiShield" target="_blank">
 								<span class="fa fa-code-branch"></span> Source Code
 							</a>
-							<a href="https://en.wikipedia.org/wiki/User_talk:MonkeysmashingKeyboards" target="_blank">
+							<a href="https://en.wikipedia.org/wiki/Wikipedia_talk:WikiShield" target="_blank">
 								<span class="fa fa-comments"></span> Feedback
 							</a>
 						</div>
