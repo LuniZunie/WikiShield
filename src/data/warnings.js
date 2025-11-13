@@ -31,7 +31,7 @@ export const warnings = {
 		"Vandalism": [
 			{
 				title: "Vandalism",
-				summary: "",
+				summary: "vandalism",
 				description: "Warning for general vandalism.",
 				icon: "fas fa-skull-crossbones",
 				auto: defaultAuto,
