@@ -2,7 +2,7 @@ name: Update Wiki Documentation
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, stuff]
     paths:
       - 'src/**/*.js'
       - 'src/**/*.jsx'
