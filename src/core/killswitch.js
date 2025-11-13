@@ -65,6 +65,7 @@ export const killswitch_config = {
  *   return;
  * }
  */
+
 export const killswitch_status = {
     disabled: false,
     forceReload: false
