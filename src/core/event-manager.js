@@ -416,11 +416,6 @@ export class WikiShieldEventManager {
 				progressDesc: "Warning...",
 				needsContinuity: true,
 				validateParameters: (params, currentEdit) => {
-					// If custom templates are provided, skip validation
-					if (params.warningTemplates) {
-						return true;
-					}
-
 					return params.level === "auto" || getWarningFromLookup(params.warningType)?.templates[params.level] !== null;
 				},
 				func: async (params, currentEdit) => {
@@ -444,11 +439,18 @@ export class WikiShieldEventManager {
 			rollback: {
 				description: "Rollback edits",
 				icon: "fas fa-backward",
+				parameters: [
+					{
+						title: "Summary (optional)",
+						id: "summary",
+						type: "text"
+					}
+				],
 				includeInProgress: true,
 				progressDesc: "Rolling back...",
-				func: async (params = {}, currentEdit) => {
+				func: async (params, currentEdit) => {
 					wikishield.queue.playRollbackSound();
-					return await wikishield.revert(currentEdit, params.label || "");
+					return await wikishield.revert(currentEdit, params.summary || "");
 				}
 			},
 			rollbackGoodFaith: {

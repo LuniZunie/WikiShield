@@ -8,7 +8,7 @@ import { WikiShieldSettingsInterface } from './settings.js';
 import { wikishieldStyling } from './styles.js';
 import { wikishieldHTML } from './templates.js';
 import { __script__ } from '../index.js';
-import { warnings, warningTemplateColors } from '../data/warnings.js';
+import { getWarningFromLookup, warnings, warningTemplateColors } from '../data/warnings.js';
 import { colorPalettes } from '../config/defaults.js';
 
 export class WikiShieldInterface {
@@ -1037,7 +1037,9 @@ export class WikiShieldInterface {
 					},
 					{
 						name: "rollback",
-						params: {}
+						params: {
+							summary: getWarningFromLookup(warningType).summary
+						}
 					},
 					{
 						name: "warn",
