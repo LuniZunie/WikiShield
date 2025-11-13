@@ -20,6 +20,7 @@ import { WikiShieldSettingsInterface, wikishieldSettingsAllowedKeys } from './ui
 import { WikiShieldInterface } from './ui/interface.js';
 import { WikiShieldProgressBar } from './ui/progress-bar.jsx';
 import { WikiShield } from './core/wikishield.js';
+import { killswitch_status, checkKillswitch, startKillswitchPolling } from './core/killswitch.js';
 
 export const __script__ = {
 	version: "1.0.0",
@@ -77,27 +78,61 @@ export const __script__ = {
 	let wikishieldEventData;
 
 	if (mw.config.get("wgRelevantPageName") === "Wikipedia:WikiShield/run" && mw.config.get("wgAction") === "view") {
-		wikishield = new WikiShield(wikishieldData);
-		// Initialize queue after wikishield is created (needs reference to wikishield)
-		wikishield.queue = new WikiShieldQueue(wikishield);
+		// Create a temporary API instance to check killswitch before full initialization
+		const tempApi = new WikiShieldAPI(null, new mw.Api());
+		
+		// Check killswitch before initializing
+		checkKillswitch(tempApi).then(() => {
+			if (killswitch_status.disabled) {
+				console.log("WikiShield: Disabled by killswitch");
+				mw.notify("WikiShield is currently disabled by administrators.", { type: 'error' });
+				return;
+			}
 
-		// Initialize event data after wikishield is created (avoids circular dependency)
-		wikishieldEventData = {
-			conditions: createConditions(wikishield),
-			welcomeTemplates: welcomeTemplates
-		};
+			// Initialize WikiShield if not disabled
+			wikishield = new WikiShield(wikishieldData);
+			// Initialize queue after wikishield is created (needs reference to wikishield)
+			wikishield.queue = new WikiShieldQueue(wikishield);
 
-		// Set wikishieldEventData on the wikishield instance
-		wikishield.wikishieldEventData = wikishieldEventData;
+			// Initialize event data after wikishield is created (avoids circular dependency)
+			wikishieldEventData = {
+				conditions: createConditions(wikishield),
+				welcomeTemplates: welcomeTemplates
+			};
 
-		// Initialize event manager's events with the event data
-		wikishield.interface.eventManager.initializeEvents(wikishieldEventData);
+			// Set wikishieldEventData on the wikishield instance
+			wikishield.wikishieldEventData = wikishieldEventData;
 
-		wikishield.init().then(() => {
-			window.addEventListener("beforeunload", () => wikishield.save());
+			// Initialize event manager's events with the event data
+			wikishield.interface.eventManager.initializeEvents(wikishieldEventData);
+
+			wikishield.init().then(() => {
+				window.addEventListener("beforeunload", () => wikishield.save());
+				
+				// Start killswitch polling after successful initialization
+				startKillswitchPolling(wikishield.api);
+			});
+
+			window.addEventListener("keydown", wikishield.keyPressed.bind(wikishield));
+		}).catch((err) => {
+			console.error("WikiShield: Failed to check killswitch:", err);
+			mw.notify("WikiShield: Failed to check killswitch. Loading anyway...", { type: 'warn' });
+			
+			// Initialize anyway if killswitch check fails (network issues shouldn't prevent loading)
+			wikishield = new WikiShield(wikishieldData);
+			wikishield.queue = new WikiShieldQueue(wikishield);
+			wikishieldEventData = {
+				conditions: createConditions(wikishield),
+				welcomeTemplates: welcomeTemplates
+			};
+			wikishield.wikishieldEventData = wikishieldEventData;
+			wikishield.interface.eventManager.initializeEvents(wikishieldEventData);
+			wikishield.init().then(() => {
+				window.addEventListener("beforeunload", () => wikishield.save());
+				startKillswitchPolling(wikishield.api);
+			});
+			window.addEventListener("keydown", wikishield.keyPressed.bind(wikishield));
 		});
-
-		window.addEventListener("keydown", wikishield.keyPressed.bind(wikishield));
 	} else {
 		mw.util.addPortletLink(
 			'p-personal',
