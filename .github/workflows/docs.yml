@@ -43,35 +43,32 @@ jobs:
 
       - name: Deploy to docs branch
         run: |
-          # Check if docs branch exists remotely
-          git fetch origin docs:docs 2>/dev/null || git checkout --orphan docs
-
-          # If branch exists, check it out
-          if git show-ref --verify --quiet refs/heads/docs; then
-            git checkout docs
-          fi
-
-          # Remove all existing files except .git
-          git rm -rf . 2>/dev/null || true
-
-          # Copy generated docs from main branch
-          git checkout main -- docs/
-
-          # Move docs contents to root of docs branch
-          mv docs/* .
-          rmdir docs
+          # Save generated docs to a temporary location
+          mkdir -p /tmp/docs-output
+          cp -r docs/* /tmp/docs-output/
 
           # Create .nojekyll file to allow files starting with underscore
-          touch .nojekyll
+          touch /tmp/docs-output/.nojekyll
+
+          # Switch to docs branch (create if it doesn't exist)
+          git fetch origin docs 2>/dev/null || true
+          git checkout docs 2>/dev/null || git checkout --orphan docs
+
+          # Clean the branch
+          git rm -rf . 2>/dev/null || true
+          rm -rf *
+
+          # Copy generated docs to root
+          cp -r /tmp/docs-output/* .
 
           # Add all files
-          git add .
+          git add -A
 
           # Commit changes if there are any
-          if ! git diff --cached --quiet; then
-            git commit -m "Update documentation (auto-generated from ${{ github.sha }})"
+          if ! git diff --cached --quiet 2>/dev/null; then
+            git commit -m " Update documentation from ${{ github.sha }}"
             git push origin docs --force
-            echo "Documentation deployed successfully to docs branch"
+            echo " Documentation deployed successfully to docs branch"
           else
-            echo "No changes to documentation"
+            echo "ℹ No changes to documentation"
           fi
