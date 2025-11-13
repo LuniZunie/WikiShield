@@ -224,9 +224,28 @@ export class WikiShieldEventManager {
 			},
 			addToWhitelist: {
 				description: "Add user to the whitelist",
-				icon: "fas fa-thumbs-up",
+				icon: "fas fa-user-check",
 				includeInProgress: true,
 				progressDesc: "Whitelisting...",
+				func: (event, currentEdit) => {
+					wikishield.queue.playSparkleSound();
+					const username = currentEdit.user.name;
+
+					wikishield.whitelist.set(username, Date.now());
+					wikishield.statistics.whitelisted++;
+					wikishield.logger.log(`Added ${username} to whitelist`);
+
+					// Refresh the interface to update button text
+					wikishield.interface.renderQueue(wikishield.queue.queue, wikishield.queue.currentEdit);
+
+					return true;
+				}
+			},
+			removeFromWhitelist: {
+				description: "Remove user from the whitelist",
+				icon: "fas fa-user-xmark",
+				includeInProgress: true,
+				progressDesc: "Removing whitelist...",
 				func: (event, currentEdit) => {
 					wikishield.queue.playSparkleSound();
 					const username = currentEdit.user.name;
@@ -235,10 +254,6 @@ export class WikiShieldEventManager {
 					if (wikishield.whitelist.has(username)) {
 						wikishield.whitelist.delete(username);
 						wikishield.logger.log(`Removed ${username} from whitelist`);
-					} else {
-						wikishield.whitelist.set(username, Date.now());
-						wikishield.statistics.whitelisted++;
-						wikishield.logger.log(`Added ${username} to whitelist`);
 					}
 
 					// Refresh the interface to update button text
@@ -249,24 +264,38 @@ export class WikiShieldEventManager {
 			},
 			highlight: {
 				description: "Highlight this user's contributions",
-				icon: "fas fa-highlighter",
+				icon: "fas fa-star",
 				includeInProgress: true,
 				progressDesc: "Highlighting...",
 				func: (event, currentEdit) => {
 					wikishield.queue.playSparkleSound();
 					const username = currentEdit.user.name;
 
-					// Toggle highlight status
-					/* if (wikishield.highlighted.has(username)) {
+					// Set highlight to expire based on user setting
+					const expiryMs = wikishield.util.expiryToMilliseconds(wikishield.options.highlightedExpiry);
+					const expirationTime = Date.now() + expiryMs;
+					wikishield.highlighted.set(username, expirationTime);
+					wikishield.statistics.highlighted++;
+					wikishield.logger.log(`Highlighted user ${username} until ${new Date(expirationTime).toLocaleString()}`);
+
+					// Trigger immediate UI refresh
+					wikishield.interface.renderQueue(wikishield.queue.queue, wikishield.queue.currentEdit);
+
+					return true;
+				}
+			},
+			unhighlight: {
+				description: "Unhighlight this user's contributions",
+				icon: "fas fa-star",
+				includeInProgress: true,
+				progressDesc: "Removing highlight...",
+				func: (event, currentEdit) => {
+					wikishield.queue.playSparkleSound();
+					const username = currentEdit.user.name;
+
+					if (wikishield.highlighted.has(username)) {
 						wikishield.highlighted.delete(username);
 						wikishield.logger.log(`Removed highlight from ${username}`);
-					} else  */{ // temp fix holy
-						// Set highlight to expire based on user setting
-						const expiryMs = wikishield.util.expiryToMilliseconds(wikishield.options.highlightedExpiry);
-						const expirationTime = Date.now() + expiryMs;
-						wikishield.highlighted.set(username, expirationTime);
-						wikishield.statistics.highlighted++;
-						wikishield.logger.log(`Highlighted user ${username} until ${new Date(expirationTime).toLocaleString()}`);
 					}
 
 					// Trigger immediate UI refresh
@@ -277,7 +306,7 @@ export class WikiShieldEventManager {
 			},
 			openPage: {
 				description: "Open page being edited in new tab",
-				icon: "fas fa-file-lines",
+				icon: "fas fa-file",
 				func: (event, currentEdit) => {
 					const page = currentEdit.page;
 					const url = wikishield.util.pageLink(page.title);
@@ -317,7 +346,7 @@ export class WikiShieldEventManager {
 			},
 			openRevision: {
 				description: "Open revision in new tab",
-				icon: "fas fa-pen-to-square",
+				icon: "fas fa-eye",
 				func: (event, currentEdit) => {
 					const revid = currentEdit.revid;
 					const url = wikishield.util.pageLink(`Special:PermanentLink/${revid}`);
@@ -328,7 +357,7 @@ export class WikiShieldEventManager {
 			},
 			openDiff: {
 				description: "Open diff in new tab",
-				icon: "fas fa-code-commit",
+				icon: "fas fa-code-compare",
 				func: (event, currentEdit) => {
 					const revid = currentEdit.revid;
 					const url = wikishield.util.pageLink(`Special:Diff/${revid}`);
@@ -339,7 +368,7 @@ export class WikiShieldEventManager {
 			},
 			thankUser: {
 				description: "Thank user",
-				icon: "fas fa-user-check",
+				icon: "fas fa-heart",
 				includeInProgress: true,
 				progressDesc: "Thanking...",
 				func: async (event, currentEdit) => {
@@ -528,7 +557,7 @@ export class WikiShieldEventManager {
 			},
 			requestProtection: {
 				description: "Request protection",
-				icon: "fas fa-shield",
+				icon: "fas fa-shield-halved",
 				parameters: [
 					{
 						title: "Level",
@@ -635,7 +664,7 @@ export class WikiShieldEventManager {
 			},
 			welcome: {
 				description: "Welcome user",
-				icon: "fas fa-door-open",
+				icon: "fas fa-paper-plane",
 				parameters: [
 					{
 						title: "Template",
@@ -654,6 +683,25 @@ export class WikiShieldEventManager {
 					);
 
 					currentEdit.user.emptyTalkPage = false;
+
+					return true;
+				}
+			},
+			toggleConsecutive: {
+				description: "Toggle consecutive edits",
+				icon: "fas fa-users",
+				parameters: [],
+				func: async (params, currentEdit) => {
+					const latestEdits = document.querySelector("#latest-edits-tab");
+					const consecutiveEdits = document.querySelector("#consecutive-edits-tab");
+
+					if (!consecutiveEdits.classList.contains("hidden")) {
+						if (consecutiveEdits.classList.contains("selected")) {
+							latestEdits.click();
+						} else {
+							consecutiveEdits.click();
+						}
+					}
 
 					return true;
 				}

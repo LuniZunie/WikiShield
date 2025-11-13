@@ -80,13 +80,27 @@ export const __script__ = {
 	if (mw.config.get("wgRelevantPageName") === "Wikipedia:WikiShield/run" && mw.config.get("wgAction") === "view") {
 		// Create a temporary API instance to check killswitch before full initialization
 		const tempApi = new WikiShieldAPI(null, new mw.Api());
-		
+
 		// Check killswitch before initializing
-		checkKillswitch(tempApi).then(() => {
+		checkKillswitch(tempApi, true).then(() => {
 			if (killswitch_status.disabled) {
 				console.log("WikiShield: Disabled by killswitch");
-				mw.notify("WikiShield is currently disabled by administrators.", { type: 'error' });
+				mw.notify("WikiShield is currently disabled by the development team.", { type: 'error' });
 				return;
+			}
+
+			if (window.sessionStorage.getItem("WikiShield:SendHardReloadNotification"))  {
+				window.sessionStorage.removeItem("WikiShield:SendHardReloadNotification");
+				killswitch_status.notifications.push({
+					id: `app-${performance.now()}`,
+					type: "app",
+					subtype: "hard-reload",
+					timestamp: Date.now(),
+					title: "The development team has forced a reload.",
+					agent: "WikiShield Development",
+					category: "WikiShield",
+					read: false
+				});
 			}
 
 			// Initialize WikiShield if not disabled
@@ -108,16 +122,28 @@ export const __script__ = {
 
 			wikishield.init().then(() => {
 				window.addEventListener("beforeunload", () => wikishield.save());
-				
+
+				for (const notification of killswitch_status.notifications) {
+					wikishield.notifications.unshift(notification);
+				}
+
+				killswitch_status.notifications = [ ];
+
 				// Start killswitch polling after successful initialization
-				startKillswitchPolling(wikishield.api);
+				startKillswitchPolling(wikishield.api, data => {
+					for (const notification of data.notifications) {
+						wikishield.notifications.unshift(notification);
+					}
+
+					data.notifications = [ ];
+				});
 			});
 
 			window.addEventListener("keydown", wikishield.keyPressed.bind(wikishield));
 		}).catch((err) => {
 			console.error("WikiShield: Failed to check killswitch:", err);
 			mw.notify("WikiShield: Failed to check killswitch. Loading anyway...", { type: 'warn' });
-			
+
 			// Initialize anyway if killswitch check fails (network issues shouldn't prevent loading)
 			wikishield = new WikiShield(wikishieldData);
 			wikishield.queue = new WikiShieldQueue(wikishield);
