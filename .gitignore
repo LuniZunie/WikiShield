@@ -144,5 +144,8 @@ vite.config.ts.timestamp-*
 # webpack poop
 .webpack-cache/
 
-# Generated documentation (copy to wiki repo manually)
+# Old markdown wiki format (not used anymore)
 wiki/
+
+# Docs
+docs/

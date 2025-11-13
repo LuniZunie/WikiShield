@@ -1,0 +1,66 @@
+{
+  "source": {
+    "include": ["src/"],
+    "includePattern": ".+\\.js(x)?$",
+    "excludePattern": "(node_modules|dist|build|wiki|docs)"
+  },
+  "opts": {
+    "template": "node_modules/docdash",
+    "encoding": "utf8",
+    "destination": "./docs/",
+    "recurse": true,
+    "verbose": false,
+    "readme": "README.md"
+  },
+  "plugins": [
+    "plugins/markdown"
+  ],
+  "markdown": {
+    "hardwrap": false,
+    "idInHeadings": true
+  },
+  "templates": {
+    "cleverLinks": true,
+    "monospaceLinks": false,
+    "default": {
+      "outputSourceFiles": true,
+      "includeDate": true
+    }
+  },
+  "docdash": {
+    "static": true,
+    "sort": true,
+    "sectionOrder": [
+      "Modules",
+      "Classes",
+      "Namespaces",
+      "Tutorials",
+      "Global"
+    ],
+    "search": true,
+    "collapse": false,
+    "typedefs": true,
+    "removeQuotes": "none",
+    "scripts": [],
+    "menu": {
+      "GitHub": {
+        "href": "https://github.com/LuniZunie/WikiShield",
+        "target": "_blank",
+        "class": "menu-item",
+        "id": "github-link"
+      },
+      "Wikipedia": {
+        "href": "https://en.wikipedia.org/wiki/Wikipedia:WikiShield",
+        "target": "_blank",
+        "class": "menu-item",
+        "id": "wikipedia-link"
+      }
+    },
+    "meta": {
+      "title": "WikiShield Documentation",
+      "description": "API documentation for WikiShield - Wikipedia anti-vandalism tool",
+      "keyword": "wikishield, wikipedia, documentation, api, anti-vandalism"
+    }
+  }
+}
+
