@@ -483,7 +483,7 @@ export class WikiShieldEventManager {
 					wikishield.queue.playReportSound();
 
 					const reason = params.comment ? `${params.reportMessage}: ${params.comment}` : params.reportMessage;
-					await wikishield.reportToUAA(
+					await wikishield.reportToAIV(
 						currentEdit.user.name,
 						reason
 					);
