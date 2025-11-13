@@ -1401,7 +1401,7 @@ export const __script__ = {
 			if (ifAndTrue || !script.name) {
 				for (const action of script.actions) {
 					if (action.name === "if") {
-						hasContinuity = this.executeScript(action, hasContinuity, updateProgress, currentEdit);
+						hasContinuity = await this.executeScript(action, hasContinuity, updateProgress, currentEdit);
 					} else {
 						const event = this.interface.eventManager.events[action.name];
 

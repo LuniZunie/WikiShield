@@ -98,7 +98,7 @@ export const welcomeTemplates = {
 	"Default": "{{subst:Welcome}} ~~~~",
 	"Basic": "{{subst:W-basic}}",
 	"Links": "{{subst:W-graphical}}",
-	"Latin": "{{subst:welcome non-latin|LuniZunie}} ~~~~",
+	"Latin": "{{subst:welcome non-latin}} ~~~~",
 	"COI": "{{subst:welcome-coi}} ~~~~",
 	"Mentor": "{{subst:Mentor welcome-autosign}}"
 };

@@ -831,10 +831,19 @@ export class WikiShieldAPI {
 			}
 
 			try {
-				await this.api.rollback(title, user, {
+				const res = await this.api.rollback(title, user, {
 					"summary": summary,
 					"tags": "WikiShield script"
 				});
+
+				if (!res?.revid) {
+					throw new Error("Possible edit conflict.");
+				}
+
+				const revData = await this.getRevisionData(res.revid);
+				if (revData?.user !== this.wikishield.username) {
+					throw new Error("Possible edit conflict.");
+				}
 
 				return true;
 			} catch (err) {
@@ -861,13 +870,22 @@ export class WikiShieldAPI {
 				const title = edit.page.title;
 
 				// Use the MediaWiki API to undo the edit
-				await this.api.postWithToken("csrf", {
+				const res = await this.api.postWithToken("csrf", {
 					"action": "edit",
 					"title": title,
 					"undo": revid,
 					"summary": reason,
 					"tags": "WikiShield script"
 				});
+
+				if (!res?.edit?.newrevid) {
+					throw new Error("Possible edit conflict.");
+				}
+
+				const revData = await this.getRevisionData(res.edit.newrevid);
+				if (revData?.user !== this.wikishield.username) {
+					throw new Error("Possible edit conflict.");
+				}
 
 				return true;
 			} catch (err) {
