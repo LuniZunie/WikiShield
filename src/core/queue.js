@@ -893,6 +893,7 @@ export class WikiShieldQueue {
 		const diffContainer = this.wikishield.interface.elem("#diff-container");
 		diffContainer.innerHTML = ``;
 
+		const index = this.queue.findIndex(item => item.revid === this.currentEdit?.revid);
 		this.currentEdit = await this.generateQueueItem(
 			edit,
 			this.currentEdit.user.editCount,
@@ -903,6 +904,11 @@ export class WikiShieldQueue {
 			null,
 			this.currentEdit.user.emptyTalkPage
 		);
+
+		if (index > -1) {
+			this.queue[index] = this.currentEdit;
+		}
+
 		this.wikishield.interface.renderQueue(this.queue, this.currentEdit);
 	}
 
@@ -925,7 +931,7 @@ export class WikiShieldQueue {
 		]);
 
 		const talkPageText = results[1];
-
+		const index = this.queue.findIndex(item => item.revid === this.currentEdit?.revid);
 		this.currentEdit = await this.generateQueueItem(
 			edit,
 			results[0][0].editcount,
@@ -933,6 +939,11 @@ export class WikiShieldQueue {
 			null, false, results[2], results[3],
 			!(await this.wikishield.api.pageExists(`User talk:${edit.user}`))
 		);
+
+		if (index > -1) {
+			this.queue[index] = this.currentEdit;
+		}
+
 		this.wikishield.interface.renderQueue(this.queue, this.currentEdit);
 	}
 

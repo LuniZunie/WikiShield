@@ -1360,8 +1360,6 @@ export class WikiShieldInterface {
 		let previous = null;
 		for (const edit of queue) {
 			let elem = domMap.get(edit.revid);
-
-			// Create DOM element if it doesn't exist
 			if (!elem) {
 				elem = document.createElement("div");
 				elem.classList.add("queue-edit");
@@ -1980,16 +1978,6 @@ export class WikiShieldInterface {
 			}
 		}
 
-		// Scroll to the first changed line in the diff
-		const diffContainer = this.elem("#diff-container");
-		const firstChange = diffContainer.querySelector(".diff-addedline, .diff-deletedline");
-		if (firstChange) {
-			// Use setTimeout to ensure the DOM is fully rendered before scrolling
-			setTimeout(() => {
-				firstChange.scrollIntoView({ behavior: "smooth", block: "center" });
-			}, 100);
-		}
-
 		// Display AI analysis if available
 		this.updateAIAnalysisDisplay(edit.aiAnalysis);
 
@@ -2056,6 +2044,16 @@ export class WikiShieldInterface {
 			`;
 
 			this.addTooltipListener($summary.querySelector(".summary"));
+		}
+
+		// Scroll to the first changed line in the diff
+		const diffContainer = this.elem("#diff-container");
+		const firstChange = diffContainer.querySelector(".diff-addedline, .diff-deletedline");
+		if (firstChange) {
+			// Use setTimeout to ensure the DOM is fully rendered before scrolling
+			setTimeout(() => {
+				firstChange.scrollIntoView({ behavior: "smooth", block: "center" });
+			}, 100);
 		}
 	}
 
