@@ -79,7 +79,7 @@ export const __script__ = {
 
 	if (mw.config.get("wgRelevantPageName") === "Wikipedia:WikiShield/run" && mw.config.get("wgAction") === "view") {
 		// Create a temporary API instance to check killswitch before full initialization
-		const tempApi = new WikiShieldAPI(null, mw);
+		const tempApi = new WikiShieldAPI(null, new mw.Api());
 		
 		// Check killswitch before initializing
 		checkKillswitch(tempApi).then(() => {

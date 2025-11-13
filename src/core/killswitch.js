@@ -26,10 +26,24 @@
  * @property {number} polling_interval - How often to check the killswitch page (milliseconds)
  * 
  * @example
- * // Expected format of the killswitch page content:
+ * // To set up the killswitch, create a page at the configured location with this content:
+ * // Page: User:Monkeysmashingkeyboards/killswitch.js
+ * // Content:
  * {
  *   "disabled": false,
  *   "forceReload": false
+ * }
+ * 
+ * // To disable WikiShield:
+ * {
+ *   "disabled": true,
+ *   "forceReload": false
+ * }
+ * 
+ * // To force all users to reload:
+ * {
+ *   "disabled": false,
+ *   "forceReload": true
  * }
  */
 export const killswitch_config = {
@@ -76,6 +90,13 @@ export const killswitch_status = {
 export async function checkKillswitch(api) {
     try {
         const content = await api.getSinglePageContent(killswitch_config.killswitch_page);
+        
+        // Check if content was successfully fetched
+        if (!content) {
+            console.warn("WikiShield: Killswitch page not found or could not be fetched");
+            return killswitch_status;
+        }
+        
         const data = JSON.parse(content);
         
         // Update status
@@ -94,7 +115,7 @@ export async function checkKillswitch(api) {
         
         return killswitch_status;
     } catch (err) {
-        console.error("Failed to check killswitch:", err);
+        console.error("WikiShield: Failed to check killswitch:", err);
         // Return current state on error (don't disable WikiShield on network failures)
         return killswitch_status;
     }
