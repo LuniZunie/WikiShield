@@ -1,0 +1,77 @@
+name: Generate and Deploy Documentation
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "src/**/*.js"
+      - "src/**/*.jsx"
+      - "jsdoc.json"
+      - "scripts/generate-docs.js"
+
+jobs:
+  generate-docs:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate documentation
+        run: npm run docs
+
+      - name: Configure Git
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+      - name: Deploy to docs branch
+        run: |
+          # Check if docs branch exists remotely
+          git fetch origin docs:docs 2>/dev/null || git checkout --orphan docs
+
+          # If branch exists, check it out
+          if git show-ref --verify --quiet refs/heads/docs; then
+            git checkout docs
+          fi
+
+          # Remove all existing files except .git
+          git rm -rf . 2>/dev/null || true
+
+          # Copy generated docs from main branch
+          git checkout main -- docs/
+
+          # Move docs contents to root of docs branch
+          mv docs/* .
+          rmdir docs
+
+          # Create .nojekyll file to allow files starting with underscore
+          touch .nojekyll
+
+          # Add all files
+          git add .
+
+          # Commit changes if there are any
+          if ! git diff --cached --quiet; then
+            git commit -m "Update documentation (auto-generated from ${{ github.sha }})"
+            git push origin docs --force
+            echo "Documentation deployed successfully to docs branch"
+          else
+            echo "No changes to documentation"
+          fi
