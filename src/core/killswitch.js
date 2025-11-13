@@ -2,26 +2,20 @@
  * @module core/killswitch
  * @description Global killswitch system for WikiShield.
  * 
- * This module provides a polling mechanism to check a remote Wikipedia page
- * for killswitch commands that can disable WikiShield functionality globally,
- * force a reload, or selectively disable specific features. This allows for
- * emergency shutdowns or forced updates without requiring users to manually reload.
+ * This module provides a simple polling mechanism to check a remote Wikipedia page
+ * for killswitch commands that can either disable WikiShield entirely or force a reload.
  * 
  * @example
  * import { killswitch_status, startKillswitchPolling } from './core/killswitch.js';
  * 
- * // Check if rollback is disabled
- * if (killswitch_status.killed.rollback) {
- *   console.log("Rollback functionality is disabled by killswitch");
+ * // Check if WikiShield is disabled
+ * if (killswitch_status.disabled) {
+ *   console.log("WikiShield is disabled by killswitch");
  *   return;
  * }
  * 
  * // Start monitoring the killswitch
- * startKillswitchPolling(api, (status) => {
- *   if (status.killed.edit) {
- *     alert("Edit functionality has been disabled");
- *   }
- * });
+ * startKillswitchPolling(api);
  */
 
 /**
@@ -34,82 +28,49 @@
  * @example
  * // Expected format of the killswitch page content:
  * {
- *   "killed": {
- *     "rollback": false,
- *     "warn": false,
- *     "edit": false
- *   }
+ *   "disabled": false,
+ *   "forceReload": false
  * }
  */
 export const killswitch_config = {
     killswitch_page: "User:Monkeysmashingkeyboards/killswitch.js",
-    polling_interval: 60000 // Check every 60 seconds (changed from 1000ms)
+    polling_interval: 60000 // Check every 60 seconds
 };
 
 /**
- * Killswitch status object containing fine-grained feature toggles.
- * Properties are updated by polling the remote killswitch page.
+ * Killswitch status object with two simple options.
  * 
  * @type {Object}
- * @property {Object} killed - Object containing boolean flags for each feature
- * @property {boolean} killed.rollback - Disable rollback functionality
- * @property {boolean} killed.rollback_agf - Disable good-faith rollback
- * @property {boolean} killed.report_uaa - Disable UAA (Username) reports
- * @property {boolean} killed.report_aiv - Disable AIV (Vandalism) reports
- * @property {boolean} killed.report - Disable all reporting functionality
- * @property {boolean} killed.warn - Disable warning users
- * @property {boolean} killed.welcome - Disable welcoming new users
- * @property {boolean} killed.edit - Disable all edit operations
+ * @property {boolean} disabled - If true, WikiShield should not load or operate
+ * @property {boolean} forceReload - If true, WikiShield should reload immediately
  * 
  * @example
- * // Check if a specific feature is disabled
- * if (killswitch_status.killed.rollback) {
- *   console.log("Rollback is disabled by killswitch");
- * }
- * 
- * // Check before performing an action
- * async function revertEdit(edit) {
- *   if (killswitch_status.killed.rollback || killswitch_status.killed.edit) {
- *     throw new Error("Rollback is currently disabled");
- *   }
- *   // ... perform rollback
+ * // Check if WikiShield is disabled
+ * if (killswitch_status.disabled) {
+ *   console.log("WikiShield is disabled");
+ *   return;
  * }
  */
 export const killswitch_status = {
-    killed: {
-        rollback: false,
-        rollback_agf: false,
-        undo: false,
-
-        report_uaa: false,
-        report_aiv: false,
-        report_rpp: false,
-        report: false,
-
-        warn: false,
-        welcome: false,
-        thank: false,
-
-        edit: false,
-    }
+    disabled: false,
+    forceReload: false
 };
 
 /**
  * Check the remote killswitch page and update the global killswitch status.
  * 
  * This function fetches the killswitch configuration page from Wikipedia,
- * parses the JSON content, and updates the killswitch_status object accordingly.
- * All feature flags default to false if not present in the remote configuration.
+ * parses the JSON content, and updates the killswitch_status object.
+ * If forceReload is detected, it will reload the page immediately.
  * 
  * @async
  * @param {WikiShieldAPI} api - The WikiShield API instance for fetching page content
  * @returns {Promise<Object>} The updated killswitch_status object
- * @throws {Error} If the page cannot be fetched or the JSON is invalid
  * 
  * @example
  * const status = await checkKillswitch(wikishield.api);
- * if (status.killed.warn) {
- *   console.log("Warning functionality is now disabled!");
+ * if (status.disabled) {
+ *   console.log("WikiShield has been disabled!");
  * }
  */
 export async function checkKillswitch(api) {
@@ -117,9 +78,18 @@ export async function checkKillswitch(api) {
         const content = await api.getSinglePageContent(killswitch_config.killswitch_page);
         const data = JSON.parse(content);
         
-        // Update the exported killswitch_status object (mutations propagate to all modules)
-        if (data.killed) {
-            Object.assign(killswitch_status.killed, data.killed);
+        // Update status
+        if (typeof data.disabled === 'boolean') {
+            killswitch_status.disabled = data.disabled;
+        }
+        if (typeof data.forceReload === 'boolean') {
+            killswitch_status.forceReload = data.forceReload;
+        }
+        
+        // If force reload is enabled, reload immediately
+        if (killswitch_status.forceReload) {
+            console.log("WikiShield: Force reload triggered by killswitch");
+            location.reload();
         }
         
         return killswitch_status;
@@ -134,51 +104,18 @@ export async function checkKillswitch(api) {
  * Start polling the killswitch page at regular intervals.
  * 
  * This function begins a polling loop that checks the killswitch configuration
- * at the interval specified in killswitch_config. When the killswitch state changes,
- * the optional callback is invoked with the updated status.
+ * at the interval specified in killswitch_config.
  * 
  * @param {WikiShieldAPI} api - The WikiShield API instance for fetching page content
- * @param {Function} [onKillswitchChange] - Optional callback invoked when any killswitch flag changes
- * @param {Object} onKillswitchChange.status - The updated killswitch_status object
  * 
  * @example
- * startKillswitchPolling(wikishield.api, (status) => {
- *   if (status.killed.edit) {
- *     wikishield.interface.showToast(
- *       'Feature Disabled',
- *       'Edit functionality has been disabled by administrators',
- *       0,
- *       'warning'
- *     );
- *   }
- * });
- * 
- * @example
- * More granular response to specific features
- * startKillswitchPolling(wikishield.api, (status) => {
- *   const disabledFeatures = [];
- *   
- *   if (status.killed.rollback) disabledFeatures.push('Rollback');
- *   if (status.killed.warn) disabledFeatures.push('Warnings');
- *   if (status.killed.report) disabledFeatures.push('Reports');
- *   
- *   if (disabledFeatures.length > 0) {
- *     console.log('Disabled features:', disabledFeatures.join(', '));
- *   }
- * });
+ * startKillswitchPolling(wikishield.api);
  */
-export function startKillswitchPolling(api, onKillswitchChange) {
+export function startKillswitchPolling(api) {
     const poll = async () => {
-        const previousState = JSON.stringify(killswitch_status.killed);
         await checkKillswitch(api);
-        const currentState = JSON.stringify(killswitch_status.killed);
         
-        // Only trigger callback if state changed
-        if (currentState !== previousState && onKillswitchChange) {
-            onKillswitchChange(killswitch_status);
-        }
-        
-        // Schedule next check
+        // Schedule next check (only if not force reloaded)
         setTimeout(poll, killswitch_config.polling_interval);
     };
     
