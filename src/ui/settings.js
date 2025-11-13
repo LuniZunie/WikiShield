@@ -684,7 +684,10 @@ export class WikiShieldSettingsInterface {
 				const select = addContainer.querySelector("select");
 
 				Object.keys(this.wikishield.interface.eventManager.events).forEach(name => {
-					select.innerHTML += `<option value="${name}">${this.wikishield.interface.eventManager.events[name].description}</option>`;
+					const event = this.wikishield.interface.eventManager.events[name];
+					if ("description" in event) {
+						select.innerHTML += `<option value="${name}">${this.wikishield.interface.eventManager.events[name].description}</option>`;
+					}
 				});
 				select.innerHTML += `<option value="if">If condition</option>`;
 

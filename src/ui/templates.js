@@ -200,9 +200,17 @@ export const wikishieldHTML = {
 				<i class="fas fa-user-check"></i>
 				<span>Add to whitelist</span>
 			</div>
+			<div id="user-remove-whitelist" class="menu-option" style="display: none;">
+				<i class="fas fa-user-xmark"></i>
+				<span>Remove from whitelist</span>
+			</div>
 			<div id="user-highlight" class="menu-option">
 				<i class="fas fa-star"></i>
 				<span>Highlight user</span>
+			</div>
+			<div id="user-unhighlight" class="menu-option" style="display: none;">
+				<i class="fas fa-star"></i>
+				<span>Unhighlight user</span>
 			</div>
 			<div class="menu-divider"></div>
 			<div id="user-welcome" class="menu-option submenu-trigger">

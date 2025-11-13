@@ -427,14 +427,14 @@ export class WikiShield {
 
 			// Add user talk page to watchlist with configured expiry
 			try {
-				const expiry = wikishield.util.expiryToMilliseconds(wikishield.options.watchlistExpiry);
+				const expiry = this.util.expiryToMilliseconds(this.options.watchlistExpiry);
 				if (expiry > 0) {
 					const toExpire = new Date(Date.now() + expiry);
 
 					await this.api.postWithToken("watch", {
 						"action": "watch",
 						"titles": `User talk:${user}`,
-						"expiry": expiry === Infinity ? "infinity" : wikishield.util?.utcString(toExpire)
+						"expiry": expiry === Infinity ? "infinity" : this.util?.utcString(toExpire)
 					});
 				}
 			} catch (err) {
@@ -657,7 +657,7 @@ export class WikiShield {
 
 				// Play sound if there are new notifications
 				if (hasNewNotifications && this.notifications.length > 0) {
-					wikishield.queue.playNotificationSound();
+					this.queue.playNotificationSound();
 				}
 
 				// Sort by timestamp
@@ -721,7 +721,14 @@ export class WikiShield {
 
 						let title, subtitle, typeLabel, clickData;
 
-						if (notif.type === "alert") {
+						if (notif.type === "app") {
+							typeLabel = notif.category || "WikiShield";
+
+							title = notif.agent;
+							subtitle = notif.title;
+
+							clickData = "";
+						} else if (notif.type === "alert") {
 							// Echo alert notification (mentions, thanks, page links, etc.)
 							typeLabel = notif.category || "Alert";
 							if (notif.subtype === "mention" || notif.subtype === "mention-success") {
@@ -970,7 +977,7 @@ export class WikiShield {
 
 				// Play sound if there are new watchlist
 				if (hasNewWatchlistItems && this.watchlist.length > 0) {
-					wikishield.queue.playWatchlistSound();
+					this.queue.playWatchlistSound();
 				}
 
 				// Sort by timestamp
@@ -1072,8 +1079,8 @@ export class WikiShield {
 							const watchlistId = item.dataset.watchlistId;
 							this.markWathlistItemRead(watchlistId);
 
-							const url = wikishield.util.pageLink(`Special:Diff/${item.dataset.revid}`);
-							wikishield.interface.eventManager.openWikipediaLink(url, item.dataset.title, event);
+							const url = this.util.pageLink(`Special:Diff/${item.dataset.revid}`);
+							this.interface.eventManager.openWikipediaLink(url, item.dataset.title, event);
 						});
 					});
 				}

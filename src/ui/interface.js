@@ -620,8 +620,18 @@ export class WikiShieldInterface {
 		);
 
 		this.eventManager.linkButton(
+			this.elem("#user-remove-whitelist"),
+			"removeFromWhitelist"
+		);
+
+		this.eventManager.linkButton(
 			this.elem("#user-highlight"),
 			"highlight"
+		);
+
+		this.eventManager.linkButton(
+			this.elem("#user-unhighlight"),
+			"unhighlight"
 		);
 
 		this.eventManager.linkButton(
@@ -1783,42 +1793,29 @@ export class WikiShieldInterface {
 		});
 
 		// Update whitelist and highlight button text based on current status
-		const whitelistButton = this.elem("#user-add-whitelist");
-		const highlightButton = this.elem("#user-highlight");
-
-		if (whitelistButton) {
+		const addWhitelistButton = this.elem("#user-add-whitelist");
+		const removeWhitelistButton = this.elem("#user-remove-whitelist");
+		if (addWhitelistButton && removeWhitelistButton) {
 			const isWhitelisted = this.wikishield.whitelist.has(edit.user.name);
-			const whitelistIcon = whitelistButton.querySelector("i");
-			const whitelistSpan = whitelistButton.querySelector("span");
-
 			if (isWhitelisted) {
-				whitelistSpan.textContent = "Remove from whitelist";
-				if (whitelistIcon) {
-					whitelistIcon.className = "fas fa-user-xmark";
-				}
+				addWhitelistButton.style = "display: none;";
+				removeWhitelistButton.style = "";
 			} else {
-				whitelistSpan.textContent = "Add to whitelist";
-				if (whitelistIcon) {
-					whitelistIcon.className = "fas fa-user-check";
-				}
+				addWhitelistButton.style = "";
+				removeWhitelistButton.style = "display: none;";
 			}
 		}
 
-		if (highlightButton) {
+		const highlightButton = this.elem("#user-highlight");
+		const unhighlightButton = this.elem("#user-unhighlight");
+		if (highlightButton && unhighlightButton) {
 			const isHighlighted = this.wikishield.highlighted.has(edit.user.name);
-			const highlightIcon = highlightButton.querySelector("i");
-			const highlightSpan = highlightButton.querySelector("span");
-
 			if (isHighlighted) {
-				highlightSpan.textContent = "Remove highlight";
-				if (highlightIcon) {
-					highlightIcon.className = "fas fa-star-half-stroke";
-				}
+				highlightButton.style = "display: none;";
+				unhighlightButton.style = "";
 			} else {
-				highlightSpan.textContent = "Highlight user";
-				if (highlightIcon) {
-					highlightIcon.className = "fas fa-star";
-				}
+				highlightButton.style = "";
+				unhighlightButton.style = "display: none;";
 			}
 		}
 
