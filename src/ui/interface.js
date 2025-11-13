@@ -1635,32 +1635,35 @@ export class WikiShieldInterface {
 			return;
 		}
 
+		if (!edit.seen) {
+			this.wikishield.statistics.reviewed++;
+			edit.seen = true;
+		}
+
 		// Stop checking for newer revisions on the previous edit
 		this.stopNewerRevisionCheck();
 
 		// Start checking for newer revisions on THIS Wikipedia page
 		this.startNewerRevisionCheck(edit);
 
-		if (edit !== null) {
-			edit.consecutive.then(data => {
-				// no longer most recent edit
-				if (!Object.is(this.wikishield.queue.currentEdit, edit)) {
-					return;
+		edit.consecutive.then(data => {
+			// no longer most recent edit
+			if (!Object.is(this.wikishield.queue.currentEdit, edit)) {
+				return;
+			}
+
+			// don't show button if user created page, no longer most recent, or if there is only 1 edit
+			if (data.count <= 1 || typeof data.priorRev === "string") {
+				if (data.priorRev === "created") {
+					this.elem("#right-top > .icons > .created-page").classList.remove("hidden");
 				}
 
-				// don't show button if user created page, no longer most recent, or if there is only 1 edit
-				if (data.count <= 1 || typeof data.priorRev === "string") {
-					if (data.priorRev === "created") {
-						this.elem("#right-top > .icons > .created-page").classList.remove("hidden");
-					}
+				return;
+			}
 
-					return;
-				}
-
-				this.elem("#latest-edits-tab").classList.remove("hidden");
-				this.elem("#consecutive-edits-tab").classList.remove("hidden");
-			});
-		}
+			this.elem("#latest-edits-tab").classList.remove("hidden");
+			this.elem("#consecutive-edits-tab").classList.remove("hidden");
+		});
 
 		userContribsLevel.style.display = "initial";
 		userContribsLevel.style.background = warningTemplateColors[edit.user.warningLevel] || "grey";

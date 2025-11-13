@@ -608,7 +608,6 @@ export class WikiShieldQueue {
 		// Mark as reviewed if moving away from the first item
 		if (currentIndex === 0 && !editWeAreLeaving.reviewed) {
 			editWeAreLeaving.reviewed = true;
-			this.wikishield.statistics.reviewed += 1;
 		}
 
 		// Remove the current item from the queue
