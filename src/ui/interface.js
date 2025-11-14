@@ -1731,7 +1731,6 @@ export class WikiShieldInterface {
 					warningHistory.slice(0, 5).forEach(warning => {
 						const templateDisplay = `${warning.template}${warning.level}`;
 						const userInfo = warning.username ? `(User:${this.wikishield.util.escapeHtml(warning.username)})` : "";
-						console.log(warning, warning.timestamp, new Date(warning.timestamp));
 						const timeInfo = warning.timestamp ? `${this.wikishield.formatNotificationTime(new Date(warning.timestamp))}` : "";
 						tooltipHtml += `<div class="tooltip-item">`;
 						tooltipHtml += `<span class="tooltip-item-level">${this.wikishield.util.escapeHtml(templateDisplay)}</span>`;
