@@ -154,7 +154,32 @@ export const __script__ = {
 			wikishield.wikishieldEventData = wikishieldEventData;
 			wikishield.interface.eventManager.initializeEvents(wikishieldEventData);
 			wikishield.init().then(() => {
-				window.addEventListener("beforeunload", () => wikishield.save());
+				let saveFired = false;
+				const safeSave = () => {
+					if (saveFired) {
+						return;
+					}
+					saveFired = true;
+					wikishield.save();
+				};
+
+				// Safari-safe backgrounding
+				document.addEventListener("visibilitychange", () => {
+					if (document.visibilityState === "hidden") {
+						safeSave();
+					}
+				});
+
+				// iOS-specific fallback
+				window.addEventListener("pagehide", () => {
+					safeSave();
+				});
+
+				// Desktop fallback
+				window.addEventListener("beforeunload", () => {
+					safeSave();
+				});
+
 				startKillswitchPolling(wikishield.api);
 			});
 			window.addEventListener("keydown", wikishield.keyPressed.bind(wikishield));
