@@ -543,6 +543,13 @@ export class WikiShieldQueue {
 					timestamp = timestamp.replace(/<[^>]*>/g, '');
 				}
 
+				{ // get proper timestamp
+					const [ , time, day, monthName, year ] = timestamp.match(/(\d{2}:\d{2}), (\d{1,2}) ([A-Za-z]+) (\d{4})/);
+
+					const monthIndex = [ "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" ].indexOf(monthName);
+					timestamp = new Date(Date.UTC(year, monthIndex, day, ...time.split(":"))).toUTCString();
+				}
+
 				// Extract username from signature (look for User: or User talk: links)
 				let username = null;
 				const userLinkMatch = content.match(/\[\[User(?:[ _]talk)?:([^\]|]+)/i);

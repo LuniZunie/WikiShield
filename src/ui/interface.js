@@ -1730,12 +1730,13 @@ export class WikiShieldInterface {
 					let tooltipHtml = '<div class="tooltip-title">Warning History</div>';
 					warningHistory.slice(0, 5).forEach(warning => {
 						const templateDisplay = `${warning.template}${warning.level}`;
-						const articleInfo = warning.article ? `<span class="tooltip-item-article"> (${this.wikishield.util.escapeHtml(warning.article)})</span>` : "";
-						const userInfo = warning.username ? `User:${this.wikishield.util.escapeHtml(warning.username)}` : (warning.timestamp || warning.section);
+						const userInfo = warning.username ? `(User:${this.wikishield.util.escapeHtml(warning.username)})` : "";
+						console.log(warning, warning.timestamp, new Date(warning.timestamp));
+						const timeInfo = warning.timestamp ? `${this.wikishield.formatNotificationTime(new Date(warning.timestamp))}` : "";
 						tooltipHtml += `<div class="tooltip-item">`;
 						tooltipHtml += `<span class="tooltip-item-level">${this.wikishield.util.escapeHtml(templateDisplay)}</span>`;
-						tooltipHtml += articleInfo;
-						tooltipHtml += `<br><span class="tooltip-item-time">${this.wikishield.util.escapeHtml(userInfo)}</span>`;
+						tooltipHtml += `<span class="tooltip-item-user">${this.wikishield.util.escapeHtml(userInfo)}</span>`;
+						tooltipHtml += `<br><span class="tooltip-item-time">${this.wikishield.util.escapeHtml(timeInfo)}</span>`;
 						tooltipHtml += `</div>`;
 					});
 					if (warningHistory.length > 5) {
@@ -1885,43 +1886,42 @@ export class WikiShieldInterface {
 			const blockIndicator = document.querySelector("#user-contribs #block-count-indicator");
 			if (blockIndicator) {
 				if (blockCount > 0) {
-					// Fetch detailed block history for tooltip
 					const blockHistory = await this.wikishield.api.getBlockHistory(edit.user.name);
 
-					let tooltipHtml = `<div class="tooltip-title">🚫 Block History (${blockCount} total)</div>`;
+					let tooltipHtml = `<div class="tooltip-title">Block History</div>`;
 
-					if (blockHistory.length > 0) {
-						blockHistory.forEach(block => {
-							// Extract plain text from blocker name (remove any HTML tags)
-							let blockerName = block.user || "Unknown";
-							blockerName = blockerName.replace(/<[^>]*>/g, '');
+					// limit to 5 items to match warnings
+					const limited = blockHistory.slice(0, 5);
 
-							const timestamp = new Date(block.timestamp).toLocaleString('en-US', {
-								month: 'short',
-								day: 'numeric',
-								year: 'numeric',
-								hour: '2-digit',
-								minute: '2-digit'
-							});
+					limited.forEach(block => {
+						let blockerName = block.user || "Unknown";
+						blockerName = blockerName.replace(/<[^>]*>/g, '');
 
-							// Extract plain text from duration (remove any HTML tags)
-							let duration = block.params?.duration || "Unknown duration";
-							duration = duration.replace(/<[^>]*>/g, '');
+						let duration = block.params?.duration || "Unknown duration";
+						duration = duration.replace(/<[^>]*>/g, '');
 
-							// Extract plain text from reason (remove any HTML tags)
-							let reason = block.comment || "No reason specified";
-							reason = reason.replace(/<[^>]*>/g, '');
+						let reason = block.comment || "No reason specified";
+						reason = reason.replace(/<[^>]*>/g, '');
 
-							tooltipHtml += `<div class="tooltip-item">`;
-							tooltipHtml += `<span class="tooltip-item-level">By ${this.wikishield.util.escapeHtml(blockerName)}</span><br>`;
-							tooltipHtml += `<span class="tooltip-item-time">${timestamp} • ${this.wikishield.util.escapeHtml(duration)}</span><br>`;
-							tooltipHtml += `<span class="tooltip-item-article">${this.wikishield.util.escapeHtml(reason)}</span>`;
-							tooltipHtml += `</div>`;
-						});
+						const timestamp = block.timestamp ? this.wikishield.formatNotificationTime(new Date(block.timestamp)) : "";
 
-						if (blockCount > blockHistory.length) {
-							tooltipHtml += `<div class="tooltip-more">... and ${blockCount - blockHistory.length} more</div>`;
-						}
+						const userInfo = blockerName ? `(User:${this.wikishield.util.escapeHtml(blockerName)})` : "";
+
+						tooltipHtml += `<div class="tooltip-item">`;
+
+						// equivalent to template + level
+						tooltipHtml += `<span class="tooltip-item-level">${this.wikishield.util.escapeHtml(reason)}</span>`;
+
+						// same formatting as warning username
+						tooltipHtml += `<span class="tooltip-item-user">${this.wikishield.util.escapeHtml(userInfo)}</span>`;
+
+						tooltipHtml += `<br><span class="tooltip-item-time">${this.wikishield.util.escapeHtml(timestamp)} — ${this.wikishield.util.escapeHtml(duration)}</span>`;
+
+						tooltipHtml += `</div>`;
+					});
+
+					if (blockHistory.length > 5) {
+						tooltipHtml += `<div class="tooltip-more">... and ${blockHistory.length - 5} more</div>`;
 					}
 
 					blockIndicator.style.display = "initial";
