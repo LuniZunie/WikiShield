@@ -272,9 +272,11 @@ export const wikishieldHTML = {
 				<i class="fas fa-heart"></i>
 				<span>Thank user</span>
 			</div>
-			<div id="edit-rollback" class="menu-option">
+			<div id="edit-rollback" class="menu-option submenu-trigger">
 				<i class="fas fa-rotate-left"></i>
 				<span>Rollback</span>
+				<i class="fas fa-chevron-right menu-option-chevron"></i>
+				<div class="submenu"></div>
 			</div>
 			<div id="edit-rollback-goodfaith" class="menu-option submenu-trigger">
 				<i class="fas fa-handshake"></i>
