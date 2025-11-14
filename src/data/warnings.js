@@ -523,7 +523,7 @@ export const warnings = {
 				icon: "fas fa-globe",
 				auto: () => "0",
 				templates: {
-					"0": { exists: true, template: "subst:uw-notenglish" },
+					"0": { exists: true, template: "subst:uw-lang-noteng" },
 					"1": null,
 					"2": null,
 					"3": null,

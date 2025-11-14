@@ -2323,10 +2323,11 @@ body.dark-mode .queue-edit-current {
 	letter-spacing: 0.3px;
 }
 
-.tooltip-item-article {
+.tooltip-item-user {
 	color: #87ceeb;
 	word-wrap: break-word;
 	font-weight: 500;
+	margin-left: 6px;
 }
 
 .tooltip-item-time {

@@ -881,11 +881,9 @@ export class WikiShield {
 				const hours = Math.floor(diff / 3600);
 				return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
 			}
-			if (diff < 604800) {
-				const days = Math.floor(diff / 86400);
-				return `${days} day${days !== 1 ? 's' : ''} ago`;
-			}
-			return date.toLocaleDateString();
+
+			const days = Math.floor(diff / 86400);
+			return `${days} day${days !== 1 ? 's' : ''} ago`;
 		}
 
 		formatNotificationTimeShort(date) {
@@ -904,11 +902,9 @@ export class WikiShield {
 				const hours = Math.floor(diff / 3600);
 				return `${hours}h`;
 			}
-			if (diff < 604800) {
-				const days = Math.floor(diff / 86400);
-				return `${days}d`;
-			}
-			return date.toLocaleDateString();
+
+			const days = Math.floor(diff / 86400);
+			return `${days}d`;
 		}
 
 		/**
