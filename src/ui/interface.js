@@ -664,8 +664,8 @@ export class WikiShieldInterface {
 			"thankUser"
 		);
 
-		this.eventManager.linkButton(
-			this.elem("#edit-rollback"),
+		this.createSubmenu(
+			this.elem("#edit-rollback .submenu"),
 			"rollback"
 		);
 
