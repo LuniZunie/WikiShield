@@ -731,41 +731,75 @@ export class WikiShieldInterface {
 			this.elem("#right-top").style.width = savedDetailsWidth;
 		}
 
-		queueWidthAdjust.addEventListener("mousedown", (event) => {
-			this.selectedWidthAdjust = queueWidthAdjust;
-			this.startingMouseX = event.clientX;
-			this.startingSectionWidth = queue.getBoundingClientRect().width;
-		});
+		const clamp = (val, min, max) => Math.min(Math.max(val, min), max);
 
-		detailsWidthAdjust.addEventListener("mousedown", (event) => {
-			this.selectedWidthAdjust = detailsWidthAdjust;
-			this.startingMouseX = event.clientX;
-			this.startingSectionWidth = details.getBoundingClientRect().width;
-		});
+		const startResize = (handle, section, event) => {
+			event.preventDefault();
 
-		window.addEventListener("mouseup", () => {
-			if (this.selectedWidthAdjust === queueWidthAdjust) {
+			this.activeHandle = handle;
+			this.section = section;
+
+			// fixed pixel baseline
+			this.startX = event.clientX;
+			this.startWidthPx = section.getBoundingClientRect().width;
+
+			// fixed window width baseline (so vw conversion is stable)
+			this.windowWidthPx = window.innerWidth;
+		};
+
+		queueWidthAdjust.addEventListener("pointerdown", (e) =>
+			startResize(queueWidthAdjust, queue, e)
+		);
+		detailsWidthAdjust.addEventListener("pointerdown", (e) =>
+			startResize(detailsWidthAdjust, details, e)
+		);
+
+		window.addEventListener("pointerup", () => {
+			if (this.activeHandle === queueWidthAdjust) {
 				this.wikishield.queueWidth = queue.style.width;
 			}
-			if (this.selectedWidthAdjust === detailsWidthAdjust) {
+
+			if (this.activeHandle === detailsWidthAdjust) {
 				this.wikishield.detailsWidth = details.style.width;
 			}
-			this.selectedWidthAdjust = null;
+
+			this.activeHandle = null;
+			this.section = null;
 		});
 
-		window.addEventListener("mousemove", (event) => {
-			if (this.selectedWidthAdjust === queueWidthAdjust) {
-				const newWidth = event.clientX - this.startingMouseX + this.startingSectionWidth;
-				queue.style.width = `${Math.min(Math.max(newWidth / window.innerWidth * 100, 10), 30)}vw`;
-				this.elem("#right-container").style.width = `calc(100% - ${queue.style.width})`;
+		window.addEventListener("pointermove", (event) => {
+			if (!this.activeHandle) return;
+
+			const dx = event.clientX - this.startX;
+
+			let newWidthPx;
+
+			if (this.activeHandle === queueWidthAdjust) {
+				// Left resizer increases with rightward drag
+				newWidthPx = this.startWidthPx + dx;
+			} else {
+				// Right resizer increases with leftward drag
+				newWidthPx = this.startWidthPx - dx;
 			}
 
-			if (this.selectedWidthAdjust === detailsWidthAdjust) {
-				const newWidth = this.startingMouseX - event.clientX + this.startingSectionWidth;
-				details.style.width = `${Math.min(Math.max(newWidth / window.innerWidth * 100, 10), 30)}vw`;
-				this.elem("#main-container").style.width = `calc(100% - ${details.style.width})`;
-				this.elem("#middle-top").style.width = `calc(100% - ${details.style.width})`;
-				this.elem("#right-top").style.width = details.style.width;
+			// Clamp in pixels
+			const minPx = this.windowWidthPx * 0.10; // 10vw
+			const maxPx = this.windowWidthPx * 0.30; // 30vw
+			newWidthPx = clamp(newWidthPx, minPx, maxPx);
+
+			// Convert to vw once
+			const newWidthVw = (newWidthPx / this.windowWidthPx) * 100;
+			this.section.style.width = newWidthVw + "vw";
+
+			// Update siblings based on section identity
+			if (this.activeHandle === queueWidthAdjust) {
+				this.elem("#right-container").style.width = `calc(100% - ${newWidthVw}vw)`;
+			}
+
+			if (this.activeHandle === detailsWidthAdjust) {
+				this.elem("#main-container").style.width = `calc(100% - ${newWidthVw}vw)`;
+				this.elem("#middle-top").style.width = `calc(100% - ${newWidthVw}vw)`;
+				this.elem("#right-top").style.width = `${newWidthVw}vw`;
 			}
 		});
 

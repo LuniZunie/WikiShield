@@ -581,17 +581,18 @@ body.dark-mode .notification-time, body.dark-mode .watchlist-time {
 }
 
 .width-adjust {
-	width: 8px;
+	touch-action: none;
+	width: 16px;
 	height: 100%;
 	position: absolute;
 	top: 0;
-	right: -4px;
+	right: -8px;
 	z-index: 3;
 	cursor: col-resize;
 }
 
 #details-width-adjust {
-	left: -4px;
+	left: -8px;
 }
 
 #right-container {
