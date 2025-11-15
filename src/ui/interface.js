@@ -1627,6 +1627,8 @@ export class WikiShieldInterface {
 		this.elem("#latest-edits-tab").classList.add("hidden");
 		this.elem("#consecutive-edits-tab").classList.add("hidden");
 
+		this.elem("#user-report-uaa").style.display = mw.util.isTemporaryUser(edit.user.name) ? "none" : "";
+
 		document.querySelectorAll("#right-top > .icons > :not(.hidden)").forEach(el => el.classList.add("hidden"));
 
 		this.hide3RRNotice();
