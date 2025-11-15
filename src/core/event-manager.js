@@ -546,6 +546,16 @@ export class WikiShieldEventManager {
 				includeInProgress: true,
 				progressDesc: "Reporting...",
 				func: async (params, currentEdit) => {
+					if (mw.util.isTemporaryUser(currentEdit.user.name)) {
+						wikishield.interface.showToast(
+							"Report Failed",
+							`Can not file a report for a temporary account (${currentEdit.user.name})`,
+							5000,
+							"error"
+						);
+						return false;
+					}
+
 					wikishield.queue.playReportSound();
 
 					const reason = params.comment ? `${params.reportMessage}: ${params.comment}` : params.reportMessage;

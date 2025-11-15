@@ -556,6 +556,8 @@ export class WikiShield {
 							categoryLabel = "Revert";
 						} else if (notif.type === "edit-user-talk") {
 							categoryLabel = "Talk";
+						} else if (notif.type === "emailuser") {
+							categoryLabel = "Email";
 						}
 
 						notifications.push({
@@ -563,7 +565,7 @@ export class WikiShield {
 							type: "alert",
 							subtype: notif.type,
 							timestamp: timestamp,
-							title: notif.title?.full || "Unknown page",
+							title: notif.title?.full || null,
 							agent: notif.agent?.name || "Someone",
 							category: categoryLabel,
 							read: false
@@ -588,8 +590,6 @@ export class WikiShield {
 
 						if (notif.type === "user-rights") {
 							categoryLabel = "User Rights";
-						} else if (notif.type === "emailuser") {
-							categoryLabel = "Email";
 						}
 
 						notifications.push({
@@ -757,7 +757,10 @@ export class WikiShield {
 								title = `Alert: ${notif.subtype || 'notification'}`;
 								subtitle = `${notif.agent} - ${notif.title}`;
 							}
-							clickData = `data-page="${this.escapeHtml(notif.title)}"`;
+
+							if (notif.title) {
+								clickData = `data-page="${this.escapeHtml(notif.title)}"`;
+							}
 						} else if (notif.type === "notice") {
 							// Echo notice notification (user rights, etc.)
 							typeLabel = notif.category || "Notice";
@@ -775,7 +778,10 @@ export class WikiShield {
 								title = `Notice: ${notif.subtype || 'system notification'}`;
 								subtitle = `${notif.agent} - ${notif.title}`;
 							}
-							clickData = `data-page="${this.escapeHtml(notif.title)}"`;
+
+							if (notif.title) {
+								clickData = `data-page="${this.escapeHtml(notif.title)}"`;
+							}
 						} else {
 							// Talk page edit notification
 							typeLabel = "Talk Page";
@@ -792,7 +798,7 @@ export class WikiShield {
 									<span class="notification-type">${typeLabel}</span>
 									<span class="notification-time">${timeStr}</span>
 								</div>
-								<div class="notification-title">${this.escapeHtml(title)}</div>
+								<div class="notification-title">${title ? this.escapeHtml(title) : ""}</div>
 								${subtitle ? `<div class="notification-subtitle">${this.escapeHtml(subtitle)}</div>` : ''}
 								${notif.read ? "" : '<div class="notification-read">Mark as read</div>'}
 							</div>

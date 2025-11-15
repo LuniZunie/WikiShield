@@ -885,7 +885,13 @@ export class WikiShieldSettingsInterface {
 				select.innerHTML += `<option>${choice}</option>`;
 			}
 
-			select.value = value;
+			if (value) {
+				select.value = value;
+			} else {
+				select.value = parameter.options[0];
+				onChange(select.value);
+			}
+
 			select.addEventListener("change", () => onChange(select.value));
 		} else if (parameter.type === "text") {
 			parameterElem.innerHTML += `<input type="text">`;

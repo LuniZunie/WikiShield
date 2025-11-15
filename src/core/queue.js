@@ -59,19 +59,39 @@ export class WikiShieldQueue {
 			}
 
 			const usersToFetch = recentChanges.reduce((str, edit) => str + (str === "" ? "" : "|") + edit.user, "");
-			const editCounts = (await this.wikishield.api.editCount(usersToFetch))
-				.filter(user => user.invalid || user.editcount <= this.wikishield.options.maxEditCount);
 
-			const dict = editCounts
-				.reduce((a, v) => ({ ...a, [v.name]: v.editcount }), {});
-
-			const warnings = (await this.wikishield.api.getText(
+			// Fetch edit counts, warnings (user talk text), blocks and ores in parallel
+			const editCountsPromise = this.wikishield.api.editCount(usersToFetch);
+			const warningsPromise = this.wikishield.api.getText(
 				recentChanges.reduce((str, edit) => str + (str === "" ? "" : "|") + `User_talk:${edit.user}`, "")
-			));
+			);
+			const blocksPromise = this.wikishield.api.usersBlocked(usersToFetch);
+			const oresPromise = this.wikishield.api.ores(recentChanges.reduce((str, edit) => str + (str === "" ? "" : "|") + edit.revid, ""));
 
-			const blocks = await this.wikishield.api.usersBlocked(usersToFetch);
+			const [editCountsRes, warningsRes, blocksRes, oresRes] = await Promise.allSettled([
+				editCountsPromise,
+				warningsPromise,
+				blocksPromise,
+				oresPromise
+			]);
 
-			const ores = (await this.wikishield.api.ores(recentChanges.reduce((str, edit) => str + (str === "" ? "" : "|") + edit.revid, "")));
+			let editCounts = [];
+			if (editCountsRes.status === 'fulfilled') {
+				editCounts = editCountsRes.value.filter(user => user.invalid || user.editcount <= this.wikishield.options.maxEditCount);
+			} else {
+				console.error('editCount failed:', editCountsRes.reason);
+			}
+
+			const dict = editCounts.reduce((a, v) => ({ ...a, [v.name]: v.editcount }), {});
+
+			const warnings = warningsRes.status === 'fulfilled' ? warningsRes.value : {};
+			if (warningsRes.status === 'rejected') console.error('getText (warnings) failed:', warningsRes.reason);
+
+			const blocks = blocksRes.status === 'fulfilled' ? blocksRes.value : {};
+			if (blocksRes.status === 'rejected') console.error('usersBlocked failed:', blocksRes.reason);
+
+			const ores = oresRes.status === 'fulfilled' ? oresRes.value : {};
+			if (oresRes.status === 'rejected') console.error('ores failed:', oresRes.reason);
 
 			recentChanges
 				.filter(edit => edit.user in dict)
@@ -86,7 +106,7 @@ export class WikiShieldQueue {
 						this.getWarningLevel(talkPageText),
 						ores[edit.revid] || 0,
 						blocks[edit.user] || false,
-						!(await this.wikishield.api.pageExists(`User talk:${edit.user}`))
+						`User talk:${edit.user}`
 					);
 				});
 
@@ -378,24 +398,60 @@ export class WikiShieldQueue {
 	 * @returns {Object} The queue item
 	 */
 	async generateQueueItem(edit, count, warningLevel, ores, blocked, contribs, history, emptyTalkPage) {
-		contribs = contribs || await this.wikishield.api.contribs(edit.user);
-		history = history || await this.wikishield.api.history(edit.title);
-		const diff = await this.wikishield.api.diff(edit.title, edit.old_revid || edit.parentid, edit.revid);
-		const metadata = await this.wikishield.api.getPageMetadata(edit.title);
+		// Run independent API calls in parallel for speed.
+		const currentUsername = mw.config.get("wgUserName");
+		const oldRev = edit.old_revid || edit.parentid;
 
-		const categories = await this.wikishield.api.categories(edit.old_revid || edit.parentid) ?? [];
+		// Prepare promises, but reuse provided values if passed in
+		const contribsPromise = contribs ? Promise.resolve(contribs) : this.wikishield.api.contribs(edit.user);
+		const historyPromise = history ? Promise.resolve(history) : this.wikishield.api.history(edit.title);
+		const diffPromise = this.wikishield.api.diff(edit.title, oldRev, edit.revid);
+		const metadataPromise = this.wikishield.api.getPageMetadata(edit.title);
+		const categoriesPromise = this.wikishield.api.categories(oldRev);
+		const revertsPromise = currentUsername ? this.wikishield.api.countReverts(edit.title, currentUsername) : Promise.resolve(0);
+		const emptyTalkPagePromise = typeof emptyTalkPage === "string" ? await this.wikishield.api.pageExists(emptyTalkPage) : undefined;
+
+		// Await all of them (settle individually so one failure doesn't block others)
+		const [contribsRes, historyRes, diffRes, metadataRes, categoriesRes, revertsRes, emptyTalkPageRes] = await Promise.allSettled([
+			contribsPromise,
+			historyPromise,
+			diffPromise,
+			metadataPromise,
+			categoriesPromise,
+			revertsPromise,
+			emptyTalkPagePromise
+		]);
+
+		// Extract results with safe fallbacks and log errors
+		contribs = contribsRes.status === 'fulfilled' ? contribsRes.value : (contribs || []);
+		if (contribsRes.status === 'rejected') console.error('contribs failed:', contribsRes.reason);
+
+		history = historyRes.status === 'fulfilled' ? historyRes.value : (history || []);
+		if (historyRes.status === 'rejected') console.error('history failed:', historyRes.reason);
+
+		const diff = diffRes.status === 'fulfilled' ? diffRes.value : '';
+		if (diffRes.status === 'rejected') console.error('diff failed:', diffRes.reason);
+
+		const metadata = metadataRes.status === 'fulfilled' ? metadataRes.value : { dateFormat: null, englishVariant: null };
+		if (metadataRes.status === 'rejected') console.error('metadata failed:', metadataRes.reason);
+
+		const categories = categoriesRes.status === 'fulfilled' ? (categoriesRes.value ?? []) : [];
+		if (categoriesRes.status === 'rejected') console.error('categories failed:', categoriesRes.reason);
+
+		const reverts = revertsRes.status === 'fulfilled' ? revertsRes.value : 0;
+		if (revertsRes.status === 'rejected') console.error('countReverts failed:', revertsRes.reason);
+
+		if (emptyTalkPagePromise !== undefined) {
+			emptyTalkPage = emptyTalkPageRes.status === 'fulfilled' ? !emptyTalkPageRes.value : false;
+			if (emptyTalkPageRes.status === 'rejected') console.error('emptyTalkPage failed:', emptyTalkPageRes.reason);
+		}
 
 		// Check if diff mentions current user
-		const currentUsername = mw.config.get("wgUserName");
-		const reverts = await this.wikishield.api.countReverts(edit.title, currentUsername);
-
 		let mentionsMe = false;
 		if (currentUsername && diff) {
-			// Create a temporary div to parse HTML and get text content
 			const tempDiv = document.createElement("div");
 			tempDiv.innerHTML = diff;
 			const diffText = tempDiv.textContent || tempDiv.innerText || "";
-			// Case-insensitive search for username
 			mentionsMe = diffText.toLowerCase().includes(currentUsername.toLowerCase());
 		}
 
@@ -944,7 +1000,7 @@ export class WikiShieldQueue {
 			results[0][0].editcount,
 			this.getWarningLevel(talkPageText),
 			null, false, results[2], results[3],
-			!(await this.wikishield.api.pageExists(`User talk:${edit.user}`))
+			`User talk:${edit.user}`
 		);
 
 		if (index > -1) {
@@ -1000,7 +1056,7 @@ export class WikiShieldQueue {
 				results[0][0].editcount,
 				this.getWarningLevel(talkPageText),
 				null, false, results[2], results[3],
-				!(await this.wikishield.api.pageExists(`User talk:${edit.user}`))
+				`User talk:${edit.user}`
 			);
 
 			this.wikishield.interface.renderQueue(this.queue, this.currentEdit);

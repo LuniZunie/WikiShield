@@ -574,34 +574,45 @@ export class WikiShieldAPI {
 		 */
 		async getLatestRevisions(pages) {
 			try {
-				// Split pages string into array
-				const pageArray = pages.split("|");
+				if (!pages) return {};
+
+				// Split pages string into trimmed array and remove empty entries
+				const pageArray = pages.split("|").map(s => s.trim()).filter(Boolean);
 
 				const result = {};
+				const chunkSize = 50;
+				const chunks = [];
+				for (let i = 0; i < pageArray.length; i += chunkSize) {
+					chunks.push(pageArray.slice(i, i + chunkSize));
+				}
 
-				// Make individual requests for each page to avoid API parameter issues
-				for (const page of pageArray) {
-					try {
-						const response = await this.api.get({
-							"action": "query",
-							"titles": page,
-							"prop": "revisions",
-							"rvprop": "ids",
-							"rvlimit": 1,
-							"format": "json"
-						});
+				// Fire all chunk requests in parallel and wait for completion
+				const promises = chunks.map(chunk => {
+					return this.api.get({
+						"action": "query",
+						"titles": chunk.join("|"),
+						"prop": "revisions",
+						"rvprop": "ids",
+						"format": "json",
+						"formatversion": 2
+					});
+				});
 
-						if (response.query && response.query.pages) {
-							for (const pageId in response.query.pages) {
-								const pageData = response.query.pages[pageId];
-								if (pageData.revisions && pageData.revisions.length > 0 && pageData.title) {
-									result[pageData.title] = pageData.revisions[0].revid;
-								}
+				const settled = await Promise.allSettled(promises);
+				for (const res of settled) {
+					if (res.status !== "fulfilled" || !res.value) {
+						console.log(`Failed to fetch a revision chunk: ${res.status === "rejected" ? res.reason : "no response"}`);
+						continue;
+					}
+
+					const response = res.value;
+					if (response.query && response.query.pages) {
+						for (const pageId in response.query.pages) {
+							const pageData = response.query.pages[pageId];
+							if (pageData && pageData.revisions && pageData.revisions.length > 0 && pageData.title) {
+								result[pageData.title] = pageData.revisions[0].revid;
 							}
 						}
-					} catch (pageErr) {
-						// Skip pages that fail individually
-						console.log(`Failed to fetch revision for ${page}: ${pageErr}`);
 					}
 				}
 

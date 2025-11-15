@@ -433,3 +433,41 @@ code {
 	background: rgba(70, 80, 100, 0.5) !important;
 	color: #e0e0e0 !important;
 }
+
+/* About panel - dark mode overrides */
+.about-content {
+	background: rgba(34, 38, 47, 0.95) !important;
+	border: 1px solid rgba(255, 255, 255, 0.06) !important;
+	box-shadow: none !important;
+	color: #e0e0e0 !important;
+}
+
+.about-version {
+	color: #f1f5ff !important;
+}
+
+.about-version .fa {
+	color: #5b9aff !important;
+}
+
+.about-description p {
+	color: #c6cbd6 !important;
+}
+
+.about-content .about-links a {
+	background: rgba(41, 47, 60, 0.95) !important;
+	color: #89b8e8 !important;
+	border: 1px solid rgba(255, 255, 255, 0.04) !important;
+}
+
+.about-content .about-links a:hover {
+	background: rgba(91, 154, 255, 0.08) !important;
+	box-shadow: 0 6px 16px rgba(91, 154, 255, 0.06) !important;
+	transform: translateY(-1px) !important;
+}
+
+.changelog-content {
+	background: rgba(35, 38, 48, 0.8) !important;
+	color: #e0e8ff !important;
+	border: 1px solid rgba(255, 255, 255, 0.04) !important;
+}
