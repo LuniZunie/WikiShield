@@ -14,7 +14,10 @@ export class Toggle extends Component {
 		return (
 			<div
 				class={`settings-toggle ${value ? 'active' : ''}`}
-				onClick={() => onChange(!value)}
+				onClick={e => {
+					e.target.closest('.settings-toggle').classList.toggle('active');
+					onChange(!value);
+				}}
 			>
 				<div class="toggle-switch">
 					<div class="toggle-slider"></div>
@@ -217,14 +220,12 @@ export class GeneralSettings extends Component {
 			highlightedExpiry,
 			namespaces,
 			selectedNamespaces,
-			enableUsernameHighlighting,
 			onMaxEditCountChange,
 			onMaxQueueSizeChange,
 			onMinOresScoreChange,
 			onWatchlistExpiryChange,
 			onHighlightedExpiryChange,
 			onNamespaceToggle,
-			onUsernameHighlightingChange
 		} = this.props;
 
 		return (
@@ -330,30 +331,21 @@ export class GeneralSettings extends Component {
 					title="Namespaces to show"
 					description="Only edits from the selected namespaces will be shown in your queue."
 				>
-					<div id="namespace-container">
+					<div class="checkbox-container">
 						{Object.entries(namespaces).map(([key, namespace]) => (
 							<div class="namespace-item" key={key}>
-								<label>
+								<label class="checkbox-box">
 									<input
 										type="checkbox"
 										checked={selectedNamespaces.includes(parseInt(key))}
 										onChange={(e) => onNamespaceToggle(parseInt(key), e.target.checked)}
 									/>
-									<span class="namespace-label">{namespace.name}</span>
+									<div class="checkmark"></div>
 								</label>
+								<span>{namespace.name}</span>
 							</div>
 						))}
 					</div>
-				</SettingsSection>
-
-				<SettingsSection
-					title="Username Highlighting"
-					description="Highlight edits that contain your username in the diff"
-				>
-					<Toggle
-						value={enableUsernameHighlighting}
-						onChange={onUsernameHighlightingChange}
-					/>
 				</SettingsSection>
 			</div>
 		);
@@ -867,6 +859,51 @@ ollama serve`}</pre>
 						<strong>Get Ollama:</strong> <a href="https://ollama.com" target="_blank" style="color: #667eea; font-weight: bold;">ollama.com</a>
 						<br /><strong>Popular models:</strong> llama3.2, mistral, gemma2, qwen2.5
 						<br /><strong>Detects:</strong> Vandalism, spam, POV, attacks, copyright issues, policy violations
+					</div>
+				</SettingsSection>
+			</div>
+		);
+	}
+}
+
+export class AutoReportingSettings extends Component {
+	render() {
+		const {
+			enableAutoReporting,
+			autoReportReasons,
+			selectedAutoReportReasons,
+		} = this.props;
+
+		return (
+			<div>
+				<SettingsSection
+					id="enable-auto-reporting"
+					title="Enable Auto-Reporting"
+					description="Automatically report edits that receive certain warnings"
+				>
+					<Toggle
+						value={enableAutoReporting}
+						onChange={this.props.onEnableChange}
+					/>
+				</SettingsSection>
+				<SettingsSection
+					title="Auto-Reportable Warnings"
+					description="Select which warnings should trigger automatic reporting"
+				>
+					<div class="checkbox-container">
+						{autoReportReasons.map((warning) => (
+							<div class="auto-reportable-warning-item" key={warning}>
+								<label class="checkbox-box">
+									<input
+										type="checkbox"
+										checked={selectedAutoReportReasons[warning] === true}
+										onChange={(e) => this.props.onWarningToggle(warning, e.target.checked)}
+									/>
+									<div class="checkmark"></div>
+								</label>
+								<span>{warning}</span>
+							</div>
+						))}
 					</div>
 				</SettingsSection>
 			</div>

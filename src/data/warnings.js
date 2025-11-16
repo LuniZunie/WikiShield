@@ -404,7 +404,7 @@ export const warnings = {
 				show: edit => edit?.isTalk
 			},
 			{
-				title: "Afd removal",
+				title: "AfD removal",
 				summary: "removing AfD templates or comments",
 				description: "Removing AfD templates or other users' comments from AfD discussions.",
 				icon: "fas fa-gavel",
@@ -437,7 +437,8 @@ export const warnings = {
 					"3": { exists: true, template: "subst:uw-mislead3" },
 					"4": { exists: false, template: "subst:uw-generic4", additional: "''Stop using misleading edit summaries on your edits.''" },
 					"4im": null
-				}
+				},
+				onlyWarn: true,
 			},
 			{
 				title: "Inappropriate",
@@ -452,7 +453,8 @@ export const warnings = {
 					"3": { exists: true, template: "subst:uw-bes3" },
 					"4": { exists: true, template: "subst:uw-bes4" },
 					"4im": { exists: true, template: "subst:uw-bes4im" },
-				}
+				},
+				onlyWarn: true,
 			},
 			{
 				title: "Minor edit",
@@ -467,7 +469,8 @@ export const warnings = {
 					"3": null,
 					"4": null,
 					"4im": null
-				}
+				},
+				onlyWarn: true,
 			}
 		],
 		"Behavior": [
@@ -484,7 +487,8 @@ export const warnings = {
 					"3": null,
 					"4": { exists: true, template: "subst:uw-coi-warn", label: "Warn" },
 					"4im": null
-				}
+				},
+				onlyWarn: true,
 			},
 			{
 				title: "Gaming the system",
@@ -499,7 +503,8 @@ export const warnings = {
 					"3": { exists: true, template: "subst:uw-gaming3" },
 					"4": { exists: true, template: "subst:uw-gaming4" },
 					"4im": { exists: true, template: "subst:uw-gaming4im" }
-				}
+				},
+				onlyWarn: true,
 			},
 			{
 				title: "Edit Warring",
@@ -514,7 +519,8 @@ export const warnings = {
 					"3": null,
 					"4": { exists: true, template: "subst:uw-ew", label: "Normal" },
 					"4im": null
-				}
+				},
+				onlyWarn: true,
 			},
 			{
 				title: "Not English",
@@ -529,7 +535,8 @@ export const warnings = {
 					"3": null,
 					"4": null,
 					"4im": null
-				}
+				},
+				onlyWarn: true,
 			},
 		],
 	}

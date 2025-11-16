@@ -1063,6 +1063,25 @@ export class WikiShieldInterface {
 		});
 
 		const execute = async (warningType, level) => {
+			const reportObject = {
+				name: "if",
+				condition: "atFinalWarning",
+				actions: [
+					{
+						name: "if",
+						condition: "operatorNonAdmin",
+						actions: [
+							{
+								name: "reportToAIV",
+								params: {
+									reportMessage: "Vandalism past final warning"
+								}
+							}
+						]
+					}
+				]
+			};
+
 			await this.wikishield.executeScript({
 				actions: [
 					{
@@ -1086,25 +1105,9 @@ export class WikiShieldInterface {
 						name: "highlight",
 						params: {}
 					},
-					{
-						name: "if",
-						condition: "atFinalWarning",
-						actions: [
-							{
-								name: "if",
-								condition: "operatorNonAdmin",
-								actions: [
-									{
-										name: "reportToAIV",
-										params: {
-											reportMessage: "Vandalism past final warning"
-										}
-									}
-								]
-							}
-						]
-					}
-				]
+				].concat(this.wikishield.options.enableAutoReporting && this.wikishield.options.selectedAutoReportReasons[warningType] ?
+					[ reportObject ] : []
+				)
 			});
 
 			this.selectedMenu = null;

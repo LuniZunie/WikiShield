@@ -327,6 +327,9 @@ export const wikishieldHTML = {
 					<div class="settings-left-menu-item" id="settings-ai-button">
 						<span>AI Analysis</span>
 					</div>
+					<div class="settings-left-menu-item" id="settings-auto-reporting-button">
+						<span>Auto Reporting</span>
+					</div>
 					<div class="settings-left-menu-item" id="settings-gadgets-button">
 						<span>Gadgets</span>
 					</div>
