@@ -2,6 +2,9 @@
  * WikiShieldAPI - MediaWiki API wrapper
  * Provides methods for interacting with the Wikipedia/MediaWiki API
  */
+
+const __TAGS__ = "WikiShield script";
+
 export class WikiShieldAPI {
 	constructor(wikishield, api, options = {}) {
 		this.wikishield = wikishield;
@@ -33,7 +36,7 @@ export class WikiShieldAPI {
 				"text": content,
 				"summary": summary,
 				"format": "json",
-				/* "tags": "WikiShield script" */
+				"tags": __TAGS__
 			}, params));
 
 			return true;
@@ -63,7 +66,7 @@ export class WikiShieldAPI {
 					"appendtext": "\n" + content,
 					"summary": summary,
 					"format": "json",
-					/* "tags": "WikiShield script" */
+					"tags": __TAGS__
 				});
 
 				return true;
@@ -844,7 +847,7 @@ export class WikiShieldAPI {
 			try {
 				const res = await this.api.rollback(title, user, {
 					"summary": summary,
-					/* "tags": "WikiShield script" */
+					"tags": __TAGS__
 				});
 
 				if (!res?.revid) {
@@ -886,7 +889,7 @@ export class WikiShieldAPI {
 					"title": title,
 					"undo": revid,
 					"summary": reason,
-					/* "tags": "WikiShield script" */
+					"tags": __TAGS__
 				});
 
 				if (!res?.edit?.newrevid) {
@@ -929,7 +932,7 @@ export class WikiShieldAPI {
 						"user": user,
 						"expiry": duration,
 						"reason": summary,
-						/* "tags": "WikiShield script" */
+						"tags": __TAGS__
 					},
 					blockCreation ? { "nocreate": "" } : {},
 					blockEmail ? { "noemail": "" } : {},
@@ -1028,7 +1031,7 @@ export class WikiShieldAPI {
 					"reason": summary,
 					"protections": `edit=${details.edit}|move=${details.move}`,
 					"expiry": `${details.editExpiry}|${details.moveExpiry}`,
-					/* "tags": "WikiShield script" */
+					"tags": __TAGS__
 				});
 
 				return true;
