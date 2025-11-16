@@ -12,6 +12,39 @@ export const defaultSettings = {
 	enableEditAnalysis: false,
 	enableUsernameAnalysis: false,
 
+	enableAutoReporting: true,
+	selectedAutoReportReasons: {
+		"Vandalism": true,
+		"Subtle vandalism": true,
+		"Image vandalism": true,
+		"Sandbox": true,
+
+		"Unsourced": true,
+		"Unsourced (BLP)": true,
+		"Unsourced genre": true,
+		"POV": false,
+		"Commentary": true,
+		"AI-Generated": true,
+		"AI-Generated (talk)": true,
+		"MOS violation": false,
+		"Censoring": false,
+
+		"Disruption": true,
+		"Deleting": true,
+		"Errors": true,
+		"Editing tests": true,
+		"Chatting": false,
+		"Jokes": true,
+		"Owning": false,
+
+		"Advertising": true,
+		"Spam links": true,
+
+		"Personal attacks": true,
+		"TPO": true,
+		"AfD removal": true,
+	},
+
 	masterVolume: 0.5,
 	volumes: {
 		click: 0.5,

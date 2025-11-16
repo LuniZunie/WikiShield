@@ -8,6 +8,7 @@ import { defaultSettings, colorPalettes } from '../config/defaults.js';
 import { namespaces } from '../data/namespaces.js';
 import { sounds } from '../data/sounds.js';
 import { wikishieldHTML } from './templates.js';
+import { warningsLookup, getWarningFromLookup } from '../data/warnings.js';
 // import { wikishieldEventData } from '../core/event-manager.js';
 import {
 	GeneralSettings,
@@ -17,6 +18,7 @@ import {
 	HighlightedSettings,
 	StatisticsSettings,
 	AISettings,
+	AutoReportingSettings,
 	ImportExportSettings,
 	AboutSettings
 } from './settings-components.jsx';
@@ -288,6 +290,7 @@ export class WikiShieldSettingsInterface {
 			["#settings-appearance-button", this.openAppearance.bind(this)],
 			["#settings-controls-button", this.openControls.bind(this)],
 			["#settings-ai-button", this.openAI.bind(this)],
+			["#settings-auto-reporting-button", this.openAutoReporting.bind(this)],
 			["#settings-gadgets-button", this.openGadgets.bind(this)],
 			["#settings-whitelist-button", this.openWhitelist.bind(this)],
 			["#settings-highlight-button", this.openHighlighted.bind(this)],
@@ -322,7 +325,6 @@ export class WikiShieldSettingsInterface {
 				highlightedExpiry: this.wikishield.options.highlightedExpiry,
 				namespaces,
 				selectedNamespaces: this.wikishield.options.namespacesShown,
-				enableUsernameHighlighting: this.wikishield.options.enableUsernameHighlighting,
 				onMaxEditCountChange: (value) => {
 					this.wikishield.options.maxEditCount = value;
 				},
@@ -348,9 +350,6 @@ export class WikiShieldSettingsInterface {
 						.filter(n => n !== nsid);
 					}
 				},
-				onUsernameHighlightingChange: (value) => {
-					this.wikishield.options.enableUsernameHighlighting = value;
-				}
 			})
 		);
 	}
@@ -1161,6 +1160,24 @@ export class WikiShieldSettingsInterface {
 		});
 	}
 
+	openAutoReporting() {
+		this.wikishield.options.selectedAutoReportReasons ??= { };
+		this.renderComponent(
+			h(AutoReportingSettings, {
+				enableAutoReporting: this.wikishield.options.enableAutoReporting,
+				autoReportReasons: Object.keys(warningsLookup).filter(title => !getWarningFromLookup(title).onlyWarn),
+				selectedAutoReportReasons: this.wikishield.options.selectedAutoReportReasons,
+
+				onEnableChange: (newValue) => {
+					this.wikishield.options.enableAutoReporting = newValue;
+				},
+				onWarningToggle: (key, isEnabled) => {
+					this.wikishield.options.selectedAutoReportReasons[key] = isEnabled;
+				}
+			})
+		);
+	}
+
 	/**
 	* Open gadgets settings seciton
 	*/
@@ -1609,11 +1626,25 @@ export class WikiShieldSettingsInterface {
 					case 'showUsers':
 					case 'sortQueueItems':
 					case 'enableOllamaAI':
+					case 'enableAutoReporting':
 					if (typeof value === 'boolean') {
 						result.settings[key] = value;
 						result.appliedCount++;
 					} else {
 						result.warnings.push(`${key}: Invalid value (${value}), must be boolean`);
+					}
+					break;
+
+					case 'selectedAutoReportReasons':
+					if (typeof value === 'object' && value !== null) {
+						let autoCount = 0;
+						for (const [autoKey, autoValue] of Object.entries(value)) {
+							value[autoKey] = Boolean(autoValue);
+							autoCount++;
+						}
+						if (autoCount > 0) result.appliedCount++;
+					} else {
+						result.warnings.push(`selectedAutoReportReasons: Invalid format, must be object`);
 					}
 					break;
 

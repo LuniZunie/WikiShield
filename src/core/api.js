@@ -33,7 +33,7 @@ export class WikiShieldAPI {
 				"text": content,
 				"summary": summary,
 				"format": "json",
-				"tags": "WikiShield script"
+				/* "tags": "WikiShield script" */
 			}, params));
 
 			return true;
@@ -63,7 +63,7 @@ export class WikiShieldAPI {
 					"appendtext": "\n" + content,
 					"summary": summary,
 					"format": "json",
-					"tags": "WikiShield script"
+					/* "tags": "WikiShield script" */
 				});
 
 				return true;
@@ -844,7 +844,7 @@ export class WikiShieldAPI {
 			try {
 				const res = await this.api.rollback(title, user, {
 					"summary": summary,
-					"tags": "WikiShield script"
+					/* "tags": "WikiShield script" */
 				});
 
 				if (!res?.revid) {
@@ -886,7 +886,7 @@ export class WikiShieldAPI {
 					"title": title,
 					"undo": revid,
 					"summary": reason,
-					"tags": "WikiShield script"
+					/* "tags": "WikiShield script" */
 				});
 
 				if (!res?.edit?.newrevid) {
@@ -929,7 +929,7 @@ export class WikiShieldAPI {
 						"user": user,
 						"expiry": duration,
 						"reason": summary,
-						"tags": "WikiShield script"
+						/* "tags": "WikiShield script" */
 					},
 					blockCreation ? { "nocreate": "" } : {},
 					blockEmail ? { "noemail": "" } : {},
@@ -1028,7 +1028,7 @@ export class WikiShieldAPI {
 					"reason": summary,
 					"protections": `edit=${details.edit}|move=${details.move}`,
 					"expiry": `${details.editExpiry}|${details.moveExpiry}`,
-					"tags": "WikiShield script"
+					/* "tags": "WikiShield script" */
 				});
 
 				return true;
