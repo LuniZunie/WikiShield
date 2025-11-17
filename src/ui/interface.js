@@ -1869,12 +1869,12 @@ export class WikiShieldInterface {
 					if (protection.level === "full") {
 						icon = "🔒";
 						tooltip = "Fully protected";
-					} else if (protection.level === "semi") {
-						icon = "🔐";
-						tooltip = "Semi-protected";
 					} else if (protection.level === "extended") {
-						icon = "🔓";
+						icon = "🔐";
 						tooltip = "Extended confirmed protected";
+					} else if (protection.level === "semi") {
+						icon = "🔓";
+						tooltip = "Semi-protected";
 					}
 
 					protIndicator.innerHTML = `<span style="cursor: help;" data-tooltip="${tooltip}">${icon}</span>`;
