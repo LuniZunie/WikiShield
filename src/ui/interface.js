@@ -1870,10 +1870,10 @@ export class WikiShieldInterface {
 						icon = "🔒";
 						tooltip = "Fully protected";
 					} else if (protection.level === "semi") {
-						icon = "🔓";
+						icon = "🔐";
 						tooltip = "Semi-protected";
 					} else if (protection.level === "extended") {
-						icon = "🔐";
+						icon = "🔓";
 						tooltip = "Extended confirmed protected";
 					}
 
