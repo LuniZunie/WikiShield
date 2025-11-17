@@ -914,7 +914,7 @@ export class AutoReportingSettings extends Component {
 /**
  * Import/Export Settings Panel Component
  */
-export class ImportExportSettings extends Component {
+export class SaveSettings extends Component {
 	constructor(props) {
 		super(props);
 		this.state = {
@@ -1015,12 +1015,26 @@ export class ImportExportSettings extends Component {
 	}
 
 	render() {
-		const { showImportInput, importValue, statusMessage } = this.state;
+		const {
+			showImportInput, importValue, statusMessage,
+			enableCloudStorage,
+			onCloudStorageToggle
+		} = this.state;
 
 		return (
 			<div>
 				<SettingsSection
-					title="Import/Export Settings"
+					id="enable-cloud-storage"
+					title="Enable Cloud Storage"
+					description="Store your settings in the cloud for access across multiple browsers and devices"
+				>
+					<Toggle
+						value={enableCloudStorage}
+						onChange={this.props.onCloudStorageToggle}
+					/>
+				</SettingsSection>
+				<SettingsSection
+					title="Import / Export Settings"
 					description="Import, export, or reset your WikiShield settings. Settings are encoded as a base64 string for easy sharing."
 				>
 					<div style="display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap;">

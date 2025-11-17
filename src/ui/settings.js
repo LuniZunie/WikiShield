@@ -9,6 +9,7 @@ import { namespaces } from '../data/namespaces.js';
 import { sounds } from '../data/sounds.js';
 import { wikishieldHTML } from './templates.js';
 import { warningsLookup, getWarningFromLookup } from '../data/warnings.js';
+import { WikiShieldOllamaAI } from '../ai/ollama.js';
 // import { wikishieldEventData } from '../core/event-manager.js';
 import {
 	GeneralSettings,
@@ -19,7 +20,7 @@ import {
 	StatisticsSettings,
 	AISettings,
 	AutoReportingSettings,
-	ImportExportSettings,
+	SaveSettings,
 	AboutSettings
 } from './settings-components.jsx';
 
@@ -296,7 +297,7 @@ export class WikiShieldSettingsInterface {
 			["#settings-highlight-button", this.openHighlighted.bind(this)],
 			["#settings-statistics-button", this.openStatistics.bind(this)],
 			["#settings-about-button", this.openAbout.bind(this)],
-			["#settings-import-export-button", this.openImportExport.bind(this)],
+			["#settings-save-button", this.openSaveSettings.bind(this)],
 		].forEach(([sel, func]) => container.querySelector(sel).addEventListener("click", () => {
 			this.wikishield.queue.playClickSound();
 
@@ -1562,6 +1563,117 @@ export class WikiShieldSettingsInterface {
 		);
 	}
 
+	validateAndMergeSave(importedString) {
+		const result = {
+			success: false,
+			data: null,
+			warnings: [],
+			appliedCount: 0,
+			error: null
+		};
+
+		let parsed;
+		try {
+			parsed = typeof importedString === "string" ? JSON.parse(atob(importedString)) : importedString;
+			if (typeof parsed !== "object" || parsed === null) throw new Error("Parsed data is not an object");
+		} catch (err) {
+			result.error = "Invalid save string: " + err.message;
+			return result;
+		}
+
+		// Start with current save structure
+		const validated = {
+			changelog: this.wikishield.loadedChangelog ?? 0,
+			options: JSON.parse(JSON.stringify(this.wikishield.options)),
+			statistics: JSON.parse(JSON.stringify(this.wikishield.statistics)),
+			queueWidth: this.wikishield.queueWidth ?? "15vw",
+			detailsWidth: this.wikishield.detailsWidth ?? "15vw",
+			whitelist: [...this.wikishield.whitelist.entries()],
+			highlighted: [...this.wikishield.highlighted.entries()]
+		};
+
+		// --- Validate changelog ---
+		if ("changelog" in parsed) {
+			const version = parsed.changelog;
+			if (typeof version === "string" || typeof version === "number") {
+				validated.changelog = version;
+				result.appliedCount++;
+			} else {
+				result.warnings.push("changelog: Invalid type, must be string or number");
+			}
+		}
+
+		// --- Validate queueWidth and detailsWidth ---
+		const vwValidator = v => typeof v === "string" && /^\d+(\.\d+)?vw$/.test(v);
+		if ("queueWidth" in parsed) {
+			if (vwValidator(parsed.queueWidth)) {
+				validated.queueWidth = parsed.queueWidth;
+				result.appliedCount++;
+			} else {
+				result.warnings.push("queueWidth: Invalid format, must be like '15vw'");
+			}
+		}
+		if ("detailsWidth" in parsed) {
+			if (vwValidator(parsed.detailsWidth)) {
+				validated.detailsWidth = parsed.detailsWidth;
+				result.appliedCount++;
+			} else {
+				result.warnings.push("detailsWidth: Invalid format, must be like '15vw'");
+			}
+		}
+
+		// --- Validate statistics ---
+		if ("statistics" in parsed && typeof parsed.statistics === "object" && parsed.statistics !== null) {
+			validated.statistics = { ...validated.statistics };
+			for (const key of Object.keys(validated.statistics)) {
+				const val = parsed.statistics[key];
+				if (typeof val === "number" && !isNaN(val)) {
+					validated.statistics[key] = val;
+				} else if (val !== undefined) {
+					result.warnings.push(`statistics.${key}: Invalid, must be a number`);
+				}
+			}
+			result.appliedCount++;
+		}
+
+		// --- Validate options ---
+		if ("options" in parsed && typeof parsed.options === "object" && parsed.options !== null) {
+			const optResult = this.validateAndMergeSettings(parsed.options);
+			validated.options = optResult.settings;
+			result.appliedCount += optResult.appliedCount;
+			result.warnings.push(...optResult.warnings);
+		}
+
+		// --- Validate whitelist ---
+		if ("whitelist" in parsed) {
+			if (Array.isArray(parsed.whitelist) && parsed.whitelist.every(
+				entry => Array.isArray(entry) && typeof entry[0] === "string" && typeof entry[1] === "number"
+			)) {
+				validated.whitelist = parsed.whitelist;
+				result.appliedCount++;
+			} else {
+				result.warnings.push("whitelist: Must be array of [username, timestamp]");
+			}
+		}
+
+		// --- Validate highlighted ---
+		if ("highlighted" in parsed) {
+			if (Array.isArray(parsed.highlighted) && parsed.highlighted.every(
+				entry => Array.isArray(entry) && typeof entry[0] === "string" && typeof entry[1] === "number"
+			)) {
+				validated.highlighted = parsed.highlighted;
+				result.appliedCount++;
+			} else {
+				result.warnings.push("highlighted: Must be array of [username, timestamp]");
+			}
+		}
+
+		result.success = result.appliedCount > 0;
+		if (!result.success && !result.warnings.length) result.error = "No valid data found in import";
+		result.data = validated;
+		return result;
+	}
+
 	/**
 	* Validate and merge imported settings with current settings
 	* @param {Object} importedSettings The imported settings object
@@ -1582,13 +1694,22 @@ export class WikiShieldSettingsInterface {
 		}
 
 		const defaults = defaultSettings;
-		const soundKeys = Object.keys(sounds);
-		const namespaceIds = namespaces.map(ns => ns.id);
+		const soundKeys = Object.keys(defaults.soundMappings); // Valid sound triggers
 		const expiryOptions = ["none", "1 hour", "1 day", "1 week", "1 month", "3 months", "6 months", "indefinite"];
+		const validThemes = ["theme-light", "theme-dark"];
+		const colorCount = colorPalettes.length;
+		const namespaceIds = defaults.namespacesShown;
 
-		// Validate and apply each setting
+		const applyValue = (key, value, validator, errorMsg) => {
+			if (validator(value)) {
+				result.settings[key] = value;
+				result.appliedCount++;
+			} else {
+				result.warnings.push(`${key}: ${errorMsg} (${value})`);
+			}
+		};
+
 		for (const [key, value] of Object.entries(importedSettings)) {
-			// Skip if key doesn't exist in defaults (unknown setting)
 			if (!(key in defaults)) {
 				result.warnings.push(`${key}: Unknown setting, ignored`);
 				continue;
@@ -1598,24 +1719,14 @@ export class WikiShieldSettingsInterface {
 				switch (key) {
 					case 'maxQueueSize':
 					case 'maxEditCount':
-					if (typeof value === 'number' && value >= 1 && value <= 500) {
-						result.settings[key] = Math.floor(value);
-						result.appliedCount++;
-					} else {
-						result.warnings.push(`${key}: Invalid value (${value}), must be 1-500`);
-					}
-					break;
+						applyValue(key, Math.floor(value), v => Number.isInteger(v) && v >= 1 && v <= 500, "must be an integer 1-500");
+						break;
 
 					case 'minimumORESScore':
 					case 'soundAlertORESScore':
 					case 'masterVolume':
-					if (typeof value === 'number' && value >= 0 && value <= 1) {
-						result.settings[key] = value;
-						result.appliedCount++;
-					} else {
-						result.warnings.push(`${key}: Invalid value (${value}), must be 0-1`);
-					}
-					break;
+						applyValue(key, value, v => typeof v === 'number' && v >= 0 && v <= 1, "must be a number 0-1");
+						break;
 
 					case 'enableUsernameHighlighting':
 					case 'enableWelcomeLatin':
@@ -1627,221 +1738,196 @@ export class WikiShieldSettingsInterface {
 					case 'sortQueueItems':
 					case 'enableOllamaAI':
 					case 'enableAutoReporting':
-					if (typeof value === 'boolean') {
-						result.settings[key] = value;
-						result.appliedCount++;
-					} else {
-						result.warnings.push(`${key}: Invalid value (${value}), must be boolean`);
-					}
-					break;
+						applyValue(key, Boolean(value), v => typeof v === 'boolean', "must be a boolean");
+						break;
 
 					case 'selectedAutoReportReasons':
-					if (typeof value === 'object' && value !== null) {
-						let autoCount = 0;
-						for (const [autoKey, autoValue] of Object.entries(value)) {
-							value[autoKey] = Boolean(autoValue);
-							autoCount++;
+						if (typeof value === 'object' && value !== null) {
+							result.settings.selectedAutoReportReasons = {};
+							for (const [reason, val] of Object.entries(value)) {
+								result.settings.selectedAutoReportReasons[reason] = Boolean(val);
+							}
+							result.appliedCount++;
+						} else {
+							result.warnings.push("selectedAutoReportReasons: Invalid format, must be an object");
 						}
-						if (autoCount > 0) result.appliedCount++;
-					} else {
-						result.warnings.push(`selectedAutoReportReasons: Invalid format, must be object`);
-					}
-					break;
+						break;
 
 					case 'volumes':
-					if (typeof value === 'object' && value !== null) {
-						let volumeCount = 0;
-						for (const [volumeKey, volumeValue] of Object.entries(value)) {
-							if (typeof volumeValue === 'number' && volumeValue >= 0 && volumeValue <= 1) {
-								if (!result.settings.volumes) result.settings.volumes = {};
-								result.settings.volumes[volumeKey] = volumeValue;
-								volumeCount++;
-							} else {
-								result.warnings.push(`volumes.${volumeKey}: Invalid value (${volumeValue}), must be 0-1`);
+						if (typeof value === 'object' && value !== null) {
+							result.settings.volumes = { ...result.settings.volumes };
+							let applied = 0;
+							for (const [volKey, volVal] of Object.entries(value)) {
+								if (typeof volVal === 'number' && volVal >= 0 && volVal <= 1) {
+									result.settings.volumes[volKey] = volVal;
+									applied++;
+								} else {
+									result.warnings.push(`volumes.${volKey}: Invalid value, must be 0-1`);
+								}
 							}
+							if (applied) result.appliedCount++;
+						} else {
+							result.warnings.push("volumes: Invalid format, must be an object");
 						}
-						if (volumeCount > 0) result.appliedCount++;
-					} else {
-						result.warnings.push(`volumes: Invalid format, must be object`);
-					}
-					break;
+						break;
 
 					case 'soundMappings':
-					if (typeof value === 'object' && value !== null) {
-						let mappingCount = 0;
-						for (const [triggerKey, soundKey] of Object.entries(value)) {
-							if (soundKeys.includes(soundKey)) {
-								if (!result.settings.soundMappings) result.settings.soundMappings = {};
-								result.settings.soundMappings[triggerKey] = soundKey;
-								mappingCount++;
-							} else {
-								result.warnings.push(`soundMappings.${triggerKey}: Invalid sound (${soundKey})`);
+						if (typeof value === 'object' && value !== null) {
+							const allowedSounds = Object.values(defaults.soundMappings); // use values, not keys
+							result.settings.soundMappings = { ...result.settings.soundMappings };
+							let applied = 0;
+							for (const [trigger, sound] of Object.entries(value)) {
+								if (allowedSounds.includes(sound)) {
+									result.settings.soundMappings[trigger] = sound;
+									applied++;
+								} else {
+									result.warnings.push(`soundMappings.${trigger}: Invalid sound`);
+								}
 							}
+							if (applied) result.appliedCount++;
+						} else {
+							result.warnings.push("soundMappings: Invalid format, must be an object");
 						}
-						if (mappingCount > 0) result.appliedCount++;
-					} else {
-						result.warnings.push(`soundMappings: Invalid format, must be object`);
-					}
-					break;
+						break;
+
 
 					case 'watchlistExpiry':
 					case 'highlightedExpiry':
-					if (typeof value === 'string' && expiryOptions.includes(value)) {
-						result.settings[key] = value;
-						result.appliedCount++;
-					} else {
-						result.warnings.push(`${key}: Invalid value (${value}), must be one of: ${expiryOptions.join(', ')}`);
-					}
-					break;
+						applyValue(key, value, v => typeof v === 'string' && expiryOptions.includes(v), `must be one of: ${expiryOptions.join(', ')}`);
+						break;
 
 					case 'wiki':
-					if (typeof value === 'string' && value.length >= 2 && value.length <= 20) {
-						result.settings[key] = value;
-						result.appliedCount++;
-					} else {
-						result.warnings.push(`${key}: Invalid value (${value}), must be 2-20 characters`);
-					}
-					break;
+						applyValue(key, value, v => typeof v === 'string' && v.length >= 2 && v.length <= 20, "must be a string 2-20 chars");
+						break;
 
 					case 'namespacesShown':
-					if (Array.isArray(value)) {
-						const validNamespaces = value.filter(id => namespaceIds.includes(id));
-						if (validNamespaces.length > 0) {
-							result.settings[key] = validNamespaces;
-							result.appliedCount++;
-							if (validNamespaces.length < value.length) {
-								result.warnings.push(`namespacesShown: Some invalid namespace IDs were excluded`);
+						if (Array.isArray(value)) {
+							const filtered = value.filter(v => namespaceIds.includes(v));
+							if (filtered.length) {
+								result.settings.namespacesShown = filtered;
+								result.appliedCount++;
+								if (filtered.length < value.length) result.warnings.push("namespacesShown: Some invalid IDs were excluded");
+							} else {
+								result.warnings.push("namespacesShown: No valid IDs found");
 							}
 						} else {
-							result.warnings.push(`namespacesShown: No valid namespace IDs found`);
+							result.warnings.push("namespacesShown: Must be an array");
 						}
-					} else {
-						result.warnings.push(`namespacesShown: Invalid format, must be array`);
-					}
-					break;
+						break;
 
 					case 'ollamaServerUrl':
-					if (typeof value === 'string' && (value.startsWith('http://') || value.startsWith('https://'))) {
-						result.settings[key] = value;
-						result.appliedCount++;
-					} else {
-						result.warnings.push(`${key}: Invalid URL format`);
-					}
-					break;
+						applyValue(key, value, v => typeof v === 'string' && /^(https?:\/\/)/.test(v), "must be a valid URL starting with http:// or https://");
+						break;
 
 					case 'ollamaModel':
-					if (typeof value === 'string') {
-						result.settings[key] = value;
-						result.appliedCount++;
-					} else {
-						result.warnings.push(`${key}: Invalid value, must be string`);
-					}
-					break;
+						applyValue(key, value, v => typeof v === 'string', "must be a string");
+						break;
 
 					case 'controlScripts':
-					if (Array.isArray(value)) {
-						// Basic validation for control scripts structure
-						const validScripts = value.filter(script => {
-							return script &&
-							Array.isArray(script.keys) &&
-							Array.isArray(script.actions) &&
-							script.keys.length > 0;
-						});
-						if (validScripts.length > 0) {
-							result.settings[key] = validScripts;
-							result.appliedCount++;
-							if (validScripts.length < value.length) {
-								result.warnings.push(`controlScripts: Some invalid scripts were excluded`);
+						if (Array.isArray(value)) {
+							const valid = value.filter(s => Array.isArray(s.keys) && s.keys.length && Array.isArray(s.actions));
+							if (valid.length) {
+								result.settings.controlScripts = valid;
+								result.appliedCount++;
+								if (valid.length < value.length) result.warnings.push("controlScripts: Some invalid scripts were excluded");
+							} else {
+								result.warnings.push("controlScripts: No valid scripts found");
 							}
 						} else {
-							result.warnings.push(`controlScripts: No valid control scripts found`);
+							result.warnings.push("controlScripts: Must be an array");
 						}
-					} else {
-						result.warnings.push(`controlScripts: Invalid format, must be array`);
-					}
-					break;
+						break;
 
 					case 'selectedPalette':
-					if (typeof value === 'number' && value >= 0 && value < colorPalettes.length) {
-						result.settings[key] = Math.floor(value);
-						result.appliedCount++;
-					} else {
-						result.warnings.push(`${key}: Invalid value (${value}), must be 0-${colorPalettes.length - 1}`);
-					}
-					break;
+						applyValue(key, Math.floor(value), v => Number.isInteger(v) && v >= 0 && v < colorCount, `must be an integer 0-${colorCount - 1}`);
+						break;
 
 					case 'theme':
-					const validThemes = ['theme-light', 'theme-dark'];
-					if (typeof value === 'string' && validThemes.includes(value)) {
-						result.settings[key] = value;
-						result.appliedCount++;
-					} else {
-						result.warnings.push(`${key}: Invalid value (${value}), must be 'theme-light' or 'theme-dark'`);
-					}
-					break;
+						applyValue(key, value, v => typeof v === 'string' && validThemes.includes(v), `must be one of: ${validThemes.join(', ')}`);
+						break;
 
 					default:
-					// For any other setting in defaults that we haven't explicitly handled,
-					// just copy it if the type matches
-					if (typeof value === typeof defaults[key]) {
-						result.settings[key] = value;
-						result.appliedCount++;
-					} else {
-						result.warnings.push(`${key}: Type mismatch, expected ${typeof defaults[key]}, got ${typeof value}`);
-					}
-					break;
+						if (typeof value === typeof defaults[key]) {
+							result.settings[key] = value;
+							result.appliedCount++;
+						} else {
+							result.warnings.push(`${key}: Type mismatch, expected ${typeof defaults[key]}`);
+						}
 				}
-			} catch (error) {
-				result.warnings.push(`${key}: Error validating - ${error.message}`);
+			} catch (err) {
+				result.warnings.push(`${key}: Error applying value - ${err.message}`);
 			}
 		}
 
 		result.success = result.appliedCount > 0;
-		if (!result.success && result.warnings.length === 0) {
+		if (!result.success && !result.warnings.length) {
 			result.error = 'No valid settings found in import';
 		}
 
 		return result;
-	}		/**
+	}
+
+	/**
 	* Open import/export settings section
 	*/
-	openImportExport() {
+	openSaveSettings() {
 		this.clearContent();
 		this.contentContainer.innerHTML = `
 				<div class="settings-section">
-					<div class="settings-section-title">Import/Export Settings</div>
-					<div class="settings-section-desc">
-						Import, export, or reset your WikiShield settings. Settings are encoded as a base64 string for easy sharing.
+					<div class="settings-section-title">Save Settings</div>
+					<div class="settings-section-desc">Manage how and where your WikiShield settings are stored.</div>
+					<div class="settings-toggles-section">
+						<div class="settings-section compact inline" id="enable-cloud-storage">
+							<div class="settings-section-content">
+								<div class="settings-section-title">Cloud Storage</div>
+								<div class="settings-section-desc">Store your settings in the cloud for access across multiple browsers and devices.</div>
+							</div>
+						</div>
 					</div>
-					<div style="display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap;">
-						<button id="export-settings-btn" class="add-action-button" style="flex: 1; min-width: 120px;">
-							<span class="fa fa-download"></span> Export Settings
-						</button>
-						<button id="import-settings-btn" class="add-action-button" style="flex: 1; min-width: 120px;">
-							<span class="fa fa-upload"></span> Import Settings
-						</button>
-						<button id="reset-settings-btn" class="add-action-button" style="flex: 1; min-width: 120px; background: #dc3545;">
-							<span class="fa fa-undo"></span> Reset to Default
-						</button>
+					<div class="settings-section">
+						<div class="settings-section-title">Import / Export Settings</div>
+						<div class="settings-section-desc">
+							Import, export, or reset your WikiShield settings. Settings are encoded as a base64 string for easy sharing.
+						</div>
+						<div style="display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap;">
+							<button id="export-settings-btn" class="add-action-button" style="flex: 1; min-width: 120px;">
+								<span class="fa fa-download"></span> Export Settings
+							</button>
+							<button id="import-settings-btn" class="add-action-button" style="flex: 1; min-width: 120px;">
+								<span class="fa fa-upload"></span> Import Settings
+							</button>
+							<button id="reset-settings-btn" class="add-action-button" style="flex: 1; min-width: 120px; background: #dc3545;">
+								<span class="fa fa-undo"></span> Reset to Default
+							</button>
+						</div>
+						<div id="import-export-status" style="margin-top: 12px; padding: 12px; border-radius: 6px; display: none;"></div>
+						<textarea id="import-settings-input"
+							placeholder="Paste base64 settings string here..."
+							style="
+								width: 100%;
+								min-height: 100px;
+								margin-top: 12px;
+								padding: 12px;
+								border: 2px solid rgba(128, 128, 128, 0.3);
+								border-radius: 6px;
+								font-family: 'Courier New', monospace;
+								font-size: 0.85em;
+								background: rgba(0, 0, 0, 0.2);
+								color: inherit;
+								display: none;
+							"></textarea>
 					</div>
-					<div id="import-export-status" style="margin-top: 12px; padding: 12px; border-radius: 6px; display: none;"></div>
-					<textarea id="import-settings-input"
-						placeholder="Paste base64 settings string here..."
-						style="
-							width: 100%;
-							min-height: 100px;
-							margin-top: 12px;
-							padding: 12px;
-							border: 2px solid rgba(128, 128, 128, 0.3);
-							border-radius: 6px;
-							font-family: 'Courier New', monospace;
-							font-size: 0.85em;
-							background: rgba(0, 0, 0, 0.2);
-							color: inherit;
-							display: none;
-						"></textarea>
 				</div>
 			`;
+
+		this.createToggle(
+			this.contentContainer.querySelector("#enable-cloud-storage"),
+			this.wikishield.options.enableCloudStorage,
+			(newValue) => {
+				this.wikishield.options.enableCloudStorage = newValue;
+				mw.storage.store.setItem("WikiShield:CloudStorage", newValue);
+			}
+		);
 
 		// Import/Export handlers
 		const exportBtn = this.contentContainer.querySelector('#export-settings-btn');
@@ -1850,10 +1936,9 @@ export class WikiShieldSettingsInterface {
 		const statusDiv = this.contentContainer.querySelector('#import-export-status');
 		const importInput = this.contentContainer.querySelector('#import-settings-input');
 
-		exportBtn.addEventListener('click', () => {
+		exportBtn.addEventListener('click', async () => {
 			try {
-				const settingsJson = JSON.stringify(this.wikishield.options);
-				const base64String = btoa(settingsJson);
+				const base64String = await this.wikishield.save(true); // Export current settings as base64
 
 				// Create a temporary textarea to copy to clipboard
 				const tempTextarea = document.createElement('textarea');
@@ -1923,14 +2008,11 @@ export class WikiShieldSettingsInterface {
 				}
 
 				try {
-					const settingsJson = atob(base64String);
-					const importedSettings = JSON.parse(settingsJson);
-
 					// Validate and merge settings
-					const validationResult = this.validateAndMergeSettings(importedSettings);
+					const validationResult = this.validateAndMergeSave(base64String);
 
 					if (validationResult.success) {
-						this.wikishield.options = validationResult.settings;
+						this.wikishield.init(validationResult.data, true); // Re-initialize with imported data
 
 						statusDiv.style.display = 'block';
 						statusDiv.style.background = 'rgba(40, 167, 69, 0.2)';
@@ -1987,9 +2069,9 @@ export class WikiShieldSettingsInterface {
 			}
 		});
 
-		resetBtn.addEventListener('click', () => {
+		resetBtn.addEventListener('click', async () => {
 			if (confirm('Are you sure you want to reset all settings to default? This cannot be undone.')) {
-				this.wikishield.options = JSON.parse(JSON.stringify(defaultSettings));
+				await this.wikishield.init({}, true);
 
 				statusDiv.style.display = 'block';
 				statusDiv.style.background = 'rgba(255, 193, 7, 0.2)';
