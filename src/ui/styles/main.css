@@ -4159,3 +4159,11 @@ body.dark-mode ::-webkit-scrollbar-thumb:hover {
 	border-width: 0 0.15em 0.15em 0;
 	transform: rotate(45deg);
 }
+
+.settings-left-menu-item .fas {
+	height: 1em;
+	text-align: center;
+	aspect-ratio: 1 / 1;
+
+	margin-right: 12px;
+}

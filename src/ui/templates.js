@@ -307,16 +307,16 @@ export const wikishieldHTML = {
 						<span>CORE</span>
 					</div>
 					<div class="settings-left-menu-item" id="settings-general-button">
-						<span>General</span>
+						<span><i class="fas fa-gear"></i>General</span>
 					</div>
 					<div class="settings-left-menu-item" id="settings-audio-button">
-						<span>Audio</span>
+						<span><i class="fas fa-volume-high"></i>Audio</span>
 					</div>
 					<div class="settings-left-menu-item" id="settings-appearance-button">
-						<span>Appearance</span>
+						<span><i class="fas fa-palette"></i>Appearance</span>
 					</div>
 					<div class="settings-left-menu-item" id="settings-controls-button">
-						<span>Controls</span>
+						<span><i class="fas fa-keyboard"></i>Controls</span>
 					</div>
 				</div>
 
@@ -325,19 +325,19 @@ export const wikishieldHTML = {
 						<span>MODERATION</span>
 					</div>
 					<div class="settings-left-menu-item" id="settings-ai-button">
-						<span>AI Analysis</span>
+						<span><i class="fas fa-robot"></i>AI Analysis</span>
 					</div>
 					<div class="settings-left-menu-item" id="settings-auto-reporting-button">
-						<span>Auto Reporting</span>
+						<span><i class="fas fa-flag"></i>Auto Reporting</span>
 					</div>
 					<div class="settings-left-menu-item" id="settings-gadgets-button">
-						<span>Gadgets</span>
+						<span><i class="fas fa-toolbox"></i>Gadgets</span>
 					</div>
 					<div class="settings-left-menu-item" id="settings-whitelist-button">
-						<span>Whitelist</span>
+						<span><i class="fas fa-user-check"></i>Whitelist</span>
 					</div>
 					<div class="settings-left-menu-item" id="settings-highlight-button">
-						<span>Highlighted</span>
+						<span><i class="fas fa-star"></i>Highlighted</span>
 					</div>
 				</div>
 
@@ -346,10 +346,10 @@ export const wikishieldHTML = {
 						<span>INFO</span>
 					</div>
 					<div class="settings-left-menu-item" id="settings-statistics-button">
-						<span>Statistics</span>
+						<span><i class="fas fa-chart-area"></i>Statistics</span>
 					</div>
 					<div class="settings-left-menu-item" id="settings-about-button">
-						<span>About</span>
+						<span><i class="fas fa-info"></i>About</span>
 					</div>
 				</div>
 
@@ -357,8 +357,8 @@ export const wikishieldHTML = {
 					<div class="settings-category-header">
 						<span>MISC</span>
 					</div>
-					<div class="settings-left-menu-item" id="settings-import-export-button">
-						<span>Import / Export</span>
+					<div class="settings-left-menu-item" id="settings-save-button">
+						<span><i class="fas fa-floppy-disk"></i>Save</span>
 					</div>
 				</div>
 			</div>

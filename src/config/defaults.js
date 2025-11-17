@@ -4,6 +4,8 @@ export const defaultSettings = {
 	maxQueueSize: 50,
 	maxEditCount: 50,
 	minimumORESScore: 0,
+
+	enableSoundAlerts: true,
 	soundAlertORESScore: 0.95,
 
 	enableUsernameHighlighting: true,
@@ -44,6 +46,8 @@ export const defaultSettings = {
 		"TPO": true,
 		"AfD removal": true,
 	},
+
+	enableCloudStorage: true,
 
 	masterVolume: 0.5,
 	volumes: {
