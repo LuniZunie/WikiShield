@@ -546,7 +546,10 @@ export class WikiShieldAPI {
 					let types = [];
 
 					for (const prot of protections) {
-						types.push(prot.type);
+						if (prot.type !== "edit") {
+							continue;
+						}
+
 						if (prot.level === "sysop") {
 							highestLevel = "full";
 						} else if (prot.level === "autoconfirmed" && highestLevel !== "full") {
@@ -558,8 +561,7 @@ export class WikiShieldAPI {
 
 					return {
 						protected: true,
-						level: highestLevel,
-						types: types
+						level: highestLevel
 					};
 				}
 
