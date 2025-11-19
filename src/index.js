@@ -63,16 +63,6 @@ export const __script__ = {
 		sounds
 	};
 
-	// Classes moved to separate files - see imports at top
-
-	// WikiShieldEventManager moved to src/core/event-manager.js
-
-
-	// WikiShieldSettingsInterface moved to src/ui/settings.js
-	// WikiShieldInterface moved to src/ui/interface.js
-	// WikiShieldProgressBar moved to src/ui/progress-bar.jsx (React component)
-
-
 
 	let wikishield;
 	let wikishieldEventData;
