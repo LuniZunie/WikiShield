@@ -25,11 +25,11 @@ export class WikiShieldQueue {
 		try {
 			this.editsSince = this.wikishield.util.utcString(new Date());
 
-			const whitelistedTags = this.wikishield.__script__.tags.whitelisted;
-
+			const whitelist = this.wikishield.whitelist;
 			const namespaceString = this.wikishield.options.namespacesShown.join("|");
+
 			const recentChanges = (await this.wikishield.api.recentChanges(namespaceString))
-				.filter(edit => !edit.tags?.some(tag => whitelistedTags.includes(tag)))
+				.filter(edit => !(whitelist.users.has(edit.user) || whitelist.pages.has(edit.title) || edit.tags?.some(tag => whitelist.tags.has(tag))))
 				.filter(edit => edit.revid > this.lastRevid);
 
 			this.lastRevid = Math.max(...recentChanges.map(edit => edit.revid));
@@ -93,10 +93,12 @@ export class WikiShieldQueue {
 			const ores = oresRes.status === 'fulfilled' ? oresRes.value : {};
 			if (oresRes.status === 'rejected') console.error('ores failed:', oresRes.reason);
 
+			const highlighted = this.wikishield.highlighted;
+			const minORES = this.wikishield.options.minimumORESScore;
+
 			recentChanges
 				.filter(edit => edit.user in dict)
-				.filter(edit => (ores[edit.revid] || 0) >= this.wikishield.options.minimumORESScore || this.wikishield.highlighted.has(edit.user))
-				.filter(edit => !this.wikishield.whitelist.has(edit.user))
+				.filter(edit => (ores[edit.revid] || 0) >= minORES || highlighted.users.has(edit.user) || highlighted.pages.has(edit.title) || edit.tags?.some(tag => highlighted.tags.has(tag)))
 				.forEach(async edit => {
 					const talkPageText = warnings[`User talk:${edit.user}`] || "";
 
@@ -149,6 +151,7 @@ export class WikiShieldQueue {
 			sorted = this.queue.slice(0, currentIndex).concat(this.queue.slice(currentIndex + 1));
 		}
 
+		const highlighted = this.wikishield.highlighted;
 		sorted = sorted.sort((a, b) => {
 			const aHistory = a.fromHistory;
 			const bHistory = b.fromHistory;
@@ -161,16 +164,28 @@ export class WikiShieldQueue {
 			}
 
 			let aScore = a.ores;
-			if (this.wikishield.highlighted.has(a.user.name)) {
+			if (highlighted.users.has(a.user.name)) {
 				aScore += 100;
-			} else if (a.mentionsMe) {
+			}
+			if (highlighted.pages.has(a.page.title)) {
+				aScore += 75;
+			}
+			aScore += highlighted.tags.filter(tag => a.tags?.includes(tag)).length * 25;
+
+			if (a.mentionsMe) {
 				aScore += 50;
 			}
 
 			let bScore = b.ores;
-			if (this.wikishield.highlighted.has(b.user.name)) {
+			if (highlighted.has(b.user.name)) {
 				bScore += 100;
-			} else if (b.mentionsMe) {
+			}
+			if (highlighted.pages.has(b.page.title)) {
+				bScore += 75;
+			}
+			bScore += highlighted.tags.filter(tag => b.tags?.includes(tag)).length * 25;
+
+			if (b.mentionsMe) {
 				bScore += 50;
 			}
 
@@ -510,7 +525,7 @@ export class WikiShieldQueue {
 			});
 
 			// Perform username analysis for registered users (not TEMPs) and not whitelisted
-			if (!mw.util.isTemporaryUser(edit.user) && !this.wikishield.whitelist.has(edit.user)) {
+			if (!mw.util.isTemporaryUser(edit.user) && !this.wikishield.whitelist.users.has(edit.user)) {
 				this.wikishield.ollamaAI.analyzeUsername(edit.user, edit.title).then(usernameAnalysis => {
 					queueItem.usernameAnalysis = usernameAnalysis;
 

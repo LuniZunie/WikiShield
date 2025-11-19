@@ -293,8 +293,15 @@ export class WikiShieldSettingsInterface {
 			["#settings-ai-button", this.openAI.bind(this)],
 			["#settings-auto-reporting-button", this.openAutoReporting.bind(this)],
 			["#settings-gadgets-button", this.openGadgets.bind(this)],
-			["#settings-whitelist-button", this.openWhitelist.bind(this)],
-			["#settings-highlight-button", this.openHighlighted.bind(this)],
+
+			["#settings-whitelist-users-button", this.openWhitelist.bind(this, "users")],
+			["#settings-whitelist-pages-button", this.openWhitelist.bind(this, "pages")],
+			["#settings-whitelist-tags-button", this.openWhitelist.bind(this, "tags")],
+
+			["#settings-highlight-users-button", this.openHighlighted.bind(this, "users")],
+			["#settings-highlight-pages-button", this.openHighlighted.bind(this, "pages")],
+			["#settings-highlight-tags-button", this.openHighlighted.bind(this, "tags")],
+
 			["#settings-statistics-button", this.openStatistics.bind(this)],
 			["#settings-about-button", this.openAbout.bind(this)],
 			["#settings-save-button", this.openSaveSettings.bind(this)],
@@ -305,7 +312,7 @@ export class WikiShieldSettingsInterface {
 			this.clearContent();
 
 			[...document.querySelectorAll(".settings-left-menu-item.selected")]
-			.forEach(e => e.classList.remove("selected"));
+				.forEach(e => e.classList.remove("selected"));
 			container.querySelector(sel).classList.add("selected");
 
 			func();
@@ -323,7 +330,6 @@ export class WikiShieldSettingsInterface {
 				maxQueueSize: this.wikishield.options.maxQueueSize,
 				minOresScore: this.wikishield.options.minimumORESScore,
 				watchlistExpiry: this.wikishield.options.watchlistExpiry,
-				highlightedExpiry: this.wikishield.options.highlightedExpiry,
 				namespaces,
 				selectedNamespaces: this.wikishield.options.namespacesShown,
 				onMaxEditCountChange: (value) => {
@@ -337,9 +343,6 @@ export class WikiShieldSettingsInterface {
 				},
 				onWatchlistExpiryChange: (value) => {
 					this.wikishield.options.watchlistExpiry = value;
-				},
-				onHighlightedExpiryChange: (value) => {
-					this.wikishield.options.highlightedExpiry = value;
 				},
 				onNamespaceToggle: (nsid, checked) => {
 					if (checked) {
@@ -1269,19 +1272,52 @@ export class WikiShieldSettingsInterface {
 		);
 	}
 
-	/**
-	* Open whitelist settings section
-	*/
-	openWhitelist() {
+	openWhitelist(key) {
+		const descriptionMap = {
+			users: {
+				button: "Add User",
+				input: "username",
+				short: "How long to whitelist a user",
+				long: "This is a list of users you have whitelisted. Edits from these users will not appear in your queue. Whitelists expire based on your configured expiry time."
+			},
+			pages: {
+				button: "Add Page",
+				input: "page title",
+				short: "How long to whitelist a page",
+				long: "This is a list of pages you have whitelisted. Edits to these pages will not appear in your queue. Whitelists expire based on your configured expiry time."
+			},
+			tags: {
+				button: "Add Tag",
+				input: "tag id",
+				short: "How long to whitelist a tag",
+				long: "This is a list of tags you have whitelisted. Edits with these tags will not appear in your queue. Whitelists expire based on your configured expiry time."
+			}
+		};
+
+		const expiryString = this.wikishield.options.whitelistExpiry[key];
 		this.clearContent();
 		this.contentContainer.innerHTML = `
 				<div class="settings-section">
-					<div class="settings-section-title">Whitelisted users</div>
-					<div class="settings-section-desc">This is a list of users you have whitelisted. Edits by these users will not appear in your queue.</div>
+					<div class="settings-section-title">
+						Whitelisted ${key}
+						<div title="Whitelist expiry ${key}" description="${descriptionMap[key].short}" style="float: right; font-size: 0.8em; font-weight: normal; opacity: 0.7;">
+							<select id="whitelist-expiry">
+								<option value="none">None</option>
+								<option value="1 hour">1 hour</option>
+								<option value="1 day">1 day</option>
+								<option value="1 week">1 week</option>
+								<option value="1 month">1 month</option>
+								<option value="3 months">3 months</option>
+								<option value="6 months">6 months</option>
+								<option value="indefinite">Indefinite</option>
+							</select>
+						</div>
+					</div>
+					<div class="settings-section-desc">${descriptionMap[key].long} (currently: ${expiryString}).</div>
 					<div class="user-input-container">
-						<input type="text" id="whitelist-username-input" placeholder="Enter username to whitelist..." class="username-input">
-						<button id="add-whitelist-user" class="add-user-button">
-							Add User
+						<input type="text" id="whitelist-input" placeholder="Enter ${descriptionMap[key].input} to whitelist..." class="username-input">
+						<button id="add-whitelist" class="add-user-button">
+							${descriptionMap[key].button}
 						</button>
 					</div>
 				</div>
@@ -1289,170 +1325,78 @@ export class WikiShieldSettingsInterface {
 			`;
 
 		const container = this.contentContainer.querySelector(".user-container");
-		const input = this.contentContainer.querySelector("#whitelist-username-input");
-		const button = this.contentContainer.querySelector("#add-whitelist-user");
+		const input = this.contentContainer.querySelector("#whitelist-input");
+		const button = this.contentContainer.querySelector("#add-whitelist");
 
-		const addUser = () => {
-			const username = input.value.trim();
-			if (username) {
-				this.wikishield.whitelist.set(username, Date.now());
+		const add = () => {
+			const value = input.value.trim();
+			if (value) {
+				const expiryMs = this.wikishield.util.expiryToMilliseconds(this.wikishield.options.whitelistExpiry[key]);
+
+				const now = Date.now();
+				this.wikishield.whitelist[key].set(value, [ now, now + expiryMs ]);
+
 				input.value = "";
-				this.openWhitelist(); // Refresh the list
+				this.openWhitelist(key); // Refresh the list
 				this.wikishield.sounds.success();
 			}
 		};
 
-		button.addEventListener("click", addUser);
+		button.addEventListener("click", add);
 		input.addEventListener("keypress", (e) => {
-			if (e.key === "Enter") addUser();
+			if (e.key === "Enter") add();
 		});
 
-		this.createUserListWithDates(container, this.wikishield.whitelist, this.wikishield.save.bind(this.wikishield));
+		const whitelistExpiry = this.contentContainer.querySelector("#whitelist-expiry");
+		whitelistExpiry.value = this.wikishield.options.whitelistExpiry[key];
+		whitelistExpiry.addEventListener("change", () => {
+			this.wikishield.options.whitelistExpiry[key] = whitelistExpiry.value;
+		});
+
+		this.createWhitelistList(container, key);
 	}
 
 	/**
-	* Create a list of users given a set of usernames (old format)
+	* Create a list of highlights with expiration times
 	* @param {HTMLElement} container
-	* @param {Set<string>} set
 	*/
-	createUserList(container, set) {
-		for (const user of [...set]) {
-			const userItem = document.createElement("div");
-			container.appendChild(userItem);
-			userItem.innerHTML = `
-					<div>
-						<a target="_blank" href="${this.wikishield.util.pageLink(`Special:Contributions/${user}`)}">${user}</a>
-					</div>
-					<div class="add-action-button remove-button">Remove</div>
-				`;
-			userItem.querySelector(".remove-button").addEventListener("click", () => {
-				set.delete(user);
-				userItem.remove();
-			});
-		}
-	}
-
-	/**
-	* Create a list of users with timestamps
-	* @param {HTMLElement} container
-	* @param {Map<string, number>} map Map of username to timestamp
-	* @param {Function} saveCallback Function to call when list is modified
-	*/
-	createUserListWithDates(container, map, saveCallback) {
+	createWhitelistList(container, key) {
 		// Sort by most recent first
-		const sortedEntries = [...map.entries()].sort((a, b) => b[1] - a[1]);
+		const sortedEntries = [ ...this.wikishield.whitelist[key].entries() ].sort((a, b) => b[1][1] - a[1][1]);
 
-		for (const [user, timestamp] of sortedEntries) {
-			const userItem = document.createElement("div");
-			userItem.style.display = "flex";
-			userItem.style.justifyContent = "space-between";
-			userItem.style.alignItems = "center";
-			userItem.style.padding = "8px 12px";
-			userItem.style.marginBottom = "6px";
-			userItem.style.background = "rgba(255, 255, 255, 0.05)";
-			userItem.style.borderRadius = "8px";
-			userItem.style.border = "1px solid rgba(255, 255, 255, 0.1)";
-
-			const date = new Date(timestamp);
-			const dateStr = date.toLocaleDateString() + " " + date.toLocaleTimeString();
-
-			container.appendChild(userItem);
-			userItem.innerHTML = `
-					<div style="display: flex; flex-direction: column; gap: 4px;">
-						<a target="_blank" href="${this.wikishield.util.pageLink(`Special:Contributions/${user}`)}" style="font-weight: 600;">${user}</a>
-						<span style="font-size: 0.85em; opacity: 0.7;">Added: ${dateStr}</span>
-					</div>
-					<div class="add-action-button remove-button">Remove</div>
-				`;
-			userItem.querySelector(".remove-button").addEventListener("click", () => {
-				map.delete(user);
-				userItem.remove();
-				if (saveCallback) saveCallback();
-			});
-		}
-
-		if (sortedEntries.length === 0) {
-			container.innerHTML = '<div style="opacity: 0.6; text-align: center; padding: 20px;">No users in list</div>';
-		}
-	}
-
-	/**
-	* Open highlighted settings section
-	*/
-	openHighlighted() {
-		const expiryString = this.wikishield.options.highlightedExpiry;
-		this.clearContent();
-		this.contentContainer.innerHTML = `
-				<div class="settings-section">
-					<div class="settings-section-title">Highlighted users</div>
-					<div class="settings-section-desc">This is a list of users you have highlighted. Edits by these users will appear before other edits in your queue. Highlights expire based on your configured expiry time (currently: ${expiryString}).</div>
-					<div class="user-input-container">
-						<input type="text" id="highlighted-username-input" placeholder="Enter username to highlight..." class="username-input">
-						<button id="add-highlighted-user" class="add-user-button">
-							Add User
-						</button>
-					</div>
-				</div>
-				<div class="settings-section user-container"></div>
-			`;
-
-		const container = this.contentContainer.querySelector(".user-container");
-		const input = this.contentContainer.querySelector("#highlighted-username-input");
-		const button = this.contentContainer.querySelector("#add-highlighted-user");
-
-		const addUser = () => {
-			const username = input.value.trim();
-			if (username) {
-				const expiryMs = this.wikishield.util.expiryToMilliseconds(this.wikishield.options.highlightedExpiry);
-				const expirationTime = Date.now() + expiryMs;
-				this.wikishield.highlighted.set(username, expirationTime);
-				input.value = "";
-				this.openHighlighted(); // Refresh the list
-				this.wikishield.sounds.success();
+		const createHref = value => {
+			switch (key) {
+				case "users":
+					return this.wikishield.util.pageLink(`Special:Contributions/${value}`);
+				case "pages":
+					return this.wikishield.util.pageLink(value);
+				case "tags":
+					return this.wikishield.util.pageLink(`Special:Tags/${value}`);
 			}
 		};
 
-		button.addEventListener("click", addUser);
-		input.addEventListener("keypress", (e) => {
-			if (e.key === "Enter") addUser();
-		});
+		for (const [ whitelist, time ] of sortedEntries) {
+			const item = document.createElement("div");
+			item.style.display = "flex";
+			item.style.justifyContent = "space-between";
+			item.style.alignItems = "center";
+			item.style.padding = "8px 12px";
+			item.style.marginBottom = "6px";
+			item.style.background = "rgba(255, 255, 255, 0.05)";
+			item.style.borderRadius = "8px";
+			item.style.border = "1px solid rgba(255, 255, 255, 0.1)";
 
-		this.createHighlightedUserList(container);
-	}
-
-	/**
-	* Create a list of highlighted users with expiration times
-	* @param {HTMLElement} container
-	*/
-	createHighlightedUserList(container) {
-		// Sort by most recent first
-		const sortedEntries = [...this.wikishield.highlighted.entries()].sort((a, b) => b[1] - a[1]);
-
-		for (const [user, expirationTime] of sortedEntries) {
-			const userItem = document.createElement("div");
-			userItem.style.display = "flex";
-			userItem.style.justifyContent = "space-between";
-			userItem.style.alignItems = "center";
-			userItem.style.padding = "8px 12px";
-			userItem.style.marginBottom = "6px";
-			userItem.style.background = "rgba(255, 255, 255, 0.05)";
-			userItem.style.borderRadius = "8px";
-			userItem.style.border = "1px solid rgba(255, 255, 255, 0.1)";
-
-			// Calculate added time by using current expiry setting (approximation)
-			const expiryMs = this.wikishield.util.expiryToMilliseconds(this.wikishield.options.highlightedExpiry);
-			const addedTime = expirationTime - expiryMs;
-			const date = new Date(addedTime);
+			const date = new Date(time[0]);
 			const dateStr = date.toLocaleDateString() + " " + date.toLocaleTimeString();
 
-			const expiresDate = new Date(expirationTime);
+			const expiresDate = new Date(time[1]);
 			const expiresStr = expiresDate.toLocaleDateString() + " " + expiresDate.toLocaleTimeString();
-			const isExpired = Date.now() > expirationTime;
+			const isExpired = Date.now() > time[1];
 
-			container.appendChild(userItem);
-			userItem.innerHTML = `
+			container.appendChild(item);
+			item.innerHTML = `
 					<div style="display: flex; flex-direction: column; gap: 4px;">
-						<a target="_blank" href="${this.wikishield.util.pageLink(`Special:Contributions/${user}`)}" style="font-weight: 600;">${user}</a>
+						<a target="_blank" href="${createHref(whitelist)}" style="font-weight: 600;">${whitelist}</a>
 						<span style="font-size: 0.85em; opacity: 0.7;">Added: ${dateStr}</span>
 						<span style="font-size: 0.85em; opacity: 0.7; color: ${isExpired ? '#ff6b6b' : '#51cf66'};">
 							${isExpired ? 'Expired' : 'Expires'}: ${expiresStr}
@@ -1460,14 +1404,164 @@ export class WikiShieldSettingsInterface {
 					</div>
 					<div class="add-action-button remove-button">Remove</div>
 				`;
-			userItem.querySelector(".remove-button").addEventListener("click", () => {
-				this.wikishield.highlighted.delete(user);
-				userItem.remove();
+			item.querySelector(".remove-button").addEventListener("click", () => {
+				this.wikishield.whitelist[key].delete(whitelist);
+				item.remove();
+
+				this.createWhitelistList(container, key); // Refresh the list
 			});
 		}
 
 		if (sortedEntries.length === 0) {
-			container.innerHTML = '<div style="opacity: 0.6; text-align: center; padding: 20px;">No users highlighted</div>';
+			container.innerHTML = `<div style="opacity: 0.6; text-align: center; padding: 20px;">No ${key} whitelisted</div>`;
+		}
+	}
+
+	/**
+	* Open highlighted settings section
+	*/
+	openHighlighted(key) {
+		const descriptionMap = {
+			users: {
+				button: "Add User",
+				input: "username",
+				short: "How long to highlight a user after issuing a warning",
+				long: "This is a list of users you have highlighted. Edits by these users will appear before other edits in your queue. Highlights expire based on your configured expiry time."
+			},
+			pages: {
+				button: "Add Page",
+				input: "page title",
+				short: "How long to highlight a page",
+				long: "This is a list of pages you have highlighted. Edits on these pages will appear before other edits in your queue. Highlights expire based on your configured expiry time."
+			},
+			tags: {
+				button: "Add Tag",
+				input: "tag id",
+				short: "How long to highlight a tag",
+				long: "This is a list of tags you have highlighted. Edits with these tags will appear before other edits in your queue. Highlights expire based on your configured expiry time."
+			}
+		};
+
+		const expiryString = this.wikishield.options.highlightedExpiry[key];
+		this.clearContent();
+		this.contentContainer.innerHTML = `
+				<div class="settings-section">
+					<div class="settings-section-title">
+						Highlighted ${key}
+						<div title="Highlight expiry for warned ${key}" description="${descriptionMap[key].short}" style="float: right; font-size: 0.8em; font-weight: normal; opacity: 0.7;">
+							<select id="highlighted-expiry">
+								<option value="none">None</option>
+								<option value="1 hour">1 hour</option>
+								<option value="1 day">1 day</option>
+								<option value="1 week">1 week</option>
+								<option value="1 month">1 month</option>
+								<option value="3 months">3 months</option>
+								<option value="6 months">6 months</option>
+								<option value="indefinite">Indefinite</option>
+							</select>
+						</div>
+					</div>
+					<div class="settings-section-desc">${descriptionMap[key].long} (currently: ${expiryString}).</div>
+					<div class="user-input-container">
+						<input type="text" id="highlighted-input" placeholder="Enter ${descriptionMap[key].input} to highlight..." class="username-input">
+						<button id="add-highlighted" class="add-user-button">
+							${descriptionMap[key].button}
+						</button>
+					</div>
+				</div>
+				<div class="settings-section user-container"></div>
+			`;
+
+		const container = this.contentContainer.querySelector(".user-container");
+		const input = this.contentContainer.querySelector("#highlighted-input");
+		const button = this.contentContainer.querySelector("#add-highlighted");
+
+		const add = () => {
+			const value = input.value.trim();
+			if (value) {
+				const expiryMs = this.wikishield.util.expiryToMilliseconds(this.wikishield.options.highlightedExpiry[key]);
+
+				const now = Date.now();
+				this.wikishield.highlighted[key].set(value, [ now, now + expiryMs ]);
+
+				input.value = "";
+				this.openHighlighted(key); // Refresh the list
+				this.wikishield.sounds.success();
+			}
+		};
+
+		button.addEventListener("click", add);
+		input.addEventListener("keypress", (e) => {
+			if (e.key === "Enter") add();
+		});
+
+		const highlightedExpiry = this.contentContainer.querySelector("#highlighted-expiry");
+		highlightedExpiry.value = this.wikishield.options.highlightedExpiry[key];
+		highlightedExpiry.addEventListener("change", () => {
+			this.wikishield.options.highlightedExpiry[key] = highlightedExpiry.value;
+		});
+
+		this.createHighlightedList(container, key);
+	}
+
+	/**
+	* Create a list of highlights with expiration times
+	* @param {HTMLElement} container
+	*/
+	createHighlightedList(container, key) {
+		// Sort by most recent first
+		const sortedEntries = [ ...this.wikishield.highlighted[key].entries() ].sort((a, b) => b[1][1] - a[1][1]);
+
+		const createHref = value => {
+			switch (key) {
+				case "users":
+					return this.wikishield.util.pageLink(`Special:Contributions/${value}`);
+				case "pages":
+					return this.wikishield.util.pageLink(value);
+				case "tags":
+					return this.wikishield.util.pageLink(`Special:Tags/${value}`);
+			}
+		};
+
+		for (const [ highlight, time ] of sortedEntries) {
+			const item = document.createElement("div");
+			item.style.display = "flex";
+			item.style.justifyContent = "space-between";
+			item.style.alignItems = "center";
+			item.style.padding = "8px 12px";
+			item.style.marginBottom = "6px";
+			item.style.background = "rgba(255, 255, 255, 0.05)";
+			item.style.borderRadius = "8px";
+			item.style.border = "1px solid rgba(255, 255, 255, 0.1)";
+
+			const date = new Date(time[0]);
+			const dateStr = date.toLocaleDateString() + " " + date.toLocaleTimeString();
+
+			const expiresDate = new Date(time[1]);
+			const expiresStr = expiresDate.toLocaleDateString() + " " + expiresDate.toLocaleTimeString();
+			const isExpired = Date.now() > time[1];
+
+			container.appendChild(item);
+			item.innerHTML = `
+					<div style="display: flex; flex-direction: column; gap: 4px;">
+						<a target="_blank" href="${createHref(highlight)}" style="font-weight: 600;">${highlight}</a>
+						<span style="font-size: 0.85em; opacity: 0.7;">Added: ${dateStr}</span>
+						<span style="font-size: 0.85em; opacity: 0.7; color: ${isExpired ? '#ff6b6b' : '#51cf66'};">
+							${isExpired ? 'Expired' : 'Expires'}: ${expiresStr}
+						</span>
+					</div>
+					<div class="add-action-button remove-button">Remove</div>
+				`;
+			item.querySelector(".remove-button").addEventListener("click", () => {
+				this.wikishield.highlighted[key].delete(highlight);
+				item.remove();
+
+				this.createHighlightedList(container, key); // Refresh the list
+			});
+		}
+
+		if (sortedEntries.length === 0) {
+			container.innerHTML = `<div style="opacity: 0.6; text-align: center; padding: 20px;">No ${key} highlighted</div>`;
 		}
 	}
 
@@ -1563,6 +1657,7 @@ export class WikiShieldSettingsInterface {
 		);
 	}
 
+	// TODO
 	validateAndMergeSave(importedString) {
 		const result = {
 			success: false,
@@ -1792,8 +1887,17 @@ export class WikiShieldSettingsInterface {
 
 
 					case 'watchlistExpiry':
-					case 'highlightedExpiry':
 						applyValue(key, value, v => typeof v === 'string' && expiryOptions.includes(v), `must be one of: ${expiryOptions.join(', ')}`);
+						break;
+					case 'highlightedExpiry':
+						if (typeof value === 'object' && value !== null) {
+							result.settings.highlightedExpiry = { ...result.settings.highlightedExpiry };
+							for (const subKey of Object.keys(defaults.highlightedExpiry)) {
+								if (subKey in value) {
+									applyValue('highlightedExpiry.' + subKey, value[subKey], v => typeof v === 'string' && expiryOptions.includes(v), `must be one of: ${expiryOptions.join(', ')}`);
+								}
+							}
+						}
 						break;
 
 					case 'wiki':

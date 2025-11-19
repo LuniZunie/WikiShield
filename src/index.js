@@ -147,6 +147,12 @@ export const __script__ = {
 					safeSave();
 				});
 
+				window.addEventListener("keydown", e => {
+					if (e.key === 'F2') {
+						wikishield.save();
+					}
+				});
+
 				for (const notification of killswitch_status.notifications) {
 					wikishield.notifications.unshift(notification);
 				}

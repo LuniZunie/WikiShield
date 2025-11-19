@@ -79,7 +79,16 @@ export const defaultSettings = {
 		sparkle: 'sparkle'
 	},
 	watchlistExpiry: "1 week",
-	highlightedExpiry: "1 hour",
+	whitelistExpiry: {
+		users: "indefinite",
+		pages: "indefinite",
+		tags: "indefinite",
+	},
+	highlightedExpiry: {
+		users: "1 week",
+		pages: "1 week",
+		tags: "1 week",
+	},
 	wiki: "en",
 	namespacesShown: [
 		0, 2, 4, 6, 8, 10, 12, 14, 100, 118,

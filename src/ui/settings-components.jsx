@@ -217,14 +217,12 @@ export class GeneralSettings extends Component {
 			maxQueueSize,
 			minOresScore,
 			watchlistExpiry,
-			highlightedExpiry,
 			namespaces,
 			selectedNamespaces,
 			onMaxEditCountChange,
 			onMaxQueueSizeChange,
 			onMinOresScoreChange,
 			onWatchlistExpiryChange,
-			onHighlightedExpiryChange,
 			onNamespaceToggle,
 		} = this.props;
 
@@ -279,11 +277,7 @@ export class GeneralSettings extends Component {
 							onChange={onMinOresScoreChange}
 						/>
 					</SettingsSection>
-				</SettingsCompactGrid>
-
-				<SettingsSection title="Expiries">
-					<SettingsCompactGrid>
-						<SettingsSection
+					<SettingsSection
 							compact
 							id="watchlist-expiry"
 							title="Watchlist expiry for warned users"
@@ -302,30 +296,8 @@ export class GeneralSettings extends Component {
 								<option value="6 months">6 months</option>
 								<option value="indefinite">Indefinite</option>
 							</select>
-						</SettingsSection>
-
-						<SettingsSection
-							compact
-							id="highlighted-expiry"
-							title="Highlighted user expiry"
-							description="How long to keep users highlighted before expiration"
-						>
-							<select
-								value={highlightedExpiry}
-								onChange={(e) => onHighlightedExpiryChange(e.target.value)}
-							>
-								<option value="none">None</option>
-								<option value="1 hour">1 hour</option>
-								<option value="1 day">1 day</option>
-								<option value="1 week">1 week</option>
-								<option value="1 month">1 month</option>
-								<option value="3 months">3 months</option>
-								<option value="6 months">6 months</option>
-								<option value="indefinite">Indefinite</option>
-							</select>
-						</SettingsSection>
-					</SettingsCompactGrid>
-				</SettingsSection>
+					</SettingsSection>
+				</SettingsCompactGrid>
 
 				<SettingsSection
 					title="Namespaces to show"

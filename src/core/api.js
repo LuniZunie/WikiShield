@@ -3,7 +3,7 @@
  * Provides methods for interacting with the Wikipedia/MediaWiki API
  */
 
-const __TESTING__ = false;
+const __TESTING__ = true;
 const __TAGS__ = __TESTING__ ? "" : "WikiShield script";
 
 export class WikiShieldAPI {

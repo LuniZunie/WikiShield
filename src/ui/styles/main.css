@@ -2360,7 +2360,7 @@ body.dark-mode .queue-edit-current {
 	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
-.context-menu div {
+.context-menu div:not(.menu-divider) {
 	padding: 8px 12px;
 	margin: 4px;
 	-webkit-user-select: none;
@@ -2375,7 +2375,7 @@ body.dark-mode .queue-edit-current {
 }
 
 #context-ores {
-	color: #444;
+	color: #888;
 	font-size: 0.8em;
 }
 

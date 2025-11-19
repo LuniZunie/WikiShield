@@ -196,13 +196,13 @@ export const wikishieldHTML = {
 				<i class="fas fa-arrow-up-right-from-square menu-option-icon"></i>
 			</div>
 			<div class="menu-divider"></div>
-			<div id="user-add-whitelist" class="menu-option">
-				<i class="fas fa-user-check"></i>
-				<span>Add to whitelist</span>
+			<div id="user-whitelist" class="menu-option">
+				<i class="fas fa-check"></i>
+				<span>Whitelist user</span>
 			</div>
-			<div id="user-remove-whitelist" class="menu-option" style="display: none;">
-				<i class="fas fa-user-xmark"></i>
-				<span>Remove from whitelist</span>
+			<div id="user-unwhitelist" class="menu-option" style="display: none;">
+				<i class="fas fa-xmark"></i>
+				<span>Unwhitelist user</span>
 			</div>
 			<div id="user-highlight" class="menu-option">
 				<i class="fas fa-star"></i>
@@ -247,6 +247,23 @@ export const wikishieldHTML = {
 				<i class="fas fa-clock-rotate-left"></i>
 				<span>View page history</span>
 				<i class="fas fa-arrow-up-right-from-square menu-option-icon"></i>
+			</div>
+			<div class="menu-divider"></div>
+			<div id="page-whitelist" class="menu-option">
+				<i class="fas fa-check"></i>
+				<span>Whitelist page</span>
+			</div>
+			<div id="page-unwhitelist" class="menu-option" style="display: none;">
+				<i class="fas fa-xmark"></i>
+				<span>Unwhitelist page</span>
+			</div>
+			<div id="page-highlight" class="menu-option">
+				<i class="fas fa-star"></i>
+				<span>Highlight page</span>
+			</div>
+			<div id="page-unhighlight" class="menu-option" style="display: none;">
+				<i class="fas fa-star"></i>
+				<span>Unhighlight page</span>
 			</div>
 			<div class="menu-divider"></div>
 			<div id="page-request-protection" class="menu-option submenu-trigger">
@@ -295,7 +312,13 @@ export const wikishieldHTML = {
 	"edit-context-menu": `
 		<div id="context-ores"><span id="context-ores-number">0</span> ORES score</div>
 		<div id="context-remove">Remove from queue</div>
-		<div id="context-whitelist">Whitelist user</div>
+		<div class="menu-divider"></div>
+		<div id="context-whitelist-user">Whitelist user</div>
+		<div id="context-highlight-user">Highlight user</div>
+		<div class="menu-divider"></div>
+		<div id="context-whitelist-page">Whitelist page</div>
+		<div id="context-highlight-page">Highlight page</div>
+		<div class="menu-divider"></div>
 		<div id="context-open-history">View page history</div>
 		<div id="context-open-contribs">View user contribs</div>
 	`,
@@ -322,7 +345,7 @@ export const wikishieldHTML = {
 
 				<div class="settings-category">
 					<div class="settings-category-header">
-						<span>MODERATION</span>
+						<span>TOOLS</span>
 					</div>
 					<div class="settings-left-menu-item" id="settings-ai-button">
 						<span><i class="fas fa-robot"></i>AI Analysis</span>
@@ -333,11 +356,35 @@ export const wikishieldHTML = {
 					<div class="settings-left-menu-item" id="settings-gadgets-button">
 						<span><i class="fas fa-toolbox"></i>Gadgets</span>
 					</div>
-					<div class="settings-left-menu-item" id="settings-whitelist-button">
-						<span><i class="fas fa-user-check"></i>Whitelist</span>
+				</div>
+
+				<div class="settings-category">
+					<div class="settings-category-header">
+						<span>WHITELIST</span>
 					</div>
-					<div class="settings-left-menu-item" id="settings-highlight-button">
-						<span><i class="fas fa-star"></i>Highlighted</span>
+					<div class="settings-left-menu-item" id="settings-whitelist-users-button">
+						<span><i class="fas fa-user"></i>Users</span>
+					</div>
+					<div class="settings-left-menu-item" id="settings-whitelist-pages-button">
+						<span><i class="fas fa-file"></i>Pages</span>
+					</div>
+					<div class="settings-left-menu-item" id="settings-whitelist-tags-button">
+						<span><i class="fas fa-tag"></i>Tags</span>
+					</div>
+				</div>
+
+				<div class="settings-category">
+					<div class="settings-category-header">
+						<span>HIGHLIGHT</span>
+					</div>
+					<div class="settings-left-menu-item" id="settings-highlight-users-button">
+						<span><i class="fas fa-user"></i>Users</span>
+					</div>
+					<div class="settings-left-menu-item" id="settings-highlight-pages-button">
+						<span><i class="fas fa-file"></i>Pages</span>
+					</div>
+					<div class="settings-left-menu-item" id="settings-highlight-tags-button">
+						<span><i class="fas fa-tag"></i>Tags</span>
 					</div>
 				</div>
 
