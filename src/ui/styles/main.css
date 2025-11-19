@@ -2050,7 +2050,7 @@ body.dark-mode .queue-edit:not(.queue-edit-current) {
 	}
 }
 
-.queue-edit-title, .queue-edit-user, .queue-edit-summary, .queue-edit-time {
+.queue-edit :is(.page-title, .username, .queue-edit-summary, .queue-edit-time) {
 	display: flex;
 	align-items: center;
 	white-space: nowrap;
@@ -2061,7 +2061,7 @@ body.dark-mode .queue-edit:not(.queue-edit-current) {
 	height: 22px;
 }
 
-.queue-edit-user, .queue-edit-summary, .queue-edit-time {
+.queue-edit :is(.username, .queue-edit-summary, .queue-edit-time) {
 	font-size: 0.9em;
 }
 
@@ -2094,13 +2094,13 @@ body.dark-mode #page-history-content .queue-edit:hover {
 	padding: 2px 6px;
 }
 
-.queue-edit-icon {
+.queue-edit .queue-edit-icon {
 	width: 25px;
 	flex-shrink: 0;
 	color: #333;
 }
 
-body.dark-mode .queue-edit-icon {
+body.dark-mode .queue-edit .queue-edit-icon {
 	color: #c0c0c0;
 }
 
@@ -2154,11 +2154,11 @@ body.dark-mode .queue-edit-content {
 	border-bottom: none;
 }
 
-.queue-edit-tags {
+.queue-edit .tags {
 	display: flex;
 }
 
-.queue-edit-tag {
+.queue-edit .tags .tag {
 	font-size: 0.8em;
 	padding: 3px 10px;
 	flex-shrink: 0;
@@ -2171,34 +2171,18 @@ body.dark-mode .queue-edit-content {
 	transition: all 0.2s ease;
 }
 
-body.dark-mode .queue-edit-tag {
+body.dark-mode .queue-edit .tags .tag {
 	background: rgba(50, 54, 66, 0.9);
 	border: 1px solid rgba(255, 255, 255, 0.1);
 	color: #c0c0c0;
 }
 
-.queue-edit-tag:hover {
+.queue-edit .tags .tag:hover {
 	background: rgba(220, 220, 220, 0.95);
 }
 
-body.dark-mode .queue-edit-tag:hover {
+body.dark-mode .queue-edit .tags .tag:hover {
 	background: rgba(60, 64, 76, 0.95);
-}
-
-.queue-edit-tag-minor {
-	background: rgba(212, 212, 212, 0.95);
-	-webkit-backdrop-filter: blur(8px);
-	backdrop-filter: blur(8px);
-	border: 1px solid rgba(0, 0, 0, 0.1);
-	font-weight: bold;
-	color: #666;
-	font-style: italic;
-}
-
-body.dark-mode .queue-edit-tag-minor {
-	background: rgba(60, 64, 76, 0.95);
-	border: 1px solid rgba(255, 255, 255, 0.15);
-	color: #999;
 }
 
 .minor-indicator {

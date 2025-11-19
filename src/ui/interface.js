@@ -1449,7 +1449,6 @@ export class WikiShieldInterface {
 					contextMenu.querySelector("#context-ores-number").style.color = this.getORESColor(edit.ores || 0);
 
 					// whitelist button text
-					// TODO
 					{ // users whitelist & highlighted
 						const username = edit.user.name;
 
@@ -1696,25 +1695,10 @@ export class WikiShieldInterface {
 		const oresLabel = oresPercent < 30 ? "Good" : oresPercent < 70 ? "Review" : "Likely Bad";
 
 		const oresHTML = includeORES ? `<div class="queue-edit-color" data-ores-score="${oresPercent}%" data-raw-ores-score="${oresScore}" style="background: ${this.getORESColor(oresScore)};"></div>` : "";
-		const titleHTML = includeTitle ? `
-				<div class="queue-edit-title" data-tooltip="${edit.page ? edit.page.title : edit.title}">
-					<span class="fa fa-file-lines queue-edit-icon"></span>
-					${edit.page ? edit.page.title : edit.title}
-				</div>` : "";
 
-		// Determine user highlight classes
-		let userClasses = "";
-		if (edit.user && this.wikishield.highlighted.users.has(edit.user.name)) {
-			userClasses = "queue-edit-user-highlight";
-		} else if (edit.user && typeof edit.user === "object" && edit.user.emptyTalkPage) {
-			userClasses = "queue-edit-user-empty-talk";
-		}
+		const titleHTML = includeTitle ? edit.display.pageTitle : "";
+		const userHTML = includeUser ? edit.display.username : "";
 
-		const userHTML = includeUser ? `
-				<div class="queue-edit-user ${userClasses}">
-					<span class="fa fa-user queue-edit-icon"></span>
-					${!edit.user ? "<em>Username removed</em>" : typeof edit.user === "string" ? edit.user : edit.user.name}
-				</div>` : "";
 		const timeHTML = includeTime ? `
 				<div class="queue-edit-time" data-tooltip="${new Date(edit.timestamp).toUTCString()}">
 					<span class="fa fa-clock queue-edit-icon"></span>
@@ -1899,14 +1883,8 @@ export class WikiShieldInterface {
 
 		this.elem("#middle-top").innerHTML = `
 				<div style="display: flex; overflow: auto hidden; white-space: nowrap">
-					<div>
-						<span class="fa fa-file-lines"></span>
-						<a href="${this.wikishield.util.pageLink(edit.page.title)}" target="_blank" data-tooltip="${titleFull}">${title}</a>
-					</div>
-					<div>
-						<span class="fa fa-user"></span>
-						<a href="${this.wikishield.util.pageLink("Special:Contributions/" + edit.user.name)}" target="_blank" data-tooltip="${usernameFull}">${username}</a>
-					</div>
+					${edit.display.pageTitle}
+					${edit.display.username}
 					<div>
 						<span class="fa fa-pencil"></span>
 						<span id="diff-size-text" style="color: ${this.wikishield.util.getChangeColor(0)}">${this.wikishield.util.getChangeString(0)}</span>
@@ -1916,48 +1894,6 @@ export class WikiShieldInterface {
 
 				</div>
 			`;
-
-		// Highlight username in top bar based on status (same as queue highlighting)
-		// Use requestAnimationFrame to ensure DOM has been updated
-		requestAnimationFrame(() => {
-			const middleTop = this.elem("#middle-top");
-			const userDiv = middleTop.children[1]; // Second div contains the username
-			const userLink = userDiv ? userDiv.querySelector("a") : null; // Get the <a> tag inside
-			const userIcon = userDiv ? userDiv.querySelector(".fa-user") : null; // Get the icon
-
-			if (userLink) {
-				// Clear previous styles
-				userLink.style.color = "";
-				userLink.style.fontWeight = "";
-				if (userIcon) {
-					userIcon.style.color = "";
-				}
-
-				//TODO
-				// Check if user is highlighted (yellow) or has empty talk page (red)
-				if (this.wikishield.highlighted.users.has(edit.user.name)) {
-					userLink.style.setProperty("color", "#f4c430", "important");
-					userLink.style.setProperty("font-weight", "600", "important");
-					if (userIcon) {
-						userIcon.style.setProperty("color", "#f4c430", "important");
-					}
-				} else if (edit.user.emptyTalkPage) {
-					userLink.style.setProperty("color", "#ff6b6b", "important");
-					userLink.style.setProperty("font-weight", "600", "important");
-					if (userIcon) {
-						userIcon.style.setProperty("color", "#ff6b6b", "important");
-					}
-				}
-
-				if (this.wikishield.highlighted.users.has(edit.user.name)) {
-					userLink.style.setProperty("color", "#f4c430", "important");
-					userLink.style.setProperty("font-weight", "600", "important");
-					if (userIcon) {
-						userIcon.style.setProperty("color", "#f4c430", "important");
-					}
-				}
-			}
-		});
 
 		{ // users whitelist & highlight buttons
 			const addWhitelistButton = this.elem("#user-whitelist");

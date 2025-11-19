@@ -170,20 +170,20 @@ export class WikiShieldQueue {
 			if (highlighted.pages.has(a.page.title)) {
 				aScore += 75;
 			}
-			aScore += highlighted.tags.filter(tag => a.tags?.includes(tag)).length * 25;
+			aScore += a.tags.filter(tag => highlighted.tags.has(tag)).length * 25;
 
 			if (a.mentionsMe) {
 				aScore += 50;
 			}
 
 			let bScore = b.ores;
-			if (highlighted.has(b.user.name)) {
+			if (highlighted.users.has(b.user.name)) {
 				bScore += 100;
 			}
 			if (highlighted.pages.has(b.page.title)) {
 				bScore += 75;
 			}
-			bScore += highlighted.tags.filter(tag => b.tags?.includes(tag)).length * 25;
+			bScore += b.tags.filter(tag => highlighted.tags.has(tag)).length * 25;
 
 			if (b.mentionsMe) {
 				bScore += 50;
@@ -470,7 +470,51 @@ export class WikiShieldQueue {
 			mentionsMe = diffText.toLowerCase().includes(currentUsername.toLowerCase());
 		}
 
+		const _util_ = this.wikishield.util;
+
 		const queueItem = {
+			display: {
+				pageTitle: `<div
+					class="page-title ${this.wikishield.highlighted.pages.has(edit.title) ? 'queue-highlight' : ''}"
+				>
+					<span class="fa fa-file-alt queue-edit-icon"></span>
+					<a
+						href="${_util_.pageLink(edit.title)}"
+						target="_blank"
+						data-tooltip="${_util_.escapeHtml(edit.title)}"
+					>
+						${_util_.escapeHtml(_util_.maxStringLength(edit.title, 40))}
+				</div>`,
+				username: `<div
+					class="username ${this.wikishield.highlighted.users.has(edit.user) ? 'queue-highlight' : (
+						emptyTalkPage ? 'queue-user-empty-talk' : ''
+					)}"
+				>
+					<span class="fa fa-user queue-edit-icon"></span>
+					<a
+						href="${_util_.pageLink(`Special:Contributions/${edit.user}`)}"
+						target="_blank"
+						data-tooltip="${_util_.escapeHtml(edit.user)}"
+					>
+						${_util_.escapeHtml(_util_.maxStringLength(edit.user, 30))}
+					</a>
+				</div>`,
+				tags: `div class="tags">
+					${edit.tags.map(tag => {
+						const highlighted = this.wikishield.highlighted.tags.has(tag);
+
+						return {
+							highlighted,
+							html: `<span
+								class="tag ${highlighted ? 'queue-highlight' : ''}"
+								data-tooltip="${_util_.escapeHtml(tag)}"
+							>
+								${_util_.escapeHtml(_util_.maxStringLength(tag, 20))}
+							</span>`
+						}
+					}).sort((a, b) => b.highlighted - a.highlighted).reduce((str, obj) => str + obj.html, '')}
+				</div>`
+			},
 			page: {
 				title: edit.title,
 				history: history,

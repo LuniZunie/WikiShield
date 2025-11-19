@@ -1657,7 +1657,6 @@ export class WikiShieldSettingsInterface {
 		);
 	}
 
-	// TODO
 	validateAndMergeSave(importedString) {
 		const result = {
 			success: false,
