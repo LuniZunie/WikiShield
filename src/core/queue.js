@@ -507,8 +507,8 @@ export class WikiShieldQueue {
 				</div>`,
 				username: `<div
 					class="username ${this.wikishield.highlighted.users.has(edit.user) ? 'queue-highlight' : (
-				emptyTalkPage ? 'queue-user-empty-talk' : ''
-			)}"
+						emptyTalkPage ? 'queue-user-empty-talk' : ''
+					)}"
 				>
 					<span class="fa fa-user queue-edit-icon"></span>
 					<a
@@ -521,18 +521,18 @@ export class WikiShieldQueue {
 				</div>`,
 			tags: `div class="tags">
 					${edit.tags.map(tag => {
-			const highlighted = this.wikishield.highlighted.tags.has(tag);
+						const highlighted = this.wikishield.highlighted.tags.has(tag);
 
-			return {
-				highlighted,
-				html: `<span
-								class="tag ${highlighted ? 'queue-highlight' : ''}"
-								data-tooltip="${_util_.escapeHtml(tag)}"
-							>
-								${_util_.escapeHtml(_util_.maxStringLength(tag, 20))}
-							</span>`
-			}
-		}).sort((a, b) => b.highlighted - a.highlighted).reduce((str, obj) => str + obj.html, '')}
+						return {
+							highlighted,
+							html: `<span
+										class="tag ${highlighted ? 'queue-highlight' : ''}"
+										data-tooltip="${_util_.escapeHtml(tag)}"
+									>
+										${_util_.escapeHtml(_util_.maxStringLength(tag, 20))}
+									</span>`
+						}
+					}).sort((a, b) => b.highlighted - a.highlighted).reduce((str, obj) => str + obj.html, '')}
 				</div>`
 	},
 	page: {
@@ -1124,6 +1124,7 @@ async checkAndAutoReportUAA(edit) {
 				user: revisionData.user,
 				comment: revisionData.comment,
 				timestamp: revisionData.timestamp,
+				tags: revisionData.tags || [],
 				size: revisionData.size,
 				oldlen: revisionData.oldlen || 0,
 				newlen: revisionData.size,

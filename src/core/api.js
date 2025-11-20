@@ -183,7 +183,7 @@ export class WikiShieldAPI {
 					"action": "query",
 					"prop": "revisions",
 					"revids": revid,
-					"rvprop": "ids|user|comment|timestamp|size",
+					"rvprop": "ids|user|comment|timestamp|size|tags",
 					"format": "json",
 					"formatversion": 2
 				});
