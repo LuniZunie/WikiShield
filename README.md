@@ -1,6 +1,6 @@
 # WikiShield
 
-See [the Wikipedia page](https://en.wikipedia.org/wiki/Wikipedia:WikiShield) for information.
+See [the Wikipedia page](https://en.wikipedia.org/wiki/Wikipedia:WikiShield) for information. The [docs](https://lunizunie.github.io/WikiShield/) are also available on Github Pages.
 
 Target project structure:
 
