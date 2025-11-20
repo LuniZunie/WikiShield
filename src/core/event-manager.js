@@ -44,6 +44,17 @@ export class WikiShieldEventManager {
 		const wikishield = this.wikishield;
 
 		this.events = {
+			toggleZenMode: {
+				description: "Toggle Zen Mode",
+				icon: "fas fa-spa",
+				runWithoutEdit: true,
+				func: () => {
+					wikishield.options.zen.enabled = !wikishield.options.zen.enabled;
+					document.querySelector('#zen-mode-enable')?.classList.toggle('active', wikishield.options.zen.enabled);
+
+					wikishield.interface.updateZenModeDisplay();
+				}
+			},
 			prevEdit: {
 				description: "Go to the previous edit in the queue",
 				icon: "fas fa-arrow-left",
@@ -456,6 +467,7 @@ export class WikiShieldEventManager {
 					return true;
 				}
 			},
+
 			thankUser: {
 				description: "Thank user",
 				icon: "fas fa-heart",
@@ -637,6 +649,7 @@ export class WikiShieldEventManager {
 				progressDesc: "Reporting...",
 				func: async (params, currentEdit) => {
 					if (mw.util.isTemporaryUser(currentEdit.user.name)) {
+						this.wikishield.queue.playErrorSound();
 						wikishield.interface.showToast(
 							"Report Failed",
 							`Can not file a report for a temporary account (${currentEdit.user.name})`,

@@ -9,10 +9,11 @@ import { h, Component } from 'preact';
  */
 export class Toggle extends Component {
 	render() {
-		const { value, onChange, label, description } = this.props;
+		const { value, onChange, label, description, id } = this.props;
 
 		return (
 			<div
+				id={id || ''}
 				class={`settings-toggle ${value ? 'active' : ''}`}
 				onClick={e => {
 					e.target.closest('.settings-toggle').classList.toggle('active');
@@ -182,10 +183,37 @@ export class VolumeControl extends Component {
  */
 export class SettingsSection extends Component {
 	render() {
-		const { title, description, compact, children, id } = this.props;
+		const { title, description, compact, inline, children, id } = this.props;
 
 		return (
-			<div class={`settings-section ${compact ? 'compact' : ''}`} id={id}>
+			<div class={`settings-section ${compact ? 'compact' : ''} ${inline ? 'inline' : ''}`} id={id || ''}>
+				{title && <div class="settings-section-title">{title}</div>}
+				{description && <div class="settings-section-desc">{description}</div>}
+				{children}
+			</div>
+		);
+	}
+}
+
+export class SettingsSectionContent extends Component {
+	render() {
+		const { title, description, children, id } = this.props;
+
+		return (
+			<div class={`settings-section-content`} id={id || ''}>
+				{title && <div class="settings-section-title">{title}</div>}
+				{description && <div class="settings-section-desc">{description}</div>}
+				{children}
+			</div>
+		);
+	}
+}
+
+export class SettingsTogglesSection extends Component {
+	render() {
+		const { title, description, children } = this.props;
+		return (
+			<div class="settings-toggles-section">
 				{title && <div class="settings-section-title">{title}</div>}
 				{description && <div class="settings-section-desc">{description}</div>}
 				{children}
@@ -309,8 +337,8 @@ export class GeneralSettings extends Component {
 								<label class="checkbox-box">
 									<input
 										type="checkbox"
-										checked={selectedNamespaces.includes(parseInt(key))}
-										onChange={(e) => onNamespaceToggle(parseInt(key), e.target.checked)}
+										checked={selectedNamespaces.includes(namespace.id)}
+										onChange={(e) => onNamespaceToggle(namespace.id, e.target.checked)}
 									/>
 									<div class="checkmark"></div>
 								</label>
@@ -423,7 +451,7 @@ export class AudioSettings extends Component {
 /**
  * Appearance Settings Panel Component
  */
-export class AppearanceSettings extends Component {
+export class PaletteSettings extends Component {
 	constructor(props) {
 		super(props);
 		this.state = {
@@ -467,6 +495,100 @@ export class AppearanceSettings extends Component {
 						))}
 					</div>
 				</SettingsSection>
+			</div>
+		);
+	}
+}
+
+/**
+ * Zen Settings Panel Component
+ */
+export class ZenSettings extends Component {
+	render() {
+		const {
+			enabled,
+			sounds,
+
+			watchlist,
+			notifications,
+			editCount,
+			toasts,
+		} = this.props;
+
+		return (
+			<div>
+				<SettingsTogglesSection
+					title="Zen Mode"
+					description="Customize your distraction-free reviewing experience"
+				>
+					<SettingsSection compact inline>
+						<SettingsSectionContent
+							title="Enable Zen Mode"
+							description="Reduce on-screen distractions while reviewing edits"
+						/>
+						<Toggle
+							id="zen-mode-enable"
+							value={enabled}
+							onChange={this.props.onEnableChange}
+						/>
+					</SettingsSection>
+					<SettingsSection compact inline>
+						<SettingsSectionContent
+							title="Enable Sounds"
+							description="Play sounds in Zen mode"
+						/>
+						<Toggle
+							value={sounds}
+							onChange={this.props.onSoundsChange}
+						/>
+					</SettingsSection>
+				</SettingsTogglesSection>
+				<SettingsCompactGrid>
+					<SettingsSection
+						compact
+						id="zen-watchlist"
+						title="Watchlist Updates"
+						description="Show watchlist update notifications in Zen mode"
+					>
+						<Toggle
+							value={watchlist}
+							onChange={this.props.onWatchlistChange}
+						/>
+					</SettingsSection>
+					<SettingsSection
+						compact
+						id="zen-notifications"
+						title="Notifications"
+						description="Show notifications in Zen mode"
+					>
+						<Toggle
+							value={notifications}
+							onChange={this.props.onNotificationsChange}
+						/>
+					</SettingsSection>
+					<SettingsSection
+						compact
+						id="zen-edit-count"
+						title="Edit Count"
+						description="Show edit count in Zen mode"
+					>
+						<Toggle
+							value={editCount}
+							onChange={this.props.onEditCountChange}
+						/>
+					</SettingsSection>
+					<SettingsSection
+						compact
+						id="zen-toasts"
+						title="Toasts"
+						description="Show toast messages in Zen mode"
+					>
+						<Toggle
+							value={toasts}
+							onChange={this.props.onToastsChange}
+						/>
+					</SettingsSection>
+				</SettingsCompactGrid>
 			</div>
 		);
 	}
@@ -1122,7 +1244,7 @@ export class AboutSettings extends Component {
 				</SettingsSection>
 
 				{changelog && (
-					<SettingsSection title="Changelog">
+					<SettingsSection>
 						<div class="changelog-content" dangerouslySetInnerHTML={{ __html: changelog }} />
 					</SettingsSection>
 				)}

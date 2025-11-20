@@ -408,6 +408,7 @@ export class WikiShield {
 		);
 
 		if (!success) {
+			this.queue.playErrorSound();
 			this.interface.showToast(
 				"Revert Failed",
 				`Could not revert edits on "${edit.page.title}" - a newer edit may have been made`,
@@ -1451,7 +1452,6 @@ export class WikiShield {
 
 			statistics: this.statistics
 		};
-		console.log("Saving WikiShield data:", obj);
 		const stringify = JSON.stringify(obj);
 
 		const string = btoa(stringify);

@@ -47,6 +47,16 @@ export const defaultSettings = {
 		"AfD removal": true,
 	},
 
+	zen: {
+		enabled: false,
+		sounds: true,
+
+		watchlist: false,
+		notifications: true,
+		editCount: false,
+		toasts: false,
+	},
+
 	enableCloudStorage: true,
 
 	masterVolume: 0.5,
@@ -62,7 +72,9 @@ export const defaultSettings = {
 		thank: 0.5,
 		protection: 0.5,
 		block: 0.5,
-		sparkle: 0.5
+		sparkle: 0.5,
+		success: 0.5,
+		error: 0.5
 	},
 	soundMappings: {
 		click: 'click',
@@ -76,7 +88,9 @@ export const defaultSettings = {
 		thank: 'thank',
 		protection: 'protection',
 		block: 'block',
-		sparkle: 'sparkle'
+		sparkle: 'sparkle',
+		success: 'success',
+		error: 'error'
 	},
 	watchlistExpiry: "1 week",
 	whitelistExpiry: {

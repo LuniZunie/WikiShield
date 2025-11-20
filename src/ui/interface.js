@@ -446,6 +446,8 @@ export class WikiShieldInterface {
 		});
 
 		this.loadTheme("theme-dark");
+
+		this.updateZenModeDisplay();
 	}
 
 	/**
@@ -880,7 +882,7 @@ export class WikiShieldInterface {
 			}
 		}, true);
 
-		if (this.wikishield.loadedChangelog !== __script__.changelog.version) {
+		if (this.wikishield.loadedChangelog !== __script__.changelog.version || __script__.changelog.version.endsWith("!")) {
 			const container = document.createElement("div");
 			container.classList.add("settings-container");
 			document.body.appendChild(container);
@@ -889,8 +891,8 @@ export class WikiShieldInterface {
 					<div class="settings">
 						<div class="settings-section changelog">
 							${__script__.changelog.HTML}
-							<button id="close-changelog" class="add-action-button">Close</button>
 						</div>
+						<button id="close-changelog" class="add-action-button">Close</button>
 					</div>
 				`;
 
@@ -1677,8 +1679,29 @@ export class WikiShieldInterface {
 		let tagHTML = "";
 		// Ensure edit.tags is an array before iterating
 		if (edit.tags && Array.isArray(edit.tags)) {
+			const cache = new Map();
+			edit.tags.sort((a, b) => {
+				let aScore;
+				if (cache.has(a)) {
+					aScore = cache.get(a);
+				} else {
+					aScore = this.wikishield.highlighted.tags.has(a) ? 0 : 1;
+					cache.set(a, aScore);
+				}
+
+				let bScore;
+				if (cache.has(b)) {
+					bScore = cache.get(b);
+				} else {
+					bScore = this.wikishield.highlighted.tags.has(b) ? 0 : 1;
+					cache.set(b, bScore);
+				}
+
+				return aScore - bScore;
+			});
+
 			for (const tag of edit.tags) {
-				tagHTML += `<span class="queue-edit-tag">${tag}</span>`;
+				tagHTML += `<span class="queue-edit-tag ${this.wikishield.highlighted.tags.has(tag) ? "queue-highlight" : ""}">${tag}</span>`;
 			}
 		}
 
@@ -1695,10 +1718,28 @@ export class WikiShieldInterface {
 		const oresLabel = oresPercent < 30 ? "Good" : oresPercent < 70 ? "Review" : "Likely Bad";
 
 		const oresHTML = includeORES ? `<div class="queue-edit-color" data-ores-score="${oresPercent}%" data-raw-ores-score="${oresScore}" style="background: ${this.getORESColor(oresScore)};"></div>` : "";
+		const titleHTML = includeTitle ? `
+				<div
+					class="queue-edit-title ${this.wikishield.highlighted.pages.has(edit.page ? edit.page.title : edit.title) ? "queue-highlight" : ""}"
+					data-tooltip="${edit.page ? edit.page.title : edit.title}"
+				>
+					<span class="fa fa-file-lines queue-edit-icon"></span>
+					${edit.page ? edit.page.title : edit.title}
+				</div>` : "";
 
-		const titleHTML = includeTitle ? edit.display.pageTitle : "";
-		const userHTML = includeUser ? edit.display.username : "";
+		// Determine user highlight classes
+		let userClasses = "";
+		if (edit.user && this.wikishield.highlighted.users.has(typeof edit.user === "string" ? edit.user : edit.user.name)) {
+			userClasses = "queue-highlight";
+		} else if (edit.user && typeof edit.user === "object" && edit.user.emptyTalkPage) {
+			userClasses = "queue-edit-user-empty-talk";
+		}
 
+		const userHTML = includeUser ? `
+				<div class="queue-edit-user ${userClasses}">
+					<span class="fa fa-user queue-edit-icon"></span>
+					${!edit.user ? "<em>Username removed</em>" : typeof edit.user === "string" ? edit.user : edit.user.name}
+				</div>` : "";
 		const timeHTML = includeTime ? `
 				<div class="queue-edit-time" data-tooltip="${new Date(edit.timestamp).toUTCString()}">
 					<span class="fa fa-clock queue-edit-icon"></span>
@@ -2699,6 +2740,10 @@ export class WikiShieldInterface {
 	* @param {Number} duration - How long to show (ms), default 5000
 	*/
 	showToast(title, message, duration = 5000, type = "default") {
+		if (this.wikishield.options.zen.enabled && !this.wikishield.options.zen.toasts) {
+			return; // Do not play sounds in Zen mode if disabled
+		}
+
 		// Create toast element
 		const toast = document.createElement("div");
 		toast.classList.add("toast-notification");
@@ -2752,6 +2797,13 @@ export class WikiShieldInterface {
 				toast.remove();
 			}
 		}, 300);
+	}
+
+	updateZenModeDisplay() {
+		const _zen_ = this.wikishield.options.zen;
+		document.querySelectorAll("[data-zen-show]").forEach(elem => {
+			elem.style.display = _zen_.enabled && !_zen_[elem.dataset.zenShow] ? "none" : "";
+		});
 	}
 
 	/**

@@ -2154,11 +2154,11 @@ body.dark-mode .queue-edit-content {
 	border-bottom: none;
 }
 
-.queue-edit .tags {
+.queue-edit-tags {
 	display: flex;
 }
 
-.queue-edit .tags .tag {
+.queue-edit-tag {
 	font-size: 0.8em;
 	padding: 3px 10px;
 	flex-shrink: 0;
@@ -2171,17 +2171,17 @@ body.dark-mode .queue-edit-content {
 	transition: all 0.2s ease;
 }
 
-body.dark-mode .queue-edit .tags .tag {
+body.dark-mode .queue-edit-tag {
 	background: rgba(50, 54, 66, 0.9);
 	border: 1px solid rgba(255, 255, 255, 0.1);
 	color: #c0c0c0;
 }
 
-.queue-edit .tags .tag:hover {
+.queue-edit-tag:hover {
 	background: rgba(220, 220, 220, 0.95);
 }
 
-body.dark-mode .queue-edit .tags .tag:hover {
+body.dark-mode .queue-edit-tag:hover {
 	background: rgba(60, 64, 76, 0.95);
 }
 
@@ -3710,35 +3710,21 @@ body.dark-mode .username-input:focus {
 	text-decoration: none;
 }
 
-.queue-edit-user-highlight {
+.queue-highlight {
 	color: #d4a400 !important;
 	font-weight: 600 !important;
-	background: none !important;
-	-webkit-backdrop-filter: none !important;
-	backdrop-filter: none !important;
-	border: none !important;
-	padding: 0 !important;
-	border-radius: 0 !important;
-	box-shadow: none !important;
 }
 
-.queue-edit-user-highlight .queue-edit-icon {
+.queue-highlight .queue-edit-icon {
 	color: #d4a400 !important;
 }
 
-.queue-edit-user-empty-talk {
+.queue-user-empty-talk {
 	color: #d63031 !important;
 	font-weight: 600 !important;
-	background: none !important;
-	-webkit-backdrop-filter: none !important;
-	backdrop-filter: none !important;
-	border: none !important;
-	padding: 0 !important;
-	border-radius: 0 !important;
-	box-shadow: none !important;
 }
 
-.queue-edit-user-empty-talk .queue-edit-icon {
+.queue-user-empty-talk .queue-edit-icon {
 	color: #d63031 !important;
 }
 
@@ -3834,10 +3820,23 @@ body.dark-mode .queue-edit-mentions-me:hover {
 
 .changelog {
 	width: 100%;
-	margin: 20px 20px 0 20px;
+	margin: 20px;
 
 	font-size: 0.9em;
 	line-height: 1.6em;
+
+	overflow: auto;
+}
+
+#close-changelog {
+	position: absolute;
+	top: 0px;
+	right: 0px;
+	border-radius: 0px 0px 0px 8px;
+	cursor: pointer;
+	background: #c20 !important;
+	box-shadow: 0 2px 6px #c201 !important;
+	transition: all 0.2s ease;
 }
 
 .settings-appearance-box {

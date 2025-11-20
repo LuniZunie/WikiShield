@@ -3,8 +3,8 @@
  * Provides methods for interacting with the Wikipedia/MediaWiki API
  */
 
-const __TESTING__ = true;
-const __TAGS__ = __TESTING__ ? "" : "WikiShield script";
+const serversWithTags = new Set([ "en.wikipedia.org" ]);
+const __TAGS__ = serversWithTags.has(mw.config.get("wgServerName")) ? "WikiShield script" : "";
 
 export class WikiShieldAPI {
 	constructor(wikishield, api, options = {}) {

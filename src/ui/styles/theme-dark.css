@@ -301,25 +301,11 @@ select:hover, input[type=text]:focus, .bottom-subcontent-button:hover {
 .queue-highlight {
 	color: #f4c430 !important;
 	font-weight: 600 !important;
-	/* background: none !important;
-	-webkit-backdrop-filter: none !important;
-	backdrop-filter: none !important;
-	border: none !important;
-	padding: 0 !important;
-	border-radius: 0 !important;
-	box-shadow: none !important; */
 }
 
 .queue-user-empty-talk {
 	color: #ff6b6b !important;
 	font-weight: 600 !important;
-	/* background: none !important;
-	-webkit-backdrop-filter: none !important;
-	backdrop-filter: none !important;
-	border: none !important;
-	padding: 0 !important;
-	border-radius: 0 !important;
-	box-shadow: none !important; */
 }
 
 .toggle-switch {

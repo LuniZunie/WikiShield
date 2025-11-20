@@ -14,7 +14,10 @@ import { WikiShieldOllamaAI } from '../ai/ollama.js';
 import {
 	GeneralSettings,
 	AudioSettings,
-	AppearanceSettings,
+
+	PaletteSettings,
+	ZenSettings,
+
 	WhitelistSettings,
 	HighlightedSettings,
 	StatisticsSettings,
@@ -288,8 +291,11 @@ export class WikiShieldSettingsInterface {
 		[
 			["#settings-general-button", this.openGeneral.bind(this)],
 			["#settings-audio-button", this.openAudio.bind(this)],
-			["#settings-appearance-button", this.openAppearance.bind(this)],
 			["#settings-controls-button", this.openControls.bind(this)],
+
+			["#settings-palette-button", this.openPalette.bind(this)],
+			["#settings-zen-mode-button", this.openZen.bind(this)],
+
 			["#settings-ai-button", this.openAI.bind(this)],
 			["#settings-auto-reporting-button", this.openAutoReporting.bind(this)],
 			["#settings-gadgets-button", this.openGadgets.bind(this)],
@@ -350,8 +356,7 @@ export class WikiShieldSettingsInterface {
 						set.add(nsid);
 						this.wikishield.options.namespacesShown = [...set];
 					} else {
-						this.wikishield.options.namespacesShown = this.wikishield.options.namespacesShown
-						.filter(n => n !== nsid);
+						this.wikishield.options.namespacesShown = this.wikishield.options.namespacesShown.filter(n => n !== nsid);
 					}
 				},
 			})
@@ -455,19 +460,22 @@ export class WikiShieldSettingsInterface {
 		// Individual sound controls
 		const soundsContainer = this.contentContainer.querySelector("#sound-volumes-container");
 
+		const _queue_ = this.wikishield.queue;
 		const sounds = [
-			{ key: "click", title: "Click Sound", desc: "Played when clicking buttons and UI elements", fn: this.wikishield.queue.playClickSound },
-			{ key: "notification", title: "Notification Sound", desc: "Played when you receive an alert or notice", fn: this.wikishield.queue.playNotificationSound },
-			{ key: "watchlist", title: "Watchlist Sound", desc: "Played when you your watchlist is updated", fn: this.wikishield.queue.playWatchlistSound },
-			{ key: "alert", title: "Alert Sound", desc: "Played when a high ORES score edit is added to the queue", fn: this.wikishield.queue.playAlertSound },
-			{ key: "whoosh", title: "Whoosh Sound", desc: "Played when items are removed or cleared", fn: this.wikishield.queue.playWhooshSound },
-			{ key: "warn", title: "Warn Sound", desc: "Played when issuing a warning to a user", fn: this.wikishield.queue.playWarnSound },
-			{ key: "rollback", title: "Rollback Sound", desc: "Played when performing a rollback action", fn: this.wikishield.queue.playRollbackSound },
-			{ key: "report", title: "Report Sound", desc: "Played when reporting a user or page", fn: this.wikishield.queue.playReportSound },
-			{ key: "thank", title: "Thank Sound", desc: "Played when thanking a user for their edit", fn: this.wikishield.queue.playThankSound },
-			{ key: "protection", title: "Protection Sound", desc: "Played when requesting page protection", fn: this.wikishield.queue.playProtectionSound },
-			{ key: "block", title: "Block Sound", desc: "Played when blocking a user", fn: this.wikishield.queue.playBlockSound },
-			{ key: "sparkle", title: "Sparkle Sound", desc: "Played when highlighting or whitelisting users", fn: this.wikishield.queue.playSparkleSound }
+			{ key: "click", title: "Click Sound", desc: "Played when clicking buttons and UI elements", fn: _queue_.playClickSound.bind(_queue_, true) },
+			{ key: "notification", title: "Notification Sound", desc: "Played when you receive an alert or notice", fn: _queue_.playNotificationSound.bind(_queue_, true) },
+			{ key: "watchlist", title: "Watchlist Sound", desc: "Played when you your watchlist is updated", fn: _queue_.playWatchlistSound.bind(_queue_, true) },
+			{ key: "alert", title: "Alert Sound", desc: "Played when a high ORES score edit is added to the queue", fn: _queue_.playAlertSound.bind(_queue_, true) },
+			{ key: "whoosh", title: "Whoosh Sound", desc: "Played when items are removed or cleared", fn: _queue_.playWhooshSound.bind(_queue_, true) },
+			{ key: "warn", title: "Warn Sound", desc: "Played when issuing a warning to a user", fn: _queue_.playWarnSound.bind(_queue_, true) },
+			{ key: "rollback", title: "Rollback Sound", desc: "Played when performing a rollback action", fn: _queue_.playRollbackSound.bind(_queue_, true) },
+			{ key: "report", title: "Report Sound", desc: "Played when reporting a user or page", fn: _queue_.playReportSound.bind(_queue_, true) },
+			{ key: "thank", title: "Thank Sound", desc: "Played when thanking a user for their edit", fn: _queue_.playThankSound.bind(_queue_, true) },
+			{ key: "protection", title: "Protection Sound", desc: "Played when requesting page protection", fn: _queue_.playProtectionSound.bind(_queue_, true) },
+			{ key: "block", title: "Block Sound", desc: "Played when blocking a user", fn: _queue_.playBlockSound.bind(_queue_, true) },
+			{ key: "sparkle", title: "Sparkle Sound", desc: "Played when highlighting or whitelisting users", fn: _queue_.playSparkleSound.bind(_queue_, true) },
+			{ key: "success", title: "Success Sound", desc: "Played when an action is successfully completed", fn: _queue_.playSuccessSound.bind(_queue_, true) },
+			{ key: "error", title: "Error Sound", desc: "Played when an action fails or encounters an error", fn: _queue_.playErrorSound.bind(_queue_, true) },
 		];
 
 		sounds.forEach(sound => {
@@ -484,9 +492,9 @@ export class WikiShieldSettingsInterface {
 	/**
 	* Open appearance settings section (Dark mode only)
 	*/
-	openAppearance() {
+	openPalette() {
 		this.renderComponent(
-			h(AppearanceSettings, {
+			h(PaletteSettings, {
 				selectedPalette: this.wikishield.options.selectedPalette,
 				colorPalettes,
 				onPaletteChange: (paletteIndex) => {
@@ -503,6 +511,40 @@ export class WikiShieldSettingsInterface {
 						);
 					}
 				}
+			})
+		);
+	}
+
+	openZen() {
+		this.renderComponent(
+			h(ZenSettings, {
+				...this.wikishield.options.zen,
+
+				onEnableChange: value => {
+					this.wikishield.options.zen.enabled = value;
+					this.wikishield.interface.updateZenModeDisplay();
+				},
+				onSoundsChange: value => {
+					this.wikishield.options.zen.sounds = value;
+					this.wikishield.interface.updateZenModeDisplay();
+				},
+
+				onWatchlistChange: value => {
+					this.wikishield.options.zen.watchlist = value;
+					this.wikishield.interface.updateZenModeDisplay();
+				},
+				onNotificationsChange: value => {
+					this.wikishield.options.zen.notifications = value;
+					this.wikishield.interface.updateZenModeDisplay();
+				},
+				onEditCountChange: value => {
+					this.wikishield.options.zen.editCount = value;
+					this.wikishield.interface.updateZenModeDisplay();
+				},
+				onToastsChange: value => {
+					this.wikishield.options.zen.toasts = value;
+					this.wikishield.interface.updateZenModeDisplay();
+				},
 			})
 		);
 	}
@@ -1336,9 +1378,11 @@ export class WikiShieldSettingsInterface {
 				const now = Date.now();
 				this.wikishield.whitelist[key].set(value, [ now, now + expiryMs ]);
 
+				wikishield.statistics.whitelist++;
+
 				input.value = "";
 				this.openWhitelist(key); // Refresh the list
-				this.wikishield.sounds.success();
+				this.wikishield.queue.playSuccessSound();
 			}
 		};
 
@@ -1361,6 +1405,8 @@ export class WikiShieldSettingsInterface {
 	* @param {HTMLElement} container
 	*/
 	createWhitelistList(container, key) {
+		container.innerHTML = "";
+
 		// Sort by most recent first
 		const sortedEntries = [ ...this.wikishield.whitelist[key].entries() ].sort((a, b) => b[1][1] - a[1][1]);
 
@@ -1390,7 +1436,7 @@ export class WikiShieldSettingsInterface {
 			const dateStr = date.toLocaleDateString() + " " + date.toLocaleTimeString();
 
 			const expiresDate = new Date(time[1]);
-			const expiresStr = expiresDate.toLocaleDateString() + " " + expiresDate.toLocaleTimeString();
+			const expiresStr = time[1] === Infinity ? "Never" : expiresDate.toLocaleDateString() + " " + expiresDate.toLocaleTimeString();
 			const isExpired = Date.now() > time[1];
 
 			container.appendChild(item);
@@ -1484,9 +1530,11 @@ export class WikiShieldSettingsInterface {
 				const now = Date.now();
 				this.wikishield.highlighted[key].set(value, [ now, now + expiryMs ]);
 
+				wikishield.statistics.highlighted++;
+
 				input.value = "";
 				this.openHighlighted(key); // Refresh the list
-				this.wikishield.sounds.success();
+				this.wikishield.queue.playSuccessSound();
 			}
 		};
 
@@ -1509,6 +1557,8 @@ export class WikiShieldSettingsInterface {
 	* @param {HTMLElement} container
 	*/
 	createHighlightedList(container, key) {
+		container.innerHTML = "";
+
 		// Sort by most recent first
 		const sortedEntries = [ ...this.wikishield.highlighted[key].entries() ].sort((a, b) => b[1][1] - a[1][1]);
 
@@ -1538,7 +1588,7 @@ export class WikiShieldSettingsInterface {
 			const dateStr = date.toLocaleDateString() + " " + date.toLocaleTimeString();
 
 			const expiresDate = new Date(time[1]);
-			const expiresStr = expiresDate.toLocaleDateString() + " " + expiresDate.toLocaleTimeString();
+			const expiresStr = time[1] === Infinity ? "Never" : expiresDate.toLocaleDateString() + " " + expiresDate.toLocaleTimeString();
 			const isExpired = Date.now() > time[1];
 
 			container.appendChild(item);
@@ -1640,7 +1690,7 @@ export class WikiShieldSettingsInterface {
 					sessionStart: Date.now()
 				};
 				this.openStatistics();
-				this.wikishield.sounds.success();
+				this.wikishield.queue.playSuccessSound();
 			}
 		});
 	}
@@ -1682,8 +1732,8 @@ export class WikiShieldSettingsInterface {
 			statistics: JSON.parse(JSON.stringify(this.wikishield.statistics)),
 			queueWidth: this.wikishield.queueWidth ?? "15vw",
 			detailsWidth: this.wikishield.detailsWidth ?? "15vw",
-			whitelist: [...this.wikishield.whitelist.entries()],
-			highlighted: [...this.wikishield.highlighted.entries()]
+			whitelist: Object.fromEntries(Object.entries(this.wikishield.whitelist).map(([ key, value ]) => [ key, [ ...value.entries() ] ])),
+			highlighted: Object.fromEntries(Object.entries(this.wikishield.highlighted).map(([ key, value ]) => [ key, [ ...value.entries() ] ])),
 		};
 
 		// --- Validate changelog ---
@@ -1740,25 +1790,47 @@ export class WikiShieldSettingsInterface {
 
 		// --- Validate whitelist ---
 		if ("whitelist" in parsed) {
-			if (Array.isArray(parsed.whitelist) && parsed.whitelist.every(
-				entry => Array.isArray(entry) && typeof entry[0] === "string" && typeof entry[1] === "number"
-			)) {
-				validated.whitelist = parsed.whitelist;
-				result.appliedCount++;
+			if (!Array.isArray(parsed.whitelist) && typeof parsed.whitelist === "object" && parsed.whitelist !== null) {
+				for (const key of ["users", "pages", "tags"]) {
+					if (Array.isArray(parsed.whitelist[key]) && parsed.whitelist[key].every(
+						entry => Array.isArray(entry) && typeof entry[0] === "string" && Array.isArray(entry[1])
+							&& entry[1].length === 2 && typeof entry[1][0] === "number" && typeof entry[1][1] === "number"
+					)) {
+						validated.whitelist[key] = parsed.whitelist[key];
+						result.appliedCount++;
+					} else if (parsed.whitelist[key] !== undefined) {
+						result.warnings.push(`whitelist.${key}: Must be array of [username, [timestamp, timestamp]]`);
+					}
+				}
 			} else {
-				result.warnings.push("whitelist: Must be array of [username, timestamp]");
+				parsed.whitelist = {
+					users: [],
+					pages: [],
+					tags: []
+				}
 			}
 		}
 
 		// --- Validate highlighted ---
 		if ("highlighted" in parsed) {
-			if (Array.isArray(parsed.highlighted) && parsed.highlighted.every(
-				entry => Array.isArray(entry) && typeof entry[0] === "string" && typeof entry[1] === "number"
-			)) {
-				validated.highlighted = parsed.highlighted;
-				result.appliedCount++;
+			if (!Array.isArray(parsed.highlighted) && typeof parsed.highlighted === "object" && parsed.highlighted !== null) {
+				for (const key of ["users", "pages", "tags"]) {
+					if (Array.isArray(parsed.highlighted[key]) && parsed.highlighted[key].every(
+						entry => Array.isArray(entry) && typeof entry[0] === "string" && Array.isArray(entry[1])
+							&& entry[1].length === 2 && typeof entry[1][0] === "number" && typeof entry[1][1] === "number"
+					)) {
+						validated.highlighted[key] = parsed.highlighted[key];
+						result.appliedCount++;
+					} else if (parsed.highlighted[key] !== undefined) {
+						result.warnings.push(`highlighted.${key}: Must be array of [username, [timestamp, timestamp]]`);
+					}
+				}
 			} else {
-				result.warnings.push("highlighted: Must be array of [username, timestamp]");
+				parsed.highlighted = {
+					users: [],
+					pages: [],
+					tags: []
+				}
 			}
 		}
 
@@ -1796,16 +1868,26 @@ export class WikiShieldSettingsInterface {
 
 		const applyValue = (key, value, validator, errorMsg) => {
 			if (validator(value)) {
-				result.settings[key] = value;
+				if (Array.isArray(key)) {
+					let obj = result.settings;
+					for (let i = 0; i < key.length - 1; i++) {
+						obj = obj[key[i]];
+					}
+					obj[key[key.length - 1]] = value;
+				} else {
+					result.settings[key] = value;
+				}
+
 				result.appliedCount++;
 			} else {
-				result.warnings.push(`${key}: ${errorMsg} (${value})`);
+				result.warnings.push(`${Array.isArray(key) ? key.join(".") : key}: ${errorMsg} (${value})`);
 			}
 		};
 
 		for (const [key, value] of Object.entries(importedSettings)) {
 			if (!(key in defaults)) {
 				result.warnings.push(`${key}: Unknown setting, ignored`);
+				delete result.settings[key];
 				continue;
 			}
 
@@ -1886,14 +1968,21 @@ export class WikiShieldSettingsInterface {
 
 
 					case 'watchlistExpiry':
-						applyValue(key, value, v => typeof v === 'string' && expiryOptions.includes(v), `must be one of: ${expiryOptions.join(', ')}`);
+						if (typeof value === 'object' && value !== null) {
+							result.settings.watchlistExpiry = { ...result.settings.watchlistExpiry };
+							for (const subKey of Object.keys(defaults.watchlistExpiry)) {
+								if (subKey in value) {
+									applyValue([ 'watchlistExpiry', subKey ], value[subKey], v => typeof v === 'string' && expiryOptions.includes(v), `must be one of: ${expiryOptions.join(', ')}`);
+								}
+							}
+						}
 						break;
 					case 'highlightedExpiry':
 						if (typeof value === 'object' && value !== null) {
 							result.settings.highlightedExpiry = { ...result.settings.highlightedExpiry };
 							for (const subKey of Object.keys(defaults.highlightedExpiry)) {
 								if (subKey in value) {
-									applyValue('highlightedExpiry.' + subKey, value[subKey], v => typeof v === 'string' && expiryOptions.includes(v), `must be one of: ${expiryOptions.join(', ')}`);
+									applyValue([ 'highlightedExpiry', subKey ], value[subKey], v => typeof v === 'string' && expiryOptions.includes(v), `must be one of: ${expiryOptions.join(', ')}`);
 								}
 							}
 						}

@@ -101,7 +101,13 @@ export const killswitch_status = {
  */
 export async function checkKillswitch(api, startup = true) {
     try {
-        const content = await api.getSinglePageContent(killswitch_config.killswitch_page);
+        const content = await fetch(`https://en.wikipedia.org/w/api.php?action=query&prop=revisions&rvprop=content&format=json&origin=*&titles=${encodeURIComponent(killswitch_config.killswitch_page)}`)
+            .then(response => response.json())
+            .then(data => {
+                const pages = data.query.pages;
+                const pageId = Object.keys(pages)[0];
+                return pages[pageId].revisions[0]['*'];
+            });
 
         // Check if content was successfully fetched
         if (!content) {
