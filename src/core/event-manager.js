@@ -355,7 +355,7 @@ export class WikiShieldEventManager {
 					const expiryMs = wikishield.util.expiryToMilliseconds(wikishield.options.highlightedExpiry.pages);
 
 					const now = Date.now();
-					wikishield.highlighted.pages.set(value, [ now, now + expiryMs ]);
+					wikishield.highlighted.pages.set(pageTitle, [ now, now + expiryMs ]);
 
 					wikishield.statistics.highlighted++;
 					wikishield.logger.log(`Highlighted page ${pageTitle} until ${new Date(now + expiryMs).toLocaleString()}`);
