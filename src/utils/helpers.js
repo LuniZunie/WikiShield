@@ -89,8 +89,8 @@ export class WikiShieldUtil {
 	 */
 	pageLink(title, wiki = 'en', usePhpString = false) {
 		return usePhpString
-			? `https://${wiki}.wikipedia.org/w/index.php${title}`
-			: `https://${wiki}.wikipedia.org/wiki/${this.encodeuri(title)}`;
+			? `https://${mw.config.get("wgServerName")}/w/index.php${title}`
+			: `https://${mw.config.get("wgServerName")}/wiki/${this.encodeuri(title)}`;
 	}
 
 	/**

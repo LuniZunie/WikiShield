@@ -108,8 +108,8 @@ export class WikiShield {
 		this.handleLoadingNotifications();
 		this.handleLoadingWatchlist();
 
-		this.highlightCleanupInterval = setInterval(() => {
-			this.cleanupExpiredHighlights();
+		this.entriesCleanupInterval = setInterval(() => {
+			this.cleanupExpiredEntries();
 		}, 30000);
 
 		this.startInterface();
@@ -141,6 +141,11 @@ export class WikiShield {
 			// Parsing error, use empty object
 		}
 		options = options || {};
+
+		if (typeof options.highlightedExpiry === "string") {
+			// Convert old format to new format
+			options.highlightedExpiry = { users: options.highlightedExpiry };
+		}
 
 		// Fill in missing options with defaults
 		for (const key in defaultSettings) {
@@ -192,21 +197,29 @@ export class WikiShield {
 	 * Load whitelist from storage
 	 */
 	loadWhitelist(data) {
+		if (Array.isArray(data)) {
+			data = { users: data }; // Convert old format to new format
+		}
+
 		try {
-			const stored = data ?? JSON.parse(mw.storage.store.getItem("WikiShield:Whitelist"));
-			if (stored && stored.length > 0) {
-				// Check if it's old format (array of strings) or new format (array of [username, timestamp] pairs)
-				if (typeof stored[0] === "string") {
-					// Old format - convert to new format with current timestamp
-					return new Map(stored.map(username => [username, Date.now()]));
-				} else {
-					// New format
-					return new Map(stored);
+			const stored = data ?? { users: JSON.parse(mw.storage.store.getItem("WikiShield:Whitelist")) };
+
+			const rtn = { users: new Map(), pages: new Map(), tags: new Map() };
+			for (const [ key, value ] of Object.entries(stored || {})) {
+				if (value && value.length > 0) {
+					rtn[key] = new Map(value.map(entry => {
+						if (!Array.isArray(entry[1])) {
+							entry[1] = [ entry[1], Infinity ];
+						}
+
+						entry[1][1] ??= Infinity; // nullish expiry means indefinite
+						return entry;
+					}));
 				}
 			}
-			return new Map();
+			return rtn;
 		} catch (err) {
-			return new Map();
+			return { users: new Map(), pages: new Map(), tags: new Map() };
 		}
 	}
 
@@ -214,11 +227,29 @@ export class WikiShield {
 	 * Load highlighted users from storage
 	 */
 	loadHighlighted(data) {
+		if (Array.isArray(data)) {
+			data = { users: data }; // Convert old format to new format
+		}
+
 		try {
-			const stored = data ?? JSON.parse(mw.storage.store.getItem("WikiShield:Highlighted"));
-			return new Map(stored || []);
+			const stored = data ?? { users: JSON.parse(mw.storage.store.getItem("WikiShield:Highlighted")) };
+
+			const rtn = { users: new Map(), pages: new Map(), tags: new Map() };
+			for (const [ key, value ] of Object.entries(stored || {})) {
+				if (value && value.length > 0) {
+					rtn[key] = new Map(value.map(entry => {
+						if (!Array.isArray(entry[1])) {
+							entry[1] = [ Date.now(), entry[1] ];
+						}
+
+						entry[1][1] ??= Infinity; // nullish expiry means indefinite
+						return entry;
+					}));
+				}
+			}
+			return rtn;
 		} catch (err) {
-			return new Map();
+			return { users: new Map(), pages: new Map(), tags: new Map() };
 		}
 	}
 
@@ -308,17 +339,29 @@ export class WikiShield {
 	}
 
 	/**
-	 * Clean up expired user highlights
+	 * Clean up expired highlights & whitelist entries
 	 */
-	cleanupExpiredHighlights() {
+	cleanupExpiredEntries() {
 		const now = Date.now();
 		let changed = false;
 
-		for (const [username, expirationTime] of this.highlighted.entries()) {
-			if (now >= expirationTime) {
-				this.highlighted.delete(username);
-				changed = true;
-				this.logger.log(`Removed expired highlight for user: ${username}`);
+		for (const [ key, value ] of Object.entries(this.highlighted)) {
+			for (const [ name, time ] of value.entries()) {
+				if (now >= time[1]) {
+					value.delete(name);
+					changed = true;
+					this.logger.log(`Removed expired highlight for ${key}: ${name}`);
+				}
+			}
+		}
+
+		for (const [ key, value ] of Object.entries(this.whitelist)) {
+			for (const [ name, time ] of value.entries()) {
+				if (now >= time[1]) {
+					value.delete(name);
+					changed = true;
+					this.logger.log(`Removed expired whitelist for ${key}: ${name}`);
+				}
 			}
 		}
 
@@ -365,6 +408,7 @@ export class WikiShield {
 		);
 
 		if (!success) {
+			this.queue.playErrorSound();
 			this.interface.showToast(
 				"Revert Failed",
 				`Could not revert edits on "${edit.page.title}" - a newer edit may have been made`,
@@ -1400,8 +1444,8 @@ export class WikiShield {
 			changelog: __script__.changelog.version,
 
 			options: this.options,
-			whitelist: [ ...this.whitelist.entries() ],
-			highlighted: [...this.highlighted.entries() ],
+			whitelist: Object.fromEntries(Object.entries(this.whitelist).map(([ key, value ]) => [ key, [ ...value.entries() ] ])),
+			highlighted: Object.fromEntries(Object.entries(this.highlighted).map(([ key, value ]) => [ key, [ ...value.entries() ] ])),
 
 			queueWidth: this.queueWidth,
 			detailsWidth: this.detailsWidth,

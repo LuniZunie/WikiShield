@@ -26,9 +26,8 @@ export const __script__ = {
 	version: "1.0.0",
 
 	changelog: {
-		version: "1",
-		HTML: `<h1 class="settings-section-title">Changelog</h1>
-		<p>In development</p>`
+		version: "2!",
+		HTML: wikishieldHTML.changelog
 	},
 
 	pages: {

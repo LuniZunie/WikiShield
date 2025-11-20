@@ -2050,7 +2050,7 @@ body.dark-mode .queue-edit:not(.queue-edit-current) {
 	}
 }
 
-.queue-edit-title, .queue-edit-user, .queue-edit-summary, .queue-edit-time {
+.queue-edit :is(.page-title, .username, .queue-edit-summary, .queue-edit-time) {
 	display: flex;
 	align-items: center;
 	white-space: nowrap;
@@ -2061,7 +2061,7 @@ body.dark-mode .queue-edit:not(.queue-edit-current) {
 	height: 22px;
 }
 
-.queue-edit-user, .queue-edit-summary, .queue-edit-time {
+.queue-edit :is(.username, .queue-edit-summary, .queue-edit-time) {
 	font-size: 0.9em;
 }
 
@@ -2094,13 +2094,13 @@ body.dark-mode #page-history-content .queue-edit:hover {
 	padding: 2px 6px;
 }
 
-.queue-edit-icon {
+.queue-edit .queue-edit-icon {
 	width: 25px;
 	flex-shrink: 0;
 	color: #333;
 }
 
-body.dark-mode .queue-edit-icon {
+body.dark-mode .queue-edit .queue-edit-icon {
 	color: #c0c0c0;
 }
 
@@ -2183,22 +2183,6 @@ body.dark-mode .queue-edit-tag {
 
 body.dark-mode .queue-edit-tag:hover {
 	background: rgba(60, 64, 76, 0.95);
-}
-
-.queue-edit-tag-minor {
-	background: rgba(212, 212, 212, 0.95);
-	-webkit-backdrop-filter: blur(8px);
-	backdrop-filter: blur(8px);
-	border: 1px solid rgba(0, 0, 0, 0.1);
-	font-weight: bold;
-	color: #666;
-	font-style: italic;
-}
-
-body.dark-mode .queue-edit-tag-minor {
-	background: rgba(60, 64, 76, 0.95);
-	border: 1px solid rgba(255, 255, 255, 0.15);
-	color: #999;
 }
 
 .minor-indicator {
@@ -2360,7 +2344,7 @@ body.dark-mode .queue-edit-current {
 	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
-.context-menu div {
+.context-menu div:not(.menu-divider) {
 	padding: 8px 12px;
 	margin: 4px;
 	-webkit-user-select: none;
@@ -2375,7 +2359,7 @@ body.dark-mode .queue-edit-current {
 }
 
 #context-ores {
-	color: #444;
+	color: #888;
 	font-size: 0.8em;
 }
 
@@ -3726,35 +3710,21 @@ body.dark-mode .username-input:focus {
 	text-decoration: none;
 }
 
-.queue-edit-user-highlight {
+.queue-highlight {
 	color: #d4a400 !important;
 	font-weight: 600 !important;
-	background: none !important;
-	-webkit-backdrop-filter: none !important;
-	backdrop-filter: none !important;
-	border: none !important;
-	padding: 0 !important;
-	border-radius: 0 !important;
-	box-shadow: none !important;
 }
 
-.queue-edit-user-highlight .queue-edit-icon {
+.queue-highlight .queue-edit-icon {
 	color: #d4a400 !important;
 }
 
-.queue-edit-user-empty-talk {
+.queue-user-empty-talk {
 	color: #d63031 !important;
 	font-weight: 600 !important;
-	background: none !important;
-	-webkit-backdrop-filter: none !important;
-	backdrop-filter: none !important;
-	border: none !important;
-	padding: 0 !important;
-	border-radius: 0 !important;
-	box-shadow: none !important;
 }
 
-.queue-edit-user-empty-talk .queue-edit-icon {
+.queue-user-empty-talk .queue-edit-icon {
 	color: #d63031 !important;
 }
 
@@ -3850,10 +3820,23 @@ body.dark-mode .queue-edit-mentions-me:hover {
 
 .changelog {
 	width: 100%;
-	margin: 20px 20px 0 20px;
+	margin: 20px;
 
 	font-size: 0.9em;
 	line-height: 1.6em;
+
+	overflow: auto;
+}
+
+#close-changelog {
+	position: absolute;
+	top: 0px;
+	right: 0px;
+	border-radius: 0px 0px 0px 8px;
+	cursor: pointer;
+	background: #c20 !important;
+	box-shadow: 0 2px 6px #c201 !important;
+	transition: all 0.2s ease;
 }
 
 .settings-appearance-box {

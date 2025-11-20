@@ -1,6 +1,147 @@
 // HTML templates for WikiShield UI
 
 export const wikishieldHTML = {
+	"changelog": `
+		<h1 style="
+			text-align:center;
+			margin:25px 0 30px;
+			font-size:32px;
+			font-weight:800;
+			color:var(--title-color, #fff);
+			letter-spacing:0.5px;
+		">
+			Changelog
+		</h1>
+
+		<div style="
+			max-width:1350px;
+			margin:0 auto;
+			display:grid;
+			grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));
+			gap:24px;
+			padding:0 10px;
+			font-family:system-ui, sans-serif;
+			color:var(--text-color, inherit);
+		">
+
+			<style>
+			:root {
+				--card-bg: rgba(255,255,255,0.04);
+				--card-border: rgba(255,255,255,0.10);
+				--card-shadow: 0 6px 20px rgba(0,0,0,0.25);
+				--text-color: #e5e5e5;
+				--title-color: #ffffff;
+				--accent-color: #76a8ff;
+				--code-bg: rgba(255,255,255,0.15);
+			}
+			@media (prefers-color-scheme: light) {
+				:root {
+				--card-bg: #ffffff;
+				--card-border: #d2d2d2;
+				--card-shadow: 0 4px 16px rgba(0,0,0,0.12);
+				--text-color: #222;
+				--title-color: #000;
+				--accent-color: #3b66dd;
+				--code-bg: #ececec;
+				}
+			}
+			</style>
+
+			<!-- CARD -->
+			<div style="
+			background:var(--card-bg);
+			border:1px solid var(--card-border);
+			border-radius:14px;
+			padding:22px 24px;
+			box-shadow:var(--card-shadow);
+			backdrop-filter:blur(8px);
+			">
+			<h2 style="margin:0 0 10px; font-size:20px; font-weight:700; color:var(--title-color);">Zen Mode</h2>
+			<p style="margin:0 0 14px; font-size:15px; font-weight:600; color:var(--accent-color);">
+				UI Improvements & Minimalism Tools
+			</p>
+			<ul style="margin:0; padding-left:20px; line-height:1.6; font-size:15px;">
+				<li>New <code style="background:var(--code-bg); padding:2px 5px; border-radius:4px;">Zen Mode</code> tab in the settings panel.</li>
+				<li>Toggle visibility of watchlist, notifications, edit count, and toasts.</li>
+			</ul>
+			</div>
+
+			<div style="
+			background:var(--card-bg);
+			border:1px solid var(--card-border);
+			border-radius:14px;
+			padding:22px 24px;
+			box-shadow:var(--card-shadow);
+			backdrop-filter:blur(8px);
+			">
+			<h2 style="margin:0 0 10px; font-size:20px; font-weight:700; color:var(--title-color);">Highlighting & Whitelisting</h2>
+			<p style="margin:0 0 14px; font-size:15px; font-weight:600; color:var(--accent-color);">
+				More Control Over Categories
+			</p>
+			<ul style="margin:0; padding-left:20px; line-height:1.6; font-size:15px;">
+				<li>Pages and tags can now be whitelisted or highlighted.</li>
+				<li>Settings reorganized into clearer category groups.</li>
+			</ul>
+			</div>
+
+			<div style="
+			background:var(--card-bg);
+			border:1px solid var(--card-border);
+			border-radius:14px;
+			padding:22px 24px;
+			box-shadow:var(--card-shadow);
+			backdrop-filter:blur(8px);
+			">
+			<h2 style="margin:0 0 10px; font-size:20px; font-weight:700; color:var(--title-color);">Sound System Upgrade</h2>
+			<p style="margin:0 0 14px; font-size:15px; font-weight:600; color:var(--accent-color);">
+				Layered Audio Format
+			</p>
+			<ul style="margin:0; padding-left:20px; line-height:1.6; font-size:15px;">
+				<li>Sounds now support multiple layers for richer effects.</li>
+				<li>Updated every sound to use the new system.</li>
+				<li>Added <code style="background:var(--code-bg); padding:2px 5px; border-radius:4px;">success</code> and <code style="background:var(--code-bg); padding:2px 5px; border-radius:4px;">error</code> tones.</li>
+			</ul>
+			</div>
+
+			<div style="
+			background:var(--card-bg);
+			border:1px solid var(--card-border);
+			border-radius:14px;
+			padding:22px 24px;
+			box-shadow:var(--card-shadow);
+			backdrop-filter:blur(8px);
+			">
+			<h2 style="margin:0 0 10px; font-size:20px; font-weight:700; color:var(--title-color);">Save System Fixes</h2>
+			<p style="margin:0 0 14px; font-size:15px; font-weight:600; color:var(--accent-color);">
+				More Reliable Loading
+			</p>
+			<ul style="margin:0; padding-left:20px; line-height:1.6; font-size:15px;">
+				<li>Namespace preferences may have reset due to a bug.</li>
+				<li>Invalid or unsupported settings now auto-remove during load.</li>
+			</ul>
+			</div>
+
+			<div style="
+			background:var(--card-bg);
+			border:1px solid var(--card-border);
+			border-radius:14px;
+			padding:22px 24px;
+			box-shadow:var(--card-shadow);
+			backdrop-filter:blur(8px);
+			">
+			<h2 style="margin:0 0 10px; font-size:20px; font-weight:700; color:var(--title-color);">Miscellaneous Improvements</h2>
+			<p style="margin:0 0 14px; font-size:15px; font-weight:600; color:var(--accent-color);">
+				General Enhancements
+			</p>
+			<ul style="margin:0; padding-left:20px; line-height:1.6; font-size:15px;">
+				<li>Script now works across all Wikimedia Foundation wikis.</li>
+				<li>Rearranged and cleaned up the settings panel.</li>
+				<li>Fixed several minor bugs.</li>
+			</ul>
+			</div>
+
+		</div>
+	`,
 	"head": `
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
@@ -44,10 +185,10 @@ export const wikishieldHTML = {
 						<span id="queue-top-items">0 items</span>
 					</div>
 					<div id="queue-top-right">
-						<span class="fa fa-book-bookmark" id="watchlist-icon" data-tooltip="Watchlist" style="position: relative;">
+						<span class="fa fa-book-bookmark" id="watchlist-icon" data-tooltip="Watchlist" style="position: relative;" data-zen-show="watchlist">
 							<span id="watchlist-count" style="display: none; position: absolute; top: -5px; right: -5px; background: dodgerblue; color: white; border-radius: 50%; width: 16px; height: 16px; font-size: 10px; text-align: center; line-height: 16px; font-family: sans-serif;"></span>
 						</span>
-						<span class="fa fa-bell" id="notifications-icon" data-tooltip="Notifications" style="position: relative;">
+						<span class="fa fa-bell" id="notifications-icon" data-tooltip="Notifications" style="position: relative;" data-zen-show="notifications">
 							<span id="notification-count" style="display: none; position: absolute; top: -5px; right: -5px; background: red; color: white; border-radius: 50%; width: 16px; height: 16px; font-size: 10px; text-align: center; line-height: 16px; font-family: sans-serif;"></span>
 						</span>
 						<span class="fa fa-trash" id="delete-queue" data-tooltip="Clear queue"></span>
@@ -134,7 +275,7 @@ export const wikishieldHTML = {
 								</div>
 							</div>
 
-							<div id="bottom-tools-stats">
+							<div id="bottom-tools-stats" data-zen-show="editCount">
 								<div class="stat-item">
 									<i class="fas fa-user"></i>
 									<span class="bottom-stat-value" id="stat-total-contribs">-</span>
@@ -196,13 +337,13 @@ export const wikishieldHTML = {
 				<i class="fas fa-arrow-up-right-from-square menu-option-icon"></i>
 			</div>
 			<div class="menu-divider"></div>
-			<div id="user-add-whitelist" class="menu-option">
-				<i class="fas fa-user-check"></i>
-				<span>Add to whitelist</span>
+			<div id="user-whitelist" class="menu-option">
+				<i class="fas fa-check"></i>
+				<span>Whitelist user</span>
 			</div>
-			<div id="user-remove-whitelist" class="menu-option" style="display: none;">
-				<i class="fas fa-user-xmark"></i>
-				<span>Remove from whitelist</span>
+			<div id="user-unwhitelist" class="menu-option" style="display: none;">
+				<i class="fas fa-xmark"></i>
+				<span>Unwhitelist user</span>
 			</div>
 			<div id="user-highlight" class="menu-option">
 				<i class="fas fa-star"></i>
@@ -247,6 +388,23 @@ export const wikishieldHTML = {
 				<i class="fas fa-clock-rotate-left"></i>
 				<span>View page history</span>
 				<i class="fas fa-arrow-up-right-from-square menu-option-icon"></i>
+			</div>
+			<div class="menu-divider"></div>
+			<div id="page-whitelist" class="menu-option">
+				<i class="fas fa-check"></i>
+				<span>Whitelist page</span>
+			</div>
+			<div id="page-unwhitelist" class="menu-option" style="display: none;">
+				<i class="fas fa-xmark"></i>
+				<span>Unwhitelist page</span>
+			</div>
+			<div id="page-highlight" class="menu-option">
+				<i class="fas fa-star"></i>
+				<span>Highlight page</span>
+			</div>
+			<div id="page-unhighlight" class="menu-option" style="display: none;">
+				<i class="fas fa-star"></i>
+				<span>Unhighlight page</span>
 			</div>
 			<div class="menu-divider"></div>
 			<div id="page-request-protection" class="menu-option submenu-trigger">
@@ -295,7 +453,13 @@ export const wikishieldHTML = {
 	"edit-context-menu": `
 		<div id="context-ores"><span id="context-ores-number">0</span> ORES score</div>
 		<div id="context-remove">Remove from queue</div>
-		<div id="context-whitelist">Whitelist user</div>
+		<div class="menu-divider"></div>
+		<div id="context-whitelist-user">Whitelist user</div>
+		<div id="context-highlight-user">Highlight user</div>
+		<div class="menu-divider"></div>
+		<div id="context-whitelist-page">Whitelist page</div>
+		<div id="context-highlight-page">Highlight page</div>
+		<div class="menu-divider"></div>
 		<div id="context-open-history">View page history</div>
 		<div id="context-open-contribs">View user contribs</div>
 	`,
@@ -312,9 +476,6 @@ export const wikishieldHTML = {
 					<div class="settings-left-menu-item" id="settings-audio-button">
 						<span><i class="fas fa-volume-high"></i>Audio</span>
 					</div>
-					<div class="settings-left-menu-item" id="settings-appearance-button">
-						<span><i class="fas fa-palette"></i>Appearance</span>
-					</div>
 					<div class="settings-left-menu-item" id="settings-controls-button">
 						<span><i class="fas fa-keyboard"></i>Controls</span>
 					</div>
@@ -322,7 +483,19 @@ export const wikishieldHTML = {
 
 				<div class="settings-category">
 					<div class="settings-category-header">
-						<span>MODERATION</span>
+						<span>APPEARANCE</span>
+					</div>
+					<div class="settings-left-menu-item" id="settings-palette-button">
+						<span><i class="fas fa-palette"></i>Palette</span>
+					</div>
+					<div class="settings-left-menu-item" id="settings-zen-mode-button">
+						<span><i class="fas fa-spa"></i>Zen Mode</span>
+					</div>
+				</div>
+
+				<div class="settings-category">
+					<div class="settings-category-header">
+						<span>TOOLS</span>
 					</div>
 					<div class="settings-left-menu-item" id="settings-ai-button">
 						<span><i class="fas fa-robot"></i>AI Analysis</span>
@@ -333,11 +506,35 @@ export const wikishieldHTML = {
 					<div class="settings-left-menu-item" id="settings-gadgets-button">
 						<span><i class="fas fa-toolbox"></i>Gadgets</span>
 					</div>
-					<div class="settings-left-menu-item" id="settings-whitelist-button">
-						<span><i class="fas fa-user-check"></i>Whitelist</span>
+				</div>
+
+				<div class="settings-category">
+					<div class="settings-category-header">
+						<span>WHITELIST</span>
 					</div>
-					<div class="settings-left-menu-item" id="settings-highlight-button">
-						<span><i class="fas fa-star"></i>Highlighted</span>
+					<div class="settings-left-menu-item" id="settings-whitelist-users-button">
+						<span><i class="fas fa-user"></i>Users</span>
+					</div>
+					<div class="settings-left-menu-item" id="settings-whitelist-pages-button">
+						<span><i class="fas fa-file"></i>Pages</span>
+					</div>
+					<div class="settings-left-menu-item" id="settings-whitelist-tags-button">
+						<span><i class="fas fa-tag"></i>Tags</span>
+					</div>
+				</div>
+
+				<div class="settings-category">
+					<div class="settings-category-header">
+						<span>HIGHLIGHT</span>
+					</div>
+					<div class="settings-left-menu-item" id="settings-highlight-users-button">
+						<span><i class="fas fa-user"></i>Users</span>
+					</div>
+					<div class="settings-left-menu-item" id="settings-highlight-pages-button">
+						<span><i class="fas fa-file"></i>Pages</span>
+					</div>
+					<div class="settings-left-menu-item" id="settings-highlight-tags-button">
+						<span><i class="fas fa-tag"></i>Tags</span>
 					</div>
 				</div>
 

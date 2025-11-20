@@ -18,11 +18,19 @@ export const createConditions = (wikishield) => ({
 	},
 	"userIsHighlighted": {
 		desc: "User is highlighted",
-		check: (edit) => wikishield.highlighted.has(edit.user.name)
+		check: (edit) => wikishield.highlighted.users.has(edit.user.name)
+	},
+	"pageIsHighlighted": {
+		desc: "Page is highlighted",
+		check: (edit) => wikishield.highlighted.pages.has(edit.page.title)
 	},
 	"userIsWhitelisted": {
 		desc: "User is whitelisted",
-		check: (edit) => wikishield.whitelist.has(edit.user.name)
+		check: (edit) => wikishield.whitelist.users.has(edit.user.name)
+	},
+	"pageIsWhitelisted": {
+		desc: "Page is whitelisted",
+		check: (edit) => wikishield.whitelist.pages.has(edit.page.title)
 	},
 	"userIsAnon": {
 		desc: "User is anonymous (temporary account)",
