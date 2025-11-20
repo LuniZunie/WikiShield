@@ -34,17 +34,6 @@ export const wikishieldHTML = {
 				--accent-color: #76a8ff;
 				--code-bg: rgba(255,255,255,0.15);
 			}
-			@media (prefers-color-scheme: light) {
-				:root {
-				--card-bg: #ffffff;
-				--card-border: #d2d2d2;
-				--card-shadow: 0 4px 16px rgba(0,0,0,0.12);
-				--text-color: #222;
-				--title-color: #000;
-				--accent-color: #3b66dd;
-				--code-bg: #ececec;
-				}
-			}
 			</style>
 
 			<!-- CARD -->
