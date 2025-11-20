@@ -26,7 +26,7 @@ export const __script__ = {
 	version: "1.0.0",
 
 	changelog: {
-		version: "2!",
+		version: "2",
 		HTML: wikishieldHTML.changelog
 	},
 
@@ -40,12 +40,6 @@ export const __script__ = {
 		refresh: 1000,
 		historyCount: 10,
 	},
-
-	tags: {
-		whitelisted: [
-			"OAuth CID: 4978", // dashboard.wikiedu.org [2.3]
-		],
-	}
 };
 
 {
