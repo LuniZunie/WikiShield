@@ -1124,7 +1124,7 @@ export class WikiShieldInterface {
 						}
 					},
 					{
-						name: "highlight",
+						name: "highlightUser",
 						params: {}
 					},
 				].concat(this.wikishield.options.enableAutoReporting && this.wikishield.options.selectedAutoReportReasons[warningType] ?
@@ -1249,7 +1249,7 @@ export class WikiShieldInterface {
 						}
 					},
 					{
-						name: "highlight",
+						name: "highlightUser",
 						params: {}
 					}
 				]

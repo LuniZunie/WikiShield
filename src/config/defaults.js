@@ -167,7 +167,7 @@ export const defaultSettings = {
 					]
 				},
 				{
-					name: "highlight",
+					name: "highlightUser",
 					params: {}
 				}
 			]

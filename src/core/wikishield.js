@@ -170,20 +170,34 @@ export class WikiShield {
 			}
 
 			script.actions = script.actions.flatMap(action => {
-				if (action.name === "rollbackAndWarn") {
-					action = [
-						{
-							name: "rollback",
-							params: {}
-						},
-						{
-							name: "warn",
-							params: {
-								warningType: action.params.warningType || "Vandalism",
-								level: action.params.level || "auto"
-							}
-						},
-					];
+				switch (action.name) {
+					case "rollbackAndWarn":
+						action = [
+							{
+								name: "rollback",
+								params: {}
+							},
+							{
+								name: "warn",
+								params: {
+									warningType: action.params.warningType || "Vandalism",
+									level: action.params.level || "auto"
+								}
+							},
+						];
+						break;
+					case "highlight":
+						action.name = "highlightUser";
+						break;
+					case "unhighlight":
+						action.name = "unhighlightUser";
+						break;
+					case "addToWhitelist":
+						action.name = "whitelistUser";
+						break;
+					case "removeFromWhitelist":
+						action.name = "unwhitelistUser";
+						break;
 				}
 
 				return action;

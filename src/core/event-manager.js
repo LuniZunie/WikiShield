@@ -245,7 +245,7 @@ export class WikiShieldEventManager {
 					const expiryMs = wikishield.util.expiryToMilliseconds(wikishield.options.whitelistExpiry.users);
 
 					const now = Date.now();
-					wikishield.whitelist.users.set(value, [ now, now + expiryMs ]);
+					wikishield.whitelist.users.set(username, [ now, now + expiryMs ]);
 
 					wikishield.statistics.whitelist++;
 					wikishield.logger.log(`Added ${username} to user whitelist until ${new Date(now + expiryMs).toLocaleString()}`);
@@ -267,7 +267,7 @@ export class WikiShieldEventManager {
 					const expiryMs = wikishield.util.expiryToMilliseconds(wikishield.options.whitelistExpiry.pages);
 
 					const now = Date.now();
-					wikishield.whitelist.pages.set(value, [ now, now + expiryMs ]);
+					wikishield.whitelist.pages.set(pageTitle, [ now, now + expiryMs ]);
 
 					wikishield.statistics.whitelist++;
 					wikishield.logger.log(`Added ${pageTitle} to page whitelist until ${new Date(now + expiryMs).toLocaleString()}`);
@@ -332,7 +332,7 @@ export class WikiShieldEventManager {
 					const expiryMs = wikishield.util.expiryToMilliseconds(wikishield.options.highlightedExpiry.users);
 
 					const now = Date.now();
-					wikishield.highlighted.users.set(value, [ now, now + expiryMs ]);
+					wikishield.highlighted.users.set(username, [ now, now + expiryMs ]);
 
 					wikishield.statistics.highlighted++;
 					wikishield.logger.log(`Highlighted user ${username} until ${new Date(now + expiryMs).toLocaleString()}`);
