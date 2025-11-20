@@ -104,9 +104,7 @@ export const defaultSettings = {
 		tags: "1 week",
 	},
 	wiki: "en",
-	namespacesShown: [
-		0
-	],
+	namespacesShown: [ 0 ],
 	showTemps: true,
 	showUsers: true,
 	sortQueueItems: true,
