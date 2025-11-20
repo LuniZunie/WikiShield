@@ -726,7 +726,7 @@ body.dark-mode .notification-time, body.dark-mode .watchlist-time {
 
 #middle-top a {
 	text-decoration: none;
-	color: #0645ad;
+	color: #6ba3d8;
 	font-weight: 500;
 	transition: color 0.2s ease;
 }
@@ -3710,22 +3710,14 @@ body.dark-mode .username-input:focus {
 	text-decoration: none;
 }
 
-.queue-highlight {
-	color: #d4a400 !important;
+.queue-highlight, .queue-highlight * {
+	color: #f4c430 !important;
 	font-weight: 600 !important;
 }
 
-.queue-highlight .queue-edit-icon {
-	color: #d4a400 !important;
-}
-
-.queue-user-empty-talk {
-	color: #d63031 !important;
+.queue-user-empty-talk, .queue-user-empty-talk * {
+	color: #ff6b6b !important;
 	font-weight: 600 !important;
-}
-
-.queue-user-empty-talk .queue-edit-icon {
-	color: #d63031 !important;
 }
 
 /* Special highlight for edits that mention current user */

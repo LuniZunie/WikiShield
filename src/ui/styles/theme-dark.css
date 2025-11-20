@@ -370,16 +370,9 @@ select:hover, input[type=text]:focus, .bottom-subcontent-button:hover {
 	backdrop-filter: blur(8px) !important;
 }
 
-#middle-top a, #right-top a {
-	color: #6ba3d8 !important;
-}
-
-#middle-top a:hover, #right-top a:hover {
-	color: #89b8e8 !important;
-}
 
 #middle-top .fa, #right-top .fa {
-	color: #aaa !important;
+	color: #aaa;
 }
 
 /* Warning/Notice boxes - dark mode compatible */

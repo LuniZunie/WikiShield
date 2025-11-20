@@ -492,48 +492,57 @@ export class WikiShieldQueue {
 
 		const _util_ = this.wikishield.util;
 
+		const wikishield = this.wikishield; // For use in getters below
 		const queueItem = {
 			display: {
-				pageTitle: `<div
-					class="page-title ${this.wikishield.highlighted.pages.has(edit.title) ? 'queue-highlight' : ''}"
-				>
-					<span class="fa fa-file-alt queue-edit-icon"></span>
-					<a
-						href="${_util_.pageLink(edit.title)}"
-						target="_blank"
-						data-tooltip="${_util_.escapeHtml(edit.title)}"
+				get pageTitle() {
+					return `<div
+						class="page-title ${wikishield.highlighted.pages.has(edit.title) ? 'queue-highlight' : ''}"
 					>
-						${_util_.escapeHtml(_util_.maxStringLength(edit.title, 40))}
-				</div>`,
-				username: `<div
-					class="username ${this.wikishield.highlighted.users.has(edit.user) ? 'queue-highlight' : (
-						emptyTalkPage ? 'queue-user-empty-talk' : ''
-					)}"
-				>
-					<span class="fa fa-user queue-edit-icon"></span>
-					<a
-						href="${_util_.pageLink(`Special:Contributions/${edit.user}`)}"
-						target="_blank"
-						data-tooltip="${_util_.escapeHtml(edit.user)}"
-					>
-						${_util_.escapeHtml(_util_.maxStringLength(edit.user, 30))}
-					</a>
-				</div>`,
-			tags: `div class="tags">
-					${edit.tags.map(tag => {
-						const highlighted = this.wikishield.highlighted.tags.has(tag);
+						<span class="fa fa-file-alt queue-edit-icon"></span>
+						<a
+							href="${_util_.pageLink(edit.title)}"
+							target="_blank"
+							data-tooltip="${_util_.escapeHtml(edit.title)}"
+						>
+							${_util_.escapeHtml(_util_.maxStringLength(edit.title, 40))}
+						</a>
+					</div>`;
+				},
 
-						return {
-							highlighted,
-							html: `<span
-										class="tag ${highlighted ? 'queue-highlight' : ''}"
-										data-tooltip="${_util_.escapeHtml(tag)}"
-									>
-										${_util_.escapeHtml(_util_.maxStringLength(tag, 20))}
-									</span>`
-						}
-					}).sort((a, b) => b.highlighted - a.highlighted).reduce((str, obj) => str + obj.html, '')}
-				</div>`
+				get username() {
+					return `<div
+						class="username ${wikishield.highlighted.users.has(edit.user) ? 'queue-highlight' : (
+							emptyTalkPage ? 'queue-user-empty-talk' : ''
+						)}"
+					>
+						<span class="fa fa-user queue-edit-icon"></span>
+						<a
+							href="${_util_.pageLink(`Special:Contributions/${edit.user}`)}"
+							target="_blank"
+							data-tooltip="${_util_.escapeHtml(edit.user)}"
+						>
+							${_util_.escapeHtml(_util_.maxStringLength(edit.user, 30))}
+						</a>
+					</div>`;
+				},
+				get tags() {
+					return `<div class="tags">
+						${edit.tags.map(tag => {
+							const highlighted = wikishield.highlighted.tags.has(tag);
+
+							return {
+								highlighted,
+								html: `<span
+											class="tag ${highlighted ? 'queue-highlight' : ''}"
+											data-tooltip="${_util_.escapeHtml(tag)}"
+										>
+											${_util_.escapeHtml(_util_.maxStringLength(tag, 20))}
+										</span>`
+							}
+						}).sort((a, b) => b.highlighted - a.highlighted).reduce((str, obj) => str + obj.html, '')}
+					</div>`;
+				}
 	},
 	page: {
 		title: edit.title,
