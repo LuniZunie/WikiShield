@@ -1658,11 +1658,11 @@ export class WikiShieldSettingsInterface {
 						</div>
 						<div class="stat-card">
 							<div class="stat-value">${stats.whitelisted}</div>
-							<div class="stat-label">Users Whitelisted</div>
+							<div class="stat-label">Items Whitelisted</div>
 						</div>
 						<div class="stat-card">
 							<div class="stat-value">${stats.highlighted}</div>
-							<div class="stat-label">Users Highlighted</div>
+							<div class="stat-label">Items Highlighted</div>
 						</div>
 						<div class="stat-card">
 							<div class="stat-value">${hours}h ${minutes}m</div>
