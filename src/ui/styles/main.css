@@ -2050,7 +2050,7 @@ body.dark-mode .queue-edit:not(.queue-edit-current) {
 	}
 }
 
-.queue-edit :is(.page-title, .username, .queue-edit-summary, .queue-edit-time) {
+.queue-edit :is(.queue-edit-title, .queue-edit-user, .queue-edit-summary, .queue-edit-time) {
 	display: flex;
 	align-items: center;
 	white-space: nowrap;
@@ -2061,7 +2061,7 @@ body.dark-mode .queue-edit:not(.queue-edit-current) {
 	height: 22px;
 }
 
-.queue-edit :is(.username, .queue-edit-summary, .queue-edit-time) {
+.queue-edit :is(.queue-edit-user, .queue-edit-summary, .queue-edit-time) {
 	font-size: 0.9em;
 }
 

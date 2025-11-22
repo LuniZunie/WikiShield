@@ -736,6 +736,7 @@ export class WikiShieldAPI {
 				"rclimit": 50,
 				"rcprop": "title|ids|sizes|flags|user|tags|comment|timestamp",
 				"rctype": "edit",
+				"rctoponly": true,
 				"format": "json",
 				"rcstart": since || "",
 				"rcdir": since ? "newer" : "older"

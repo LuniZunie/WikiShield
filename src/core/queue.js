@@ -28,9 +28,9 @@ export class WikiShieldQueue {
 			const whitelist = this.wikishield.whitelist;
 			const namespaceString = this.wikishield.options.namespacesShown.join("|");
 
-			const recentChanges = (await this.wikishield.api.recentChanges(namespaceString))
-			.filter(edit => !(whitelist.users.has(edit.user) || whitelist.pages.has(edit.title) || edit.tags?.some(tag => whitelist.tags.has(tag))))
-			.filter(edit => edit.revid > this.lastRevid);
+			let recentChanges = (await this.wikishield.api.recentChanges(namespaceString))
+				.filter(edit => !whitelist.pages.has(edit.title))
+				.filter(edit => edit.revid > this.lastRevid);
 
 			this.lastRevid = Math.max(...recentChanges.map(edit => edit.revid));
 
@@ -57,6 +57,8 @@ export class WikiShieldQueue {
 					}
 				}
 			}
+
+			recentChanges = recentChanges.filter(edit => !(whitelist.users.has(edit.user) || edit.tags?.some(tag => whitelist.tags.has(tag))));
 
 			const usersToFetch = recentChanges.reduce((str, edit) => str + (str === "" ? "" : "|") + edit.user, "");
 
