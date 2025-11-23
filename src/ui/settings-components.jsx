@@ -11,13 +11,15 @@ export class Toggle extends Component {
 	render() {
 		const { value, onChange, label, description, id } = this.props;
 
+		let currentValue = value;
 		return (
 			<div
 				id={id || ''}
 				class={`settings-toggle ${value ? 'active' : ''}`}
 				onClick={e => {
-					e.target.closest('.settings-toggle').classList.toggle('active');
-					onChange(!value);
+					currentValue = !currentValue;
+					e.target.closest('.settings-toggle').classList.toggle('active', currentValue);
+					onChange(currentValue);
 				}}
 			>
 				<div class="toggle-switch">
