@@ -279,8 +279,8 @@ export const warnings = {
 			},
 			{
 				title: "Editing tests",
-				summary: "adding deliberate errors to articles",
-				description: "Adding deliberate errors to articles.",
+				summary: "test edits",
+				description: "Making test edits on live articles.",
 				icon: "fas fa-flask",
 				auto: defaultAuto,
 				templates: {
