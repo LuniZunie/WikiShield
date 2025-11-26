@@ -161,31 +161,32 @@ export const __script__ = {
 			wikishield.wikishieldEventData = wikishieldEventData;
 			wikishield.interface.eventManager.initializeEvents(wikishieldEventData);
 			wikishield.init().then(() => {
-				let saveFired = false;
-				const safeSave = () => {
-					if (saveFired) {
-						return;
-					}
-					saveFired = true;
-					wikishield.save();
-				};
+				const isIOS = /iP(ad|hone|od)/.test(navigator.userAgent);
+				const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+				const isDesktop = !isIOS && !/android/i.test(navigator.userAgent);
 
-				// Safari-safe backgrounding
-				document.addEventListener("visibilitychange", () => {
-					if (document.visibilityState === "hidden") {
-						safeSave();
-					}
-				});
+				// SAFARI (non-iOS) – visibilitychange works
+				if (isSafari && !isIOS) {
+					document.addEventListener("visibilitychange", () => {
+						if (document.visibilityState === "hidden") {
+							wikishield.save();
+						}
+					});
+				}
 
-				// iOS-specific fallback
-				window.addEventListener("pagehide", () => {
-					safeSave();
-				});
+				// iOS – pagehide is required because visibilitychange is unreliable
+				if (isIOS) {
+					window.addEventListener("pagehide", () => {
+						wikishield.save();
+					});
+				}
 
-				// Desktop fallback
-				window.addEventListener("beforeunload", () => {
-					safeSave();
-				});
+				// Desktop – beforeunload is the only consistent option
+				if (isDesktop) {
+					window.addEventListener("beforeunload", () => {
+						wikishield.save();
+					});
+				}
 
 				startKillswitchPolling(wikishield.api);
 			});
