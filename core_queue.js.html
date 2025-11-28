@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="utf-8">
+    <title>core/queue.js - WikiShield Documentation</title>
+    
+    <meta name="description" content="API documentation for WikiShield - Wikipedia anti-vandalism tool" />
+    
+        <meta name="keywords" content="wikishield, wikipedia, documentation, api, anti-vandalism" />
+        <meta name="keyword" content="wikishield, wikipedia, documentation, api, anti-vandalism" />
+    
+    
+    
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc.css">
+    <script src="scripts/nav.js" defer></script>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav >
+    
+    <input type="text" id="nav-search" placeholder="Search" />
+    
+    
+    <h2><a href="index.html">Home</a></h2><h2><a href="https://github.com/LuniZunie/WikiShield" target="_blank" class="menu-item" id="github-link" >GitHub</a></h2><h2><a href="https://en.wikipedia.org/wiki/Wikipedia:WikiShield" target="_blank" class="menu-item" id="wikipedia-link" >Wikipedia</a></h2><h3>Modules</h3><ul><li><a href="module-core_killswitch.html">core/killswitch</a><ul class='members'><li data-type='member'><a href="module-core_killswitch.html#.killswitch_config">killswitch_config</a></li><li data-type='member'><a href="module-core_killswitch.html#.killswitch_status">killswitch_status</a></li></ul><ul class='methods'><li data-type='method'><a href="module-core_killswitch.html#.checkKillswitch">checkKillswitch</a></li><li data-type='method'><a href="module-core_killswitch.html#.startKillswitchPolling">startKillswitchPolling</a></li></ul></li></ul><h3>Classes</h3><ul><li><a href="AISettings.html">AISettings</a></li><li><a href="AboutSettings.html">AboutSettings</a></li><li><a href="AudioSettings.html">AudioSettings</a></li><li><a href="GeneralSettings.html">GeneralSettings</a></li><li><a href="HighlightedSettings.html">HighlightedSettings</a></li><li><a href="NumericInput.html">NumericInput</a></li><li><a href="PaletteSettings.html">PaletteSettings</a></li><li><a href="ProgressBarComponent.html">ProgressBarComponent</a><ul class='methods'><li data-type='method'><a href="ProgressBarComponent.html#scheduleRemoval">scheduleRemoval</a></li><li data-type='method'><a href="ProgressBarComponent.html#updateProgress">updateProgress</a></li></ul></li><li><a href="SaveSettings.html">SaveSettings</a></li><li><a href="SettingsCompactGrid.html">SettingsCompactGrid</a></li><li><a href="SettingsSection.html">SettingsSection</a></li><li><a href="StatisticsSettings.html">StatisticsSettings</a></li><li><a href="Toggle.html">Toggle</a></li><li><a href="UserList.html">UserList</a></li><li><a href="VolumeControl.html">VolumeControl</a></li><li><a href="WhitelistSettings.html">WhitelistSettings</a></li><li><a href="WikiShieldLog.html">WikiShieldLog</a><ul class='methods'><li data-type='method'><a href="WikiShieldLog.html#log">log</a></li></ul></li><li><a href="WikiShieldProgressBar.html">WikiShieldProgressBar</a><ul class='methods'><li data-type='method'><a href="WikiShieldProgressBar.html#cleanup">cleanup</a></li><li data-type='method'><a href="WikiShieldProgressBar.html#processQueue">processQueue</a></li><li data-type='method'><a href="WikiShieldProgressBar.html#remove">remove</a></li><li data-type='method'><a href="WikiShieldProgressBar.html#set">set</a></li></ul></li><li><a href="WikiShieldQueue.html">WikiShieldQueue</a><ul class='methods'><li data-type='method'><a href="WikiShieldQueue.html#addQueueItem">addQueueItem</a></li><li data-type='method'><a href="WikiShieldQueue.html#checkAndAutoReportUAA">checkAndAutoReportUAA</a></li><li data-type='method'><a href="WikiShieldQueue.html#checkAndAutoWelcome">checkAndAutoWelcome</a></li><li data-type='method'><a href="WikiShieldQueue.html#checkForOutdatedEdits">checkForOutdatedEdits</a></li><li data-type='method'><a href="WikiShieldQueue.html#delete">delete</a></li><li data-type='method'><a href="WikiShieldQueue.html#fetchRecentChanges">fetchRecentChanges</a></li><li data-type='method'><a href="WikiShieldQueue.html#generateQueueItem">generateQueueItem</a></li><li data-type='method'><a href="WikiShieldQueue.html#getWarningHistory">getWarningHistory</a></li><li data-type='method'><a href="WikiShieldQueue.html#getWarningLevel">getWarningLevel</a></li><li data-type='method'><a href="WikiShieldQueue.html#loadFromContribs">loadFromContribs</a></li><li data-type='method'><a href="WikiShieldQueue.html#loadFromHistory">loadFromHistory</a></li><li data-type='method'><a href="WikiShieldQueue.html#loadSpecificRevision">loadSpecificRevision</a></li><li data-type='method'><a href="WikiShieldQueue.html#nextItem">nextItem</a></li><li data-type='method'><a href="WikiShieldQueue.html#playAlertSound">playAlertSound</a></li><li data-type='method'><a href="WikiShieldQueue.html#playBlockSound">playBlockSound</a></li><li data-type='method'><a href="WikiShieldQueue.html#playClickSound">playClickSound</a></li><li data-type='method'><a href="WikiShieldQueue.html#playNotificationSound">playNotificationSound</a></li><li data-type='method'><a href="WikiShieldQueue.html#playProtectionSound">playProtectionSound</a></li><li data-type='method'><a href="WikiShieldQueue.html#playReportSound">playReportSound</a></li><li data-type='method'><a href="WikiShieldQueue.html#playRollbackSound">playRollbackSound</a></li><li data-type='method'><a href="WikiShieldQueue.html#playSound">playSound</a></li><li data-type='method'><a href="WikiShieldQueue.html#playSparkleSound">playSparkleSound</a></li><li data-type='method'><a href="WikiShieldQueue.html#playThankSound">playThankSound</a></li><li data-type='method'><a href="WikiShieldQueue.html#playWarnSound">playWarnSound</a></li><li data-type='method'><a href="WikiShieldQueue.html#playWatchlistSound">playWatchlistSound</a></li><li data-type='method'><a href="WikiShieldQueue.html#playWhooshSound">playWhooshSound</a></li><li data-type='method'><a href="WikiShieldQueue.html#prevItem">prevItem</a></li><li data-type='method'><a href="WikiShieldQueue.html#promptForUAAReport">promptForUAAReport</a></li></ul></li><li><a href="WikiShieldUtil.html">WikiShieldUtil</a><ul class='methods'><li data-type='method'><a href="WikiShieldUtil.html#encodeuri">encodeuri</a></li><li data-type='method'><a href="WikiShieldUtil.html#escapeHtml">escapeHtml</a></li><li data-type='method'><a href="WikiShieldUtil.html#expiryToMilliseconds">expiryToMilliseconds</a></li><li data-type='method'><a href="WikiShieldUtil.html#getChangeColor">getChangeColor</a></li><li data-type='method'><a href="WikiShieldUtil.html#getChangeString">getChangeString</a></li><li data-type='method'><a href="WikiShieldUtil.html#maxStringLength">maxStringLength</a></li><li data-type='method'><a href="WikiShieldUtil.html#monthSectionName">monthSectionName</a></li><li data-type='method'><a href="WikiShieldUtil.html#padString">padString</a></li><li data-type='method'><a href="WikiShieldUtil.html#pageLink">pageLink</a></li><li data-type='method'><a href="WikiShieldUtil.html#timeAgo">timeAgo</a></li><li data-type='method'><a href="WikiShieldUtil.html#utcString">utcString</a></li></ul></li><li><a href="ZenSettings.html">ZenSettings</a></li></ul><h3>Global</h3><ul><li><a href="global.html#BuildAIAnalysisPrompt">BuildAIAnalysisPrompt</a></li><li><a href="global.html#BuildAIUsernamePrompt">BuildAIUsernamePrompt</a></li><li><a href="global.html#ProgressBar">ProgressBar</a></li><li><a href="global.html#createConditions">createConditions</a></li><li><a href="global.html#fullTrim">fullTrim</a></li><li><a href="global.html#injectNamedStyles">injectNamedStyles</a></li><li><a href="global.html#injectStyles">injectStyles</a></li><li><a href="global.html#loadStyles">loadStyles</a></li><li><a href="global.html#serversWithTags">serversWithTags</a></li><li><a href="global.html#useProgressBar">useProgressBar</a></li><li><a href="global.html#welcomeTemplates">welcomeTemplates</a></li><li><a href="global.html#wikishieldStyling">wikishieldStyling</a></li></ul>
+    
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">core/queue.js</h1>
+    
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+* WikiShieldQueue - Edit queue management
+* Manages the queue of edits to review and provides queue operations
+*/
+export class WikiShieldQueue {
+	constructor(wikishield) {
+		this.wikishield = wikishield;
+		this.queue = [];
+		this.previousItems = [];
+		this.editsSince = "";
+		this.lastRevid = 0;
+		this.currentEdit = null;
+		this.backoff = 2000;
+	}
+
+	/**
+	* Fetch recent changes from the API
+	*/
+	async fetchRecentChanges() {
+		if (this.queue.length >= this.wikishield.options.maxQueueSize) {
+			window.setTimeout(this.fetchRecentChanges.bind(this), this.wikishield.__script__.config.refresh);
+			return;
+		}
+
+		try {
+			this.editsSince = this.wikishield.util.utcString(new Date());
+
+			const whitelist = this.wikishield.whitelist;
+			const namespaceString = this.wikishield.options.namespacesShown.join("|");
+
+			let recentChanges = (await this.wikishield.api.recentChanges(namespaceString))
+				.filter(edit => !whitelist.pages.has(edit.title))
+				.filter(edit => edit.revid > this.lastRevid);
+
+			this.lastRevid = Math.max(...recentChanges.map(edit => edit.revid));
+
+			// remove outdated edits
+			for (const recentChange of recentChanges) {
+				const itemsToRemove = [];
+				for (const queueItem of this.queue) {
+					// Skip the currently selected edit
+					if (this.currentEdit &amp;&amp; queueItem.revid === this.currentEdit.revid) {
+						continue;
+					}
+					// Remove if same page and older revision
+					if (queueItem.page.title === recentChange.title &amp;&amp; queueItem.revid &lt; recentChange.revid) {
+						itemsToRemove.push(queueItem);
+					}
+				}
+
+				// Remove the outdated items
+				for (const oldItem of itemsToRemove) {
+					const index = this.queue.indexOf(oldItem);
+					if (index > -1) {
+						this.queue.splice(index, 1);
+						this.wikishield.interface.removeQueueItem(oldItem.revid);
+					}
+				}
+			}
+
+			recentChanges = recentChanges.filter(edit => !(whitelist.users.has(edit.user) || edit.tags?.some(tag => whitelist.tags.has(tag))));
+
+			const usersToFetch = recentChanges.reduce((str, edit) => str + (str === "" ? "" : "|") + edit.user, "");
+
+			// Fetch edit counts, warnings (user talk text), blocks and ores in parallel
+			const editCountsPromise = this.wikishield.api.editCount(usersToFetch);
+			const warningsPromise = this.wikishield.api.getText(
+				recentChanges.reduce((str, edit) => str + (str === "" ? "" : "|") + `User_talk:${edit.user}`, "")
+			);
+			const blocksPromise = this.wikishield.api.usersBlocked(usersToFetch);
+			const oresPromise = this.wikishield.api.ores(recentChanges.reduce((str, edit) => str + (str === "" ? "" : "|") + edit.revid, ""));
+
+			const [editCountsRes, warningsRes, blocksRes, oresRes] = await Promise.allSettled([
+				editCountsPromise,
+				warningsPromise,
+				blocksPromise,
+				oresPromise
+			]);
+
+			let editCounts = [];
+			if (editCountsRes.status === 'fulfilled') {
+				editCounts = editCountsRes.value.filter(user => user.invalid || user.editcount &lt;= this.wikishield.options.maxEditCount);
+			} else {
+				console.error('editCount failed:', editCountsRes.reason);
+			}
+
+			const dict = editCounts.reduce((a, v) => ({ ...a, [v.name]: v.editcount }), {});
+
+			const warnings = warningsRes.status === 'fulfilled' ? warningsRes.value : {};
+			if (warningsRes.status === 'rejected') console.error('getText (warnings) failed:', warningsRes.reason);
+
+			const blocks = blocksRes.status === 'fulfilled' ? blocksRes.value : {};
+			if (blocksRes.status === 'rejected') console.error('usersBlocked failed:', blocksRes.reason);
+
+			const ores = oresRes.status === 'fulfilled' ? oresRes.value : {};
+			if (oresRes.status === 'rejected') console.error('ores failed:', oresRes.reason);
+
+			const highlighted = this.wikishield.highlighted;
+			const minORES = this.wikishield.options.minimumORESScore;
+
+			recentChanges
+			.filter(edit => edit.user in dict)
+			.filter(edit => (ores[edit.revid] || 0) >= minORES || highlighted.users.has(edit.user) || highlighted.pages.has(edit.title) || edit.tags?.some(tag => highlighted.tags.has(tag)))
+			.forEach(async edit => {
+				const talkPageText = warnings[`User talk:${edit.user}`] || "";
+
+				this.addQueueItem(
+					edit,
+					dict[edit.user] || -1,
+					this.getWarningLevel(talkPageText),
+					ores[edit.revid] || 0,
+					blocks[edit.user] || false,
+					`User talk:${edit.user}`
+				);
+			});
+
+			// Check for outdated edits in queue
+			await this.checkForOutdatedEdits();
+
+			this.backoff = this.wikishield.__script__.config.refresh;
+		} catch (err) {
+			console.log("Error while fetching recent changes", err);
+			this.backoff = Math.min(this.backoff * 2, 120000);
+		}
+
+		window.setTimeout(this.fetchRecentChanges.bind(this), this.backoff);
+	}
+
+	/**
+	* Add an edit to the queue
+	* @param {Object} edit The edit to add
+	* @param {Number} count The edit count of the user
+	* @param {String} warningLevel The warning level of the user
+	* @param {Number} ores The ORES score of the edit
+	* @param {Boolean} blocked Whether the user is blocked
+	* @param {Boolean} emptyTalkPage Whether the user's talk page is empty
+	*/
+	async addQueueItem(edit, count, warningLevel, ores, blocked, emptyTalkPage) {
+		if (this.queue.filter(e => e.revid === edit.revid).length > 0 ||
+		this.previousItems.filter(e => e.revid === edit.revid).length > 0) {
+			return;
+		}
+
+		const item = await this.generateQueueItem(edit, count, warningLevel, ores, blocked, null, null, emptyTalkPage);
+
+		this.queue.push(item);
+
+		const currentIndex = this.queue.findIndex(e => e.revid === this.currentEdit?.revid);
+		let sorted;
+		if (currentIndex === -1) {
+			sorted = this.queue;
+		} else {
+			sorted = this.queue.slice(0, currentIndex).concat(this.queue.slice(currentIndex + 1));
+		}
+
+		const highlighted = this.wikishield.highlighted;
+		sorted = sorted.sort((a, b) => {
+			const aHistory = a.fromHistory;
+			const bHistory = b.fromHistory;
+			if (aHistory &amp;&amp; bHistory) { // both are from history
+				return aHistory - bHistory;
+			} else if (aHistory) { // only a is from history
+				return -1;
+			} else if (bHistory) { // only b is from history
+				return 1;
+			}
+
+			let aScore = a.ores;
+			if (highlighted.users.has(a.user.name)) {
+				aScore += 100;
+			}
+			if (highlighted.pages.has(a.page.title)) {
+				aScore += 75;
+			}
+			aScore += a.tags.filter(tag => highlighted.tags.has(tag)).length * 25;
+
+			if (a.mentionsMe) {
+				aScore += 50;
+			}
+
+			let bScore = b.ores;
+			if (highlighted.users.has(b.user.name)) {
+				bScore += 100;
+			}
+			if (highlighted.pages.has(b.page.title)) {
+				bScore += 75;
+			}
+			bScore += b.tags.filter(tag => highlighted.tags.has(tag)).length * 25;
+
+			if (b.mentionsMe) {
+				bScore += 50;
+			}
+
+			return bScore - aScore;
+		});
+
+		if (currentIndex >= 0) {
+			sorted.splice(currentIndex, 0, this.currentEdit);
+		}
+
+		this.queue = [ ...sorted ];
+
+		// Only auto-select first edit if no edit is currently selected
+		if (this.queue.length === 1 &amp;&amp; !this.currentEdit) {
+			this.currentEdit = this.queue[0];
+		}
+
+		if (ores >= this.wikishield.options.soundAlertORESScore) {
+			this.playAlertSound();
+		}
+
+		this.wikishield.interface.renderQueue(this.queue, this.currentEdit);
+	}
+
+	/**
+	* Standardized sound playing function
+	* @param {String} triggerKey The trigger key (e.g., 'click', 'alert', etc.)
+	*/
+	playSound(triggerKey) {
+		if (this.wikishield.options.zen.enabled &amp;&amp; !this.wikishield.options.zen.sounds) {
+			return; // Do not play sounds in Zen mode if disabled
+		}
+
+		const welcomeScreen = document.getElementById("welcome-container");
+		const isOnWelcomeScreen = welcomeScreen &amp;&amp; welcomeScreen.style.display !== "none";
+		if (isOnWelcomeScreen) return;
+
+		const soundKey = this.wikishield.options.soundMappings?.[triggerKey] || triggerKey;
+		const soundConfig = this.wikishield.wikishieldData.sounds[soundKey];
+		if (!soundConfig || soundKey === 'none') return;
+
+		try {
+			const AudioCtx = window.AudioContext || window.webkitAudioContext;
+			const audioContext = new AudioCtx();
+
+			const masterVol = this.wikishield.options.masterVolume ?? 0.5;
+			const soundVol = this.wikishield.options.volumes?.[triggerKey] ?? 0.5;
+			const volume = masterVol * soundVol * (soundConfig.volume ?? 1);
+			if (volume === 0) {
+				return;
+			}
+
+			const repeats = soundConfig.repeats || [0];
+			const freqs = soundConfig.frequencies;
+
+			repeats.forEach((offset, i) => {
+				const freq = freqs[i % freqs.length];
+				const osc = audioContext.createOscillator();
+				const gain = audioContext.createGain();
+
+				osc.connect(gain);
+				gain.connect(audioContext.destination);
+				osc.type = soundConfig.type;
+
+				const start = audioContext.currentTime + offset;
+
+				// Frequency sweep or fixed frequency
+				if (soundConfig.sweep) {
+					osc.frequency.setValueAtTime(soundConfig.sweep.from, start);
+					osc.frequency.exponentialRampToValueAtTime(
+						soundConfig.sweep.to,
+						start + soundConfig.duration
+					);
+				} else {
+					osc.frequency.setValueAtTime(freq, start);
+				}
+
+				// Apply envelope first, then scale by volume
+				if (typeof soundConfig.envelope === 'function') {
+					soundConfig.envelope(gain, audioContext, start, volume);
+				}
+
+				osc.start(start);
+				osc.stop(start + soundConfig.duration);
+			});
+		} catch (err) {
+			console.error(`Could not play ${soundKey}:`, err);
+		}
+	}
+
+	/**
+	* Play an alert sound for high ORES scores
+	*/
+	playAlertSound(bypassZen = false) {
+		this.playSound('alert', bypassZen);
+	}
+
+	/**
+	* Play a pleasant notification sound (two-tone chime)
+	*/
+	playNotificationSound(bypassZen = false) {
+		if (!bypassZen &amp;&amp; this.wikishield.options.zen.enabled &amp;&amp; !this.wikishield.options.zen.notifications) {
+			return;
+		}
+
+		this.playSound('notification', bypassZen);
+	}
+
+	/**
+	* Play a pleasant watchlist sound (two-tone chime)
+	*/
+	playWatchlistSound(bypassZen = false) {
+		if (!bypassZen &amp;&amp; this.wikishield.options.zen.enabled &amp;&amp; !this.wikishield.options.zen.watchlist) {
+			return;
+		}
+
+		this.playSound('watchlist', bypassZen);
+	}
+
+	/**
+	* Play a click sound (short pop)
+	*/
+	playClickSound(bypassZen = false) {
+		this.playSound('click', bypassZen);
+	}
+
+	/**
+	* Play a whoosh sound (item removed/cleared)
+	*/
+	playWhooshSound(bypassZen = false) {
+		this.playSound('whoosh', bypassZen);
+	}
+
+	/**
+	* Play a warning sound (for warn action)
+	*/
+	playWarnSound(bypassZen = false) {
+		this.playSound('warn', bypassZen);
+	}
+
+	/**
+	* Play a rollback sound (swoosh with descending tone)
+	*/
+	playRollbackSound(bypassZen = false) {
+		this.playSound('rollback', bypassZen);
+	}
+
+	/**
+	* Play a report sound (ascending alert)
+	*/
+	playReportSound(bypassZen = false) {
+		this.playSound('report', bypassZen);
+	}
+
+	/**
+	* Play a thank sound (gentle chime)
+	*/
+	playThankSound(bypassZen = false) {
+		this.playSound('thank', bypassZen);
+	}
+
+	/**
+	* Play a protection sound (shield sound)
+	*/
+	playProtectionSound(bypassZen = false) {
+		this.playSound('protection', bypassZen);
+	}
+
+	/**
+	* Play a block sound (heavy impact)
+	*/
+	playBlockSound(bypassZen = false) {
+		this.playSound('block', bypassZen);
+	}
+
+	/**
+	* Play a highlight/whitelist sound (sparkle)
+	*/
+	playSparkleSound(bypassZen = false) {
+		this.playSound('sparkle', bypassZen);
+	}
+
+	playSuccessSound(bypassZen = false) {
+		this.playSound('success', bypassZen);
+	}
+
+	playErrorSound(bypassZen = false) {
+		this.playSound('error', bypassZen);
+	}
+
+	/**
+	* Check and remove edits that have been superseded by newer edits on the same page
+	* NOTE: This now only removes edits that are NOT currently being viewed
+	*/
+	async checkForOutdatedEdits() {
+		if (this.queue.length === 0) return;
+
+		// Get all unique page titles from queue, filtering out invalid ones
+		const allPageTitles = [...new Set(this.queue.map(item => item.page.title))];
+		const pageTitles = allPageTitles;
+
+		if (pageTitles.length === 0) return;
+
+		// Fetch latest revision for each page
+		const latestRevisions = await this.wikishield.api.getLatestRevisions(pageTitles.join("|"));
+
+		// Track items to remove (but NOT the current edit being viewed)
+		const itemsToRemove = [];
+
+		for (const item of this.queue) {
+			// Don't remove the edit that's currently being viewed
+			if (this.currentEdit &amp;&amp; item.revid === this.currentEdit.revid) {
+				continue;
+			}
+
+			const latestRevid = latestRevisions[item.page.title];
+			if (latestRevid &amp;&amp; latestRevid > item.revid) {
+				// This edit has been superseded
+				itemsToRemove.push(item);
+			}
+		}
+
+		// Remove outdated items
+		if (itemsToRemove.length > 0) {
+			for (const item of itemsToRemove) {
+				const index = this.queue.indexOf(item);
+				if (index > -1) {
+					this.queue.splice(index, 1);
+					this.wikishield.interface.removeQueueItem(item.revid);
+				}
+			}
+
+			this.wikishield.interface.renderQueue(this.queue, this.currentEdit);
+		}
+	}
+
+	/**
+	* Generate a queue item from an edit
+	* @param {Object} edit The edit to generate the queue item from
+	* @param {Number} count The edit count of the user
+	* @param {String} warningLevel The warning level of the user
+	* @param {Number} ores The ORES score of the edit
+	* @param {Boolean} blocked Whether the user is blocked
+	* @param {Boolean} emptyTalkPage Whether the user's talk page is empty
+	* @returns {Object} The queue item
+	*/
+	async generateQueueItem(edit, count, warningLevel, ores, blocked, contribs, history, emptyTalkPage) {
+		// Run independent API calls in parallel for speed.
+		const currentUsername = mw.config.get("wgUserName");
+		const oldRev = edit.old_revid || edit.parentid;
+
+		// Prepare promises, but reuse provided values if passed in
+		const contribsPromise = contribs ? Promise.resolve(contribs) : this.wikishield.api.contribs(edit.user);
+		const historyPromise = history ? Promise.resolve(history) : this.wikishield.api.history(edit.title);
+		const diffPromise = this.wikishield.api.diff(edit.title, oldRev, edit.revid);
+		const metadataPromise = this.wikishield.api.getPageMetadata(edit.title);
+		const categoriesPromise = this.wikishield.api.categories(oldRev);
+		const revertsPromise = currentUsername ? this.wikishield.api.countReverts(edit.title, currentUsername) : Promise.resolve(0);
+		const emptyTalkPagePromise = typeof emptyTalkPage === "string" ? await this.wikishield.api.pageExists(emptyTalkPage) : undefined;
+
+		// Await all of them (settle individually so one failure doesn't block others)
+		const [contribsRes, historyRes, diffRes, metadataRes, categoriesRes, revertsRes, emptyTalkPageRes] = await Promise.allSettled([
+			contribsPromise,
+			historyPromise,
+			diffPromise,
+			metadataPromise,
+			categoriesPromise,
+			revertsPromise,
+			emptyTalkPagePromise
+		]);
+
+		// Extract results with safe fallbacks and log errors
+		contribs = contribsRes.status === 'fulfilled' ? contribsRes.value : (contribs || []);
+		if (contribsRes.status === 'rejected') console.error('contribs failed:', contribsRes.reason);
+
+		history = historyRes.status === 'fulfilled' ? historyRes.value : (history || []);
+		if (historyRes.status === 'rejected') console.error('history failed:', historyRes.reason);
+
+		const diff = diffRes.status === 'fulfilled' ? diffRes.value : '';
+		if (diffRes.status === 'rejected') console.error('diff failed:', diffRes.reason);
+
+		const metadata = metadataRes.status === 'fulfilled' ? metadataRes.value : { dateFormat: null, englishVariant: null };
+		if (metadataRes.status === 'rejected') console.error('metadata failed:', metadataRes.reason);
+
+		const categories = categoriesRes.status === 'fulfilled' ? (categoriesRes.value ?? []) : [];
+		if (categoriesRes.status === 'rejected') console.error('categories failed:', categoriesRes.reason);
+
+		const reverts = revertsRes.status === 'fulfilled' ? revertsRes.value : 0;
+		if (revertsRes.status === 'rejected') console.error('countReverts failed:', revertsRes.reason);
+
+		if (emptyTalkPagePromise !== undefined) {
+			emptyTalkPage = emptyTalkPageRes.status === 'fulfilled' ? !emptyTalkPageRes.value : false;
+			if (emptyTalkPageRes.status === 'rejected') console.error('emptyTalkPage failed:', emptyTalkPageRes.reason);
+		}
+
+		// Check if diff mentions current user
+		let mentionsMe = false;
+		if (currentUsername &amp;&amp; diff) {
+			const tempDiv = document.createElement("div");
+			tempDiv.innerHTML = diff;
+			const diffText = tempDiv.textContent || tempDiv.innerText || "";
+			mentionsMe = diffText.toLowerCase().includes(currentUsername.toLowerCase());
+		}
+
+		const _util_ = this.wikishield.util;
+
+		const wikishield = this.wikishield; // For use in getters below
+		const queueItem = {
+			display: {
+				get pageTitle() {
+					return `&lt;div
+						class="page-title ${wikishield.highlighted.pages.has(edit.title) ? 'queue-highlight' : ''}"
+					>
+						&lt;span class="fa fa-file-alt queue-edit-icon">&lt;/span>
+						&lt;a
+							href="${_util_.pageLink(edit.title)}"
+							target="_blank"
+							data-tooltip="${_util_.escapeHtml(edit.title)}"
+						>
+							${_util_.escapeHtml(_util_.maxStringLength(edit.title, 40))}
+						&lt;/a>
+					&lt;/div>`;
+				},
+
+				get username() {
+					return `&lt;div
+						class="username ${wikishield.highlighted.users.has(edit.user) ? 'queue-highlight' : (
+							emptyTalkPage ? 'queue-user-empty-talk' : ''
+						)}"
+					>
+						&lt;span class="fa fa-user queue-edit-icon">&lt;/span>
+						&lt;a
+							href="${_util_.pageLink(`Special:Contributions/${edit.user}`)}"
+							target="_blank"
+							data-tooltip="${_util_.escapeHtml(edit.user)}"
+						>
+							${_util_.escapeHtml(_util_.maxStringLength(edit.user, 30))}
+						&lt;/a>
+					&lt;/div>`;
+				},
+				get tags() {
+					return `&lt;div class="tags">
+						${edit.tags.map(tag => {
+							const highlighted = wikishield.highlighted.tags.has(tag);
+
+							return {
+								highlighted,
+								html: `&lt;span
+											class="tag ${highlighted ? 'queue-highlight' : ''}"
+											data-tooltip="${_util_.escapeHtml(tag)}"
+										>
+											${_util_.escapeHtml(_util_.maxStringLength(tag, 20))}
+										&lt;/span>`
+							}
+						}).sort((a, b) => b.highlighted - a.highlighted).reduce((str, obj) => str + obj.html, '')}
+					&lt;/div>`;
+				}
+	},
+	page: {
+		title: edit.title,
+		history: history,
+		dateFormat: metadata.dateFormat,
+		englishVariant: metadata.englishVariant,
+		categories: categories,
+		namespace: edit.ns
+	},
+	user: {
+		name: edit.user,
+		contribs: contribs,
+		editCount: count,
+		warningLevel: warningLevel,
+		originalWarningLevel: warningLevel, // Store the warning level at time of queueing
+		blocked: blocked,
+		emptyTalkPage: emptyTalkPage !== undefined ? emptyTalkPage : false
+	},
+	ores: ores,
+	revid: edit.revid,
+	timestamp: edit.timestamp,
+	comment: edit.comment,
+	minor: "minor" in edit, // Store whether this is a minor edit (check if property exists)
+	sizediff: (edit.newlen ? edit.newlen - edit.oldlen : edit.sizediff) || 0,
+	diff: diff,
+	tags: edit.tags,
+	reviewed: false,
+	mentionsMe: mentionsMe, // Flag if diff mentions current user
+	aiAnalysis: null, // Will be populated asynchronously
+	usernameAnalysis: null, // Will be populated asynchronously
+	isBLP: categories.some(cat => cat.title === "Category:Living people"),
+	reverts: reverts,
+	consecutive: this.wikishield.api.consecutive(edit.title, edit.user),
+	fromHistory: false,
+	isTalk: edit.ns % 2 === 1
+};
+
+// Perform AI analysis asynchronously if enabled
+if (this.wikishield.options.enableOllamaAI &amp;&amp; this.wikishield.ollamaAI) {
+	// Don't await - let it run in background and update when ready
+	this.wikishield.ollamaAI.analyzeEdit(queueItem).then(analysis => {
+		queueItem.aiAnalysis = analysis;
+		// Update UI if this edit is currently being displayed
+		if (this.currentEdit &amp;&amp; this.currentEdit.revid === queueItem.revid) {
+			this.wikishield.interface.updateAIAnalysisDisplay(analysis);
+		}
+	}).catch(err => {
+		console.error("AI analysis failed:", err);
+		queueItem.aiAnalysis = {
+			hasIssues: false,
+			error: err.message
+		};
+	});
+
+	// Perform username analysis for registered users (not TEMPs) and not whitelisted
+	if (!mw.util.isTemporaryUser(edit.user) &amp;&amp; !this.wikishield.whitelist.users.has(edit.user)) {
+		this.wikishield.ollamaAI.analyzeUsername(edit.user, edit.title).then(usernameAnalysis => {
+			queueItem.usernameAnalysis = usernameAnalysis;
+
+			// If username is flagged and not cancelled, prompt for UAA report
+			if (usernameAnalysis &amp;&amp; !usernameAnalysis.cancelled &amp;&amp;
+				usernameAnalysis.shouldFlag &amp;&amp; usernameAnalysis.confidence >= 0.5) {
+					this.promptForUAAReport(queueItem);
+				}
+			}).catch(err => {
+				console.error("Username analysis failed:", err);
+				queueItem.usernameAnalysis = {
+					shouldFlag: false,
+					error: err.message
+				};
+			});
+		}
+	}
+
+	return queueItem;
+}
+
+/**
+* Given the text of a user talk page, get the warning level of the user
+* @param {String} text The text of the user talk page
+* @returns {String} The warning level of the user
+*/
+getWarningLevel(text) {
+	const monthSections = text.split(/(?=== ?[\w\d ]+ ?==)/g);
+
+	for (let section of monthSections) {
+		if (new RegExp("== ?" + this.wikishield.util.monthSectionName() + " ?==").test(section)) {
+			// Only match templates with numbered warning levels (e.g., uw-vandalism1, uw-test4im)
+			// Excludes templates without numbers like uw-minor
+			const templates = section.match(/&lt;\!-- Template:[\w-]+?(\d(?:i?m)?) -->/g);
+			if (templates === null) {
+				return "0";
+			}
+			const filteredTemplates = templates.map(t => {
+				const match = t.match(/&lt;\!-- Template:[\w-]+?(\d(?:i?m)?) -->/);
+				return match ? match[1] : "0";
+			});
+			return filteredTemplates.sort()[filteredTemplates.length - 1].toString();
+		}
+	}
+
+	return "0";
+}
+
+/**
+* Get detailed warning history from user talk page
+* @param {String} text - User talk page content
+* @returns {Array} Array of warning objects with template name, level, and timestamp
+*/
+getWarningHistory(text) {
+	const warnings = [];
+	const monthSections = text.split(/(?=== ?[\w\d ]+ ?==)/g);
+	const currentMonthName = this.wikishield.util.monthSectionName();
+
+	for (let section of monthSections) {
+		// Check if this is the current month section
+		const isCurrentMonth = new RegExp("== ?" + currentMonthName + " ?==").test(section);
+
+		// Only process warnings from the current month (those that count toward warning level)
+		if (!isCurrentMonth) {
+			continue;
+		}
+
+		// Extract section title (month/year)
+		const sectionMatch = section.match(/== ?([\w\d ]+) ?==/);
+		const sectionTitle = sectionMatch ? sectionMatch[1] : "Unknown";
+
+		// Find all warning templates with their full context
+		const templateMatches = section.matchAll(/&lt;\!-- Template:([\w-]+?)(\d(?:i?m)?) -->(.+?)(?=&lt;\!-- Template:|$)/gs);
+
+		for (let match of templateMatches) {
+			const templateName = match[1]; // e.g., "uw-vandalism"
+			const level = match[2]; // e.g., "1", "4", "4im"
+			const content = match[3]; // Content after template
+
+			// Try to extract timestamp (looks for signature pattern)
+			// Extract the timestamp and remove any HTML tags
+			const timestampMatch = content.match(/(\d{2}:\d{2}.*?\d{4} \(UTC\))/);
+			let timestamp = timestampMatch ? timestampMatch[1] : null;
+			if (timestamp) {
+				// Remove any HTML tags from the timestamp
+				timestamp = timestamp.replace(/&lt;[^>]*>/g, '');
+			}
+
+			{ // get proper timestamp
+				const [ , time, day, monthName, year ] = timestamp.match(/(\d{2}:\d{2}), (\d{1,2}) ([A-Za-z]+) (\d{4})/);
+
+				const monthIndex = [ "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" ].indexOf(monthName);
+				timestamp = new Date(Date.UTC(year, monthIndex, day, ...time.split(":"))).toUTCString();
+			}
+
+			// Extract username from signature (look for User: or User talk: links)
+			let username = null;
+			const userLinkMatch = content.match(/\[\[User(?:[ _]talk)?:([^\]|]+)/i);
+			if (userLinkMatch) {
+				username = userLinkMatch[1].trim();
+			}
+
+			// Try to extract article name if present
+			const articleMatch = content.match(/\[\[([^\]]+?)\]\]/);
+			const article = articleMatch ? articleMatch[1] : null;
+
+			warnings.push({
+				template: templateName,
+				level: level,
+				timestamp: timestamp,
+				username: username,
+				article: article,
+				section: sectionTitle,
+				isCurrentMonth: isCurrentMonth
+			});
+		}
+	}
+
+	// Warnings are already from current month, just return them in order
+	return warnings;
+}
+
+/**
+* Set the current edit to the next item in the queue
+* This only changes which edit is selected, it does NOT remove anything
+*/
+nextItem() {
+	// If queue is empty, nothing to do
+	if (this.queue.length === 0) {
+		return;
+	}
+
+	// If no current edit, select the first item
+	if (!this.currentEdit) {
+		this.currentEdit = this.queue[0];
+		this.wikishield.interface.renderQueue(this.queue, this.currentEdit);
+		return;
+	}
+
+	// Find where the current edit is in the queue
+	const currentIndex = this.queue.findIndex(e => e.revid === this.currentEdit.revid);
+
+	// If current edit is not in queue, select the first item
+	if (currentIndex === -1) {
+		this.currentEdit = this.queue[0];
+		this.wikishield.interface.renderQueue(this.queue, this.currentEdit);
+		return;
+	}
+
+	// Store the edit we're leaving
+	const editWeAreLeaving = this.currentEdit;
+
+	// Cancel AI analysis for the edit we're leaving
+	if (editWeAreLeaving &amp;&amp; this.wikishield.ollamaAI) {
+		this.wikishield.ollamaAI.cancelAnalysis(editWeAreLeaving.revid);
+	}
+
+	// Mark as reviewed if moving away from the first item
+	if (currentIndex === 0 &amp;&amp; !editWeAreLeaving.reviewed) {
+		editWeAreLeaving.reviewed = true;
+	}
+
+	// Remove the current item from the queue
+	this.queue.splice(currentIndex, 1);
+	this.wikishield.interface.removeQueueItem(editWeAreLeaving.revid);
+
+	// Update currentEdit to the item now at the current position
+	if (this.queue.length > 0) {
+		if (currentIndex &lt; this.queue.length) {
+			// Move to the item that's now at the current position
+			this.currentEdit = this.queue[currentIndex];
+		} else {
+			// We removed the last item, go to the new last item
+			this.currentEdit = this.queue[this.queue.length - 1];
+		}
+	} else {
+		// Queue is empty
+		this.currentEdit = null;
+	}
+
+	// Store the edit we left in previousItems
+	this.previousItems.push({ ...editWeAreLeaving, fromHistory: Date.now() });
+
+	this.wikishield.interface.renderQueue(this.queue, this.currentEdit);
+
+	// Auto-welcome the user we left
+	if (editWeAreLeaving) {
+		this.checkAndAutoWelcome(editWeAreLeaving);
+		this.checkAndAutoReportUAA(editWeAreLeaving);
+	}
+}
+
+/**
+* Set the current edit to the previous item in the queue
+* This only changes which edit is selected, it does NOT remove anything
+*/
+prevItem() {
+	// If no current edit and queue has items, select the first item
+	if (!this.currentEdit &amp;&amp; this.queue.length > 0) {
+		this.currentEdit = this.queue[0];
+		this.wikishield.interface.renderQueue(this.queue, this.currentEdit);
+		return;
+	}
+
+	// Find where the current edit is in the queue
+	const currentIndex = this.currentEdit ? this.queue.findIndex(e => e.revid === this.currentEdit.revid) : -1;
+
+	// Store the edit we're leaving
+	const editWeAreLeaving = this.currentEdit;
+
+	// If we're at the first item (or not found), try to go to previousItems
+	if (currentIndex &lt;= 0) {
+		// No previous items available, can't go back
+		if (this.previousItems.length === 0) {
+			return;
+		}
+
+		// Cancel AI analysis for the edit we're leaving
+		if (editWeAreLeaving &amp;&amp; this.wikishield.ollamaAI) {
+			this.wikishield.ollamaAI.cancelAnalysis(editWeAreLeaving.revid);
+		}
+
+		// Pull an item from previousItems and add it to the front of the queue
+		this.queue.unshift(this.previousItems.pop());
+		this.currentEdit = this.queue[0];
+		this.wikishield.interface.renderQueue(this.queue, this.currentEdit);
+
+		// Auto-welcome the user we left
+		if (editWeAreLeaving) {
+			this.checkAndAutoWelcome(editWeAreLeaving);
+			this.checkAndAutoReportUAA(editWeAreLeaving);
+		}
+
+		return;
+	}
+
+	// Cancel AI analysis for the edit we're leaving
+	if (editWeAreLeaving &amp;&amp; this.wikishield.ollamaAI) {
+		this.wikishield.ollamaAI.cancelAnalysis(editWeAreLeaving.revid);
+	}
+
+	// Simply move selection to the previous item
+	this.currentEdit = this.queue[currentIndex - 1];
+	this.wikishield.interface.renderQueue(this.queue, this.currentEdit);
+
+	// Auto-welcome the user we left
+	if (editWeAreLeaving) {
+		this.checkAndAutoWelcome(editWeAreLeaving);
+		this.checkAndAutoReportUAA(editWeAreLeaving);
+	}
+}
+
+/**
+* Check if user should be auto-welcomed and do so if needed
+* @param {Object} edit The edit object to check
+*/
+async checkAndAutoWelcome(edit) {
+	// Check if auto-welcome is enabled
+	if (!this.wikishield.options.enableAutoWelcome) {
+		return;
+	}
+
+	// Only auto-welcome registered users (not TEMPs) with empty talk pages
+	if (!edit.user || !edit.user.name || mw.util.isTemporaryUser(edit.user.name)) {
+		return;
+	}
+
+	// Don't welcome users editing a sandbox (possibly gaming system)
+	const pageTitle = edit.page?.title || "unknown";
+	if (pageTitle.toLowerCase().includes('/sandbox') || pageTitle.toLowerCase().endsWith(":sandbox")) {
+		return;
+	}
+
+	// Check if user is in the no-auto-welcome list
+	if (this.wikishield.noAutoWelcomeList.has(edit.user.name)) {
+		return;
+	}
+
+	// Check if talk page appears empty
+	if (!edit.user.emptyTalkPage) {
+		return;
+	}
+
+	// Only auto-welcome if the edit was constructive (according to AI analysis)
+	if (edit.aiAnalysis &amp;&amp; edit.aiAnalysis.constructive === false) {
+		return;
+	}
+
+	// Double-check by fetching the talk page to see if it exists
+	try {
+		// If the talk page exists, don't auto-welcome
+		if (await this.wikishield.api.pageExists(`User talk:${edit.user.name}`)) {
+			edit.user.emptyTalkPage = false;
+			return;
+		}
+
+		// Show confirmation dialog
+		const confirmed = await this.wikishield.interface.showConfirmationDialog(
+			"Auto-welcome User",
+			`Would you like to welcome &lt;span class="confirmation-modal-username">${this.wikishield.util.escapeHtml(edit.user.name)}&lt;/span>?&lt;br>&lt;br>
+				&lt;span style="font-size: 0.9em; color: #888;">Editing: &lt;strong>${this.wikishield.util.escapeHtml(edit.page.title)}&lt;/strong>&lt;/span>`,
+			edit.user.name
+		);
+
+		if (!confirmed) {
+			// Add user to no-auto-welcome list
+			this.wikishield.noAutoWelcomeList.add(edit.user.name);
+			return;
+		}
+
+		// Show progress notification
+		const progressBar = new this.wikishield.WikiShieldProgressBar();
+		progressBar.set("Auto-welcoming...", 0.5, "var(--main-blue)");
+
+		let template = null;
+		if (this.wikishield.options.enableWelcomeLatin) {
+			// Determine which template to use based on username characters and mentorship
+			// Check if username contains non-Latin characters (takes precedence)
+			const hasNonLatin = /[^\u0000-\u007F\u0080-\u00FF\u0100-\u017F\u0180-\u024F]/.test(edit.user.name);
+			if (hasNonLatin) {
+				template = "Latin";
+			}
+		}
+
+		if (template === null) {
+			template = "Default";
+		}
+
+		// Auto-welcome with appropriate template
+		await this.wikishield.welcomeUser(edit.user.name, template);
+
+		// Update progress to complete
+		progressBar.set(`Welcomed ${edit.user.name}`, 1, "var(--main-green)");
+	} catch (err) {
+		console.log("Error during auto-welcome check:", err);
+	}
+}
+
+/**
+* Prompt user to report a username to UAA
+* This is called when username analysis flags a username
+* @param {Object} edit The edit object with username analysis
+*/
+async promptForUAAReport(edit) {
+	// Only check registered users (not TEMPs)
+	if (!edit.user || !edit.user.name || mw.util.isTemporaryUser(edit.user.name)) {
+		return;
+	}
+
+	// Check if user is in the no-auto-welcome list (also used for UAA to avoid duplicate prompts)
+	if (this.wikishield.noAutoWelcomeList.has(edit.user.name)) {
+		return;
+	}
+
+	// Check if we have username analysis results
+	const usernameAnalysis = edit.usernameAnalysis;
+	if (!usernameAnalysis || !usernameAnalysis.shouldFlag) {
+		return;
+	}
+
+	// Check if user is already reported to UAA
+	if (this.wikishield.uaaReports &amp;&amp; this.wikishield.uaaReports.includes(edit.user.name)) {
+		// Add to no-auto-welcome list to avoid future prompts
+		this.wikishield.noAutoWelcomeList.add(edit.user.name);
+		return;
+	}
+
+	// Show confirmation dialog with AI analysis
+	const violationLabel = usernameAnalysis.violationType !== 'none'
+	? ` (${usernameAnalysis.violationType})`
+	: '';
+	const confidencePercent = Math.round(usernameAnalysis.confidence * 100);
+
+	const confirmed = await this.wikishield.interface.showConfirmationDialog(
+		"Report Username to UAA",
+		`The username &lt;span class="confirmation-modal-username">${this.wikishield.util.escapeHtml(edit.user.name)}&lt;/span> may violate Wikipedia's username policy${violationLabel}.&lt;br>&lt;br>
+			&lt;span style="font-size: 0.9em; color: #888;">Would you like to report it to &lt;a href="https://en.wikipedia.org/wiki/Wikipedia:Usernames_for_administrator_attention" target="_blank" style="color: #0645ad;">Usernames for administrator attention (UAA)&lt;/a>?&lt;/span>&lt;br>&lt;br>
+			&lt;strong>AI Confidence:&lt;/strong> ${confidencePercent}%&lt;br>
+			&lt;strong>Reasoning:&lt;/strong> ${this.wikishield.util.escapeHtml(usernameAnalysis.reasoning)}&lt;br>
+			&lt;strong>Recommendation:&lt;/strong> ${this.wikishield.util.escapeHtml(usernameAnalysis.recommendation)}`,
+		edit.user.name
+	);
+
+	if (!confirmed) {
+		// Add user to no-auto-welcome list to avoid future prompts
+		this.wikishield.noAutoWelcomeList.add(edit.user.name);
+		return;
+	}
+
+	// Open UAA report interface
+	try {
+		// Use the existing event system to trigger UAA report
+		const reportEvent = this.wikishield.events.events.reportUserUAA;
+		if (reportEvent &amp;&amp; reportEvent.func) {
+			await reportEvent.func(edit);
+		}
+
+		// Add user to no-auto-welcome list after reporting
+		this.wikishield.noAutoWelcomeList.add(edit.user.name);
+	} catch (err) {
+		console.log("Error during auto UAA report:", err);
+	}
+}
+
+/**
+* Check if user should be reported to UAA based on username analysis
+* This is called when moving away from an edit
+* @param {Object} edit The edit object to check
+*/
+async checkAndAutoReportUAA(edit) {
+	// If username analysis has already flagged this user, prompt for report
+	if (edit.usernameAnalysis &amp;&amp; edit.usernameAnalysis.shouldFlag &amp;&amp;
+		edit.usernameAnalysis.confidence >= 0.5 &amp;&amp; !edit.usernameAnalysis.cancelled) {
+			await this.promptForUAAReport(edit);
+		}
+	}
+
+	/**
+	* Clear the queue
+	*/
+	delete() {
+		// Play whoosh sound for clearing
+		this.playWhooshSound();
+
+		// Cancel all active AI analyses
+		if (this.wikishield.ollamaAI) {
+			this.wikishield.ollamaAI.cancelAllAnalyses();
+		}
+
+		this.queue = [];
+		this.currentEdit = null;
+		this.wikishield.interface.clearQueue();
+		this.wikishield.interface.renderQueue(this.queue, this.currentEdit);
+	}
+
+	/**
+	* Load an edit from the user contributions list
+	* @param {Number} revid
+	*/
+	async loadFromContribs(revid) {
+		const edit = this.currentEdit.user.contribs.filter(e => e.revid === Number(revid))[0];
+
+		const diffContainer = this.wikishield.interface.elem("#diff-container");
+		diffContainer.innerHTML = ``;
+
+		const index = this.queue.findIndex(item => item.revid === this.currentEdit?.revid);
+		this.currentEdit = await this.generateQueueItem(
+			edit,
+			this.currentEdit.user.editCount,
+			this.currentEdit.user.warningLevel,
+			null,
+			this.currentEdit.user.blocked,
+			null,
+			null,
+			this.currentEdit.user.emptyTalkPage
+		);
+
+		if (index > -1) {
+			this.queue[index] = this.currentEdit;
+		}
+
+		this.wikishield.interface.renderQueue(this.queue, this.currentEdit);
+	}
+
+	/**
+	* Load an edit from the page history list
+	* @param {Number} revid
+	*/
+	async loadFromHistory(revid) {
+		const edit = this.currentEdit.page.history.filter(e => e.revid === Number(revid))[0];
+		edit.title = this.currentEdit.page.title;
+
+		const diffContainer = this.wikishield.interface.elem("#diff-container");
+		diffContainer.innerHTML = ``;
+
+		const results = await Promise.all([
+			this.wikishield.api.editCount(edit.user),
+			this.wikishield.api.getSinglePageContent(`User talk:${edit.user}`),
+			this.wikishield.api.contribs(edit.user),
+			this.wikishield.api.history(edit.title)
+		]);
+
+		const talkPageText = results[1];
+		const index = this.queue.findIndex(item => item.revid === this.currentEdit?.revid);
+		this.currentEdit = await this.generateQueueItem(
+			edit,
+			results[0][0].editcount,
+			this.getWarningLevel(talkPageText),
+			null, false, results[2], results[3],
+			`User talk:${edit.user}`
+		);
+
+		if (index > -1) {
+			this.queue[index] = this.currentEdit;
+		}
+
+		this.wikishield.interface.renderQueue(this.queue, this.currentEdit);
+	}
+
+	/**
+	* Load a specific revision by revid and page title (for loading newest revision)
+	* @param {Number} revid The revision ID to load
+	* @param {String} pageTitle The page title
+	*/
+	async loadSpecificRevision(revid, pageTitle) {
+		try {
+			const diffContainer = this.wikishield.interface.elem("#diff-container");
+			diffContainer.innerHTML = `&lt;div class="loading-spinner">Loading revision...&lt;/div>`;
+
+			// Fetch the revision data from the API
+			const revisionData = await this.wikishield.api.getRevisionData(revid);
+
+			if (!revisionData) {
+				diffContainer.innerHTML = `&lt;div class="error">Failed to load revision&lt;/div>`;
+				return;
+			}
+
+			// Fetch all necessary data
+			const results = await Promise.all([
+				this.wikishield.api.editCount(revisionData.user),
+				this.wikishield.api.getSinglePageContent(`User talk:${revisionData.user}`),
+				this.wikishield.api.contribs(revisionData.user),
+				this.wikishield.api.history(pageTitle)
+			]);
+
+			const talkPageText = results[1];
+
+			// Create a proper edit object
+			const edit = {
+				revid: revisionData.revid,
+				parentid: revisionData.parentid,  // Include parentid for diff generation
+				user: revisionData.user,
+				comment: revisionData.comment,
+				timestamp: revisionData.timestamp,
+				tags: revisionData.tags || [],
+				size: revisionData.size,
+				oldlen: revisionData.oldlen || 0,
+				newlen: revisionData.size,
+				title: pageTitle
+			};
+
+			this.currentEdit = await this.generateQueueItem(
+				edit,
+				results[0][0].editcount,
+				this.getWarningLevel(talkPageText),
+				null, false, results[2], results[3],
+				`User talk:${edit.user}`
+			);
+
+			this.wikishield.interface.renderQueue(this.queue, this.currentEdit);
+		} catch (err) {
+			console.error("Failed to load specific revision:", err);
+			this.wikishield.interface.elem("#diff-container").innerHTML = `&lt;div class="error">Failed to load revision&lt;/div>`;
+		}
+	}
+}</code></pre>
+        </article>
+    </section>
+
+
+
+
+    
+    
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.5</a> on Fri Nov 28 2025 01:09:59 GMT+0000 (Coordinated Universal Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/polyfill.js"></script>
+<script src="scripts/linenumber.js"></script>
+
+<script src="scripts/search.js" defer></script>
+
+
+
+</body>
+</html>
