@@ -10,6 +10,7 @@ import { wikishieldHTML } from './templates.js';
 import { __script__ } from '../index.js';
 import { getWarningFromLookup, warnings, warningTemplateColors } from '../data/warnings.js';
 import { colorPalettes } from '../config/defaults.js';
+import { WikiShieldProgressBar } from './progress-bar.jsx';
 
 export class WikiShieldInterface {
 	constructor(wikishield) {
