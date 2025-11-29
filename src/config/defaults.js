@@ -1,4 +1,4 @@
-// Default settings and configurations
+import { defaultVolumes } from "../audio/manager.js";
 
 export const defaultSettings = {
 	maxQueueSize: 50,
@@ -26,8 +26,8 @@ export const defaultSettings = {
 		"Unsourced genre": true,
 		"POV": false,
 		"Commentary": true,
-		"AI-Generated": true,
-		"AI-Generated (talk)": true,
+		"AI-generated": true,
+		"AI-generated (talk)": true,
 		"MOS violation": false,
 		"Censoring": false,
 
@@ -49,49 +49,19 @@ export const defaultSettings = {
 
 	zen: {
 		enabled: false,
-		sounds: true,
 
+		sounds: true,
+		music: true,
 		watchlist: false,
-		notifications: true,
+		notices: false,
+		alerts: true,
 		editCount: false,
 		toasts: false,
 	},
 
 	enableCloudStorage: true,
 
-	masterVolume: 0.5,
-	volumes: {
-		click: 0.5,
-		notification: 0.5,
-		watchlist: 0.5,
-		alert: 0.5,
-		whoosh: 0.5,
-		warn: 0.5,
-		rollback: 0.5,
-		report: 0.5,
-		thank: 0.5,
-		protection: 0.5,
-		block: 0.5,
-		sparkle: 0.5,
-		success: 0.5,
-		error: 0.5
-	},
-	soundMappings: {
-		click: 'click',
-		notification: 'notify',
-		watchlist: 'ping',
-		alert: 'alert',
-		whoosh: 'whoosh',
-		warn: 'warn',
-		rollback: 'rollback',
-		report: 'report',
-		thank: 'thank',
-		protection: 'protection',
-		block: 'block',
-		sparkle: 'sparkle',
-		success: 'success',
-		error: 'error'
-	},
+	volumes: defaultVolumes,
 	watchlistExpiry: "1 week",
 	whitelistExpiry: {
 		users: "indefinite",

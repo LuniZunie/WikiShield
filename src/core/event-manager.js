@@ -15,6 +15,8 @@ export class WikiShieldEventManager {
 		* @param {Event} event - Optional event object for middle-click detection
 		*/
 		this.openWikipediaLink = (url, title, event = null) => {
+			wikishield.audioManager.playSound([ "ui", "link" ]);
+
 			// Middle click should open in new tab
 			if (event && event.button === 1) {
 				window.open(url);
@@ -52,9 +54,60 @@ export class WikiShieldEventManager {
 					wikishield.options.zen.enabled = !wikishield.options.zen.enabled;
 					document.querySelector('#zen-mode-enable')?.classList.toggle('active', wikishield.options.zen.enabled);
 
-					wikishield.interface.updateZenModeDisplay();
+					wikishield.interface.updateZenModeDisplay(true);
 				}
 			},
+
+			acceptFlaggedEdit: {
+				description: "Accept pending edit",
+				icon: "fas fa-check",
+				includeInProgress: true,
+				runWithoutEdit: false,
+				progressDesc: "Accepting...",
+				parameters: [
+					{
+						title: "Reason (optional)",
+						id: "reason",
+						type: "text"
+					}
+				],
+				func: async (event, currentEdit) => {
+					const __FLAGGED__ = currentEdit?.__FLAGGED__;
+					if (!currentEdit?.__FLAGGED__) {
+						return false;
+					}
+
+					const count = __FLAGGED__.__count__;
+					const message = `Accepted ${count ? `${count} ` : ""} pending edit${count === 1 ? "" : "s"} by ${wikishield.api.buildUser(currentEdit.user.name)}`;
+					return await wikishield.api.acceptFlaggedEdit(currentEdit, wikishield.api.buildMessage(message, event.reason));
+				}
+			},
+			rejectFlaggedEdit: {
+				description: "Reject pending edit",
+				icon: "fas fa-xmark",
+				includeInProgress: true,
+				runWithoutEdit: false,
+				progressDesc: "Rejecting...",
+				parameters: [
+					{
+						title: "Reason (optional)",
+						id: "reason",
+						type: "text"
+					}
+				],
+				func: async (event, currentEdit) => {
+					const __FLAGGED__ = currentEdit?.__FLAGGED__;
+					if (!__FLAGGED__) {
+						return false;
+					}
+
+					const count = __FLAGGED__.__count__;
+					const countSection = `${count ? `${count} ` : ""} pending edit${count === 1 ? "" : "s"}`;
+					const message = `Rejected ${countSection} by ${wikishield.api.buildUser(currentEdit.user.name)} to [[Special:Diff/${__FLAGGED__.stable_revid}|last stable revision]]`;
+					return await wikishield.api.rejectFlaggedEdit(currentEdit, wikishield.api.buildMessage(message, event.reason));
+				}
+			},
+
 			prevEdit: {
 				description: "Go to the previous edit in the queue",
 				icon: "fas fa-arrow-left",
@@ -233,13 +286,43 @@ export class WikiShieldEventManager {
 					return true;
 				}
 			},
+
+			switchToRecentQueue: {
+				description: "Switch to recent edits queue",
+				icon: "fas fa-stopwatch",
+				runWithoutEdit: true,
+				func: () => {
+					wikishield.queue.switchQueueTab("recent");
+					return true;
+				}
+			},
+			switchToFlaggedQueue: {
+				description: "Switch to flagged revisions queue",
+				icon: "fas fa-flag",
+				runWithoutEdit: true,
+				func: () => {
+					wikishield.queue.switchQueueTab("flagged");
+					return true;
+				}
+			},
+			switchToWatchlistQueue: {
+				description: "Switch to watchlist queue",
+				icon: "fas fa-eye",
+				runWithoutEdit: true,
+				func: () => {
+					wikishield.queue.switchQueueTab("watchlist");
+					return true;
+				}
+			},
+
 			whitelistUser: {
 				description: "Add user to the whitelist",
 				icon: "fas fa-check",
 				includeInProgress: true,
 				progressDesc: "Whitelisting...",
 				func: (event, currentEdit) => {
-					wikishield.queue.playSparkleSound();
+					// TODO wikishield.audioManager.playSound([ "actions", "sparkle" ]);
+
 					const username = currentEdit.user.name;
 
 					const expiryMs = wikishield.util.expiryToMilliseconds(wikishield.options.whitelistExpiry.users);
@@ -251,7 +334,7 @@ export class WikiShieldEventManager {
 					wikishield.logger.log(`Added ${username} to user whitelist until ${new Date(now + expiryMs).toLocaleString()}`);
 
 					// Refresh the interface to update button text
-					wikishield.interface.renderQueue(wikishield.queue.queue, wikishield.queue.currentEdit);
+					wikishield.interface.renderQueue(wikishield.queue.queue[wikishield.queue.currentQueueTab], wikishield.queue.currentEdit[wikishield.queue.currentQueueTab]);
 					return true;
 				}
 			},
@@ -261,7 +344,8 @@ export class WikiShieldEventManager {
 				includeInProgress: true,
 				progressDesc: "Whitelisting...",
 				func: (event, currentEdit) => {
-					wikishield.queue.playSparkleSound();
+					// TODO wikishield.audioManager.playSound([ "actions", "sparkle" ]);
+
 					const pageTitle = currentEdit.page.title;
 
 					const expiryMs = wikishield.util.expiryToMilliseconds(wikishield.options.whitelistExpiry.pages);
@@ -273,7 +357,7 @@ export class WikiShieldEventManager {
 					wikishield.logger.log(`Added ${pageTitle} to page whitelist until ${new Date(now + expiryMs).toLocaleString()}`);
 
 					// Refresh the interface to update button text
-					wikishield.interface.renderQueue(wikishield.queue.queue, wikishield.queue.currentEdit);
+					wikishield.interface.renderQueue(wikishield.queue.queue[wikishield.queue.currentQueueTab], wikishield.queue.currentEdit[wikishield.queue.currentQueueTab]);
 					return true;
 				}
 			},
@@ -284,7 +368,8 @@ export class WikiShieldEventManager {
 				includeInProgress: true,
 				progressDesc: "Unwhitelisting...",
 				func: (event, currentEdit) => {
-					wikishield.queue.playSparkleSound();
+					// TODO wikishield.audioManager.playSound([ "actions", "sparkle" ]);
+
 					const username = currentEdit.user.name;
 
 					// Toggle whitelist status
@@ -294,7 +379,7 @@ export class WikiShieldEventManager {
 					}
 
 					// Refresh the interface to update button text
-					wikishield.interface.renderQueue(wikishield.queue.queue, wikishield.queue.currentEdit);
+					wikishield.interface.renderQueue(wikishield.queue.queue[wikishield.queue.currentQueueTab], wikishield.queue.currentEdit[wikishield.queue.currentQueueTab]);
 					return true;
 				}
 			},
@@ -304,7 +389,8 @@ export class WikiShieldEventManager {
 				includeInProgress: true,
 				progressDesc: "Unwhitelisting...",
 				func: (event, currentEdit) => {
-					wikishield.queue.playSparkleSound();
+					// TODO wikishield.audioManager.playSound([ "actions", "sparkle" ]);
+
 					const pageTitle = currentEdit.page.title;
 
 					// Toggle whitelist status
@@ -314,7 +400,7 @@ export class WikiShieldEventManager {
 					}
 
 					// Refresh the interface to update button text
-					wikishield.interface.renderQueue(wikishield.queue.queue, wikishield.queue.currentEdit);
+					wikishield.interface.renderQueue(wikishield.queue.queue[wikishield.queue.currentQueueTab], wikishield.queue.currentEdit[wikishield.queue.currentQueueTab]);
 					return true;
 				}
 			},
@@ -325,20 +411,21 @@ export class WikiShieldEventManager {
 				includeInProgress: true,
 				progressDesc: "Highlighting...",
 				func: (event, currentEdit) => {
-					wikishield.queue.playSparkleSound();
+					// TODO wikishield.audioManager.playSound([ "actions", "sparkle" ]);
+
 					const username = currentEdit.user.name;
 
 					// Set highlight to expire based on user setting
-					const expiryMs = wikishield.util.expiryToMilliseconds(wikishield.options.highlightedExpiry.users);
+					const expiryMs = wikishield.util.expiryToMilliseconds(wikishield.options.highlightExpiry.users);
 
 					const now = Date.now();
-					wikishield.highlighted.users.set(username, [ now, now + expiryMs ]);
+					wikishield.highlight.users.set(username, [ now, now + expiryMs ]);
 
-					wikishield.statistics.highlighted++;
-					wikishield.logger.log(`Highlighted user ${username} until ${new Date(now + expiryMs).toLocaleString()}`);
+					wikishield.statistics.highlight++;
+					wikishield.logger.log(`Highlight user ${username} until ${new Date(now + expiryMs).toLocaleString()}`);
 
 					// Trigger immediate UI refresh
-					wikishield.interface.renderQueue(wikishield.queue.queue, wikishield.queue.currentEdit);
+					wikishield.interface.renderQueue(wikishield.queue.queue[wikishield.queue.currentQueueTab], wikishield.queue.currentEdit[wikishield.queue.currentQueueTab]);
 					return true;
 				}
 			},
@@ -348,20 +435,21 @@ export class WikiShieldEventManager {
 				includeInProgress: true,
 				progressDesc: "Highlighting...",
 				func: (event, currentEdit) => {
-					wikishield.queue.playSparkleSound();
+					// TODO wikishield.audioManager.playSound([ "actions", "sparkle" ]);
+
 					const pageTitle = currentEdit.page.title;
 
 					// Set highlight to expire based on user setting
-					const expiryMs = wikishield.util.expiryToMilliseconds(wikishield.options.highlightedExpiry.pages);
+					const expiryMs = wikishield.util.expiryToMilliseconds(wikishield.options.highlightExpiry.pages);
 
 					const now = Date.now();
-					wikishield.highlighted.pages.set(pageTitle, [ now, now + expiryMs ]);
+					wikishield.highlight.pages.set(pageTitle, [ now, now + expiryMs ]);
 
-					wikishield.statistics.highlighted++;
-					wikishield.logger.log(`Highlighted page ${pageTitle} until ${new Date(now + expiryMs).toLocaleString()}`);
+					wikishield.statistics.highlight++;
+					wikishield.logger.log(`Highlight page ${pageTitle} until ${new Date(now + expiryMs).toLocaleString()}`);
 
 					// Trigger immediate UI refresh
-					wikishield.interface.renderQueue(wikishield.queue.queue, wikishield.queue.currentEdit);
+					wikishield.interface.renderQueue(wikishield.queue.queue[wikishield.queue.currentQueueTab], wikishield.queue.currentEdit[wikishield.queue.currentQueueTab]);
 					return true;
 				}
 			},
@@ -372,16 +460,17 @@ export class WikiShieldEventManager {
 				includeInProgress: true,
 				progressDesc: "Unhighlight...",
 				func: (event, currentEdit) => {
-					wikishield.queue.playSparkleSound();
+					// TODO wikishield.audioManager.playSound([ "actions", "sparkle" ]);
+
 					const username = currentEdit.user.name;
 
-					if (wikishield.highlighted.users.has(username)) {
-						wikishield.highlighted.users.delete(username);
+					if (wikishield.highlight.users.has(username)) {
+						wikishield.highlight.users.delete(username);
 						wikishield.logger.log(`Removed ${username} from user highlights`);
 					}
 
 					// Trigger immediate UI refresh
-					wikishield.interface.renderQueue(wikishield.queue.queue, wikishield.queue.currentEdit);
+					wikishield.interface.renderQueue(wikishield.queue.queue[wikishield.queue.currentQueueTab], wikishield.queue.currentEdit[wikishield.queue.currentQueueTab]);
 					return true;
 				}
 			},
@@ -391,16 +480,17 @@ export class WikiShieldEventManager {
 				includeInProgress: true,
 				progressDesc: "Unhighlight...",
 				func: (event, currentEdit) => {
-					wikishield.queue.playSparkleSound();
+					// TODO wikishield.audioManager.playSound([ "actions", "sparkle" ]);
+
 					const pageTitle = currentEdit.page.title;
 
-					if (wikishield.highlighted.pages.has(pageTitle)) {
-						wikishield.highlighted.pages.delete(pageTitle);
+					if (wikishield.highlight.pages.has(pageTitle)) {
+						wikishield.highlight.pages.delete(pageTitle);
 						wikishield.logger.log(`Removed ${pageTitle} from page highlights`);
 					}
 
 					// Trigger immediate UI refresh
-					wikishield.interface.renderQueue(wikishield.queue.queue, wikishield.queue.currentEdit);
+					wikishield.interface.renderQueue(wikishield.queue.queue[wikishield.queue.currentQueueTab], wikishield.queue.currentEdit[wikishield.queue.currentQueueTab]);
 					return true;
 				}
 			},
@@ -438,6 +528,7 @@ export class WikiShieldEventManager {
 				description: "Open page history in new tab",
 				icon: "fas fa-clock-rotate-left",
 				func: (event, currentEdit) => {
+
 					const page = currentEdit.page;
 					const url = wikishield.util.pageLink(`Special:PageHistory/${page.title}`);
 					this.openWikipediaLink(url, `History: ${page.title}`, event);
@@ -474,23 +565,17 @@ export class WikiShieldEventManager {
 				includeInProgress: true,
 				progressDesc: "Thanking...",
 				func: async (event, currentEdit) => {
-					wikishield.queue.playThankSound();
+					// wikishield.audioManager.playSound([ "actions", "thank" ]);
 
-					// Check if user is an TEMP
-					if (mw.util.isTemporaryUser(currentEdit.user.name)) {
-						// For TEMP users, leave a thank you message on their talk page
+					if (mw.util.isTemporaryUser(currentEdit.user.name) || mw.util.isIPAddress(currentEdit.user.name)) {
 						const talkPageName = `User talk:${currentEdit.user.name}`;
 						const talkPageContent = await wikishield.api.getSinglePageContent(talkPageName) || "";
 
-						await wikishield.api.edit(
-							talkPageName,
-							talkPageContent + `\n{{subst:Thanks-autosign}}`,
-							`Thanking for edit to [[${currentEdit.page.title}]] ([[WP:WikiShield|WS]])`
-						);
+						const message = `Thank you for [[Special:Diff/${currentEdit.revid}|your edit]] to [[${currentEdit.page.title}]]!`;
+						await wikishield.api.edit(talkPageName, `${talkPageContent}\n{{subst:Thanks-autosign}}`, wikishield.api.buildMessage(message));
 
 						return true;
 					} else {
-						// For registered users, use the API thank function
 						await wikishield.api.thank(currentEdit.revid);
 
 						return true;
@@ -505,7 +590,12 @@ export class WikiShieldEventManager {
 						title: "Warning type",
 						id: "warningType",
 						type: "choice",
-						options: Object.keys(warningsLookup)
+						get options() {
+							return Object.keys(warningsLookup).filter(key => {
+								const warning = getWarningFromLookup(key);
+								return warning && !warning.hide;
+							});
+						}
 					},
 					{
 						title: "Level",
@@ -521,11 +611,10 @@ export class WikiShieldEventManager {
 					return params.level === "auto" || getWarningFromLookup(params.warningType)?.templates[params.level] !== null;
 				},
 				func: async (params, currentEdit) => {
-					wikishield.queue.playWarnSound();
+					wikishield.audioManager.playSound([ "actions", "warn" ]);
 
 					const warning = getWarningFromLookup(params.warningType);
 
-					// Store the original warning level before warning
 					const originalLevel = currentEdit.user.warningLevel;
 					currentEdit.user.atFinalWarning = (warning?.auto?.[originalLevel.toString()] === "report");
 
@@ -551,8 +640,9 @@ export class WikiShieldEventManager {
 				includeInProgress: true,
 				progressDesc: "Rolling back...",
 				func: async (params, currentEdit) => {
-					wikishield.queue.playRollbackSound();
-					return await wikishield.revert(currentEdit, params.summary || "");
+					// TODO wikishield.audioManager.playSound([ "actions", "rollback" ]);
+
+					return await wikishield.revert(currentEdit, params.summary || "", false);
 				}
 			},
 			rollbackGoodFaith: {
@@ -568,7 +658,8 @@ export class WikiShieldEventManager {
 				includeInProgress: true,
 				progressDesc: "Rolling back...",
 				func: async (params, currentEdit) => {
-					wikishield.queue.playRollbackSound();
+					// TODO wikishield.audioManager.playSound([ "actions", "goodfaith" ]);
+
 					return await wikishield.revert(currentEdit, params.summary || "", true);
 				}
 			},
@@ -577,7 +668,7 @@ export class WikiShieldEventManager {
 				icon: "fas fa-undo",
 				parameters: [
 					{
-						title: "Reason",
+						title: "Reason (optional)",
 						id: "reason",
 						type: "text"
 					}
@@ -585,8 +676,8 @@ export class WikiShieldEventManager {
 				includeInProgress: true,
 				progressDesc: "Undoing...",
 				func: async (params, currentEdit) => {
-					wikishield.queue.playRollbackSound();
-					return await wikishield.api.undoEdit(currentEdit, params.reason || `Undid edit by ${currentEdit.user.name} ([[WP:WikiShield|WS]])`);
+					const message = `Undid revision [[Special:Diff/${currentEdit.revid}|${currentEdit.revid}]] by ${wikishield.api.buildUser(currentEdit.user.name)}`;
+					return await wikishield.api.undoEdit(currentEdit, wikishield.api.buildMessage(message, params.reason));
 				}
 			},
 			reportToAIV: {
@@ -613,7 +704,7 @@ export class WikiShieldEventManager {
 				needsContinuity: true,
 				progressDesc: "Reporting...",
 				func: async (params, currentEdit) => {
-					wikishield.queue.playReportSound();
+					wikishield.audioManager.playSound([ "actions", "report" ]);
 
 					const reason = params.comment ? `${params.reportMessage}: ${params.comment}` : params.reportMessage;
 					await wikishield.reportToAIV(
@@ -648,18 +739,20 @@ export class WikiShieldEventManager {
 				includeInProgress: true,
 				progressDesc: "Reporting...",
 				func: async (params, currentEdit) => {
-					if (mw.util.isTemporaryUser(currentEdit.user.name)) {
-						this.wikishield.queue.playErrorSound();
-						wikishield.interface.showToast(
+					if (mw.util.isTemporaryUser(currentEdit.user.name) || mw.util.isIPAddress(currentEdit.user.name)) {
+						if (wikishield.interface.showToast(
 							"Report Failed",
 							`Can not file a report for a temporary account (${currentEdit.user.name})`,
 							5000,
 							"error"
-						);
+						)) {
+							// TODO this.audioManager.playSound([ "status", "error" ]);
+						}
+
 						return false;
 					}
 
-					wikishield.queue.playReportSound();
+					wikishield.audioManager.playSound([ "actions", "report" ]);
 
 					const reason = params.comment ? `${params.reportMessage}: ${params.comment}` : params.reportMessage;
 					await wikishield.reportToUAA(
@@ -706,7 +799,7 @@ export class WikiShieldEventManager {
 				includeInProgress: true,
 				progressDesc: "Requesting protection...",
 				func: async (params, currentEdit) => {
-					wikishield.queue.playProtectionSound();
+					// TODO wikishield.audioManager.playSound([ "actions", "protection" ]);
 
 					const reason = params.comment ? `${params.reason}: ${params.comment}` : params.reason;
 					await wikishield.requestProtection(
@@ -718,7 +811,7 @@ export class WikiShieldEventManager {
 					return true;
 				}
 			},
-			block: {
+			block: { // TODO
 				description: "Block user",
 				icon: "fas fa-ban",
 				parameters: [
@@ -752,7 +845,7 @@ export class WikiShieldEventManager {
 				includeInProgress: true,
 				progressDesc: "Blocking...",
 				func: async (params, currentEdit) => {
-					wikishield.queue.playBlockSound();
+					// TODO wikishield.audioManager.playSound([ "actions", "block" ]);
 					const success = await wikishield.api.block(
 						currentEdit.user.name,
 						params.blockSummary,
@@ -766,13 +859,13 @@ export class WikiShieldEventManager {
 					return true;
 				}
 			},
-			protect: {
+			protect: { // TODO
 				description: "Protect page",
 				icon: "fas fa-lock",
 				includeInProgress: true,
 				progressDesc: "Protecting...",
 				func: async () => {
-					wikishield.queue.playProtectionSound();
+					// TODO wikishield.audioManager.playSound([ "actions", "protection" ]);
 
 					return true;
 				}
@@ -791,7 +884,7 @@ export class WikiShieldEventManager {
 				includeInProgress: true,
 				progressDesc: "Welcoming...",
 				func: async (params, currentEdit) => {
-					wikishield.queue.playSparkleSound();
+					// TODO wikishield.audioManager.playSound([ "actions", "sparkle" ]);
 					await wikishield.welcomeUser(
 						currentEdit.user.name,
 						params.template
@@ -854,7 +947,6 @@ export class WikiShieldEventManager {
 			}
 
 			wikishield.interface.selectedMenu = null;
-			wikishield.interface.updateMenuElements();
 			if (runWithoutEdit) {
 				this.events[event].func();
 			} else {

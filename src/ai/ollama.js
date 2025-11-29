@@ -131,7 +131,6 @@ export class WikiShieldOllamaAI {
 				return null;
 			}
 
-			console.error("Ollama AI analysis error:", err);
 			return {
 				hasIssues: false,
 				issues: [],
@@ -437,7 +436,12 @@ export class WikiShieldOllamaAI {
 				fetchOptions.signal = signal;
 			}
 
-			const response = await fetch(`${this.serverUrl}/api/generate`, fetchOptions);
+			const response = await fetch(`${this.serverUrl}/api/generate`, fetchOptions).catch(err => {
+				if (err.name === 'AbortError') {
+					throw err; // Rethrow abort errors
+				}
+				throw new Error(`Ollama API fetch error: ${err.message}`);
+			});
 
 			if (!response.ok) {
 				throw new Error(`Ollama API error: ${response.status} ${response.statusText}`);
@@ -451,7 +455,7 @@ export class WikiShieldOllamaAI {
 
 			return data.response;
 		} catch (error) {
-			throw new Error(`Ollama AI error: ${error?.message || 'Unknown error'}`);
+			throw error;
 		}
 	}
 
@@ -698,6 +702,11 @@ export class WikiShieldOllamaAI {
 						}
 					}),
 					signal: controller.signal
+				}).catch(err => {
+					if (err.name === 'AbortError') {
+						throw err; // Rethrow abort errors
+					}
+					throw new Error(`Ollama API fetch error: ${err.message}`);
 				});
 
 				if (!response.ok) {
@@ -736,7 +745,6 @@ export class WikiShieldOllamaAI {
 				};
 			}
 
-			console.error('Username analysis error:', error);
 			return {
 				shouldFlag: false,
 				confidence: 0,

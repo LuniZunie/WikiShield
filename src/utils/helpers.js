@@ -100,7 +100,14 @@ export class WikiShieldUtil {
 	 * @returns {String} The truncated string
 	 */
 	maxStringLength(str, len) {
-		return str.length > len ? str.substring(0, len) + "..." : str;
+		return str.length > len ? `${str.substring(0, len - 3).trimEnd()}...` : str;
+	}
+
+	formatBytes(bytes) {
+		const sizes = [ "B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB", "RiB", "QiB" ];
+		if (bytes === 0) return "0 B";
+		const i = Math.floor(Math.log(bytes) / Math.log(1024));
+		return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + " " + sizes[i];
 	}
 
 	/**

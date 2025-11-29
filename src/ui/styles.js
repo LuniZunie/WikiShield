@@ -1,8 +1,8 @@
 // Import CSS files as raw text strings
 import baseCSS from './styles/base.css';
 import initialCSS from './styles/initial.css';
-import mainCSS from './styles/main.css';
-import themeDarkCSS from './styles/theme-dark.css';
+
+import newMainCSS from './styles/new-main.css';
 
 /**
  * WikiShield styling object containing CSS for different parts of the application
@@ -14,24 +14,24 @@ export const wikishieldStyling = {
 	 * Used across all pages
 	 */
 	base: baseCSS,
-	
+
 	/**
 	 * Initial/Welcome page styles
 	 * Includes animated background, shield icon, and welcome UI
 	 */
 	initial: initialCSS,
-	
+
 	/**
 	 * Main application styles
 	 * The bulk of the UI including queue, diff viewer, settings, etc.
 	 */
-	main: mainCSS,
-	
+	main: newMainCSS,
+
 	/**
 	 * Dark theme overrides
 	 * Applied when dark mode is enabled
 	 */
-	"theme-dark": themeDarkCSS
+	// "theme-dark": themeDarkCSS
 };
 
 /**

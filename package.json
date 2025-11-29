@@ -19,6 +19,7 @@
     "@babel/preset-env": "^7.28.5",
     "@babel/preset-react": "^7.28.5",
     "babel-loader": "^10.0.0",
+    "jquery": "^3.7.1",
     "preact": "^10.27.2",
     "preact-render-to-string": "^6.6.3",
     "webpack": "^5.102.1",

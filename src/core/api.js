@@ -6,14 +6,29 @@
 const serversWithTags = new Set([ "en.wikipedia.org" ]);
 const __TAGS__ = serversWithTags.has(mw.config.get("wgServerName")) ? "WikiShield script" : "";
 
+export const __pendingChangesServer__ = new Set([ "en.wikipedia.org", "de.wikipedia.org" ]);
+
 export class WikiShieldAPI {
 	constructor(wikishield, api, options = {}) {
 		this.wikishield = wikishield;
 		this.api = api;
+		this.cache = new Map();
 		this.testingMode = options.testingMode || false;
 		this.logger = options.logger;
 		this.util = options.util;
 		this.historyCount = options.historyCount || 10;
+	}
+
+	buildMessage(base, custom) {
+		const watermark = "([[:en:Wikipedia:Wikishield|WS]])";
+		if (custom) {
+			return `${base}: ${custom} ${watermark}`;
+		} else {
+			return `${base} ${watermark}`;
+		}
+	}
+	buildUser(username) {
+		return `[[Special:Contributions/${username}|${username}]] ([[User talk:${username}|talk]])`;
 	}
 
 	/**
@@ -150,7 +165,7 @@ export class WikiShieldAPI {
 	* @returns {Promise<String>} The content of the revision
 	*/
 	async getTextByRevid(revid) {
-		if (revids === "") {
+		if (revid === "") {
 			return;
 		}
 
@@ -721,57 +736,175 @@ export class WikiShieldAPI {
 		}
 	}
 
+	async parseWikitext(wikitext) {
+		try {
+			const response = await this.api.get({
+				"action": "parse",
+				"text": wikitext,
+				"prop": "text",
+				"format": "json",
+				"formatversion": 2
+			});
+			return response.parse?.text || "";
+		} catch (err) {
+			this.logger?.log(`Could not parse wikitext: ${err}`);
+			return "";
+		}
+	}
+
 	/**
 	* Get recent edits to Wikipedia
 	* @param {String} namespaces The namespaces to get recent changes for, separated by "|"
 	* @param {String} since The timestamp to start from
 	* @returns {Promise<Array>} The recent changes
 	*/
-	async recentChanges(namespaces, since) {
-		try {
-			const response = await this.api.get({
-				"action": "query",
-				"list": "recentchanges",
-				"rcnamespace": namespaces,
-				"rclimit": 50,
-				"rcprop": "title|ids|sizes|flags|user|tags|comment|timestamp",
-				"rctype": "edit",
-				"rctoponly": true,
-				"format": "json",
-				"rcstart": since || "",
-				"rcdir": since ? "newer" : "older"
-			});
+	async queueList(listType, namespaces, since) {
+		const options = {
+			get recent() {
+				return {
+					"action": "query",
+					"list": "recentchanges",
+					"rcnamespace": namespaces,
+					"rclimit": 50,
+					"rcprop": "title|ids|sizes|flags|user|tags|comment|timestamp",
+					"rctype": "edit",
+					"rctoponly": true,
+					"format": "json",
+					"rcstart": since || "",
+					"rcdir": since ? "newer" : "older"
+				};
+			},
+			get flagged() {
+				return {
+					"action": "query",
+					"list": "oldreviewedpages",
+					"ornamespace": namespaces,
+					"orlimit": 50,
+					"format": "json",
+					"orstart": since || "",
+					"ordir": since ? "newer" : "older"
+				};
+			},
+			get watchlist() {
+				return {
+					"action": "query",
+					"list": "watchlist",
+					"wlnamespace": "*",
+					"wllimit": 25,
+					"wlprop": "title|ids|sizes|flags|user|tags|comment|timestamp",
+					"wltype": "edit",
+					"format": "json",
+					"wlstart": since || "",
+					"wldir": since ? "newer" : "older",
+					"wlexcludeuser": mw.config.get("wgUserName") || ""
+				};
+			}
+		};
 
-			return response.query.recentchanges;
+		if (listType === "flagged" && !__pendingChangesServer__.has(mw.config.get("wgServerName"))) {
+			return [];
+		}
+
+		try {
+			const response = await this.api.get(options[listType]);
+
+			switch (listType) {
+				case "recent": {
+					return response.query.recentchanges;
+				} break;
+				case "flagged": {
+					const promise = await Promise.allSettled(response.query.oldreviewedpages.map(async obj => {
+						let revision;
+						if (this.cache.has(`flaggedRev:${obj.revid}`)) {
+							revision = this.cache.get(`flaggedRev:${obj.revid}`);
+						} else {
+							revision = await this.api.get({
+								"action": "query",
+								"prop": "revisions",
+								"titles": obj.title,
+								"rvstartid": obj.revid,
+								"rvlimit": 1,
+								"rvprop": "title|ids|sizes|flags|user|tags|comment|timestamp",
+								"format": "json",
+								"formatversion": 2
+							});
+							this.cache.set(`flaggedRev:${obj.revid}`, revision);
+						}
+
+						const page = revision.query.pages[0];
+						return { title: obj.title, ...page.revisions[0], __FLAGGED__: obj };
+					}));
+
+					const cache = { };
+					const list = promise.filter(p => p.status === "fulfilled").map(p => p.value);
+					for (const item of list) {
+						const root = cache[item.title] ??= { };
+						if (item.user in root) {
+							if (root[item.user].revid < item.revid) {
+								item.__FLAGGED__.__count__ = root[item.user].__count__ + 1;
+								root[item.user] = item;
+							}
+						} else {
+							item.__FLAGGED__.__count__ = 1;
+							root[item.user] = item;
+						}
+					}
+
+					return Object.values(cache).flatMap(userEdits => Object.values(userEdits));
+				} break;
+				case "watchlist": {
+					return response.query.watchlist;
+				} break;
+			}
 		} catch (err) {
 			this.logger?.log(`Could not fetch recent changes: ${err}`);
 		}
 	}
 
-	/**
-	* Get your watchlist from Wikipedia
-	* @param {String} since The timestamp to start from
-	* @returns {Promise<Array>} The watchlist
-	*/
-	async watchlist(since) {
-		try {
-			const response = await this.api.get({
-				"action": "query",
-				"list": "watchlist",
-				"wlnamespace": "*",
-				"allrev": true,
-				"wllimit": 25,
-				"wlprop": "title|ids|sizes|flags|user|tags|comment|timestamp",
-				"wltype": "edit",
-				"format": "json",
-				"wlstart": since || "",
-				"wldir": since ? "newer" : "older",
-				"wlexcludeuser": this.wikishield.username
-			});
+	async acceptFlaggedEdit(edit, summary) {
+		if (this.testingMode) {
+			console.log("Accept flagged", { edit, summary });
+			return true;
+		}
 
-			return response.query.watchlist;
+		try {
+			const res = await this.api.postWithToken("csrf", {
+				"action": "review",
+				"revid": edit.revid,
+				"comment": summary,
+				"tags": __TAGS__
+			});
+			console.log(res);
+
+			return true;
 		} catch (err) {
-			this.logger?.log(`Could not fetch watchlist: ${err}`);
+			console.error(err);
+			return false;
+		}
+	}
+
+	async rejectFlaggedEdit(edit, summary) {
+		if (this.testingMode) {
+			console.log("Reject flagged", { edit, summary });
+			return true;
+		}
+
+		try {
+			const stableText = await this.getTextByRevid(edit.__FLAGGED__.stable_revid);
+			const res = await this.api.postWithToken("csrf", {
+				"action": "edit",
+				"title": edit.page.title,
+				"text": stableText,
+				"summary": summary,
+				"starttimestamp": edit.__FLAGGED__.timestamp,
+				"tags": __TAGS__
+			});
+			console.log(res);
+
+			return true;
+		} catch (err) {
+			console.error(err);
+			return false;
 		}
 	}
 

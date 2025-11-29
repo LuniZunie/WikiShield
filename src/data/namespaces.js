@@ -43,6 +43,22 @@ export const namespaces = [
 		id: 118
 	},
 	{
+		name: "MOS",
+		id: 126
+	},
+	{
+		name: "TimedText",
+		id: 710
+	},
+	{
+		name: "Module",
+		id: 828
+	},
+	{
+		name: "Event",
+		id: 1728
+	},
+	{
 		name: "Talk",
 		id: 1
 	},
@@ -81,6 +97,21 @@ export const namespaces = [
 	{
 		name: "Draft talk",
 		id: 119
+	},
+	{
+		name: "MOS talk",
+		id: 127
+	},
+	{
+		name: "TimedText talk",
+		id: 711
+	},
+	{
+		name: "Module talk",
+		id: 829
+	},
+	{
+		name: "Event talk",
+		id: 1729
 	}
 ];
-

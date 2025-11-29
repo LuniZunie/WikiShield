@@ -10,6 +10,8 @@ import { wikishieldHTML } from './templates.js';
 import { __script__ } from '../index.js';
 import { getWarningFromLookup, warnings, warningTemplateColors } from '../data/warnings.js';
 import { colorPalettes } from '../config/defaults.js';
+import { __pendingChangesServer__ } from '../core/api.js';
+import { WikiShieldProgressBar } from './progress-bar.jsx';
 
 export class WikiShieldInterface {
 	constructor(wikishield) {
@@ -17,7 +19,11 @@ export class WikiShieldInterface {
 		this.selectedWidthAdjust = null;
 		this.startingSectionWidth = null;
 		this.startingMouseX = null;
-		this.lastCurrentEdit = null;
+		this.lastCurrentEdit = {
+			recent: null,
+			flagged: null,
+			watchlist: null
+		};
 		this.newerRevisionInterval = null; // For periodic newer revision checking
 
 		this.queueWidth = undefined;
@@ -68,150 +74,6 @@ export class WikiShieldInterface {
 	}
 
 	/**
-	* Open a Wikipedia page in a floating iframe
-	* @param {String} url The URL to open
-	* @param {String} title The title to display in the header
-	*/
-	openFloatingIframe(url, title) {
-		// Remove any existing iframe overlay
-		this.closeFloatingIframe();
-
-		// Create overlay
-		const overlay = document.createElement("div");
-		overlay.classList.add("wiki-iframe-overlay");
-		overlay.id = "wiki-iframe-overlay";
-
-		// Create container
-		const container = document.createElement("div");
-		container.classList.add("wiki-iframe-container");
-
-		// Create header
-		const header = document.createElement("div");
-		header.classList.add("wiki-iframe-header");
-
-		const titleDiv = document.createElement("div");
-		titleDiv.classList.add("wiki-iframe-title");
-		titleDiv.innerHTML = `
-				<span class="fa fa-book"></span>
-				<span class="wiki-iframe-title-text">${this.escapeHTML(title)}</span>
-			`;
-
-		const controls = document.createElement("div");
-		controls.classList.add("wiki-iframe-controls");
-
-		const openNewTabBtn = document.createElement("button");
-		openNewTabBtn.classList.add("wiki-iframe-btn");
-		openNewTabBtn.innerHTML = `<span class="fa fa-external-link-alt"></span> Open in New Tab`;
-		openNewTabBtn.addEventListener("click", () => {
-			window.open(url, "_blank");
-		});
-
-		const closeBtn = document.createElement("button");
-		closeBtn.classList.add("wiki-iframe-btn", "close-btn");
-		closeBtn.innerHTML = `<span class="fa fa-times"></span> Close`;
-		closeBtn.addEventListener("click", () => {
-			this.closeFloatingIframe();
-		});
-
-		controls.appendChild(openNewTabBtn);
-		controls.appendChild(closeBtn);
-
-		header.appendChild(titleDiv);
-		header.appendChild(controls);
-
-		// Create content area with loading indicator
-		const content = document.createElement("div");
-		content.classList.add("wiki-iframe-content");
-
-		const loading = document.createElement("div");
-		loading.classList.add("wiki-iframe-loading");
-		loading.innerHTML = `
-				<div class="wiki-iframe-spinner"></div>
-				<span>Loading Wikipedia page...</span>
-			`;
-
-		content.appendChild(loading);
-
-		// Create iframe
-		const iframe = document.createElement("iframe");
-		iframe.src = url;
-		iframe.setAttribute("sandbox", "allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox");
-
-		// Track if iframe loaded successfully
-		let iframeLoaded = false;
-
-		// Remove loading indicator when iframe loads successfully
-		iframe.addEventListener("load", () => {
-			iframeLoaded = true;
-			loading.remove();
-		});
-
-		// Handle iframe load errors
-		iframe.addEventListener("error", () => {
-			loading.innerHTML = `
-					<span class="fa fa-exclamation-triangle" style="color: var(--danger); font-size: 2rem;"></span>
-					<span>This page cannot be displayed in a frame. <a href="${url}" target="_blank" style="color: var(--primary); text-decoration: underline;">Open in new tab instead</a></span>
-				`;
-		});
-
-		// Detect X-Frame-Options blocking (iframe doesn't fire error for this)
-		// If iframe hasn't loaded after 3 seconds, assume it's blocked
-		setTimeout(() => {
-			if (!iframeLoaded) {
-				// Wikipedia likely blocked the iframe due to X-Frame-Options
-				this.closeFloatingIframe();
-				window.open(url, "_blank");
-
-				// Show a toast notification explaining what happened
-				this.showToast("Wikipedia doesn't allow embedding. Opening in a new tab instead.", "info");
-			}
-		}, 3000);
-
-		content.appendChild(iframe);
-
-		// Assemble the modal
-		container.appendChild(header);
-		container.appendChild(content);
-		overlay.appendChild(container);
-
-		// Close on overlay click (but not container click)
-		overlay.addEventListener("click", (e) => {
-			if (e.target === overlay) {
-				this.closeFloatingIframe();
-			}
-		});
-
-		// Prevent clicks inside container from closing
-		container.addEventListener("click", (e) => {
-			e.stopPropagation();
-		});
-
-		// Close on Escape key
-		const escapeHandler = (e) => {
-			if (e.key === "Escape") {
-				this.closeFloatingIframe();
-			}
-		};
-		document.addEventListener("keydown", escapeHandler);
-		overlay.dataset.escapeHandler = "true";
-
-		// Add to document
-		document.body.appendChild(overlay);
-	}	/**
-	* Close the floating iframe if it exists
-	*/
-	closeFloatingIframe() {
-		const overlay = document.getElementById("wiki-iframe-overlay");
-		if (overlay) {
-			// Remove escape key handler
-			if (overlay.dataset.escapeHandler) {
-				document.removeEventListener("keydown", this.closeFloatingIframe);
-			}
-			overlay.remove();
-		}
-	}
-
-	/**
 	* Escape HTML to prevent XSS
 	* @param {String} text
 	* @returns {String}
@@ -226,6 +88,9 @@ export class WikiShieldInterface {
 	* Build the starting page
 	*/
 	async build() {
+		const controller = new AbortController();
+		this.wikishield.audioManager.playSound([ "startup" ], controller);
+
 		document.head.innerHTML = `
 			<title>WikiShield</title>
 			<style>${wikishieldStyling.initial}</style>
@@ -332,103 +197,6 @@ export class WikiShieldInterface {
 
 		animate();
 
-		// Sound design - create audio context for sound effects
-		let audioContext = null;
-
-		// Function to play a synth tone
-		const playSynthTone = (frequency, duration, volume = 0.15, type = 'sine') => {
-			if (!audioContext) return;
-
-			const oscillator = audioContext.createOscillator();
-			const gainNode = audioContext.createGain();
-
-			oscillator.connect(gainNode);
-			gainNode.connect(audioContext.destination);
-
-			oscillator.frequency.value = frequency;
-			oscillator.type = type;
-
-			gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
-			gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
-
-			oscillator.start(audioContext.currentTime);
-			oscillator.stop(audioContext.currentTime + duration);
-		};
-
-		// Play startup sound sequence
-		const playStartupSound = () => {
-			if (!audioContext) {
-				try {
-					const construct = window.AudioContext || window.webkitAudioContext;
-					audioContext = new construct();
-				} catch (e) {
-					return;
-				}
-			}
-
-			// Epic startup sequence
-			playSynthTone(523.25, 0.15, 0.12, 'sine'); // C5
-			setTimeout(() => playSynthTone(659.25, 0.15, 0.12, 'sine'), 150); // E5
-			setTimeout(() => playSynthTone(783.99, 0.15, 0.12, 'sine'), 300); // G5
-			setTimeout(() => playSynthTone(1046.50, 0.4, 0.15, 'sine'), 450); // C6
-		};
-
-		// Play hover sound
-		const playHoverSound = () => {
-			playSynthTone(800, 0.05, 0.08, 'sine');
-		};
-
-		// Play click sound
-		const playClickSound = () => {
-			playSynthTone(1200, 0.1, 0.1, 'square');
-			setTimeout(() => playSynthTone(1000, 0.08, 0.08, 'square'), 50);
-		};
-
-		// Initialize audio on first user interaction
-		const initAudio = () => {
-			if (!audioContext) {
-				try {
-					const construct = window.AudioContext || window.webkitAudioContext;
-					audioContext = new construct();
-					playStartupSound();
-				} catch (e) {
-					// Audio not supported - silently fail
-				}
-			}
-		};
-
-		// Add sound effects to buttons and links
-		const addSoundToElement = (selector, soundType) => {
-			const elem = this.elem(selector);
-			if (elem) {
-				if (soundType === 'hover') {
-					elem.addEventListener("mouseenter", playHoverSound);
-				} else if (soundType === 'click') {
-					elem.addEventListener("click", () => {
-						initAudio();
-						playClickSound();
-					});
-				}
-			}
-		};
-
-		// Add sounds to interactive elements
-		addSoundToElement("#start-button", "hover");
-		addSoundToElement("#start-button", "click");
-
-		document.querySelectorAll(".about-link").forEach(link => {
-			link.addEventListener("mouseenter", playHoverSound);
-			link.addEventListener("click", () => {
-				initAudio();
-				playClickSound();
-			});
-		});
-
-		// Play startup sound after a short delay
-		setTimeout(() => {
-			initAudio();
-		}, 500);
-
 		if (this.wikishield.rights.rollback) {
 			this.elem("#rollback-needed").style.display = "none";
 			this.elem("#start-button").style.display = "";
@@ -438,6 +206,9 @@ export class WikiShieldInterface {
 		}
 
 		this.elem("#start-button").addEventListener("click", () => {
+			this.wikishield.audioManager.playSound([ "ui", "click" ]);
+			controller.abort();
+
 			// Stop the dots animation
 			if (animationFrame) {
 				cancelAnimationFrame(animationFrame);
@@ -446,8 +217,6 @@ export class WikiShieldInterface {
 		});
 
 		this.loadTheme("theme-dark");
-
-		this.updateZenModeDisplay();
 	}
 
 	/**
@@ -457,6 +226,7 @@ export class WikiShieldInterface {
 		document.head.innerHTML = `
 				<title>WikiShield</title>
 				<style>${wikishieldStyling.main}</style>
+				<style>${wikishieldStyling.musicToast}</style>
 				${wikishieldHTML.head}
 			`;
 
@@ -475,11 +245,11 @@ export class WikiShieldInterface {
 				switch (item.dataset.menu) {
 					case "revert": {
 						menu.innerHTML = "";
-						this.createRevertMenu(menu, this.wikishield.queue.currentEdit);
+						this.createRevertMenu(menu, this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab]);
 					} break;
 					case "warn": {
 						menu.innerHTML = "";
-						this.createWarnMenu(menu, this.wikishield.queue.currentEdit);
+						this.createWarnMenu(menu, this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab]);
 					} break;
 				}
 
@@ -530,36 +300,41 @@ export class WikiShieldInterface {
 		[
 			this.elem("#delete-queue"),
 			this.elem("#open-settings"),
-			this.elem("#notifications-icon"),
-			this.elem("#watchlist-icon"),
-			this.elem("#user-contribs-level")
+			this.elem("#alerts-icon"),
+			this.elem("#notices-icon"),
+			this.elem("#user-warn-level"),
+
+			...document.querySelectorAll("#queue-tabs > .queue-tab"),
 		].forEach(e => this.addTooltipListener(e));
 
-		// Notification icon click handler
-		this.elem("#notifications-icon").addEventListener("click", (e) => {
-			const panel = this.elem("#notifications-panel");
+		// Alert icon click handler
+		this.elem("#alerts-icon").addEventListener("click", (e) => {
+			const panel = this.elem("#alerts-panel");
 			panel.classList.toggle("show");
 		});
 
 		// Mark all as read handler
-		this.elem("#mark-all-notifications-read").addEventListener("click", () => {
-			this.wikishield.markAllNotificationsRead();
+		this.elem("#mark-all-alerts-read").addEventListener("click", () => {
+			this.wikishield.markAllAlertsRead();
 		});
 
-		// Watchlist icon click handler
-		this.elem("#watchlist-icon").addEventListener("click", (e) => {
-			const panel = this.elem("#watchlist-panel");
+		// Notices icon click handler
+		this.elem("#notices-icon").addEventListener("click", (e) => {
+			const panel = this.elem("#notices-panel");
 			panel.classList.toggle("show");
+			if (panel.classList.contains("show")) {
+				this.wikishield.markAllNoticesSeen();
+			}
 		});
 
 		// Mark all as read handler
-		this.elem("#mark-all-watchlist-read").addEventListener("click", () => {
-			this.wikishield.markAllWatchlistRead();
+		this.elem("#mark-all-notices-read").addEventListener("click", () => {
+			this.wikishield.markAllNoticesRead();
 		});
 
-		// Close notifications panel when clicking outside
+		// Close alerts panel when clicking outside
 		document.addEventListener("click", (e) => {
-			for (const id of [ "notifications", "watchlist" ]) {
+			for (const id of [ "alerts", "notices" ]) {
 				const panel = this.elem(`#${id}-panel`);
 				const icon = this.elem(`#${id}-icon`);
 				if (panel && !panel.contains(e.target) && !icon.contains(e.target)) {
@@ -574,13 +349,13 @@ export class WikiShieldInterface {
 
 		const $latestTab = this.elem("#latest-edits-tab");
 		$latestTab.addEventListener("click", event => {
-			this.updateDiffContainer(this.wikishield.queue.currentEdit, false);
+			this.updateDiffContainer(this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab], false);
 		});
 		this.addTooltipListener($latestTab);
 
 		const $consecutiveTab = this.elem("#consecutive-edits-tab");
 		$consecutiveTab.addEventListener("click", event => {
-			this.updateDiffContainer(this.wikishield.queue.currentEdit, true);
+			this.updateDiffContainer(this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab], true);
 		});
 		this.addTooltipListener($consecutiveTab);
 
@@ -721,6 +496,40 @@ export class WikiShieldInterface {
 			"welcome"
 		);
 
+		this.elem("#pending-changes-container > .accept").addEventListener("click", (e) => {
+			this.wikishield.audioManager.playSound([ "ui", "click" ]);
+			const message = window.prompt("Enter an optional edit summary for accepting this flagged edit:");
+			this.wikishield.executeScript({
+				actions: [
+					{
+						name: "acceptFlaggedEdit",
+						params: { reason: message }
+					},
+					{
+						name: "nextEdit",
+						params: {}
+					}
+				]
+			});
+		});
+
+		this.elem("#pending-changes-container > .reject").addEventListener("click", (e) => {
+			this.wikishield.audioManager.playSound([ "ui", "click" ]);
+			const message = window.prompt("Enter an optional edit summary for rejecting this flagged edit:");
+			this.wikishield.executeScript({
+				actions: [
+					{
+						name: "rejectFlaggedEdit",
+						params: { reason: message }
+					},
+					{
+						name: "nextEdit",
+						params: {}
+					}
+				]
+			});
+		});
+
 		if (!this.wikishield.rights.block) {
 			[...document.querySelectorAll(".tool-block")].forEach(elem => elem.style.display = "none");
 		}
@@ -832,7 +641,11 @@ export class WikiShieldInterface {
 		// Intercept Wikipedia links for floating iframe
 		document.addEventListener("click", (e) => {
 			// Check if the click was on a link or inside a link
-			const link = e.target.closest("a[href][target='_blank']");
+			let link = e.target.closest("a[href]");
+			if (!link) return;
+
+			link = e.target.closest("a[href][target='_blank']");
+			this.wikishield.audioManager.playSound([ "ui", "link" ]);
 
 			if (!link) return;
 
@@ -863,51 +676,51 @@ export class WikiShieldInterface {
 				console.error("Failed to parse URL:", err);
 			}
 
-			// Open Wikipedia links in new tab
 			window.open(url, "_blank");
 		}, true); // Use capture phase to intercept before other handlers
 
-		// Also handle auxclick for middle mouse button
-		document.addEventListener("auxclick", (e) => {
-			const link = e.target.closest("a[href][target='_blank']");
-			if (!link) return;
-
-			const url = link.getAttribute("href");
-			if (!url || !url.includes("wikipedia.org")) return;
-
-			// Middle click (button 1) - allow default behavior (open in new tab)
-			if (e.button === 1) {
-				// Default behavior will handle this
-				return;
-			}
-		}, true);
-
 		if (this.wikishield.loadedChangelog !== __script__.changelog.version || __script__.changelog.version.endsWith("!")) {
-			const container = document.createElement("div");
-			container.classList.add("settings-container");
-			document.body.appendChild(container);
-
-			container.innerHTML = `
-					<div class="settings">
-						<div class="settings-section changelog">
-							${__script__.changelog.HTML}
-						</div>
-						<button id="close-changelog" class="add-action-button">Close</button>
-					</div>
-				`;
-
-			document.getElementById("close-changelog").addEventListener("click", () => {
-				container.remove();
-			});
+			this.settings.openSettings("about", ".settings-section:has(.changelog-content)");
 		}
+
+		this.updateZenModeDisplay(true);
+
+		{ // build queue tabs
+			this.eventManager.linkButton(
+				this.elem("#queue-tab-recent"),
+				"switchToRecentQueue",
+				true
+			);
+			this.eventManager.linkButton(
+				this.elem("#queue-tab-flagged"),
+				"switchToFlaggedQueue",
+				true
+			);
+			this.eventManager.linkButton(
+				this.elem("#queue-tab-watchlist"),
+				"switchToWatchlistQueue",
+				true
+			);
+		}
+
+		this.newEditSelected(null);
+
+		this.update();
+		setInterval(this.update.bind(this), 1000);
 	}
 
-	/**
-	* Update which menu elements are selected and open
-	*/
-	updateMenuElements() {
-		// Legacy function kept for compatibility
-		// Modern menu system uses closeAllBottomMenus()
+	update() {
+		try {
+			{ // flagged
+				const allowed = this.wikishield.rights.review && __pendingChangesServer__.has(mw.config.get("wgServerName"));
+				this.elem("#queue-tab-flagged").classList.toggle("hidden", !allowed);
+				if (!allowed && this.wikishield.queue.currentQueueTab === "flagged") {
+					this.wikishield.queue.switchQueueTab("recent");
+				}
+			}
+		} catch (err) {
+			console.error(err);
+		}
 	}
 
 	/**
@@ -1133,9 +946,9 @@ export class WikiShieldInterface {
 			});
 
 			this.selectedMenu = null;
-			this.updateMenuElements();
 		};
 
+		let allMade = 0;
 		for (const [ title, category ] of Object.entries(warnings.revert)) {
 			const section = document.createElement("div");
 			section.className = "warning-menu-section";
@@ -1148,10 +961,14 @@ export class WikiShieldInterface {
 			divider.className = "menu-divider";
 			section.appendChild(divider);
 
+			let made = 0;
 			for (const warning of category) {
-				if (typeof warning.show === "function" && !warning.show(currentEdit)) {
+				if (warning.hide || (typeof warning.show === "function" && !warning.show(currentEdit))) {
 					continue;
 				}
+
+				made++;
+				allMade++;
 
 				const item = document.createElement("div");
 				item.className = "warning-menu-item";
@@ -1183,9 +1000,8 @@ export class WikiShieldInterface {
 					if (template === null || template.exists === false) continue;
 
 					const levelButton = document.createElement("span");
-					levelButton.className = "levels-menu-item";
+					levelButton.className = `levels-menu-item colorize-level colorize-level-${templateLabel}`;
 					levelButton.textContent = template.label || templateLabel;
-					levelButton.style.backgroundColor = warningTemplateColors[templateLabel];
 					levelsMenu.appendChild(levelButton);
 
 					levelButton.addEventListener("click", async () => {
@@ -1219,7 +1035,16 @@ export class WikiShieldInterface {
 				section.appendChild(item);
 			}
 
-			menu.appendChild(section);
+			if (made > 0) {
+				menu.appendChild(section);
+			}
+		}
+
+		if (allMade === 0) {
+			const noWarnings = document.createElement("div");
+			noWarnings.className = "warning-menu-no-items";
+			noWarnings.textContent = "No revert warnings available.";
+			menu.appendChild(noWarnings);
 		}
 	}
 
@@ -1256,9 +1081,9 @@ export class WikiShieldInterface {
 			});
 
 			this.selectedMenu = null;
-			this.updateMenuElements();
 		};
 
+		let allMade = 0;
 		for (const [ title, category ] of Object.entries(warnings.warn)) {
 			const section = document.createElement("div");
 			section.className = "warning-menu-section";
@@ -1271,10 +1096,14 @@ export class WikiShieldInterface {
 			divider.className = "menu-divider";
 			section.appendChild(divider);
 
+			let made = 0;
 			for (const warning of category) {
-				if (typeof warning.show === "function" && !warning.show(currentEdit)) {
+				if (warning.hide || (typeof warning.show === "function" && !warning.show(currentEdit))) {
 					continue;
 				}
+
+				made++;
+				allMade++;
 
 				const item = document.createElement("div");
 				item.className = "warning-menu-item";
@@ -1306,9 +1135,8 @@ export class WikiShieldInterface {
 					if (template === null || template.exists === false) continue;
 
 					const levelButton = document.createElement("span");
-					levelButton.className = "levels-menu-item";
+					levelButton.className = `levels-menu-item colorize-level colorize-level-${templateLabel}`;
 					levelButton.textContent = template.label || templateLabel;
-					levelButton.style.backgroundColor = warningTemplateColors[templateLabel];
 					levelsMenu.appendChild(levelButton);
 
 					levelButton.addEventListener("click", async () => {
@@ -1342,7 +1170,16 @@ export class WikiShieldInterface {
 				section.appendChild(item);
 			}
 
-			menu.appendChild(section);
+			if (made > 0) {
+				menu.appendChild(section);
+			}
+		}
+
+		if (allMade === 0) {
+			const noWarnings = document.createElement("div");
+			noWarnings.className = "warning-menu-no-items";
+			noWarnings.textContent = "No warnings available.";
+			menu.appendChild(noWarnings);
 		}
 	}
 
@@ -1363,19 +1200,17 @@ export class WikiShieldInterface {
 			container.innerHTML += `<div class="bottom-subcontent-input-title">${param.title}</div>`;
 
 			switch (param.type) {
-				case "choice":
-				const optionHTML = param.options.reduce((prev, cur) => prev + `<option>${cur}</option>`, "");
-				container.innerHTML += `
-							<select data-paramid="${param.id}">
-								${optionHTML}
-							</select>
-						`;
-				break;
-				case "text":
-				container.innerHTML += `<input type="text" data-paramid="${param.id}">`;
-				break;
-				default:
-				break;
+				case "choice": {
+					const optionHTML = param.options.reduce((prev, cur) => prev + `<option>${cur}</option>`, "");
+					container.innerHTML += `
+						<select data-paramid="${param.id}">
+							${optionHTML}
+						</select>
+					`;
+				} break;
+				case "text": {
+					container.innerHTML += `<input type="text" data-paramid="${param.id}">`;
+				} break;
 			}
 		}
 
@@ -1401,14 +1236,45 @@ export class WikiShieldInterface {
 		});
 	}
 
+	updateQueueTabsCounts() {
+		const $recent = this.elem("#queue-tab-recent > span > .icon-count");
+		$recent.classList.toggle("hidden", this.wikishield.queue.queue.recent.length === 0);
+		$recent.innerText = this.wikishield.queue.queue.recent.length;
+
+		const $flagged = this.elem("#queue-tab-flagged > span > .icon-count");
+		$flagged.classList.toggle("hidden", this.wikishield.queue.queue.flagged.length === 0);
+		$flagged.innerText = this.wikishield.queue.queue.flagged.length;
+
+		const $watchlist = this.elem("#queue-tab-watchlist > span > .icon-count");
+		$watchlist.classList.toggle("hidden", this.wikishield.queue.queue.watchlist.length === 0);
+		$watchlist.innerText = this.wikishield.queue.queue.watchlist.length;
+	}
 	/**
 	* Add edits to the queue if they aren't already there
 	* @param {Object} queue
 	* @param {Object} currentEdit
 	*/
-	renderQueue(queue, currentEdit) {
+	renderQueue(queue, currentEdit, type = this.wikishield.queue.currentQueueTab) {
+		this.updateQueueTabsCounts();
+		if (type !== this.wikishield.queue.currentQueueTab) {
+			return;
+		}
+
 		const container = this.elem("#queue-items");
-		this.elem("#queue-top-items").innerText = queue.length + " item" + (queue.length === 1 ? "" : "s");
+		if (queue.length === 0) {
+			container.innerHTML = `
+				<div class="queue-empty">
+					No edits in queue.
+				</div>
+			`;
+
+			if (this.lastCurrentEdit[this.wikishield.queue.currentQueueTab] !== currentEdit) {
+				this.lastCurrentEdit[this.wikishield.queue.currentQueueTab] = currentEdit;
+				this.newEditSelected(currentEdit);
+			}
+
+			return;
+		}
 
 		// Build a map of existing DOM elements
 		const domMap = new Map();
@@ -1423,6 +1289,7 @@ export class WikiShieldInterface {
 				elem = document.createElement("div");
 				elem.classList.add("queue-edit");
 				elem.dataset.revid = edit.revid.toString();
+				elem.dataset.type = type;
 				elem.innerHTML = this.generateEditHTML(edit);
 
 				if (edit.mentionsMe && this.wikishield.options.enableUsernameHighlighting) {
@@ -1434,7 +1301,7 @@ export class WikiShieldInterface {
 				// --- Attach context menu ---
 				elem.addEventListener("contextmenu", (event) => {
 					event.preventDefault();
-					this.wikishield.queue.playClickSound();
+					this.wikishield.audioManager.playSound([ "ui", "click" ]);
 
 					// Remove existing menus
 					[...document.querySelectorAll(".context-menu")].forEach(e => e.remove());
@@ -1451,7 +1318,7 @@ export class WikiShieldInterface {
 					contextMenu.querySelector("#context-ores-number").style.color = this.getORESColor(edit.ores || 0);
 
 					// whitelist button text
-					{ // users whitelist & highlighted
+					{ // users whitelist & highlight
 						const username = edit.user.name;
 
 						const contextWhitelistBtn = contextMenu.querySelector("#context-whitelist-user");
@@ -1463,7 +1330,7 @@ export class WikiShieldInterface {
 							}
 
 							contextWhitelistBtn.addEventListener("click", () => {
-								this.wikishield.queue.playSparkleSound();
+								// TODO wikishield.audioManager.playSound([ "actions", "sparkle" ]);
 
 								if (this.wikishield.whitelist.users.has(username)) {
 									this.wikishield.whitelist.users.delete(username);
@@ -1484,48 +1351,48 @@ export class WikiShieldInterface {
 									contextWhitelistBtn.textContent = "Whitelist user";
 								}
 
-								this.renderQueue(this.wikishield.queue.queue, this.wikishield.queue.currentEdit);
+								this.renderQueue(this.wikishield.queue.queue[this.wikishield.queue.currentQueueTab], this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab]);
 								contextMenu.remove();
 							});
 						}
 
 						const contextHighlightBtn = contextMenu.querySelector("#context-highlight-user");
 						if (contextHighlightBtn) {
-							if (this.wikishield.highlighted.users.has(username)) {
+							if (this.wikishield.highlight.users.has(username)) {
 								contextHighlightBtn.textContent = "Unhighlight user";
 							} else {
 								contextHighlightBtn.textContent = "Highlight user";
 							}
 
 							contextHighlightBtn.addEventListener("click", () => {
-								this.wikishield.queue.playSparkleSound();
+								// TODO wikishield.audioManager.playSound([ "actions", "sparkle" ]);
 
-								if (this.wikishield.highlighted.users.has(username)) {
-									this.wikishield.highlighted.users.delete(username);
-									this.wikishield.logger.log(`Removed ${username} from highlighted users`);
+								if (this.wikishield.highlight.users.has(username)) {
+									this.wikishield.highlight.users.delete(username);
+									this.wikishield.logger.log(`Removed ${username} from highlight users`);
 								} else {
-									const expiryMs = this.wikishield.util.expiryToMilliseconds(this.wikishield.options.highlightedExpiry.users);
+									const expiryMs = this.wikishield.util.expiryToMilliseconds(this.wikishield.options.highlightExpiry.users);
 
 									const now = Date.now();
-									this.wikishield.highlighted.users.set(username, [ now, now + expiryMs ]);
+									this.wikishield.highlight.users.set(username, [ now, now + expiryMs ]);
 
-									this.wikishield.statistics.highlighted++;
-									this.wikishield.logger.log(`Highlighted user ${username} until ${new Date(now + expiryMs).toLocaleString()}`);
+									this.wikishield.statistics.highlight++;
+									this.wikishield.logger.log(`highlight user ${username} until ${new Date(now + expiryMs).toLocaleString()}`);
 								}
 
-								if (this.wikishield.highlighted.users.has(username)) {
+								if (this.wikishield.highlight.users.has(username)) {
 									contextHighlightBtn.textContent = "Unhighlight user";
 								} else {
 									contextHighlightBtn.textContent = "Highlight user";
 								}
 
-								this.renderQueue(this.wikishield.queue.queue, this.wikishield.queue.currentEdit);
+								this.renderQueue(this.wikishield.queue.queue[this.wikishield.queue.currentQueueTab], this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab]);
 								contextMenu.remove();
 							});
 						}
 					}
 
-					{ // pages whitelist & highlighted
+					{ // pages whitelist & highlight
 						const pageTitle = edit.page.title;
 
 						const contextWhitelistBtn = contextMenu.querySelector("#context-whitelist-page");
@@ -1537,7 +1404,7 @@ export class WikiShieldInterface {
 							}
 
 							contextWhitelistBtn.addEventListener("click", () => {
-								this.wikishield.queue.playSparkleSound();
+								// TODO wikishield.audioManager.playSound([ "actions", "sparkle" ]);
 								if (this.wikishield.whitelist.pages.has(pageTitle)) {
 									this.wikishield.whitelist.pages.delete(pageTitle);
 									this.wikishield.logger.log(`Removed ${pageTitle} from page whitelist`);
@@ -1551,36 +1418,36 @@ export class WikiShieldInterface {
 									this.wikishield.logger.log(`Added ${pageTitle} to page whitelist until ${new Date(now + expiryMs).toLocaleString()}`);
 								}
 
-								this.renderQueue(this.wikishield.queue.queue, this.wikishield.queue.currentEdit);
+								this.renderQueue(this.wikishield.queue.queue[this.wikishield.queue.currentQueueTab], this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab]);
 								contextMenu.remove();
 							});
 						}
 
 						const contextHighlightBtn = contextMenu.querySelector("#context-highlight-page");
 						if (contextHighlightBtn) {
-							if (this.wikishield.highlighted.pages.has(pageTitle)) {
+							if (this.wikishield.highlight.pages.has(pageTitle)) {
 								contextHighlightBtn.textContent = "Unhighlight page";
 							} else {
 								contextHighlightBtn.textContent = "Highlight page";
 							}
 
 							contextHighlightBtn.addEventListener("click", () => {
-								this.wikishield.queue.playSparkleSound();
+								// TODO wikishield.audioManager.playSound([ "actions", "sparkle" ]);
 
-								if (this.wikishield.highlighted.pages.has(pageTitle)) {
-									this.wikishield.highlighted.pages.delete(pageTitle);
-									this.wikishield.logger.log(`Removed ${pageTitle} from highlighted pages`);
+								if (this.wikishield.highlight.pages.has(pageTitle)) {
+									this.wikishield.highlight.pages.delete(pageTitle);
+									this.wikishield.logger.log(`Removed ${pageTitle} from highlight pages`);
 								} else {
-									const expiryMs = this.wikishield.util.expiryToMilliseconds(this.wikishield.options.highlightedExpiry.pages);
+									const expiryMs = this.wikishield.util.expiryToMilliseconds(this.wikishield.options.highlightExpiry.pages);
 
 									const now = Date.now();
-									this.wikishield.highlighted.pages.set(pageTitle, [ now, now + expiryMs ]);
+									this.wikishield.highlight.pages.set(pageTitle, [ now, now + expiryMs ]);
 
-									this.wikishield.statistics.highlighted++;
-									this.wikishield.logger.log(`Highlighted page ${pageTitle} until ${new Date(now + expiryMs).toLocaleString()}`);
+									this.wikishield.statistics.highlight++;
+									this.wikishield.logger.log(`highlight page ${pageTitle} until ${new Date(now + expiryMs).toLocaleString()}`);
 								}
 
-								this.renderQueue(this.wikishield.queue.queue, this.wikishield.queue.currentEdit);
+								this.renderQueue(this.wikishield.queue.queue[this.wikishield.queue.currentQueueTab], this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab]);
 								contextMenu.remove();
 							});
 						}
@@ -1588,7 +1455,7 @@ export class WikiShieldInterface {
 
 					// Remove item
 					contextMenu.querySelector("#context-remove").addEventListener("click", () => {
-						this.wikishield.queue.playClickSound();
+						this.wikishield.audioManager.playSound([ "ui", "click" ]);
 						if (this.wikishield.ollamaAI) {
 							this.wikishield.ollamaAI.cancelAnalysis(edit.revid);
 						}
@@ -1596,28 +1463,28 @@ export class WikiShieldInterface {
 						const currentIndex = queue.findIndex(e => e.revid === edit.revid);
 						if (currentIndex !== -1) {
 							queue.splice(currentIndex, 1);
-							this.removeQueueItem(edit.revid);
+							this.removeQueueItem(this.wikishield.queue.currentQueueTab, edit.revid);
 
 							if (edit === currentEdit) {
 								if (queue.length > 0) {
 									if (currentIndex < queue.length) {
-										this.wikishield.queue.currentEdit = queue[currentIndex];
+										this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab] = queue[currentIndex];
 									} else {
-										this.wikishield.queue.currentEdit = queue[queue.length - 1];
+										this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab] = queue[queue.length - 1];
 									}
 								} else {
-									this.wikishield.queue.currentEdit = null;
+									this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab] = null;
 								}
 							}
-							this.wikishield.queue.previousItems.push(edit);
-							this.renderQueue(queue, this.wikishield.queue.currentEdit);
+							this.wikishield.queue.previousItems[this.wikishield.queue.currentQueueTab].push(edit);
+							this.renderQueue(this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab]);
 						}
 						contextMenu.remove();
 					});
 
 					// Open history
 					contextMenu.querySelector("#context-open-history").addEventListener("click", (e) => {
-						this.wikishield.queue.playClickSound();
+						this.wikishield.audioManager.playSound([ "ui", "click" ]);
 						const url = this.wikishield.util.pageLink(`Special:PageHistory/${edit.page.title}`);
 						this.wikishield.interface.eventManager.openWikipediaLink(url, `History: ${edit.page.title}`, e);
 						contextMenu.remove();
@@ -1625,7 +1492,7 @@ export class WikiShieldInterface {
 
 					// Open contributions
 					contextMenu.querySelector("#context-open-contribs").addEventListener("click", (e) => {
-						this.wikishield.queue.playClickSound();
+						this.wikishield.audioManager.playSound([ "ui", "click" ]);
 						const url = this.wikishield.util.pageLink(`Special:Contributions/${edit.user.name}`);
 						this.wikishield.interface.eventManager.openWikipediaLink(url, `Contributions: ${edit.user.name}`, e);
 						contextMenu.remove();
@@ -1636,14 +1503,14 @@ export class WikiShieldInterface {
 
 				// --- Click to select ---
 				elem.addEventListener("click", () => {
-					this.wikishield.queue.currentEdit = edit;
-					this.renderQueue(this.wikishield.queue.queue, edit);
+					this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab] = edit;
+					this.renderQueue(this.wikishield.queue.queue[this.wikishield.queue.currentQueueTab], edit);
 
 					if (edit && this.wikishield.options.enableOllamaAI && this.wikishield.ollamaAI) {
 						this.wikishield.ollamaAI.analyzeEdit(edit)
 						.then(analysis => {
 							edit.aiAnalysis = analysis;
-							if (this.wikishield.queue.currentEdit === edit && this.wikishield.interface) {
+							if (this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab] === edit && this.wikishield.interface) {
 								this.wikishield.interface.updateAIAnalysisDisplay(analysis);
 							}
 						})
@@ -1673,8 +1540,8 @@ export class WikiShieldInterface {
 			if (!queue.find(e => e.revid === revid)) el.remove();
 		}
 
-		if (this.lastCurrentEdit !== currentEdit) {
-			this.lastCurrentEdit = currentEdit;
+		if (this.lastCurrentEdit[this.wikishield.queue.currentQueueTab] !== currentEdit) {
+			this.lastCurrentEdit[this.wikishield.queue.currentQueueTab] = currentEdit;
 			this.newEditSelected(currentEdit);
 		}
 	}
@@ -1697,7 +1564,7 @@ export class WikiShieldInterface {
 				if (cache.has(a)) {
 					aScore = cache.get(a);
 				} else {
-					aScore = this.wikishield.highlighted.tags.has(a) ? 0 : 1;
+					aScore = this.wikishield.highlight.tags.has(a) ? 0 : 1;
 					cache.set(a, aScore);
 				}
 
@@ -1705,7 +1572,7 @@ export class WikiShieldInterface {
 				if (cache.has(b)) {
 					bScore = cache.get(b);
 				} else {
-					bScore = this.wikishield.highlighted.tags.has(b) ? 0 : 1;
+					bScore = this.wikishield.highlight.tags.has(b) ? 0 : 1;
 					cache.set(b, bScore);
 				}
 
@@ -1713,7 +1580,7 @@ export class WikiShieldInterface {
 			});
 
 			for (const tag of edit.tags) {
-				tagHTML += `<span class="queue-edit-tag ${this.wikishield.highlighted.tags.has(tag) ? "queue-highlight" : ""}">${tag}</span>`;
+				tagHTML += `<span class="queue-edit-tag ${this.wikishield.highlight.tags.has(tag) ? "queue-highlight" : ""}">${tag}</span>`;
 			}
 		}
 
@@ -1732,7 +1599,7 @@ export class WikiShieldInterface {
 		const oresHTML = includeORES ? `<div class="queue-edit-color" data-ores-score="${oresPercent}%" data-raw-ores-score="${oresScore}" style="background: ${this.getORESColor(oresScore)};"></div>` : "";
 		const titleHTML = includeTitle ? `
 				<div
-					class="queue-edit-title ${this.wikishield.highlighted.pages.has(edit.page ? edit.page.title : edit.title) ? "queue-highlight" : ""}"
+					class="queue-edit-title ${this.wikishield.highlight.pages.has(edit.page ? edit.page.title : edit.title) ? "queue-highlight" : ""}"
 					data-tooltip="${edit.page ? edit.page.title : edit.title}"
 				>
 					<span class="fa fa-file-lines queue-edit-icon"></span>
@@ -1741,7 +1608,7 @@ export class WikiShieldInterface {
 
 		// Determine user highlight classes
 		let userClasses = "";
-		if (edit.user && this.wikishield.highlighted.users.has(typeof edit.user === "string" ? edit.user : edit.user.name)) {
+		if (edit.user && this.wikishield.highlight.users.has(typeof edit.user === "string" ? edit.user : edit.user.name)) {
 			userClasses = "queue-highlight";
 		} else if (edit.user && typeof edit.user === "object" && edit.user.emptyTalkPage) {
 			userClasses = "queue-user-empty-talk";
@@ -1786,17 +1653,18 @@ export class WikiShieldInterface {
 		this.elem("#latest-edits-tab").classList.add("hidden");
 		this.elem("#consecutive-edits-tab").classList.add("hidden");
 
-		this.elem("#user-report-uaa").style.display = edit?.user?.name && mw.util.isTemporaryUser(edit?.user?.name) ? "none" : "";
+		this.elem("#user-report-uaa").style.display = edit?.user?.name && (mw.util.isTemporaryUser(edit.user.name) || mw.util.isIPAddress(edit.user.name)) ? "none" : "";
 
 		document.querySelectorAll("#right-top > .icons > :not(.hidden)").forEach(el => el.classList.add("hidden"));
 
 		this.hide3RRNotice();
 		this.hideNewerEditButton();
+		this.hideCannotReviewFlaggedRevisionNotice();
 
 		// Close all bottom menu popups when switching pages
 		this.closeAllMenus();
 
-		const userContribsLevel = this.elem("#user-contribs-level");
+		const userContribsLevel = this.elem("#user-warn-level");
 		const contribsContainer = this.elem("#user-contribs-content"),
 		historyContainer = this.elem("#page-history-content");
 
@@ -1806,10 +1674,11 @@ export class WikiShieldInterface {
 		// Remove any existing tooltips when switching diffs
 		this.removeTooltips();
 
+		document.querySelector("#pending-changes-container").classList.toggle("hidden", !this.wikishield.queue.flaggedRevisions.has(edit?.__FLAGGED__?.revid));
 		if (edit === null) {
 			this.elem("#middle-top").innerHTML = "";
 			this.elem("#page-metadata").innerHTML = "";
-			this.elem("#user-contribs-count").innerText = "_ edits";
+			this.elem("#user-contribs-count").innerText = "";
 			userContribsLevel.style.display = "none";
 			this.elem("#diff-container").innerHTML = "";
 			this.elem("#protection-indicator").innerHTML = "";
@@ -1827,7 +1696,7 @@ export class WikiShieldInterface {
 			}
 
 			// Hide block count indicator
-			const blockIndicator = document.querySelector("#user-contribs #block-count-indicator");
+			const blockIndicator = document.querySelector("#user-contribs #user-block-count");
 			if (blockIndicator) {
 				blockIndicator.style.display = "none";
 				blockIndicator.innerHTML = "";
@@ -1851,24 +1720,27 @@ export class WikiShieldInterface {
 		// Start checking for newer revisions on THIS Wikipedia page
 		this.startNewerRevisionCheck(edit);
 
-		edit.consecutive.then(data => {
-			// no longer most recent edit
-			if (!Object.is(this.wikishield.queue.currentEdit, edit)) {
-				return;
-			}
 
-			// don't show button if user created page, no longer most recent, or if there is only 1 edit
-			if (data.count <= 1 || typeof data.priorRev === "string") {
-				if (data.priorRev === "created") {
-					this.elem("#right-top > .icons > .created-page").classList.remove("hidden");
+		if (!edit.__FLAGGED__) {
+			edit.consecutive.then(data => {
+				// no longer most recent edit
+				if (!Object.is(this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab], edit)) {
+					return;
 				}
 
-				return;
-			}
+				// don't show button if user created page, no longer most recent, or if there is only 1 edit
+				if (data.count <= 1 || typeof data.priorRev === "string") {
+					if (data.priorRev === "created") {
+						this.elem("#right-top > .icons > .created-page").classList.remove("hidden");
+					}
 
-			this.elem("#latest-edits-tab").classList.remove("hidden");
-			this.elem("#consecutive-edits-tab").classList.remove("hidden");
-		});
+					return;
+				}
+
+				this.elem("#latest-edits-tab").classList.remove("hidden");
+				this.elem("#consecutive-edits-tab").classList.remove("hidden");
+			});
+		}
 
 		userContribsLevel.style.display = "initial";
 		userContribsLevel.style.background = warningTemplateColors[edit.user.warningLevel] || "grey";
@@ -1893,7 +1765,7 @@ export class WikiShieldInterface {
 						const templateDisplay = `${warning.template}${warning.level}`;
 						const userInfo = warning.username ? `(User:${this.wikishield.util.escapeHtml(warning.username)})` : "";
 						const timeInfo = warning.timestamp ? `${this.wikishield.formatNotificationTime(new Date(warning.timestamp))}` : "";
-						tooltipHtml += `<div class="tooltip-item">`;
+						tooltipHtml += `<div class="tooltip-item user-warnings">`;
 						tooltipHtml += `<span class="tooltip-item-level">${this.wikishield.util.escapeHtml(templateDisplay)}</span>`;
 						tooltipHtml += `<span class="tooltip-item-user">${this.wikishield.util.escapeHtml(userInfo)}</span>`;
 						tooltipHtml += `<br><span class="tooltip-item-time">${this.wikishield.util.escapeHtml(timeInfo)}</span>`;
@@ -1935,7 +1807,7 @@ export class WikiShieldInterface {
 		const blockCountPromise = this.wikishield.api.getBlockCount(edit.user.name);
 
 		this.elem("#middle-top").innerHTML = `
-				<div style="display: flex; overflow: auto hidden; white-space: nowrap">
+				<div class="middle-top-line">
 					${edit.display.pageTitle}
 					${edit.display.username}
 					<div>
@@ -1973,7 +1845,7 @@ export class WikiShieldInterface {
 			const unhighlightButton = this.elem("#user-unhighlight");
 			if (highlightButton && unhighlightButton) {
 				const func = () => {
-					const isHighlighted = this.wikishield.highlighted.users.has(edit.user.name);
+					const isHighlighted = this.wikishield.highlight.users.has(edit.user.name);
 					if (isHighlighted) {
 						highlightButton.style = "display: none;";
 						unhighlightButton.style = "";
@@ -2015,7 +1887,7 @@ export class WikiShieldInterface {
 			const unhighlightButton = this.elem("#page-unhighlight");
 			if (highlightButton && unhighlightButton) {
 				const func = () => {
-					const isHighlighted = this.wikishield.highlighted.pages.has(edit.page.title);
+					const isHighlighted = this.wikishield.highlight.pages.has(edit.page.title);
 					if (isHighlighted) {
 						highlightButton.style = "display: none;";
 						unhighlightButton.style = "";
@@ -2061,7 +1933,7 @@ export class WikiShieldInterface {
 
 		// Load block count and display next to warning level
 		blockCountPromise.then(async blockCount => {
-			const blockIndicator = document.querySelector("#user-contribs #block-count-indicator");
+			const blockIndicator = document.querySelector("#user-contribs #user-block-count");
 			if (blockIndicator) {
 				if (blockCount > 0) {
 					const blockHistory = await this.wikishield.api.getBlockHistory(edit.user.name);
@@ -2071,7 +1943,7 @@ export class WikiShieldInterface {
 					// limit to 5 items to match warnings
 					const limited = blockHistory.slice(0, 5);
 
-					limited.forEach(block => {
+					for (const block of limited) {
 						let blockerName = block.user || "Unknown";
 						blockerName = blockerName.replace(/<[^>]*>/g, '');
 
@@ -2079,16 +1951,16 @@ export class WikiShieldInterface {
 						duration = duration.replace(/<[^>]*>/g, '');
 
 						let reason = block.comment || "No reason specified";
-						reason = reason.replace(/<[^>]*>/g, '');
+						reason = await this.wikishield.api.parseWikitext(reason);
 
 						const timestamp = block.timestamp ? this.wikishield.formatNotificationTime(new Date(block.timestamp)) : "";
 
 						const userInfo = blockerName ? `(User:${this.wikishield.util.escapeHtml(blockerName)})` : "";
 
-						tooltipHtml += `<div class="tooltip-item">`;
+						tooltipHtml += `<div class="tooltip-item user-blocks">`;
 
 						// equivalent to template + level
-						tooltipHtml += `<span class="tooltip-item-level">${this.wikishield.util.escapeHtml(reason)}</span>`;
+						tooltipHtml += `<span class="tooltip-item-level">${reason}</span>`;
 
 						// same formatting as warning username
 						tooltipHtml += `<span class="tooltip-item-user">${this.wikishield.util.escapeHtml(userInfo)}</span>`;
@@ -2096,7 +1968,7 @@ export class WikiShieldInterface {
 						tooltipHtml += `<br><span class="tooltip-item-time">${this.wikishield.util.escapeHtml(timestamp)} — ${this.wikishield.util.escapeHtml(duration)}</span>`;
 
 						tooltipHtml += `</div>`;
-					});
+					}
 
 					if (blockHistory.length > 5) {
 						tooltipHtml += `<div class="tooltip-more">... and ${blockHistory.length - 5} more</div>`;
@@ -2136,7 +2008,7 @@ export class WikiShieldInterface {
 		}
 
 		for (const cedit of edit.user.contribs) {
-			const current = cedit.revid === this.wikishield.queue.currentEdit.revid ? "queue-edit-current" : "";
+			const current = cedit.revid === this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab].revid ? "queue-edit-current" : "";
 
 			contribsContainer.innerHTML += `
 					<div class="queue-edit ${current}" data-revid="${cedit.revid}">
@@ -2146,7 +2018,7 @@ export class WikiShieldInterface {
 		}
 
 		for (const hedit of edit.page.history) {
-			const current = hedit.revid === this.wikishield.queue.currentEdit.revid ? "queue-edit-current" : "";
+			const current = hedit.revid === this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab].revid ? "queue-edit-current" : "";
 
 			historyContainer.innerHTML += `
 					<div class="queue-edit ${current}" data-revid="${hedit.revid}">
@@ -2206,15 +2078,17 @@ export class WikiShieldInterface {
 			return;
 		}
 
+		const $diff = this.elem("#diff-container");
+
 		document.querySelectorAll("#right-top > .tabs > .tab.selected").forEach(el => el.classList.remove("selected"));
 
 		if (showConsecutive) {
 			this.elem("#consecutive-edits-tab").classList.add("selected");
 
-			this.elem("#diff-container").innerHTML = `<table></table>`;
+			$diff.innerHTML = `<table></table>`;
 
 			edit.consecutive.then(data => {
-				if (!Object.is(this.wikishield.queue.currentEdit, edit)) {
+				if (!Object.is(this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab], edit)) {
 					return; // no longer most recent edit
 				}
 
@@ -2225,7 +2099,7 @@ export class WikiShieldInterface {
 				this.elem("#middle-top > .middle-top-comment").innerHTML = `
 					<div>
 						<span class="fa fa-clock"></span>
-						<span id="consecutive-time" data-tooltip="${data.oldestTimestamp}">${this.wikishield.formatNotificationTimeShort(new Date(data.oldestTimestamp))}</span>
+						<span id="consecutive-time" data-tooltip="${data.oldestTimestamp}">${this.wikishield.formatNotificationTime(new Date(data.oldestTimestamp))}</span>
 					</div>
 					<div>
 						<span class="fa fa-edit"></span>
@@ -2234,12 +2108,12 @@ export class WikiShieldInterface {
 				`;
 				this.addTooltipListener(this.elem("#consecutive-time"));
 
-				this.elem("#diff-container").innerHTML = `<table>${data.diff}</table>`;
+				$diff.innerHTML = `<table>${data.diff}</table>`;
 			});
 		} else {
 			this.elem("#latest-edits-tab").classList.add("selected");
 
-			this.elem("#diff-container").innerHTML = `<table>${edit.diff}</table>`;
+			$diff.innerHTML = `<table>${edit.diff}</table>`;
 
 			const $diffSize = this.elem("#diff-size-text");
 			$diffSize.innerHTML = this.wikishield.util.getChangeString(edit.sizediff || 0);
@@ -2258,9 +2132,17 @@ export class WikiShieldInterface {
 			this.addTooltipListener($summary.querySelector(".summary"));
 		}
 
-		// Scroll to the first changed line in the diff
-		const diffContainer = this.elem("#diff-container");
-		const firstChange = diffContainer.querySelector(".diff-addedline, .diff-deletedline");
+		$diff.querySelectorAll(":is(.mw-diff-movedpara-left, .mw-diff-movedpara-right)").forEach(elem => {
+			const href = elem.href.slice(1); // Remove leading '#'
+			elem.addEventListener("click", (e) => {
+				e.preventDefault();
+
+				console.log(`Scrolling to moved paragraph: ${href}`, $diff.querySelector(`a[name="${href}"]`));
+				$diff.querySelector(`a[name="${href}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+			});
+		});
+
+		const firstChange = $diff.querySelector(".diff-addedline, .diff-deletedline");
 		if (firstChange) {
 			// Use setTimeout to ensure the DOM is fully rendered before scrolling
 			setTimeout(() => {
@@ -2563,7 +2445,7 @@ export class WikiShieldInterface {
 				const targetPage = noticeDiv.getAttribute("data-target-page");
 
 				if (targetRevid && targetPage) {
-					this.wikishield.queue.loadSpecificRevision(Number(targetRevid), targetPage);
+					this.wikishield.queue.loadSpecificRevision(Number(targetRevid), targetPage, true);
 				}
 			});
 		}
@@ -2579,39 +2461,75 @@ export class WikiShieldInterface {
 		}
 	}
 
+	showCannotReviewFlaggedRevisionNotice() {
+		// Remove any existing notice first
+		this.hideCannotReviewFlaggedRevisionNotice();
+
+		// Create the notice using the same style as old-edit-notice
+		const noticeDiv = document.createElement("div");
+		noticeDiv.id = "cannot-review-flagged-revision-notice";
+		noticeDiv.style.cssText = `
+				margin: 10px 10px 0 10px;
+				padding: 8px 12px;
+				background: #e9f5ff;
+				border-left: 4px solid #8cc9ff;
+				border-radius: 4px;
+				color: #0a3d62;
+				display: flex;
+				align-items: center;
+				gap: 8px;
+				font-size: 0.9em;
+				flex-shrink: 0;
+			`;
+
+		noticeDiv.innerHTML = `
+				<span class="fa fa-shield-alt"></span>
+				<span style="flex: 1;">This revision cannot be reviewed because it is outdated</span>
+			`;
+
+		const diffContainer = this.elem("#diff-container");
+		if (diffContainer && diffContainer.parentElement) {
+			diffContainer.parentElement.insertBefore(noticeDiv, diffContainer);
+		}
+
+		document.querySelector("#pending-changes-container")?.classList.add("hidden");
+	}
+
+	hideCannotReviewFlaggedRevisionNotice() {
+		const existingNotice = document.querySelector("#cannot-review-flagged-revision-notice");
+		if (existingNotice) {
+			existingNotice.remove();
+		}
+
+		document.querySelector("#pending-changes-container")?.classList.remove("hidden");
+	}
+
 	/**
 	* Start periodic checking for newer revisions on the current Wikipedia page
 	* @param {Object} edit The current edit being viewed
 	*/
 	startNewerRevisionCheck(edit) {
-		// Clear any existing interval and hide any old buttons
 		this.stopNewerRevisionCheck();
 
-		// Immediately check for newer revisions
 		this.checkForNewerRevision(edit);
 
-		// Set up periodic checking every 10 seconds
 		this.newerRevisionInterval = setInterval(() => {
-			// Only continue checking if we're still viewing the exact same edit
-			if (this.wikishield.queue.currentEdit && this.wikishield.queue.currentEdit.revid === edit.revid) {
+			if (this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab]?.revid === edit.revid) {
 				this.checkForNewerRevision(edit);
 			} else {
-				// We've switched to a different edit, stop this check
 				this.stopNewerRevisionCheck();
 			}
-		}, 10000);
+		}, 1000);
 	}
 
 	/**
 	* Stop periodic checking for newer revisions and hide the button
 	*/
 	stopNewerRevisionCheck() {
-		// Clear the interval timer
 		if (this.newerRevisionInterval) {
 			clearInterval(this.newerRevisionInterval);
 			this.newerRevisionInterval = null;
 		}
-		// Always remove the button when stopping
 		this.hideNewerEditButton();
 	}
 
@@ -2620,26 +2538,29 @@ export class WikiShieldInterface {
 	* @param {Object} edit The current edit being viewed
 	*/
 	async checkForNewerRevision(edit) {
+		if (edit.__FLAGGED__) {
+			if (this.wikishield.queue.flaggedRevisions.has(edit.__FLAGGED__.revid)) {
+				this.hideCannotReviewFlaggedRevisionNotice();
+			} else {
+				this.showCannotReviewFlaggedRevisionNotice();
+			}
+		}
+
 		try {
 			const pageTitle = edit.page.title;
 			const currentRevid = edit.revid;
 
-			// Fetch the ACTUAL latest revision ID from Wikipedia API
 			const latestRevisions = await this.wikishield.api.getLatestRevisions(pageTitle);
 			const latestRevid = latestRevisions[pageTitle];
 
 			if (!latestRevid) {
-				// API call failed or page doesn't exist
 				this.hideNewerEditButton();
 				return;
 			}
 
-			// Simple check: is there a revision with a higher ID than the one we're viewing?
 			if (latestRevid > currentRevid) {
-				// YES - there's a newer revision on this Wikipedia page
 				this.showNewerEditButton(latestRevid, pageTitle);
 			} else {
-				// NO - we're viewing the latest revision
 				this.hideNewerEditButton();
 			}
 		} catch (err) {
@@ -2737,11 +2658,12 @@ export class WikiShieldInterface {
 	* Remove a specific item from the queue
 	* @param {Number} revid
 	*/
-	removeQueueItem(revid) {
-		const elem = this.elem(`.queue-edit[data-revid="${revid}"]`);
+	removeQueueItem(type, revid) {
+		const elem = this.elem(`.queue-edit[data-type="${type}"][data-revid="${revid}"]`);
 
 		if (elem) {
 			elem.remove();
+			this.updateQueueTabsCounts();
 		}
 	}
 
@@ -2774,19 +2696,19 @@ export class WikiShieldInterface {
 	}
 
 	/**
-	* Show a toast notification on screen
-	* @param {String} title - Title of the notification
+	* Show a toast alert on screen
+	* @param {String} title - Title of the alert
 	* @param {String} message - Message content
 	* @param {Number} duration - How long to show (ms), default 5000
 	*/
 	showToast(title, message, duration = 5000, type = "default") {
 		if (this.wikishield.options.zen.enabled && !this.wikishield.options.zen.toasts) {
-			return; // Do not play sounds in Zen mode if disabled
+			return false;
 		}
 
 		// Create toast element
 		const toast = document.createElement("div");
-		toast.classList.add("toast-notification");
+		toast.classList.add("toast-alert");
 
 		// Add type class for styling
 		if (type === "success") toast.classList.add("success");
@@ -2823,15 +2745,17 @@ export class WikiShieldInterface {
 		setTimeout(() => {
 			this.hideToast(toast);
 		}, duration);
+
+		return true;
 	}
 
 	/**
-	* Hide and remove a toast notification
+	* Hide and remove a toast alert
 	*/
 	hideToast(toast) {
 		if (!toast || !toast.parentElement) return;
 
-		toast.classList.add("hide");
+		toast.classList.add("hidden");
 		setTimeout(() => {
 			if (toast.parentElement) {
 				toast.remove();
@@ -2839,8 +2763,20 @@ export class WikiShieldInterface {
 		}, 300);
 	}
 
-	updateZenModeDisplay() {
+	updateZenModeDisplay(updateMusic) {
 		const _zen_ = this.wikishield.options.zen;
+		if (updateMusic) {
+			if (_zen_.enabled && _zen_.music) {
+				this.wikishield.audioManager.playPlaylist(["music", "zen"]);
+			} else {
+				this.wikishield.audioManager.stopPlaylist(["music", "zen"]);
+			}
+		}
+
+		if (_zen_.enabled && !_zen_.watchlist && this.wikishield.queue.currentQueueTab === "watchlist") {
+			this.wikishield.queue.switchQueueTab("recent");
+		}
+
 		document.querySelectorAll("[data-zen-show]").forEach(elem => {
 			elem.style.display = _zen_.enabled && !_zen_[elem.dataset.zenShow] ? "none" : "";
 		});
@@ -2872,7 +2808,7 @@ export class WikiShieldInterface {
 						<button class="confirmation-modal-button confirmation-modal-button-reason" data-reason="Offensive username">Offensive username</button>
 						<button class="confirmation-modal-button confirmation-modal-button-reason" data-reason="Promotional username">Promotional username</button>
 						<button class="confirmation-modal-button confirmation-modal-button-reason" data-reason="Misleading username">Misleading username</button>
-						<button class="confirmation-modal-button confirmation-modal-button-cancel">Cancel</button>
+						<button class="confirmation-modal-button confirmation-modal-button-cancel" style="--background: 211, 51, 51;">Cancel</button>
 					</div>
 				`;
 
@@ -2932,7 +2868,7 @@ export class WikiShieldInterface {
 	* @param {String} message - Dialog message (can include HTML)
 	* @param {String} username - Optional username to enable UAA report button
 	*/
-	showConfirmationDialog(title, message, username = null) {
+	showConfirmationDialog(title, message, username = null, hideUaaButton = false) {
 		return new Promise((resolve) => {
 			// Create overlay
 			const overlay = document.createElement("div");
@@ -2942,7 +2878,7 @@ export class WikiShieldInterface {
 			const modal = document.createElement("div");
 			modal.classList.add("confirmation-modal");
 
-			const uaaButton = username ? `<button class="confirmation-modal-button confirmation-modal-button-uaa">Report to UAA</button>` : '';
+			const uaaButton = username ? `<button class="confirmation-modal-button confirmation-modal-button-uaa" style="--background: 211, 51, 51">Report to UAA</button>` : '';
 
 			modal.innerHTML = `
 					<div class="confirmation-modal-header">
@@ -2950,10 +2886,10 @@ export class WikiShieldInterface {
 					</div>
 					<div class="confirmation-modal-body">${message}</div>
 					<div class="confirmation-modal-footer">
-						${uaaButton}
+						${hideUaaButton ? '' : uaaButton}
 						<div class="confirmation-modal-footer-right">
 							<button class="confirmation-modal-button confirmation-modal-button-no">No</button>
-							<button class="confirmation-modal-button confirmation-modal-button-yes">Yes</button>
+							<button class="confirmation-modal-button confirmation-modal-button-yes" style="--background: 51, 102, 204;">Yes</button>
 						</div>
 					</div>
 				`;
@@ -3050,6 +2986,26 @@ export class WikiShieldInterface {
 
 			// Focus the Yes button by default
 			setTimeout(() => yesBtn.focus(), 50);
+		});
+	}
+
+	addMouseTiltEffect(elem, multX = 10, multY = 10) {
+		elem.addEventListener("mousemove", (e) => {
+			const rect = elem.getBoundingClientRect();
+			const cx = rect.left + rect.width / 2;
+			const cy = rect.top + rect.height / 2;
+
+			const dx = e.clientX - cx;
+			const dy = e.clientY - cy;
+
+			const rotateX =  (dy / rect.height) * -2 * multY;
+			const rotateY = (dx / rect.width)  *  2 * multX;
+
+			elem.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+		});
+
+		elem.addEventListener("mouseleave", (e) => {
+			elem.style.transform = `rotateX(0deg) rotateY(0deg)`;
 		});
 	}
 }

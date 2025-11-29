@@ -16,13 +16,13 @@ export const createConditions = (wikishield) => ({
 		desc: "You are an admin",
 		check: (_) => wikishield.rights.block
 	},
-	"userIsHighlighted": {
-		desc: "User is highlighted",
-		check: (edit) => wikishield.highlighted.users.has(edit.user.name)
+	"userIshighlight": {
+		desc: "User is highlight",
+		check: (edit) => wikishield.highlight.users.has(edit.user.name)
 	},
-	"pageIsHighlighted": {
-		desc: "Page is highlighted",
-		check: (edit) => wikishield.highlighted.pages.has(edit.page.title)
+	"pageIshighlight": {
+		desc: "Page is highlight",
+		check: (edit) => wikishield.highlight.pages.has(edit.page.title)
 	},
 	"userIsWhitelisted": {
 		desc: "User is whitelisted",
@@ -34,11 +34,11 @@ export const createConditions = (wikishield) => ({
 	},
 	"userIsAnon": {
 		desc: "User is anonymous (temporary account)",
-		check: (edit) => mw.util.isTemporaryUser(edit.user.name)
+		check: (edit) => mw.util.isTemporaryUser(edit.user.name) || mw.util.isIPAddress(edit.user.name)
 	},
 	"userIsRegistered": {
 		desc: "User is registered (not temporary account)",
-		check: (edit) => !mw.util.isTemporaryUser(edit.user.name)
+		check: (edit) => !(mw.util.isTemporaryUser(edit.user.name) || mw.util.isIPAddress(edit.user.name))
 	},
 	"userHasEmptyTalkPage": {
 		desc: "User has an empty talk page",

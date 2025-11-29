@@ -2,23 +2,6 @@ body {
 	background: #22262f;
 }
 
-*, .about-link {
-	color: #f1f5ff;
-}
-
-button {
-	background: rgba(74, 125, 204, 0.95) !important;
-	-webkit-backdrop-filter: blur(8px) !important;
-	backdrop-filter: blur(8px) !important;
-	border: 1px solid rgba(74, 125, 204, 0.3) !important;
-	box-shadow: 0 2px 8px rgba(74, 125, 204, 0.3) !important;
-}
-
-button:hover {
-	background: rgba(91, 154, 255, 0.95) !important;
-	box-shadow: 0 4px 12px rgba(91, 154, 255, 0.4) !important;
-}
-
 .queue-edit-current, .progress-bar, .queue-edit .tags .tag {
 	background: rgba(41, 47, 60, 0.95) !important;
 	-webkit-backdrop-filter: blur(8px) !important;
@@ -39,7 +22,7 @@ button:hover {
 }
 
 #queue {
-	border-right: 2px solid #363e51 !important;
+	border-right: 2px solid rgb(54, 62, 81) !important;
 }
 
 #right-details {
@@ -58,14 +41,6 @@ button:hover {
 	color: #e0e0e0 !important;
 }
 
-.toast-notification {
-	background: rgba(211, 47, 47, 0.96) !important;
-	-webkit-backdrop-filter: blur(12px) !important;
-	backdrop-filter: blur(12px) !important;
-	border: 1px solid rgba(255, 255, 255, 0.15) !important;
-	box-shadow: 0 6px 20px rgba(211, 47, 47, 0.4) !important;
-}
-
 .confirmation-modal-overlay {
 	background: rgba(0, 0, 0, 0.7) !important;
 }
@@ -79,11 +54,11 @@ button:hover {
 }
 
 .confirmation-modal-header {
-	border-bottom: 1px solid #363e51 !important;
+	border-bottom: 1px solid rgb(54, 62, 81) !important;
 }
 
 .confirmation-modal-title {
-	color: #f1f5ff !important;
+	color: rgb(241, 245, 255) !important;
 }
 
 .confirmation-modal-body {
@@ -91,7 +66,7 @@ button:hover {
 }
 
 .confirmation-modal-username {
-	color: #5b9aff !important;
+	color: rgb(91, 154, 255) !important;
 }
 
 .confirmation-modal-footer {
@@ -174,7 +149,7 @@ button:hover {
 	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
 }
 
-#notifications-panel {
+#alerts-panel {
 	background: rgba(41, 47, 60, 0.95) !important;
 	-webkit-backdrop-filter: blur(12px) !important;
 	backdrop-filter: blur(12px) !important;
@@ -203,20 +178,6 @@ select:hover, input[type=text]:focus, .bottom-subcontent-button:hover {
 	border-bottom: 2px solid #363e51;
 }
 
-.queue-edit:not(.queue-edit-current) {
-	animation: fadeindark 0.5s linear 0s 1 !important;
-}
-
-@keyframes fadeindark {
-	from {
-		background: #363e51;
-	}
-
-	to {
-		background: transparent;
-	}
-}
-
 .settings, .context-menu, .control-keys > div, .add-action-button, .control-container,
 .user-container > div {
 	background: #22262f;
@@ -224,7 +185,7 @@ select:hover, input[type=text]:focus, .bottom-subcontent-button:hover {
 }
 
 .settings-left {
-	border-right: 2px solid #363e51;
+	border-right: 2px solid rgb(54, 62, 81);
 }
 
 .settings-section {
@@ -253,7 +214,7 @@ select:hover, input[type=text]:focus, .bottom-subcontent-button:hover {
 	background: rgba(20, 22, 28, 0.5) !important;
 }
 
-#notifications-panel {
+#alerts-panel {
 	background: rgba(34, 38, 47, 0.95) !important;
 	-webkit-backdrop-filter: blur(12px) !important;
 	backdrop-filter: blur(12px) !important;
@@ -261,32 +222,32 @@ select:hover, input[type=text]:focus, .bottom-subcontent-button:hover {
 	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
 }
 
-#notifications-header {
+#alerts-header {
 	border-bottom: 1px solid #363e51 !important;
 }
 
-.notification-item {
+.alert-item {
 	border-bottom: 1px solid #363e51 !important;
 }
 
-.notification-item:hover {
+.alert-item:hover {
 	background: #292f3c !important;
 }
 
-.notification-item.unread {
+.alert-item.unread {
 	background: #2a3a4a !important;
 	border-left-color: #5588cc !important;
 }
 
-.notification-subtitle {
+.alert-subtitle {
 	color: #aaa !important;
 }
 
-.notification-time {
+.alert-time {
 	color: #888 !important;
 }
 
-.notification-type {
+.alert-type {
 	color: #999 !important;
 }
 
@@ -320,7 +281,7 @@ select:hover, input[type=text]:focus, .bottom-subcontent-button:hover {
 	background: #f1f5ff !important;
 }
 
-#block-count-indicator {
+#user-block-count {
 	background: #22262f !important;
 	border-color: #ff6666 !important;
 }
@@ -368,11 +329,6 @@ select:hover, input[type=text]:focus, .bottom-subcontent-button:hover {
 	background: rgba(41, 47, 60, 0.98) !important;
 	-webkit-backdrop-filter: blur(8px) !important;
 	backdrop-filter: blur(8px) !important;
-}
-
-
-#middle-top .fa, #right-top .fa {
-	color: #aaa;
 }
 
 /* Warning/Notice boxes - dark mode compatible */

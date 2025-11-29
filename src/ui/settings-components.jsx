@@ -11,13 +11,15 @@ export class Toggle extends Component {
 	render() {
 		const { value, onChange, label, description, id } = this.props;
 
+		let currentValue = value;
 		return (
 			<div
 				id={id || ''}
 				class={`settings-toggle ${value ? 'active' : ''}`}
 				onClick={e => {
-					e.target.closest('.settings-toggle').classList.toggle('active');
-					onChange(!value);
+					currentValue = !currentValue;
+					e.target.closest('.settings-toggle').classList.toggle('active', currentValue);
+					onChange(currentValue);
 				}}
 			>
 				<div class="toggle-switch">
@@ -100,6 +102,7 @@ export class NumericInput extends Component {
 					onInput={(e) => this.setState({ inputValue: e.target.value })}
 					onBlur={this.handleInputChange}
 					onKeyUp={this.handleKeyUp}
+					autoComplete="off"
 				/>
 				<span
 					class="fa fa-plus numeric-input-button"
@@ -168,6 +171,7 @@ export class VolumeControl extends Component {
 							step="0.01"
 							value={value}
 							onInput={(e) => onVolumeChange(parseFloat(e.target.value))}
+							autoComplete="off"
 						/>
 						<span class="fa fa-volume-up"></span>
 						<span class="volume-control-value">{Math.round(value * 100)}%</span>
@@ -338,7 +342,11 @@ export class GeneralSettings extends Component {
 									<input
 										type="checkbox"
 										checked={selectedNamespaces.includes(namespace.id)}
-										onChange={(e) => onNamespaceToggle(namespace.id, e.target.checked)}
+										onChange={(e) => {
+											this.props.wikishield.audioManager.playSound([ "ui", "select" ]);
+											onNamespaceToggle(namespace.id, e.target.checked);
+										}}
+										autoComplete="off"
 									/>
 									<div class="checkmark"></div>
 								</label>
@@ -374,13 +382,13 @@ export class AudioSettings extends Component {
 			soundsByCategory[category].push({ key, sound });
 		});
 
-		const categoryOrder = ['ui', 'alert', 'warning', 'action', 'notification', 'positive', 'negative', 'other'];
+		const categoryOrder = ['ui', 'alert', 'warning', 'action', 'alert', 'positive', 'negative', 'other'];
 		const categoryNames = {
 			ui: 'UI Sounds',
 			alert: 'Alerts',
 			warning: 'Warnings',
 			action: 'Actions',
-			notification: 'Notifications',
+			alert: 'Alerts',
 			positive: 'Positive',
 			negative: 'Negative',
 			other: 'Other'
@@ -415,7 +423,7 @@ export class AudioSettings extends Component {
 			{ key: 'alert', title: 'Alert Sound', description: 'Played for important alerts' },
 			{ key: 'sparkle', title: 'Sparkle Sound', description: 'Played for positive actions' },
 			{ key: 'error', title: 'Error Sound', description: 'Played when an error occurs' },
-			{ key: 'notification', title: 'Notification Sound', description: 'Played for new notifications' },
+			{ key: 'alert', title: 'Alert Sound', description: 'Played for new alerts' },
 			{ key: 'warning', title: 'Warning Sound', description: 'Played when issuing warnings' },
 			{ key: 'rollback', title: 'Rollback Sound', description: 'Played when rolling back edits' },
 			{ key: 'queue', title: 'Queue Update Sound', description: 'Played when the queue updates' }
@@ -507,10 +515,12 @@ export class ZenSettings extends Component {
 	render() {
 		const {
 			enabled,
-			sounds,
 
+			sounds,
+			music,
 			watchlist,
-			notifications,
+			notices,
+			alerts,
 			editCount,
 			toasts,
 		} = this.props;
@@ -532,23 +542,32 @@ export class ZenSettings extends Component {
 							onChange={this.props.onEnableChange}
 						/>
 					</SettingsSection>
-					<SettingsSection compact inline>
-						<SettingsSectionContent
+				</SettingsTogglesSection>
+				<SettingsCompactGrid>
+					<SettingsSection
+							compact
 							title="Enable Sounds"
 							description="Play sounds in Zen mode"
-						/>
+					>
 						<Toggle
 							value={sounds}
 							onChange={this.props.onSoundsChange}
 						/>
 					</SettingsSection>
-				</SettingsTogglesSection>
-				<SettingsCompactGrid>
+					<SettingsSection
+							compact
+							title="Enable Music"
+							description="Play background music in Zen mode"
+					>
+						<Toggle
+							value={music}
+							onChange={this.props.onMusicChange}
+						/>
+					</SettingsSection>
 					<SettingsSection
 						compact
-						id="zen-watchlist"
 						title="Watchlist Updates"
-						description="Show watchlist update notifications in Zen mode"
+						description="Show watchlist update alerts in Zen mode"
 					>
 						<Toggle
 							value={watchlist}
@@ -557,18 +576,26 @@ export class ZenSettings extends Component {
 					</SettingsSection>
 					<SettingsSection
 						compact
-						id="zen-notifications"
-						title="Notifications"
-						description="Show notifications in Zen mode"
+						title="Notices"
+						description="Show notices in Zen mode"
 					>
 						<Toggle
-							value={notifications}
-							onChange={this.props.onNotificationsChange}
+							value={notices}
+							onChange={this.props.onNoticesChange}
 						/>
 					</SettingsSection>
 					<SettingsSection
 						compact
-						id="zen-edit-count"
+						title="Alerts"
+						description="Show alerts in Zen mode"
+					>
+						<Toggle
+							value={alerts}
+							onChange={this.props.onAlertsChange}
+						/>
+					</SettingsSection>
+					<SettingsSection
+						compact
 						title="Edit Count"
 						description="Show edit count in Zen mode"
 					>
@@ -579,7 +606,6 @@ export class ZenSettings extends Component {
 					</SettingsSection>
 					<SettingsSection
 						compact
-						id="zen-toasts"
 						title="Toasts"
 						description="Show toast messages in Zen mode"
 					>
@@ -595,7 +621,7 @@ export class ZenSettings extends Component {
 }
 
 /**
- * User List Component (for whitelist/highlighted users)
+ * User List Component (for whitelist/highlight users)
  */
 export class UserList extends Component {
 	render() {
@@ -666,6 +692,7 @@ export class WhitelistSettings extends Component {
 							onKeyDown={(e) => {
 								if (e.key === 'Enter') this.handleAdd();
 							}}
+							autoComplete="off"
 						/>
 						<button
 							class="user-list-add-button"
@@ -686,9 +713,9 @@ export class WhitelistSettings extends Component {
 }
 
 /**
- * Highlighted Users Panel Component
+ * highlight Users Panel Component
  */
-export class HighlightedSettings extends Component {
+export class highlightSettings extends Component {
 	constructor(props) {
 		super(props);
 		this.state = {
@@ -711,8 +738,8 @@ export class HighlightedSettings extends Component {
 		return (
 			<div>
 				<SettingsSection
-					title="Highlighted Users"
-					description="Edits from highlighted users will be shown with a yellow indicator"
+					title="highlight Users"
+					description="Edits from highlight users will be shown with a yellow indicator"
 				>
 					<div class="user-list-controls">
 						<input
@@ -724,6 +751,7 @@ export class HighlightedSettings extends Component {
 							onKeyDown={(e) => {
 								if (e.key === 'Enter') this.handleAdd();
 							}}
+							autoComplete="off"
 						/>
 						<button
 							class="user-list-add-button"
@@ -865,6 +893,7 @@ export class AISettings extends Component {
 							onInput={(e) => onServerUrlChange(e.target.value)}
 							placeholder="http://localhost:11434"
 							style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; margin-bottom: 8px;"
+							autoComplete="off"
 						/>
 						<button
 							id="test-connection-btn"
@@ -991,7 +1020,11 @@ export class AutoReportingSettings extends Component {
 									<input
 										type="checkbox"
 										checked={selectedAutoReportReasons[warning] === true}
-										onChange={(e) => this.props.onWarningToggle(warning, e.target.checked)}
+										onChange={(e) => {
+											this.props.wikishield.audioManager.playSound([ "ui", "select" ]);
+											this.props.onWarningToggle(warning, e.target.checked);
+										}}
+										autoComplete="off"
 									/>
 									<div class="checkmark"></div>
 								</label>
@@ -1215,7 +1248,14 @@ export class SaveSettings extends Component {
  */
 export class AboutSettings extends Component {
 	render() {
-		const { version, changelog } = this.props;
+		const { version, changelog, date } = this.props;
+
+		const day = date.getUTCDate().toString().padStart(2, '0');
+		const month = [ "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" ][date.getUTCMonth()];
+		const year = date.getUTCFullYear();
+		const hour = date.getUTCHours().toString().padStart(2, '0');
+
+		const dateString = `${day} ${month} ${year}, ${hour}:00 UTC`;
 
 		return (
 			<div>
@@ -1245,6 +1285,8 @@ export class AboutSettings extends Component {
 
 				{changelog && (
 					<SettingsSection>
+						<div class="settings-section-title">Changelog</div>
+						<div class="settings-section-desc">{dateString}</div>
 						<div class="changelog-content" dangerouslySetInnerHTML={{ __html: changelog }} />
 					</SettingsSection>
 				)}

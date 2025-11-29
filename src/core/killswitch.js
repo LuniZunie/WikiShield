@@ -79,7 +79,7 @@ export const killswitch_status = {
         hard: false,
     },
 
-    notifications: [ ]
+    alerts: [ ]
 };
 
 /**
@@ -101,7 +101,9 @@ export const killswitch_status = {
  */
 export async function checkKillswitch(api, startup = true) {
     try {
-        const content = await fetch(`https://en.wikipedia.org/w/api.php?action=query&prop=revisions&rvprop=content&format=json&origin=*&titles=${encodeURIComponent(killswitch_config.killswitch_page)}`)
+        const domain = mw.config.get("wgServerName") === "test.wikipedia.org" ? "test.wikipedia.org" : "en.wikipedia.org";
+
+        const content = await fetch(`https://${mw.config.get("wgServer")}/w/api.php?action=query&prop=revisions&rvprop=content&format=json&origin=*&titles=${encodeURIComponent(killswitch_config.killswitch_page)}`)
             .then(response => response.json())
             .then(data => {
                 const pages = data.query.pages;
@@ -139,12 +141,12 @@ export async function checkKillswitch(api, startup = true) {
                     window.sessionStorage.setItem("WikiShield:SoftReload", soft);
 
                     console.log("WikiShield: Soft reload triggered by killswitch");
-                    killswitch_status.notifications.push({
+                    killswitch_status.alerts.push({
                         id: `app-${performance.now()}`,
                         type: "app",
                         subtype: "soft-reload",
                         timestamp: Date.now(),
-                        title: "A newer version of WikiShield has been released! Reload to update.",
+                        title: "A newer version of WikiShield has been released!",
                         agent: "WikiShield Development",
                         category: "WikiShield",
                         read: false
@@ -155,9 +157,10 @@ export async function checkKillswitch(api, startup = true) {
                 const current = +window.sessionStorage.getItem("WikiShield:HardReload");
                 if (hard > current) {
                     window.sessionStorage.setItem("WikiShield:HardReload", hard);
-                    window.sessionStorage.setItem("WikiShield:SendHardReloadNotification", true);
+                    window.sessionStorage.setItem("WikiShield:SendHardReloadAlert", true);
 
                     console.log("WikiShield: Hard reload triggered by killswitch");
+                    history.replaceState({ page: "WikiShield-reload" }, "", window.location.href);
                     location.reload();
                 }
             }

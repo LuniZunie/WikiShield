@@ -14,9 +14,9 @@ export const BuildAIAnalysisPrompt = (edit, convertDiffToReadable) => {
 	const pageTitle = edit.page?.title || 'Unknown';
 	const userEditCount = edit.user?.editCount || 0;
 	const warningLevel = edit.user?.warningLevel || '0';
-	const userName = edit.user?.name || 'Unknown';
+	const username = edit.user?.name || 'Unknown';
 	const summary = edit.comment || 'No summary';
-	const isTempUser = mw.util.isTemporaryUser(userName);
+	const isTempUser = mw.util.isTemporaryUser(username) || mw.util.isIPAddress(username);
 
 	// Determine namespace
 	let namespace = "Main";
@@ -118,7 +118,7 @@ export const BuildAIAnalysisPrompt = (edit, convertDiffToReadable) => {
 		Page:         "${pageTitle}"
 		Namespace:    ${namespace}  — ${namespaceGuidance}
 		Page title:   "${pageTitle}"
-		Editor:       ${userName}${isTempUser ? " (TEMPORARY)" : ""} • ${userEditCount} edits
+		Editor:       ${username}${isTempUser ? " (TEMPORARY)" : ""} • ${userEditCount} edits
 		User profile: ${userProfile}
 		Summary:      "${summary}"
 		Size change:  ${sizediff > 0 ? "+" : ""}${sizediff} bytes
@@ -326,4 +326,3 @@ export const BuildAIUsernamePrompt = (username, pageTitle) => {
 		Analyze the username now. Be conservative and consider context.
 	`);
 };
-

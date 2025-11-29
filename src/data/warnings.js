@@ -76,7 +76,7 @@ export const warnings = {
 			},
 			{
 				title: "Sandbox",
-				summary: "[[WP:BADSAND|inappropriate]] use of sandbox",
+				summary: "[[WP:BADSAND|inappropriate]] sandbox use",
 				description: "Warning for vandalism, libelous, or defamatory content added to sandbox",
 				icon: "fas fa-vial",
 				auto: defaultAuto,
@@ -93,7 +93,7 @@ export const warnings = {
 		"Content Issues": [
 			{
 				title: "Unsourced",
-				summary: "adding unsourced content",
+				summary: "unsourced changes",
 				description: "Warning for unsourced content.",
 				icon: "fas fa-question",
 				auto: defaultAuto,
@@ -109,7 +109,7 @@ export const warnings = {
 			},
 			{
 				title: "Unsourced (BLP)",
-				summary: "adding unsourced content to [[WP:BLP|biographies of living persons]]",
+				summary: "unsourced [[WP:BLP|biographies of living persons']] changes",
 				description: "Warning for unsourced BLP content.",
 				icon: "fas fa-person-circle-question",
 				auto: defaultAuto,
@@ -140,7 +140,7 @@ export const warnings = {
 			},
 			{
 				title: "POV",
-				summary: "adding [[WP:NPOV|non-neutral content]]",
+				summary: "[[WP:NPOV|non-neutral changes]]",
 				description: "Adding content which violates the neutral point of view policy.",
 				icon: "fas fa-balance-scale-left",
 				auto: defaultAuto,
@@ -155,7 +155,7 @@ export const warnings = {
 			},
 			{
 				title: "Commentary",
-				summary: "adding commentary",
+				summary: "[[WP:Commentary|commentary]]",
 				description: "Adding opinion or commentary to articles.",
 				icon: "fas fa-comment-alt",
 				auto: defaultAuto,
@@ -164,13 +164,13 @@ export const warnings = {
 					"1": { exists: true, template: "subst:uw-talkinarticle1" },
 					"2": { exists: true, template: "subst:uw-talkinarticle2" },
 					"3": { exists: true, template: "subst:uw-talkinarticle3" },
-					"4": { exists: false, template: "subst:uw-generic4", additional: "''Stop adding commentary to articles.''" },
+					"4": { exists: false, template: "subst:uw-generic4", additional: "''Adding commentary to articles. ([[WP:WikiShield|WS]])''" },
 					"4im": null
 				}
 			},
 			{
-				title: "AI-Generated",
-				summary: "adding [[WP:LLM|AI-generated content]]",
+				title: "AI-generated",
+				summary: "[[WP:LLM|AI-generated content]]",
 				description: "Adding AI-generated content.",
 				icon: "fas fa-robot",
 				auto: defaultAuto,
@@ -186,7 +186,7 @@ export const warnings = {
 			},
 			{
 				title: "AI-generated (talk)",
-				summary: "adding [[WP:LLM|AI-generated content]] to a discussion",
+				summary: "[[WP:LLM|AI-generated content]] in a discussion",
 				description: "Writing an AI-generated comment.",
 				icon: "fas fa-robot",
 				auto: defaultAuto,
@@ -243,7 +243,7 @@ export const warnings = {
 					"1": { exists: true, template: "subst:uw-disruptive1" },
 					"2": { exists: true, template: "subst:uw-disruptive2" },
 					"3": { exists: true, template: "subst:uw-disruptive3" },
-					"4": { exists: false, template: "subst:uw-generic4", additional: "''Stop making disruptive edits to Wikipedia.''" },
+					"4": { exists: false, template: "subst:uw-generic4", additional: "''Disruptive editing. ([[WP:WikiShield|WS]])''" },
 					"4im": null
 				}
 			},
@@ -264,7 +264,7 @@ export const warnings = {
 			},
 			{
 				title: "Errors",
-				summary: "adding deliberate errors to articles",
+				summary: "deliberate errors",
 				description: "Adding deliberate errors to articles.",
 				icon: "fas fa-bug",
 				auto: defaultAuto,
@@ -279,8 +279,8 @@ export const warnings = {
 			},
 			{
 				title: "Editing tests",
-				summary: "adding deliberate errors to articles",
-				description: "Adding deliberate errors to articles.",
+				summary: "test edits",
+				description: "Making test edits on live articles.",
 				icon: "fas fa-flask",
 				auto: defaultAuto,
 				templates: {
@@ -288,13 +288,13 @@ export const warnings = {
 					"1": { exists: true, template: "subst:uw-test1" },
 					"2": { exists: true, template: "subst:uw-test2" },
 					"3": { exists: true, template: "subst:uw-test3" },
-					"4": { exists: false, template: "subst:uw-generic4", additional: "''Stop making test edits to Wikipedia.''" },
+					"4": { exists: false, template: "subst:uw-generic4", additional: "''Test edits. ([[WP:WikiShield|WS]])''" },
 					"4im": null
 				}
 			},
 			{
 				title: "Chatting",
-				summary: "conversation in article talk space",
+				summary: "inappropriate use of article talk pages",
 				description: "Using article talk pages for inappropriate discussion.",
 				icon: "fas fa-comments",
 				auto: defaultAuto,
@@ -310,7 +310,7 @@ export const warnings = {
 			},
 			{
 				title: "Jokes",
-				summary: "adding inappropriate humor",
+				summary: "inappropriate humor",
 				description: "Adding inappropriate humor to an article.",
 				icon: "fas fa-grin-squint",
 				auto: defaultAuto,
@@ -435,7 +435,7 @@ export const warnings = {
 					"1": { exists: true, template: "subst:uw-mislead1" },
 					"2": { exists: true, template: "subst:uw-mislead2" },
 					"3": { exists: true, template: "subst:uw-mislead3" },
-					"4": { exists: false, template: "subst:uw-generic4", additional: "''Stop using misleading edit summaries on your edits.''" },
+					"4": { exists: false, template: "subst:uw-generic4", additional: "''Misleading edit summary. ([[WP:WikiShield|WS]])''" },
 					"4im": null
 				},
 				onlyWarn: true,
@@ -452,7 +452,7 @@ export const warnings = {
 					"2": { exists: true, template: "subst:uw-bes2" },
 					"3": { exists: true, template: "subst:uw-bes3" },
 					"4": { exists: true, template: "subst:uw-bes4" },
-					"4im": { exists: true, template: "subst:uw-bes4im" },
+					"4im": { exists: true, template: "subst:uw-bes4im" }
 				},
 				onlyWarn: true,
 			},
@@ -463,7 +463,7 @@ export const warnings = {
 				icon: "fas fa-pen",
 				auto: () => "0",
 				templates: {
-					"0": { exists: true, template: "subst:uw-minor" },
+					"0": { exists: true, template: "subst:uw-minor", label: "Notice", level: "notice" },
 					"1": null,
 					"2": null,
 					"3": null,
@@ -481,11 +481,11 @@ export const warnings = {
 				icon: "fas fa-user-tie",
 				auto: () => "0",
 				templates: {
-					"0": { exists: true, template: "subst:uw-coi", label: "Notice" },
-					"1": { exists: true, template: "subst:uw-coi-username", label: "Username" },
+					"0": { exists: true, template: "subst:uw-coi", label: "Notice", level: "notice" },
+					"1": { exists: true, template: "subst:uw-coi-username", label: "Username", summary: "[[WP:COI|conflict of interest]] username", level: "notice" },
 					"2": null,
 					"3": null,
-					"4": { exists: true, template: "subst:uw-coi-warn", label: "Warn" },
+					"4": { exists: true, template: "subst:uw-coi-warn", label: "Warn", level: "warning" },
 					"4im": null
 				},
 				onlyWarn: true,
@@ -511,13 +511,13 @@ export const warnings = {
 				summary: "[[WP:EW|edit warring]]",
 				description: "User is edit warring.",
 				icon: "fas fa-people-arrows",
-				auto: (edit) => edit?.user?.editCount < 500 ? "1" : "4",
+				auto: (edit) => edit?.user?.editCount < 500 ? "0" : "4",
 				templates: {
-					"0": null,
-					"1": { exists: true, template: "subst:uw-ewsoft", label: "Soft" },
+					"0": { exists: true, template: "subst:uw-ewsoft", label: "Notice", level: "notice" },
+					"1": null,
 					"2": null,
 					"3": null,
-					"4": { exists: true, template: "subst:uw-ew", label: "Normal" },
+					"4": { exists: true, template: "subst:uw-ew", label: "Warning", level: "warning" },
 					"4im": null
 				},
 				onlyWarn: true,
@@ -529,7 +529,7 @@ export const warnings = {
 				icon: "fas fa-globe",
 				auto: () => "0",
 				templates: {
-					"0": { exists: true, template: "subst:uw-lang-noteng" },
+					"0": { exists: true, template: "subst:uw-lang-noteng", label: "Notice", level: "notice" },
 					"1": null,
 					"2": null,
 					"3": null,
@@ -547,7 +547,8 @@ for (const [ type, categories ] of Object.entries(warnings)) {
 	for (const [ category, categoryWarnings ] of Object.entries(categories)) {
 		const length = categoryWarnings.length;
 		for (let i = 0; i < length; i++) {
-			lookup[categoryWarnings[i].title] = [ type, category, i ];
+			const warning = categoryWarnings[i];
+			lookup[warning.title] = [ type, category, i ];
 		}
 	}
 }

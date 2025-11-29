@@ -2,133 +2,24 @@
 
 export const wikishieldHTML = {
 	"changelog": `
-		<h1 style="
-			text-align:center;
-			margin:25px 0 30px;
-			font-size:32px;
-			font-weight:800;
-			color:var(--title-color, #fff);
-			letter-spacing:0.5px;
-		">
-			Changelog
-		</h1>
-
-		<div style="
-			max-width:1350px;
-			margin:0 auto;
-			display:grid;
-			grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));
-			gap:24px;
-			padding:0 10px;
-			font-family:system-ui, sans-serif;
-			color:var(--text-color, inherit);
-		">
-
-			<style>
-			:root {
-				--card-bg: rgba(255,255,255,0.04);
-				--card-border: rgba(255,255,255,0.10);
-				--card-shadow: 0 6px 20px rgba(0,0,0,0.25);
-				--text-color: #e5e5e5;
-				--title-color: #ffffff;
-				--accent-color: #76a8ff;
-				--code-bg: rgba(255,255,255,0.15);
-			}
-			</style>
-
-			<!-- CARD -->
-			<div style="
-			background:var(--card-bg);
-			border:1px solid var(--card-border);
-			border-radius:14px;
-			padding:22px 24px;
-			box-shadow:var(--card-shadow);
-			backdrop-filter:blur(8px);
-			">
-			<h2 style="margin:0 0 10px; font-size:20px; font-weight:700; color:var(--title-color);">Zen Mode</h2>
-			<p style="margin:0 0 14px; font-size:15px; font-weight:600; color:var(--accent-color);">
-				UI Improvements & Minimalism Tools
-			</p>
-			<ul style="margin:0; padding-left:20px; line-height:1.6; font-size:15px;">
-				<li>New <code style="background:var(--code-bg); padding:2px 5px; border-radius:4px;">Zen Mode</code> tab in the settings panel.</li>
-				<li>Toggle visibility of watchlist, notifications, edit count, and toasts.</li>
-			</ul>
+		<div class="changelog-grid">
+			<div class="card">
+				<h2>Pending Changes</h2>
+				<p>Ability to accept or reject pending changes.</p>
+				<ul>
+					<li>View pending changes in a dedicated tab.</li>
+					<li>Accept or reject changes with an optional reason.</li>
+					<li><strong>Note:</strong> This feature requires the <code>review</code> user right.</li>
+				</ul>
 			</div>
-
-			<div style="
-			background:var(--card-bg);
-			border:1px solid var(--card-border);
-			border-radius:14px;
-			padding:22px 24px;
-			box-shadow:var(--card-shadow);
-			backdrop-filter:blur(8px);
-			">
-			<h2 style="margin:0 0 10px; font-size:20px; font-weight:700; color:var(--title-color);">Highlighting & Whitelisting</h2>
-			<p style="margin:0 0 14px; font-size:15px; font-weight:600; color:var(--accent-color);">
-				More Control Over Categories
-			</p>
-			<ul style="margin:0; padding-left:20px; line-height:1.6; font-size:15px;">
-				<li>Pages and tags can now be whitelisted or highlighted.</li>
-				<li>Settings reorganized into clearer category groups.</li>
-			</ul>
+			<div class="card">
+				<h2>Notices, Alerts, & Watchlist</h2>
+				<p>Notices & alerts separated, new watchlist queue.</p>
+				<ul>
+					<li>Separate panels for notices and alerts.</li>
+					<li>Watchlist edits now have their own queue tab.</li>
+				</ul>
 			</div>
-
-			<div style="
-			background:var(--card-bg);
-			border:1px solid var(--card-border);
-			border-radius:14px;
-			padding:22px 24px;
-			box-shadow:var(--card-shadow);
-			backdrop-filter:blur(8px);
-			">
-			<h2 style="margin:0 0 10px; font-size:20px; font-weight:700; color:var(--title-color);">Sound System Upgrade</h2>
-			<p style="margin:0 0 14px; font-size:15px; font-weight:600; color:var(--accent-color);">
-				Layered Audio Format
-			</p>
-			<ul style="margin:0; padding-left:20px; line-height:1.6; font-size:15px;">
-				<li>Sounds now support multiple layers for richer effects.</li>
-				<li>Updated every sound to use the new system.</li>
-				<li>Added <code style="background:var(--code-bg); padding:2px 5px; border-radius:4px;">success</code> and <code style="background:var(--code-bg); padding:2px 5px; border-radius:4px;">error</code> tones.</li>
-			</ul>
-			</div>
-
-			<div style="
-			background:var(--card-bg);
-			border:1px solid var(--card-border);
-			border-radius:14px;
-			padding:22px 24px;
-			box-shadow:var(--card-shadow);
-			backdrop-filter:blur(8px);
-			">
-			<h2 style="margin:0 0 10px; font-size:20px; font-weight:700; color:var(--title-color);">Save System Fixes</h2>
-			<p style="margin:0 0 14px; font-size:15px; font-weight:600; color:var(--accent-color);">
-				More Reliable Loading
-			</p>
-			<ul style="margin:0; padding-left:20px; line-height:1.6; font-size:15px;">
-				<li>Namespace preferences may have reset due to a bug.</li>
-				<li>Invalid or unsupported settings now auto-remove during load.</li>
-			</ul>
-			</div>
-
-			<div style="
-			background:var(--card-bg);
-			border:1px solid var(--card-border);
-			border-radius:14px;
-			padding:22px 24px;
-			box-shadow:var(--card-shadow);
-			backdrop-filter:blur(8px);
-			">
-			<h2 style="margin:0 0 10px; font-size:20px; font-weight:700; color:var(--title-color);">Miscellaneous Improvements</h2>
-			<p style="margin:0 0 14px; font-size:15px; font-weight:600; color:var(--accent-color);">
-				General Enhancements
-			</p>
-			<ul style="margin:0; padding-left:20px; line-height:1.6; font-size:15px;">
-				<li>Script now works across all Wikimedia Foundation wikis.</li>
-				<li>Rearranged and cleaned up the settings panel.</li>
-				<li>Fixed several minor bugs.</li>
-			</ul>
-			</div>
-
 		</div>
 	`,
 	"head": `
@@ -138,7 +29,7 @@ export const wikishieldHTML = {
 	"initial": (version) => `
 		<div id="container">
 			<canvas id="dots-canvas"></canvas>
-			<div id="welcome-container">
+			<div id="welcome-container" class="shimmer shimmer-border">
 				<div class="shield-container">
 					<div class="glow-ring"></div>
 					<div class="glow-ring"></div>
@@ -147,7 +38,9 @@ export const wikishieldHTML = {
 					<div class="sparkle"></div>
 					<div class="sparkle"></div>
 					<div class="sparkle"></div>
-					<div class="shield-icon">🛡️</div>
+					<div class="shield-icon">
+						<img src="https://media.luni.me/image/icon/WikiShield" alt="WikiShield Logo">
+					</div>
 				</div>
 				<h1>Welcome to WikiShield</h1>
 				<div class="about-links">
@@ -157,7 +50,7 @@ export const wikishieldHTML = {
 				</div>
 				<div id="rollback-needed" style="display: none;">
 					<p><span class="fa fa-exclamation-triangle"></span> You must have rollback or admin rights to use this script.</p>
-					<p>You can apply for rollback rights <a href="https://en.wikipedia.org/wiki/WP:PERM/R" target="_blank">here</a>.</p>
+					<p>You can apply for rollback rights <a href="/wiki/Wikipedia:PERM/R" target="_blank">here</a>.</p>
 				</div>
 				<button id="start-button">
 					<span class="fa fa-play"></span> Start WikiShield
@@ -170,36 +63,51 @@ export const wikishieldHTML = {
 			<div id="queue">
 				<div id="queue-top">
 					<div id="queue-top-left">
-						<span id="queue-top-title">Queue</span>
-						<span id="queue-top-items">0 items</span>
+						<span class="fa fa-gear" id="open-settings" data-tooltip="Open settings"></span>
+						<span class="fa fa-trash" id="delete-queue" data-tooltip="Clear queue"></span>
 					</div>
 					<div id="queue-top-right">
-						<span class="fa fa-book-bookmark" id="watchlist-icon" data-tooltip="Watchlist" style="position: relative;" data-zen-show="watchlist">
-							<span id="watchlist-count" style="display: none; position: absolute; top: -5px; right: -5px; background: dodgerblue; color: white; border-radius: 50%; width: 16px; height: 16px; font-size: 10px; text-align: center; line-height: 16px; font-family: sans-serif;"></span>
+						<span class="fa fa-inbox" id="notices-icon" data-tooltip="Notices" style="position: relative; display: none;" data-zen-show="notices">
+							<span id="notices-count" class="icon-count blue" style="display: none;"></span>
 						</span>
-						<span class="fa fa-bell" id="notifications-icon" data-tooltip="Notifications" style="position: relative;" data-zen-show="notifications">
-							<span id="notification-count" style="display: none; position: absolute; top: -5px; right: -5px; background: red; color: white; border-radius: 50%; width: 16px; height: 16px; font-size: 10px; text-align: center; line-height: 16px; font-family: sans-serif;"></span>
+						<span class="fa fa-bell" id="alerts-icon" data-tooltip="Alerts" style="position: relative;" data-zen-show="alerts">
+							<span id="alerts-count" class="icon-count red" style="display: none;"></span>
 						</span>
-						<span class="fa fa-trash" id="delete-queue" data-tooltip="Clear queue"></span>
-						<span class="fa fa-gear" id="open-settings" data-tooltip="Open settings"></span>
 					</div>
 				</div>
-				<div id="queue-items"></div>
+				<div id="queue-tabs">
+					<div id="queue-tab-recent" class="queue-tab selected" data-tooltip="Recent edits">
+						<span class="fas fa-stopwatch" style="position: relative;">
+							<span class="icon-count hidden red"></span>
+						</span>
+					</div>
+					<div id="queue-tab-flagged" class="queue-tab" data-tooltip="Pending edits">
+						<span class="fas fa-flag" style="position: relative;">
+							<span class="icon-count hidden orange"></span>
+						</span>
+					</div>
+					<div id="queue-tab-watchlist" class="queue-tab" data-tooltip="Watchlist edits" data-zen-show="watchlist">
+						<span class="fas fa-book-bookmark" style="position: relative;">
+							<span class="icon-count hidden blue"></span>
+						</span>
+					</div>
+				</div>
+				<div id="queue-items" class="queue-list"></div>
 				<div class="width-adjust" id="queue-width-adjust"></div>
 			</div>
-			<div id="notifications-panel">
-				<div id="notifications-header">
-					<span>Notifications</span>
-					<span id="mark-all-notifications-read" style="font-size: 0.85em; font-weight: normal; cursor: pointer; color: dodgerblue;">Mark all as read</span>
+			<div id="alerts-panel" class="notification-panel">
+				<div id="alerts-header" class="notification-header">
+					<span>Alerts</span>
+					<span id="mark-all-alerts-read" style="font-size: 0.85em; font-weight: normal; cursor: pointer; color: dodgerblue;">Mark all as read</span>
 				</div>
-				<div id="notifications-list"></div>
+				<div id="alerts-list" class="notification-list"></div>
 			</div>
-			<div id="watchlist-panel">
-				<div id="watchlist-header">
-					<span>Watchlist</span>
-					<span id="mark-all-watchlist-read" style="font-size: 0.85em; font-weight: normal; cursor: pointer; color: dodgerblue;">Mark all as read</span>
+			<div id="notices-panel" class="notification-panel">
+				<div id="notices-header" class="notification-header">
+					<span>Notices</span>
+					<span id="mark-all-notices-read" style="font-size: 0.85em; font-weight: normal; cursor: pointer; color: dodgerblue;">Mark all as read</span>
 				</div>
-				<div id="watchlist-list"></div>
+				<div id="notices-list" class="notification-list"></div>
 			</div>
 			<div id="right-container">
 				<div id="middle-top"></div>
@@ -220,6 +128,10 @@ export const wikishieldHTML = {
 				<div id="right-content">
 					<div id="main-container">
 						<div id="diff-container"></div>
+						<div id="pending-changes-container" class="hidden">
+							<div class="accept">Accept</div>
+							<div class="reject">Reject</div>
+						</div>
 						<div id="progress-bar-container"></div>
 						<div id="bottom-tools">
 							<div id="bottom-tools-left">
@@ -274,29 +186,29 @@ export const wikishieldHTML = {
 						</div>
 					</div>
 					<div id="right-details">
-						<div class="width-adjust" id="details-width-adjust"></div>
-						<div id="user-contribs">
-							<div id="user-contribs-top">
-								<div id="user-contribs-left">
-										<div id="user-contribs-title">User Contributions</div>
+						<div id="user-contribs" class="right-detail">
+							<div id="user-contribs-top" class="right-detail-top">
+								<div class="right-detail-left">
+									<div id="user-contribs-title" class="right-detail-title">User Contributions</div>
 									<div id="user-contribs-count">_ edits</div>
 								</div>
-								<div id="block-count-indicator" style="display: none;"></div>
-								<div id="user-contribs-level" data-tooltip="Warning level">0</div>
+								<div id="user-block-count" style="display: none;"></div>
+								<div id="user-warn-level" data-tooltip="Warning level">0</div>
 							</div>
-							<div id="user-contribs-content"></div>
+							<div id="user-contribs-content" class="queue-list"></div>
 						</div>
 						<div class="height-adjust"></div>
-						<div id="page-history">
-							<div id="page-history-top">
-								<div>
-									<div id="page-history-title">Page History</div>
-									<div id="page-metadata" style="font-size: 0.75em; color: #666; margin-top: 3px;"></div>
+						<div id="page-history" class="right-detail">
+							<div id="page-history-top" class="right-detail-top">
+								<div class="right-detail-left">
+									<div id="page-history-title" class="right-detail-title">Page History</div>
+									<div id="page-metadata"></div>
 								</div>
 								<div id="protection-indicator"></div>
 							</div>
-							<div id="page-history-content"></div>
+							<div id="page-history-content" class="queue-list"></div>
 						</div>
+						<div class="width-adjust" id="details-width-adjust"></div>
 					</div>
 				</div>
 			</div>
