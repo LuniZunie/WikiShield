@@ -1,19 +1,24 @@
 import { __script__ } from '../index.js';
-import { defaultSettings } from '../config/defaults.js';
 import { WikiShieldInterface } from '../ui/interface.js';
 import { WikiShieldLog } from '../utils/logger.js';
 import { WikiShieldUtil } from '../utils/helpers.js';
 import { WikiShieldAPI } from './api.js';
-import { WikiShieldOllamaAI } from '../ai/ollama.js';
 import { WikiShieldProgressBar } from '../ui/progress-bar.jsx';
 import { AudioManager } from '../audio/manager.js';
 import { warnings } from '../data/warnings.js';
+import { welcomes } from '../data/welcomes.js';
 
+import { AI } from '../ai/class.js';
 import { StorageManager } from '../data/storage.js';
 
 export class WikiShield {
 	constructor(wikishieldData) {
 		this.__script__ = __script__;
+
+		this.storage = new StorageManager();
+
+		this.defaultStorage = new StorageManager();
+		this.defaultStorage.load();
 
 		this.interface = new WikiShieldInterface(this);
 		this.logger = new WikiShieldLog();
@@ -28,6 +33,7 @@ export class WikiShield {
 			historyCount: __script__.config.historyCount
 		});
 		this.checkWarningTemplates();
+		this.checkWelcomeTemplates();
 
 		// Initialize queue - will be set after wikishield global is assigned
 		this.queue = null;
@@ -35,8 +41,7 @@ export class WikiShield {
 		// Load whitelist and highlight from storage
 		this.noAutoWelcomeList = new Set(); // Track users who shouldn't be auto-welcomed
 
-		// Initialize Ollama AI if enabled (preserves last saved state)
-		this.ollamaAI = null;
+		this.AI = null;
 
 		this.aivReports = [];
 		this.uaaReports = [];
@@ -58,7 +63,6 @@ export class WikiShield {
 		this.lastSeenRevision = null;
 
 		this.wikishieldData = wikishieldData;
-		this.wikishieldEventData = null; // Will be set after initialization
 		this.WikiShieldProgressBar = WikiShieldProgressBar;
 	}
 
@@ -91,49 +95,68 @@ export class WikiShield {
 		}
 	}
 
+	checkWelcomeTemplates() {
+		for (const welcome of Object.values(welcomes)) {
+			if (typeof welcome.template === "string") {
+				this.api.pageExists(welcome.template.replace(/^subst:/, "Template:"))
+					.then(exists => {
+						if (!exists) {
+							welcome.hide = true;
+						}
+					});
+			}
+		}
+	}
+
 	async init(override = null, noInit = false) {
+		this.storage.load(override ?? await this.load());
+
 		const obj = override ?? await this.load();
 
-		this.loadedChangelog = this.loadChangelogVersion(obj.changelog);
+		if (this.storage.data.settings.AI.enabled) {
+			switch (this.storage.data.settings.AI.provider) {
+				case "Ollama": {
+					this.AI = new AI.providers.Ollama(
+						this,
+						this.storage.data.settings.AI.Ollama
+					);
 
-		this.whitelist = this.loadWhitelist(obj.whitelist);
-		this.highlight = this.loadHighlight(obj.highlight);
-
-		this.queueWidth = obj.queueWidth || mw.storage.store.getItem("WikiShield:QueueWidth") || "15vw";
-		this.detailsWidth = obj.detailsWidth || mw.storage.store.getItem("WikiShield:DetailsWidth") || "15vw";
-
-		this.statistics = this.loadStats(obj.statistics);
-
-		this.options = this.loadOptions(obj.options);
-		this.options.enableCloudStorage = (mw.storage.store.getItem("WikiShield:CloudStorage") ?? defaultSettings.enableCloudStorage.toString()) === "true";
-
-		if (this.options.enableOllamaAI) {
-			this.ollamaAI = new WikiShieldOllamaAI(
-				this.options.ollamaServerUrl,
-				this.options.ollamaModel,
-				{
-					enableOllamaAI: this.options.enableOllamaAI,
-					enableEditAnalysis: this.options.enableEditAnalysis
-				}
-			);
-			this.logger.log("Ollama AI integration enabled");
+					const WS = this;
+					window.Test = async (...revisions) => {
+						for (const revision of revisions) {
+							console.group(`Testing Ollama AI for revision ${revision}`);
+							try {
+								await WS.queue.loadSpecificRevision(revision, await WS.api.getPageTitleFromRevid(revision), false);
+								const item = WS.queue.currentEdit[WS.queue.currentQueueTab];
+								const analysis = await WS.AI.analyze.edit(item);
+								console.log(analysis);
+							} catch (err) {
+								console.error(`Error testing Ollama AI for revision ${revision}:`, err);
+							}
+							console.groupEnd();
+						}
+					};
+				} break;
+				default: {
+					this.AI?.cancel.all();
+					this.AI = null;
+				} break;
+			}
 		} else {
-			this.ollamaAI = null;
-			this.logger.log("Ollama AI integration disabled");
+			this.AI?.cancel.all();
+			this.AI = null;
 		}
 
 		if (noInit) {
-			if (this.queueWidth) {
-				document.body.querySelector("#queue").style.width = this.queueWidth;
-				document.body.querySelector("#right-container").style.width = `calc(100% - ${this.queueWidth})`;
-			}
+			const queueWidth = this.storage.data.layout.queue.width;
+			document.body.querySelector("#queue").style.width = queueWidth;
+			document.body.querySelector("#right-container").style.width = `calc(100% - ${queueWidth})`;
 
-			if (this.detailsWidth) {
-				document.body.querySelector("#right-details").style.width = this.detailsWidth;
-				document.body.querySelector("#main-container").style.width = `calc(100% - ${this.detailsWidth})`;
-				document.body.querySelector("#middle-top").style.width = `calc(100% - ${this.detailsWidth})`;
-				document.body.querySelector("#right-top").style.width = this.detailsWidth;
-			}
+			const detailsWidth = this.storage.data.layout.details.width;
+			document.body.querySelector("#right-details").style.width = detailsWidth;
+			document.body.querySelector("#main-container").style.width = `calc(100% - ${detailsWidth})`;
+			document.body.querySelector("#middle-top").style.width = `calc(100% - ${detailsWidth})`;
+			document.body.querySelector("#right-top").style.width = detailsWidth;
 
 			return;
 		}
@@ -147,192 +170,6 @@ export class WikiShield {
 		}, 30000);
 
 		this.startInterface();
-	}
-
-	/**
-	 * Load the changelog version from storage
-	 * @returns {String} The changelog version
-	 */
-	loadChangelogVersion(data) {
-		const version = data ?? mw.storage.store.getItem("WikiShield:ChangelogVersion");
-
-		if (!version) {
-			mw.storage.store.setItem("WikiShield:ChangelogVersion", 0);
-			return 0;
-		}
-
-		return version;
-	}
-
-	/**
-	 * Load user options from storage
-	 */
-	loadOptions(data) {
-		let options = {};
-		try {
-			options = data ?? JSON.parse(mw.storage.store.getItem("WikiShield:Settings"));
-		} catch (err) {
-			// Parsing error, use empty object
-		}
-		options = options || {};
-
-		if (typeof options.highlightedExpiry === "string") {
-			// Convert old format to new format
-			options.highlightedExpiry = { users: options.highlightedExpiry };
-		}
-
-		// Fill in missing options with defaults
-		for (const key in defaultSettings) {
-			const value = options[key];
-			if (value === undefined) {
-				options[key] = defaultSettings[key];
-			} else if (typeof value === "object" && !Array.isArray(value)) {
-				// For nested objects, fill in missing nested keys
-				for (const nestedKey in defaultSettings[key]) {
-					if (value[nestedKey] === undefined) {
-						value[nestedKey] = defaultSettings[key][nestedKey];
-					}
-				}
-			}
-		}
-
-		// Ensure controls are in the right format (array of arrays of strings)
-		for (const script of options.controlScripts ?? []) {
-			if (typeof script.keys === "string") {
-				script.keys = [ script.keys ];
-				script.keys = script.keys.map(key => key.toLowerCase());
-			}
-
-			script.actions = script.actions.flatMap(action => {
-				switch (action.name) {
-					case "rollbackAndWarn":
-						action = [
-							{
-								name: "rollback",
-								params: {}
-							},
-							{
-								name: "warn",
-								params: {
-									warningType: action.params.warningType || "Vandalism",
-									level: action.params.level || "auto"
-								}
-							},
-						];
-						break;
-					case "highlight":
-						action.name = "highlightUser";
-						break;
-					case "unhighlight":
-						action.name = "unhighlightUser";
-						break;
-					case "addToWhitelist":
-						action.name = "whitelistUser";
-						break;
-					case "removeFromWhitelist":
-						action.name = "unwhitelistUser";
-						break;
-				}
-
-				return action;
-			});
-		}
-
-		return options;
-	}
-
-	/**
-	 * Load whitelist from storage
-	 */
-	loadWhitelist(data) {
-		if (Array.isArray(data)) {
-			data = { users: data }; // Convert old format to new format
-		}
-
-		try {
-			const stored = data ?? { users: JSON.parse(mw.storage.store.getItem("WikiShield:Whitelist")) };
-
-			const rtn = { users: new Map(), pages: new Map(), tags: new Map() };
-			for (const [ key, value ] of Object.entries(stored || {})) {
-				if (value && value.length > 0) {
-					rtn[key] = new Map(value.map(entry => {
-						if (!Array.isArray(entry[1])) {
-							entry[1] = [ entry[1], Infinity ];
-						}
-
-						entry[1][1] ??= Infinity; // nullish expiry means indefinite
-						return entry;
-					}));
-				}
-			}
-			return rtn;
-		} catch (err) {
-			return { users: new Map(), pages: new Map(), tags: new Map() };
-		}
-	}
-
-	/**
-	 * Load highlight users from storage
-	 */
-	loadHighlight(data) {
-		if (Array.isArray(data)) {
-			data = { users: data }; // Convert old format to new format
-		}
-
-		try {
-			const stored = data ?? { users: JSON.parse(mw.storage.store.getItem("WikiShield:Highlight")) };
-
-			const rtn = { users: new Map(), pages: new Map(), tags: new Map() };
-			for (const [ key, value ] of Object.entries(stored || {})) {
-				if (value && value.length > 0) {
-					rtn[key] = new Map(value.map(entry => {
-						if (!Array.isArray(entry[1])) {
-							entry[1] = [ Date.now(), entry[1] ];
-						}
-
-						entry[1][1] ??= Infinity; // nullish expiry means indefinite
-						return entry;
-					}));
-				}
-			}
-			return rtn;
-		} catch (err) {
-			return { users: new Map(), pages: new Map(), tags: new Map() };
-		}
-	}
-
-	/**
-	 * Load statistics from storage
-	 */
-	loadStats(data) {
-		let stats;
-		try {
-			stats = data ?? JSON.parse(mw.storage.store.getItem("WikiShield:Statistics"));
-		} catch (err) {
-			// Parsing error
-		}
-
-		stats = stats || {
-			reviewed: 0,
-			reverts: 0,
-			reports: 0,
-			warnings: 0,
-			welcomes: 0,
-			whitelisted: 0,
-			highlight: 0,
-			blocks: 0,
-			sessionStart: Date.now()
-		};
-
-		// Add missing properties with defaults
-		if (stats.warnings === undefined) stats.warnings = 0;
-		if (stats.welcomes === undefined) stats.welcomes = 0;
-		if (stats.whitelisted === undefined) stats.whitelisted = 0;
-		if (stats.highlight === undefined) stats.highlight = 0;
-		if (stats.blocks === undefined) stats.blocks = 0;
-		if (stats.sessionStart === undefined) stats.sessionStart = Date.now();
-
-		return stats;
 	}
 
 	/**
@@ -392,7 +229,7 @@ export class WikiShield {
 		const now = Date.now();
 		let changed = false;
 
-		for (const [ key, value ] of Object.entries(this.highlight)) {
+		for (const [ key, value ] of Object.entries(this.storage.data.highlight)) {
 			for (const [ name, time ] of value.entries()) {
 				if (now >= time[1]) {
 					value.delete(name);
@@ -402,7 +239,7 @@ export class WikiShield {
 			}
 		}
 
-		for (const [ key, value ] of Object.entries(this.whitelist)) {
+		for (const [ key, value ] of Object.entries(this.storage.data.whitelist)) {
 			for (const [ name, time ] of value.entries()) {
 				if (now >= time[1]) {
 					value.delete(name);
@@ -456,14 +293,33 @@ export class WikiShield {
 				5000,
 				"error"
 			)) {
-				// TODO this.audioManager.playSound([ "status", "error" ]);
+				this.audioManager.playSound([ "other", "error" ]);
 			}
 
 			return false;
 		}
 
 		// Update statistics
-		this.statistics.reverts++;
+		this.storage.data.statistics.reverts_made.total++;
+		if (goodFaith) {
+			this.storage.data.statistics.reverts_made.good_faith++;
+		}
+
+		switch (edit.__fromQueue__) {
+			case "recent": {
+				this.storage.data.statistics.reverts_made.from_recent_changes++;
+			} break;
+			case "flagged": {
+				this.storage.data.statistics.reverts_made.from_flagged++;
+			} break;
+			case "watchlist": {
+				this.storage.data.statistics.reverts_made.from_watchlist++;
+			} break;
+			case "loaded": {
+				this.storage.data.statistics.reverts_made.from_loaded_edits++;
+			} break;
+		}
+
 		this.updateMyContributions();
 
 		return true;
@@ -503,7 +359,7 @@ export class WikiShield {
 					5000,
 					"error"
 				)) {
-					// TODO this.audioManager.playSound([ "status", "error" ]);
+					this.audioManager.playSound([ "other", "error" ]);
 				}
 			}
 
@@ -528,11 +384,18 @@ export class WikiShield {
 		await this.api.edit(`User talk:${user}`, newContent, this.api.buildMessage(message, `${summary} (${levelName})`));
 
 		// Increment warning statistic
-		this.statistics.warnings++;
+		this.storage.data.statistics.warnings_issued.total++;
+		if (!("level" in templateToUse)) {
+			const key = `level_${warningLevel}`;
+			if (key in this.storage.data.statistics.warnings_issued) {
+				this.storage.data.statistics.warnings_issued[key]++;
+			}
+		}
+
 
 		// Add user talk page to watchlist with configured expiry
 		try {
-			const expiry = this.util.expiryToMilliseconds(this.options.watchlistExpiry);
+			const expiry = this.util.expiryToMilliseconds(this.storage.data.settings.expiry.watchlist);
 			if (expiry > 0) {
 				const toExpire = new Date(Date.now() + expiry);
 
@@ -626,6 +489,16 @@ export class WikiShield {
 		return `${days}d`;
 	}
 
+	updateNotificationsCount() {
+		const totalUnread = this.alerts.filter(n => !n.read).length + this.notices.filter(n => !n.read).length;
+
+		if (totalUnread === 0) {
+			document.title = "WikiShield";
+		} else {
+			document.title = `(${totalUnread}) WikiShield`;
+		}
+	}
+
 	/**
 	 * Load alerts from Wikipedia
 	 */
@@ -644,7 +517,7 @@ export class WikiShield {
 			]);
 
 			const alerts = alertsResponse.query?.notifications?.list ?? [];
-			await Promise.all(alerts.map(n => {
+			await Promise.all(alerts.map(async n => {
 				return this.api.parseWikitext(n["*"].body).then(parsed => {
 					n["*"].body = parsed;
 					return n;
@@ -660,8 +533,8 @@ export class WikiShield {
 				}
 			}
 
-			if (hasNewAlerts && this.alerts.length > 0 && this.options.zen.alerts) {
-				this.audioManager.playSound([ "alerts", "alert" ]);
+			if (hasNewAlerts && this.alerts.length > 0) {
+				this.audioManager.playSound([ "notification", "alert" ]);
 			}
 
 			this.alerts.sort((a, b) => {
@@ -693,6 +566,8 @@ export class WikiShield {
 	 * Update the alerts count and list display
 	 */
 	updateAlertsDisplay() {
+		this.updateNotificationsCount();
+
 		const unreadCount = this.alerts.filter(n => !n.read).length;
 		const countElem = document.querySelector("#alerts-count");
 		const listElem = document.querySelector("#alerts-list");
@@ -862,7 +737,7 @@ export class WikiShield {
 			]);
 
 			const notices = noticesResponse.query?.notifications?.list ?? [];
-			await Promise.all(notices.map(n => {
+			await Promise.all(notices.map(async n => {
 				return this.api.parseWikitext(n["*"].body).then(parsed => {
 					n["*"].body = parsed;
 					return n;
@@ -878,8 +753,8 @@ export class WikiShield {
 				}
 			}
 
-			if (hasNewNotices && this.notices.length > 0 && this.options.zen.notices) {
-				this.audioManager.playSound([ "alerts", "notice" ]);
+			if (hasNewNotices && this.notices.length > 0) {
+				this.audioManager.playSound([ "notification", "notice" ]);
 			}
 
 			this.notices.sort((a, b) => {
@@ -911,6 +786,8 @@ export class WikiShield {
 	 * Update the notices count and list display
 	 */
 	updateNoticesDisplay() {
+		this.updateNotificationsCount();
+
 		const unreadCount = this.notices.filter(n => !n.read).length;
 		const countElem = document.querySelector("#notices-count");
 		const listElem = document.querySelector("#notices-list");
@@ -1092,26 +969,51 @@ export class WikiShield {
 
 	/**
 	 * Give a user a welcome template, if not already given
-	 * @param {String} name The user to welcome
+	 * @param {Object} user The user to welcome
 	 * @param {String} template Which welcome template to use
 	 */
-	async welcomeUser(name, template) {
+	async welcomeUser(user, templateName) {
 		try {
-			const talkPageName = `User talk:${name}`;
-			const talkPageContent = await this.api.getSinglePageContent(talkPageName);
-
+			const talkPageName = `User talk:${user.name}`;
 			if (await this.api.pageExists(talkPageName)) {
 				return;
 			}
 
+			let template = welcomes[templateName];
+			if (!template || template.hide) {
+				return;
+			}
+
+			const checkForLoop = new Set([ template ]);
+			while (typeof template?.template === "function") {
+				template = welcomes[template.template(user)];
+				if (checkForLoop.has(template)) {
+					if (this.interface.showToast(
+						"REPORT TO DEVELOPER",
+						`Uh oh! Something has gone catastrophically wrong. Please report this to a developer, and include the error code below:<br><br><code>WELCOME_TEMPLATE_LOOP</code>`,
+						-1,
+						"developer"
+					)) {
+						this.audioManager.playSound([ "other", "error" ]);
+					}
+					return;
+				}
+
+				if (!template || template.hide) {
+					return;
+				} else {
+					checkForLoop.add(template);
+				}
+			}
+
 			await this.api.edit(
 				talkPageName,
-				talkPageContent + `\n${this.wikishieldEventData.welcomeTemplates[template]}`,
+				template.template,
 				this.api.buildMessage("Welcoming to Wikipedia")
 			);
 
 			// Increment welcome statistic
-			this.statistics.welcomes++;
+			this.storage.data.statistics.users_welcomed.total++;
 
 			// Update all edits in the queue from this user
 			this.queue.queue[this.queue.currentQueueTab].forEach(edit => {
@@ -1127,6 +1029,7 @@ export class WikiShield {
 
 			// Re-render the queue to update the display
 			this.interface.renderQueue(this.queue.queue[this.queue.currentQueueTab], this.queue.currentEdit[this.queue.currentQueueTab]);
+			// TODO force update to update middle top
 		} catch (err) {
 			console.log("Error while welcoming user", err);
 		}
@@ -1161,7 +1064,12 @@ export class WikiShield {
 			'''${level}''': ${reason} ~~~~
 		`.replaceAll("\t", ""), this.api.buildMessage(`Requesting protection for [[${title}]]`));
 
-		this.statistics.reports++;
+		this.audioManager.playSound([ "action", "protect" ]);
+
+		this.storage.data.statistics.reports_filed.total++;
+		this.storage.data.statistics.reports_filed.RFPP++;
+
+		return true;
 	}
 
 	/**
@@ -1173,11 +1081,11 @@ export class WikiShield {
 		const blocked = await this.api.usersBlocked(user);
 
 		if (blocked[user]) {
-			return;
+			return false;
 		}
 
 		if (await this.userReportedToAiv(user)) {
-			return;
+			return false;
 		}
 
 		const content = `* {{vandal|${user}}} &ndash; ${message} ~~~~`;
@@ -1188,7 +1096,12 @@ export class WikiShield {
 			this.api.buildMessage(`Reporting [[Special:Contributions/${user}|${user}]]`)
 		);
 
-		this.statistics.reports++;
+		this.audioManager.playSound([ "action", "report" ]);
+
+		this.storage.data.statistics.reports_filed.total++;
+		this.storage.data.statistics.reports_filed.AVI++;
+
+		return true;
 	}
 
 	/**
@@ -1201,12 +1114,12 @@ export class WikiShield {
 
 		if (blocked[user]) {
 			// already blocked
-			return;
+			return false;
 		}
 
 		if (await this.userReportedToUaa(user)) {
 			// already reported
-			return;
+			return false;
 		}
 
 		const content = `* {{user-uaa|${user}}} &ndash; ${message} ~~~~`;
@@ -1217,10 +1130,15 @@ export class WikiShield {
 			this.api.buildMessage(`Reporting [[Special:Contributions/${user}|${user}]]`)
 		);
 
+		this.audioManager.playSound([ "action", "report" ]);
+
 		// Add user to no-auto-welcome list since they were reported to UAA
 		this.noAutoWelcomeList.add(user);
 
-		this.statistics.reports++;
+		this.storage.data.statistics.reports_filed.total++;
+		this.storage.data.statistics.reports_filed.UAA++;
+
+		return true;
 	}
 
 	/**
@@ -1245,7 +1163,7 @@ export class WikiShield {
 			event.preventDefault();
 		}
 
-		for (const script of this.options.controlScripts) {
+		for (const script of this.storage.data.control_scripts) {
 			if (script.keys.includes(event.key.toLowerCase())) {
 				this.executeScript(script);
 			}
@@ -1266,7 +1184,7 @@ export class WikiShield {
 			while (allScripts.length > 0) {
 				const current = allScripts[0];
 				const willBeRun = (current.name && current.name === "if"
-					&& this.wikishieldEventData.conditions[current.condition].check(this.queue.currentEdit[this.queue.currentQueueTab])) || !current.name;
+					&& this.interface.eventManager.conditions[current.condition].check(this, this.queue.currentEdit[this.queue.currentQueueTab])) || !current.name;
 
 				if (willBeRun) {
 					allScripts.push(...current.actions);
@@ -1296,7 +1214,7 @@ export class WikiShield {
 			currentEdit = this.queue.currentEdit[this.queue.currentQueueTab] || 1;
 		}
 
-		const ifAndTrue = script.name && script.name === "if" && this.wikishieldEventData.conditions[script.condition].check(currentEdit);
+		const ifAndTrue = script.name && script.name === "if" && this.interface.eventManager.conditions[script.condition].check(this, currentEdit);
 
 		if (ifAndTrue || !script.name) {
 			for (const action of script.actions) {
@@ -1307,15 +1225,19 @@ export class WikiShield {
 
 					if (hasContinuity || !event.needsContinuity) {
 						if (currentEdit !== 1 || event.runWithoutEdit) {
-							if (event.includeInProgress) {
-								updateProgress(event.progressDesc);
-								this.audioManager.playSound([ "actions", "default" ]);
-							}
+							updateProgress(event.progressDesc);
 
-							const result = await event.func(action.params, currentEdit);
+							const result = await event.func(this, action.params, currentEdit);
 
+							this.storage.data.statistics.scripts_executed.total++;
 							if (result === false) {
 								hasContinuity = false;
+							} else {
+								this.storage.data.statistics.scripts_executed.successful++;
+
+								if (event.includeInProgress) {
+									this.audioManager.playSound([ "actions", "default" ]);
+								}
 							}
 						}
 					}
@@ -1330,7 +1252,10 @@ export class WikiShield {
 		return hasContinuity;
 	}
 
+	// TODO
 	async save(noSave = false) {
+		return;
+
 		const obj = {
 			changelog: __script__.changelog.version,
 
@@ -1350,7 +1275,7 @@ export class WikiShield {
 			return string;
 		}
 
-		if ((mw.storage.store.getItem("WikiShield:CloudStorage") ?? defaultSettings.enableCloudStorage.toString()) === "true") {
+		/* if ((mw.storage.store.getItem("WikiShield:CloudStorage") ?? defaultSettings.enableCloudStorage.toString()) === "true") {
 			return await this.api.edit(
 				`User:${mw.config.values.wgUserName}/ws-save.js`,
 				string,
@@ -1359,16 +1284,19 @@ export class WikiShield {
 			);
 		} else {
 			mw.storage.store.setItem("WikiShield:Save", string);
-		}
+		} */
 	}
 
+	// TODO
 	async load() {
+		return { };
+
 		let data;
-		if ((mw.storage.store.getItem("WikiShield:CloudStorage") ?? defaultSettings.enableCloudStorage.toString()) === "true") {
+		/* if ((mw.storage.store.getItem("WikiShield:CloudStorage") ?? defaultSettings.enableCloudStorage.toString()) === "true") {
 			data = await this.api.getSinglePageContent(`User:${mw.config.values.wgUserName}/ws-save.js`);
 		} else {
 			data = mw.storage.store.getItem("WikiShield:Save");
-		}
+		} */
 
 		return JSON.parse(atob(data || "e30="));
 	}

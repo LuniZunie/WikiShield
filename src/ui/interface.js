@@ -12,6 +12,7 @@ import { getWarningFromLookup, warnings, warningTemplateColors } from '../data/w
 import { colorPalettes } from '../config/defaults.js';
 import { __pendingChangesServer__ } from '../core/api.js';
 import { WikiShieldProgressBar } from './progress-bar.jsx';
+import { fullTrim } from '../utils/formatting.js';
 
 export class WikiShieldInterface {
 	constructor(wikishield) {
@@ -47,30 +48,13 @@ export class WikiShieldInterface {
 		baseStyle.classList.add("this.wikishield-theme-base");
 		baseStyle.innerHTML = wikishieldStyling.base;
 		document.head.appendChild(baseStyle);
-
-		// Always apply dark theme
-		const style = document.createElement("style");
-		style.classList.add("this.wikishield-theme");
-		style.innerHTML = wikishieldStyling["theme-dark"];
-		document.head.appendChild(style);
-
-		// Set the data-theme attribute to dark
-		document.documentElement.setAttribute("data-theme", "dark");
-
-		// Add dark-mode class to body
-		document.body.classList.add("dark-mode");
-
-		// Save the theme preference (always dark)
-		this.wikishield.options.theme = "theme-dark";
 	}
 
 	/**
 	* Remove all theme stylesheets
 	*/
 	removeTheme() {
-		document.querySelectorAll(".this.wikishield-theme, .this.wikishield-theme-base").forEach(elem => elem.remove());
-		document.documentElement.removeAttribute("data-theme");
-		document.body.classList.remove("dark-mode");
+		document.querySelectorAll(".this.wikishield-theme-base").forEach(elem => elem.remove());
 	}
 
 	/**
@@ -103,14 +87,6 @@ export class WikiShieldInterface {
 		const ctx = canvas.getContext('2d');
 		let dots = [];
 		let animationFrame;
-
-		// Set canvas size
-		const resizeCanvas = () => {
-			canvas.width = window.innerWidth;
-			canvas.height = window.innerHeight;
-		};
-		resizeCanvas();
-		window.addEventListener('resize', resizeCanvas);
 
 		// Create dots
 		class Dot {
@@ -152,14 +128,58 @@ export class WikiShieldInterface {
 			}
 		}
 
-		// Initialize dots (one per 5000 pixels)
-		const numDots = Math.floor((canvas.width * canvas.height) / 5000);
-		for (let i = 0; i < numDots; i++) {
-			dots.push(new Dot());
-		}
+		// Set canvas size
+		const resizeCanvas = () => {
+			const oldWidth = canvas.width;
+			const oldHeight = canvas.height;
 
-		// Animation loop
+			canvas.width = window.innerWidth;
+			canvas.height = window.innerHeight;
+
+			const scaleX = canvas.width / oldWidth;
+			const scaleY = canvas.height / oldHeight;
+
+			// Rescale all existing dots
+			dots.forEach(dot => {
+				dot.x *= scaleX;
+				dot.y *= scaleY;
+			});
+
+			const idealCount = Math.floor((canvas.width * canvas.height) / 5000);
+			if (idealCount > dots.length) {
+				for (let i = dots.length; i < idealCount; i++) {
+					dots.push(new Dot());
+				}
+			} else if (idealCount < dots.length) {
+				dots.length = idealCount;
+			}
+		};
+		resizeCanvas();
+		window.addEventListener('resize', resizeCanvas);
+
+		let lastTimestamp = performance.now();
+		const lastDeltaTimes = new Array(15).fill(1000 / 60); // Start with 60 FPS
 		const animate = () => {
+			{ // FPS calculation
+				const now = performance.now();
+
+				const deltaTime = now - lastTimestamp;
+				lastTimestamp = now;
+
+				lastDeltaTimes.shift();
+				lastDeltaTimes.push(deltaTime);
+
+				const noOutliers = [ ...lastDeltaTimes ].sort((a, b) => a - b).slice(2, -2);
+
+				const averageDeltaTime = noOutliers.reduce((a, b) => a + b, 0) / noOutliers.length;
+				const fps = 1000 / averageDeltaTime;
+
+				if (fps < 30) {
+					ctx.clearRect(0, 0, canvas.width, canvas.height);
+					return;
+				}
+			}
+
 			ctx.clearRect(0, 0, canvas.width, canvas.height);
 
 			// Update and draw dots
@@ -171,20 +191,38 @@ export class WikiShieldInterface {
 			// Draw lines between close dots
 			const length = dots.length;
 			for (let i = 0; i < length; i++) {
+				const a = dots[i];
+
 				for (let j = i + 1; j < length; j++) {
-					const dx = dots[i].x - dots[j].x;
-					const dy = dots[i].y - dots[j].y;
+					const b = dots[j];
+
+					// Compute wrapped distances
+					let dx = a.x - b.x;
+					let dy = a.y - b.y;
+
+					// Wrap horizontally
+					if (dx > canvas.width / 2) dx -= canvas.width;
+					if (dx < -canvas.width / 2) dx += canvas.width;
+
+					// Wrap vertically
+					if (dy > canvas.height / 2) dy -= canvas.height;
+					if (dy < -canvas.height / 2) dy += canvas.height;
+
 					const distance = Math.sqrt(dx * dx + dy * dy);
 
 					if (distance < 150) {
 						ctx.beginPath();
-						ctx.moveTo(dots[i].x, dots[i].y);
-						ctx.lineTo(dots[j].x, dots[j].y);
+						ctx.moveTo(a.x, a.y);
+						ctx.lineTo(a.x - dx, a.y - dy);  // wrapped endpoint
 						const opacity = (1 - distance / 150) * 0.4;
-						// Blend colors between dots
-						const avgR = (parseInt(dots[i].color.split(',')[0]) + parseInt(dots[j].color.split(',')[0])) / 2;
-						const avgG = (parseInt(dots[i].color.split(',')[1]) + parseInt(dots[j].color.split(',')[1])) / 2;
-						const avgB = (parseInt(dots[i].color.split(',')[2]) + parseInt(dots[j].color.split(',')[2])) / 2;
+
+						const aSplit = a.color.split(',');
+						const bSplit = b.color.split(',');
+
+						const avgR = (parseInt(aSplit[0]) + parseInt(bSplit[0])) / 2;
+						const avgG = (parseInt(aSplit[1]) + parseInt(bSplit[1])) / 2;
+						const avgB = (parseInt(aSplit[2]) + parseInt(bSplit[2])) / 2;
+
 						ctx.strokeStyle = `rgba(${avgR}, ${avgG}, ${avgB}, ${opacity})`;
 						ctx.lineWidth = 1;
 						ctx.stroke();
@@ -216,7 +254,7 @@ export class WikiShieldInterface {
 			this.wikishield.start();
 		});
 
-		this.loadTheme("theme-dark");
+		this.loadTheme();
 	}
 
 	/**
@@ -230,8 +268,7 @@ export class WikiShieldInterface {
 				${wikishieldHTML.head}
 			`;
 
-		this.loadTheme("theme-dark");
-
+		this.loadTheme();
 		document.body.innerHTML = wikishieldHTML.main;
 
 		// Modern bottom menu system
@@ -497,6 +534,7 @@ export class WikiShieldInterface {
 		);
 
 		this.elem("#pending-changes-container > .accept").addEventListener("click", (e) => {
+			// TODO
 			this.wikishield.audioManager.playSound([ "ui", "click" ]);
 			const message = window.prompt("Enter an optional edit summary for accepting this flagged edit:");
 			this.wikishield.executeScript({
@@ -514,6 +552,7 @@ export class WikiShieldInterface {
 		});
 
 		this.elem("#pending-changes-container > .reject").addEventListener("click", (e) => {
+			// TODO
 			this.wikishield.audioManager.playSound([ "ui", "click" ]);
 			const message = window.prompt("Enter an optional edit summary for rejecting this flagged edit:");
 			this.wikishield.executeScript({
@@ -547,14 +586,13 @@ export class WikiShieldInterface {
 		const detailsWidthAdjust = this.elem("#details-width-adjust");
 		const details = this.elem("#right-details");
 
-		const savedQueueWidth = this.wikishield.queueWidth;
-		const savedDetailsWidth = this.wikishield.detailsWidth;
-
+		const savedQueueWidth = this.wikishield.storage.data.layout.queue.width;
 		if (savedQueueWidth) {
 			queue.style.width = savedQueueWidth;
 			this.elem("#right-container").style.width = `calc(100% - ${savedQueueWidth})`;
 		}
 
+		const savedDetailsWidth = this.wikishield.storage.data.layout.details.width;
 		if (savedDetailsWidth) {
 			details.style.width = savedDetailsWidth;
 			this.elem("#main-container").style.width = `calc(100% - ${savedDetailsWidth})`;
@@ -587,11 +625,11 @@ export class WikiShieldInterface {
 
 		window.addEventListener("pointerup", () => {
 			if (this.activeHandle === queueWidthAdjust) {
-				this.wikishield.queueWidth = queue.style.width;
+				this.wikishield.storage.data.layout.queue.width = queue.style.width;
 			}
 
 			if (this.activeHandle === detailsWidthAdjust) {
-				this.wikishield.detailsWidth = details.style.width;
+				this.wikishield.storage.data.layout.details.width = details.style.width;
 			}
 
 			this.activeHandle = null;
@@ -620,7 +658,7 @@ export class WikiShieldInterface {
 
 			// Convert to vw once
 			const newWidthVw = (newWidthPx / this.windowWidthPx) * 100;
-			this.section.style.width = newWidthVw + "vw";
+			this.section.style.width = `${newWidthVw}vw`;
 
 			// Update siblings based on section identity
 			if (this.activeHandle === queueWidthAdjust) {
@@ -638,48 +676,7 @@ export class WikiShieldInterface {
 			[...document.querySelectorAll(".context-menu")].forEach(elem => elem.remove());
 		});
 
-		// Intercept Wikipedia links for floating iframe
-		document.addEventListener("click", (e) => {
-			// Check if the click was on a link or inside a link
-			let link = e.target.closest("a[href]");
-			if (!link) return;
-
-			link = e.target.closest("a[href][target='_blank']");
-			this.wikishield.audioManager.playSound([ "ui", "link" ]);
-
-			if (!link) return;
-
-			const url = link.getAttribute("href");
-
-			// Only intercept Wikipedia links
-			if (!url || !url.includes("wikipedia.org")) return;
-
-			// Middle click (button 1) should open in new tab normally
-			if (e.button === 1) return;
-
-			// Ctrl/Cmd + click should open in new tab normally
-			if (e.ctrlKey || e.metaKey) return;
-
-			// Prevent default behavior and open in floating iframe
-			e.preventDefault();
-			e.stopPropagation();
-
-			// Extract page title from URL for display
-			let pageTitle = "Wikipedia";
-			try {
-				const urlObj = new URL(url);
-				const pathParts = urlObj.pathname.split("/");
-				if (pathParts.length > 2) {
-					pageTitle = decodeURIComponent(pathParts[pathParts.length - 1]).replace(/_/g, " ");
-				}
-			} catch (err) {
-				console.error("Failed to parse URL:", err);
-			}
-
-			window.open(url, "_blank");
-		}, true); // Use capture phase to intercept before other handlers
-
-		if (this.wikishield.loadedChangelog !== __script__.changelog.version || __script__.changelog.version.endsWith("!")) {
+		if (__script__.changelog.version.endsWith("!") || this.wikishield.storage.data.changelog !== __script__.changelog.version) {
 			this.settings.openSettings("about", ".settings-section:has(.changelog-content)");
 		}
 
@@ -780,10 +777,10 @@ export class WikiShieldInterface {
 				menu.style.bottom = 'auto';
 			}
 
-			requestAnimationFrame(position);
+			requestAnimationFrame(() => position());
 		};
 
-		requestAnimationFrame(position);
+		requestAnimationFrame(() => position());
 	}
 
 	/**
@@ -876,10 +873,10 @@ export class WikiShieldInterface {
 			menu.style.top = `${top}px`;
 			menu.style.bottom = 'auto';
 
-			requestAnimationFrame(position);
+			requestAnimationFrame(() => position());
 		};
 
-		requestAnimationFrame(position);
+		requestAnimationFrame(() => position());
 	}
 
 	/**
@@ -917,6 +914,7 @@ export class WikiShieldInterface {
 				]
 			};
 
+			const autoReporting = this.wikishield.storage.data.settings.auto_report;
 			await this.wikishield.executeScript({
 				actions: [
 					{
@@ -940,9 +938,7 @@ export class WikiShieldInterface {
 						name: "highlightUser",
 						params: {}
 					},
-				].concat(this.wikishield.options.enableAutoReporting && this.wikishield.options.selectedAutoReportReasons[warningType] ?
-					[ reportObject ] : []
-				)
+				].concat(autoReporting.enabled && autoReporting.has(warningType) ? [ reportObject ] : [])
 			});
 
 			this.selectedMenu = null;
@@ -1201,10 +1197,14 @@ export class WikiShieldInterface {
 
 			switch (param.type) {
 				case "choice": {
-					const optionHTML = param.options.reduce((prev, cur) => prev + `<option>${cur}</option>`, "");
+					let options = param.options ?? [ ];
+					if (typeof param.showOption === "function") {
+						options = options.filter(opt => param.showOption(this.wikishield, opt));
+					}
+
 					container.innerHTML += `
 						<select data-paramid="${param.id}">
-							${optionHTML}
+							${options.reduce((prev, cur) => prev + `<option>${cur}</option>`, "")}
 						</select>
 					`;
 				} break;
@@ -1292,7 +1292,7 @@ export class WikiShieldInterface {
 				elem.dataset.type = type;
 				elem.innerHTML = this.generateEditHTML(edit);
 
-				if (edit.mentionsMe && this.wikishield.options.enableUsernameHighlighting) {
+				if (edit.mentionsMe && this.wikishield.storage.data.settings.username_highlighting.enabled) {
 					elem.classList.add("queue-edit-mentions-me");
 					elem.dataset.tooltip = "This edit contains your username";
 					this.addTooltipListener(elem);
@@ -1323,33 +1323,29 @@ export class WikiShieldInterface {
 
 						const contextWhitelistBtn = contextMenu.querySelector("#context-whitelist-user");
 						if (contextWhitelistBtn) {
-							if (this.wikishield.whitelist.users.has(username)) {
-								contextWhitelistBtn.textContent = "Unwhitelist user";
-							} else {
-								contextWhitelistBtn.textContent = "Whitelist user";
-							}
-
+							contextWhitelistBtn.textContent = this.wikishield.storage.data.whitelist.users.has(username) ? "Unwhitelist user" : "Whitelist user";
 							contextWhitelistBtn.addEventListener("click", () => {
-								// TODO wikishield.audioManager.playSound([ "actions", "sparkle" ]);
-
 								if (this.wikishield.whitelist.users.has(username)) {
-									this.wikishield.whitelist.users.delete(username);
-									this.wikishield.logger.log(`Removed ${username} from whitelist`);
+									this.wikishield.executeScript({
+										actions: [
+											{
+												name: "unwhitelistUser",
+												params: {}
+											}
+										]
+									}, undefined, undefined, edit);
 								} else {
-									const expiryMs = this.wikishield.util.expiryToMilliseconds(this.wikishield.options.whitelistExpiry.users);
-
-									const now = Date.now();
-									this.wikishield.whitelist.users.set(username, [ now, now + expiryMs ]);
-
-									this.wikishield.statistics.whitelist++;
-									this.wikishield.logger.log(`Added ${username} to user whitelist until ${new Date(now + expiryMs).toLocaleString()}`);
+									this.wikishield.executeScript({
+										actions: [
+											{
+												name: "whitelistUser",
+												params: {}
+											}
+										]
+									}, undefined, undefined, edit);
 								}
 
-								if (this.wikishield.whitelist.users.has(username)) {
-									contextWhitelistBtn.textContent = "Unwhitelist user";
-								} else {
-									contextWhitelistBtn.textContent = "Whitelist user";
-								}
+								contextWhitelistBtn.textContent = this.wikishield.storage.data.whitelist.users.has(username) ? "Unwhitelist user" : "Whitelist user";
 
 								this.renderQueue(this.wikishield.queue.queue[this.wikishield.queue.currentQueueTab], this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab]);
 								contextMenu.remove();
@@ -1358,33 +1354,29 @@ export class WikiShieldInterface {
 
 						const contextHighlightBtn = contextMenu.querySelector("#context-highlight-user");
 						if (contextHighlightBtn) {
-							if (this.wikishield.highlight.users.has(username)) {
-								contextHighlightBtn.textContent = "Unhighlight user";
-							} else {
-								contextHighlightBtn.textContent = "Highlight user";
-							}
-
+							contextHighlightBtn.textContent = this.wikishield.storage.data.highlight.users.has(username) ? "Unhighlight user" : "Highlight user";
 							contextHighlightBtn.addEventListener("click", () => {
-								// TODO wikishield.audioManager.playSound([ "actions", "sparkle" ]);
-
-								if (this.wikishield.highlight.users.has(username)) {
-									this.wikishield.highlight.users.delete(username);
-									this.wikishield.logger.log(`Removed ${username} from highlight users`);
+								if (this.wikishield.storage.data.highlight.users.has(username)) {
+									this.wikishield.executeScript({
+										actions: [
+											{
+												name: "unhighlightUser",
+												params: {}
+											}
+										]
+									}, undefined, undefined, edit);
 								} else {
-									const expiryMs = this.wikishield.util.expiryToMilliseconds(this.wikishield.options.highlightExpiry.users);
-
-									const now = Date.now();
-									this.wikishield.highlight.users.set(username, [ now, now + expiryMs ]);
-
-									this.wikishield.statistics.highlight++;
-									this.wikishield.logger.log(`highlight user ${username} until ${new Date(now + expiryMs).toLocaleString()}`);
+									this.wikishield.executeScript({
+										actions: [
+											{
+												name: "highlightUser",
+												params: {}
+											}
+										]
+									}, undefined, undefined, edit);
 								}
 
-								if (this.wikishield.highlight.users.has(username)) {
-									contextHighlightBtn.textContent = "Unhighlight user";
-								} else {
-									contextHighlightBtn.textContent = "Highlight user";
-								}
+								contextHighlightBtn.textContent = this.wikishield.storage.data.highlight.users.has(username) ? "Unhighlight user" : "Highlight user";
 
 								this.renderQueue(this.wikishield.queue.queue[this.wikishield.queue.currentQueueTab], this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab]);
 								contextMenu.remove();
@@ -1397,26 +1389,29 @@ export class WikiShieldInterface {
 
 						const contextWhitelistBtn = contextMenu.querySelector("#context-whitelist-page");
 						if (contextWhitelistBtn) {
-							if (this.wikishield.whitelist.pages.has(pageTitle)) {
-								contextWhitelistBtn.textContent = "Unwhitelist page";
-							} else {
-								contextWhitelistBtn.textContent = "Whitelist page";
-							}
-
+							contextWhitelistBtn.textContent = this.wikishield.storage.data.whitelist.pages.has(pageTitle) ? "Unwhitelist page" : "Whitelist page";
 							contextWhitelistBtn.addEventListener("click", () => {
-								// TODO wikishield.audioManager.playSound([ "actions", "sparkle" ]);
 								if (this.wikishield.whitelist.pages.has(pageTitle)) {
-									this.wikishield.whitelist.pages.delete(pageTitle);
-									this.wikishield.logger.log(`Removed ${pageTitle} from page whitelist`);
+									this.wikishield.executeScript({
+										actions: [
+											{
+												name: "unwhitelistPage",
+												params: {}
+											}
+										]
+									}, undefined, undefined, edit);
 								} else {
-									const expiryMs = this.wikishield.util.expiryToMilliseconds(this.wikishield.options.whitelistExpiry.pages);
-
-									const now = Date.now();
-									this.wikishield.whitelist.pages.set(pageTitle, [ now, now + expiryMs ]);
-
-									this.wikishield.statistics.whitelist++;
-									this.wikishield.logger.log(`Added ${pageTitle} to page whitelist until ${new Date(now + expiryMs).toLocaleString()}`);
+									this.wikishield.executeScript({
+										actions: [
+											{
+												name: "whitelistPage",
+												params: {}
+											}
+										]
+									}, undefined, undefined, edit);
 								}
+
+								contextWhitelistBtn.textContent = this.wikishield.storage.data.whitelist.pages.has(pageTitle) ? "Unwhitelist page" : "Whitelist page";
 
 								this.renderQueue(this.wikishield.queue.queue[this.wikishield.queue.currentQueueTab], this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab]);
 								contextMenu.remove();
@@ -1425,27 +1420,29 @@ export class WikiShieldInterface {
 
 						const contextHighlightBtn = contextMenu.querySelector("#context-highlight-page");
 						if (contextHighlightBtn) {
-							if (this.wikishield.highlight.pages.has(pageTitle)) {
-								contextHighlightBtn.textContent = "Unhighlight page";
-							} else {
-								contextHighlightBtn.textContent = "Highlight page";
-							}
-
+							contextHighlightBtn.textContent = this.wikishield.storage.data.highlight.pages.has(pageTitle) ? "Unhighlight page" : "Highlight page";
 							contextHighlightBtn.addEventListener("click", () => {
-								// TODO wikishield.audioManager.playSound([ "actions", "sparkle" ]);
-
-								if (this.wikishield.highlight.pages.has(pageTitle)) {
-									this.wikishield.highlight.pages.delete(pageTitle);
-									this.wikishield.logger.log(`Removed ${pageTitle} from highlight pages`);
+								if (this.wikishield.storage.data.highlight.pages.has(pageTitle)) {
+									this.wikishield.executeScript({
+										actions: [
+											{
+												name: "unhighlightPage",
+												params: {}
+											}
+										]
+									}, undefined, undefined, edit);
 								} else {
-									const expiryMs = this.wikishield.util.expiryToMilliseconds(this.wikishield.options.highlightExpiry.pages);
-
-									const now = Date.now();
-									this.wikishield.highlight.pages.set(pageTitle, [ now, now + expiryMs ]);
-
-									this.wikishield.statistics.highlight++;
-									this.wikishield.logger.log(`highlight page ${pageTitle} until ${new Date(now + expiryMs).toLocaleString()}`);
+									this.wikishield.executeScript({
+										actions: [
+											{
+												name: "highlightPage",
+												params: {}
+											}
+										]
+									}, undefined, undefined, edit);
 								}
+
+								contextHighlightBtn.textContent = this.wikishield.storage.data.highlight.pages.has(pageTitle) ? "Unhighlight page" : "Highlight page";
 
 								this.renderQueue(this.wikishield.queue.queue[this.wikishield.queue.currentQueueTab], this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab]);
 								contextMenu.remove();
@@ -1456,8 +1453,8 @@ export class WikiShieldInterface {
 					// Remove item
 					contextMenu.querySelector("#context-remove").addEventListener("click", () => {
 						this.wikishield.audioManager.playSound([ "ui", "click" ]);
-						if (this.wikishield.ollamaAI) {
-							this.wikishield.ollamaAI.cancelAnalysis(edit.revid);
+						if (this.wikishield.AI) {
+							this.wikishield.AI.cancel.edit(edit.revid);
 						}
 
 						const currentIndex = queue.findIndex(e => e.revid === edit.revid);
@@ -1484,38 +1481,19 @@ export class WikiShieldInterface {
 
 					// Open history
 					contextMenu.querySelector("#context-open-history").addEventListener("click", (e) => {
-						this.wikishield.audioManager.playSound([ "ui", "click" ]);
 						const url = this.wikishield.util.pageLink(`Special:PageHistory/${edit.page.title}`);
-						this.wikishield.interface.eventManager.openWikipediaLink(url, `History: ${edit.page.title}`, e);
+						window.open(url, "_blank");
 						contextMenu.remove();
 					});
 
 					// Open contributions
 					contextMenu.querySelector("#context-open-contribs").addEventListener("click", (e) => {
-						this.wikishield.audioManager.playSound([ "ui", "click" ]);
 						const url = this.wikishield.util.pageLink(`Special:Contributions/${edit.user.name}`);
-						this.wikishield.interface.eventManager.openWikipediaLink(url, `Contributions: ${edit.user.name}`, e);
+						window.open(url, "_blank");
 						contextMenu.remove();
 					});
 
-					contextMenu.addEventListener("click", (mevent) => mevent.stopPropagation());
-				});
-
-				// --- Click to select ---
-				elem.addEventListener("click", () => {
-					this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab] = edit;
-					this.renderQueue(this.wikishield.queue.queue[this.wikishield.queue.currentQueueTab], edit);
-
-					if (edit && this.wikishield.options.enableOllamaAI && this.wikishield.ollamaAI) {
-						this.wikishield.ollamaAI.analyzeEdit(edit)
-						.then(analysis => {
-							edit.aiAnalysis = analysis;
-							if (this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab] === edit && this.wikishield.interface) {
-								this.wikishield.interface.updateAIAnalysisDisplay(analysis);
-							}
-						})
-						.catch(err => console.error("AI analysis failed:", err));
-					}
+					contextMenu.addEventListener("click", e => e.stopPropagation());
 				});
 
 				// Add to DOM (temporarily append)
@@ -1556,7 +1534,8 @@ export class WikiShieldInterface {
 	*/
 	generateEditHTML(edit, includeORES = true, includeTitle = true, includeUser = true, includeTime = false) {
 		let tagHTML = "";
-		// Ensure edit.tags is an array before iterating
+
+		const highlightedTags = this.wikishield.storage.data.highlight.tags;
 		if (edit.tags && Array.isArray(edit.tags)) {
 			const cache = new Map();
 			edit.tags.sort((a, b) => {
@@ -1564,7 +1543,7 @@ export class WikiShieldInterface {
 				if (cache.has(a)) {
 					aScore = cache.get(a);
 				} else {
-					aScore = this.wikishield.highlight.tags.has(a) ? 0 : 1;
+					aScore = highlightedTags.has(a) ? 0 : 1;
 					cache.set(a, aScore);
 				}
 
@@ -1572,7 +1551,7 @@ export class WikiShieldInterface {
 				if (cache.has(b)) {
 					bScore = cache.get(b);
 				} else {
-					bScore = this.wikishield.highlight.tags.has(b) ? 0 : 1;
+					bScore = highlightedTags.has(b) ? 0 : 1;
 					cache.set(b, bScore);
 				}
 
@@ -1580,7 +1559,7 @@ export class WikiShieldInterface {
 			});
 
 			for (const tag of edit.tags) {
-				tagHTML += `<span class="queue-edit-tag ${this.wikishield.highlight.tags.has(tag) ? "queue-highlight" : ""}">${tag}</span>`;
+				tagHTML += `<span class="queue-edit-tag ${highlightedTags.has(tag) ? "queue-highlight" : ""}">${tag}</span>`;
 			}
 		}
 
@@ -1594,12 +1573,11 @@ export class WikiShieldInterface {
 		// Format ORES score for display
 		const oresScore = edit.ores || 0;
 		const oresPercent = Math.round(oresScore * 100);
-		const oresLabel = oresPercent < 30 ? "Good" : oresPercent < 70 ? "Review" : "Likely Bad";
 
 		const oresHTML = includeORES ? `<div class="queue-edit-color" data-ores-score="${oresPercent}%" data-raw-ores-score="${oresScore}" style="background: ${this.getORESColor(oresScore)};"></div>` : "";
 		const titleHTML = includeTitle ? `
 				<div
-					class="queue-edit-title ${this.wikishield.highlight.pages.has(edit.page ? edit.page.title : edit.title) ? "queue-highlight" : ""}"
+					class="queue-edit-title ${this.wikishield.storage.data.highlight.pages.has(edit.page ? edit.page.title : edit.title) ? "queue-highlight" : ""}"
 					data-tooltip="${edit.page ? edit.page.title : edit.title}"
 				>
 					<span class="fa fa-file-lines queue-edit-icon"></span>
@@ -1608,7 +1586,7 @@ export class WikiShieldInterface {
 
 		// Determine user highlight classes
 		let userClasses = "";
-		if (edit.user && this.wikishield.highlight.users.has(typeof edit.user === "string" ? edit.user : edit.user.name)) {
+		if (edit.user && this.wikishield.storage.data.highlight.users.has(typeof edit.user === "string" ? edit.user : edit.user.name)) {
 			userClasses = "queue-highlight";
 		} else if (edit.user && typeof edit.user === "object" && edit.user.emptyTalkPage) {
 			userClasses = "queue-user-empty-talk";
@@ -1710,8 +1688,21 @@ export class WikiShieldInterface {
 		}
 
 		if (!edit.seen) {
-			this.wikishield.statistics.reviewed++;
 			edit.seen = true;
+
+			this.wikishield.storage.data.statistics.edits_reviewed.total++;
+
+			switch (this.wikishield.queue.currentQueueTab) {
+				case "recent": {
+					this.wikishield.storage.data.statistics.recent_changes_reviewed.total++;
+				} break;
+				case "flagged": {
+					this.wikishield.storage.data.statistics.pending_changes_reviewed.total++;
+				} break;
+				case "watchlist": {
+					this.wikishield.storage.data.statistics.watchlist_changes_reviewed.total++;
+				} break;
+			}
 		}
 
 		// Stop checking for newer revisions on the previous edit
@@ -1825,7 +1816,7 @@ export class WikiShieldInterface {
 			const removeWhitelistButton = this.elem("#user-unwhitelist");
 			if (addWhitelistButton && removeWhitelistButton) {
 				const func = () => {
-					const isWhitelisted = this.wikishield.whitelist.users.has(edit.user.name);
+					const isWhitelisted = this.wikishield.storage.data.whitelist.users.has(edit.user.name);
 					if (isWhitelisted) {
 						addWhitelistButton.style = "display: none;";
 						removeWhitelistButton.style = "";
@@ -1845,7 +1836,7 @@ export class WikiShieldInterface {
 			const unhighlightButton = this.elem("#user-unhighlight");
 			if (highlightButton && unhighlightButton) {
 				const func = () => {
-					const isHighlighted = this.wikishield.highlight.users.has(edit.user.name);
+					const isHighlighted = this.wikishield.storage.data.highlight.users.has(edit.user.name);
 					if (isHighlighted) {
 						highlightButton.style = "display: none;";
 						unhighlightButton.style = "";
@@ -1866,8 +1857,9 @@ export class WikiShieldInterface {
 			const addWhitelistButton = this.elem("#page-whitelist");
 			const removeWhitelistButton = this.elem("#page-unwhitelist");
 			if (addWhitelistButton && removeWhitelistButton) {
+				// FIX, broken by context menu
 				const func = () => {
-					const isWhitelisted = this.wikishield.whitelist.pages.has(edit.page.title);
+					const isWhitelisted = this.wikishield.storage.data.whitelist.pages.has(edit.page.title);
 					if (isWhitelisted) {
 						addWhitelistButton.style = "display: none;";
 						removeWhitelistButton.style = "";
@@ -1886,8 +1878,9 @@ export class WikiShieldInterface {
 			const highlightButton = this.elem("#page-highlight");
 			const unhighlightButton = this.elem("#page-unhighlight");
 			if (highlightButton && unhighlightButton) {
+				// FIX, broken by context menu
 				const func = () => {
-					const isHighlighted = this.wikishield.highlight.pages.has(edit.page.title);
+					const isHighlighted = this.wikishield.storage.data.highlight.pages.has(edit.page.title);
 					if (isHighlighted) {
 						highlightButton.style = "display: none;";
 						unhighlightButton.style = "";
@@ -2046,22 +2039,6 @@ export class WikiShieldInterface {
 			existingNotice.remove();
 		}
 
-		if (this.wikishield.options.enableUsernameHighlighting) {
-			const currentUsername = mw.config.get("wgUserName");
-			if (currentUsername) {
-				const diffContainer = this.elem("#diff-container");
-				// Find all elements (typically td cells) in the diff
-				const allElements = diffContainer.querySelectorAll("td");
-
-				allElements.forEach(elem => {
-					if (elem.textContent.includes(currentUsername)) {
-						elem.style.outline = "2px solid #ffc107";
-						elem.style.outlineOffset = "-2px";
-					}
-				});
-			}
-		}
-
 		// Display AI analysis if available
 		this.updateAIAnalysisDisplay(edit.aiAnalysis);
 
@@ -2133,14 +2110,29 @@ export class WikiShieldInterface {
 		}
 
 		$diff.querySelectorAll(":is(.mw-diff-movedpara-left, .mw-diff-movedpara-right)").forEach(elem => {
-			const href = elem.href.slice(1); // Remove leading '#'
+			const href = elem.href.split("#")[1];
 			elem.addEventListener("click", (e) => {
 				e.preventDefault();
 
-				console.log(`Scrolling to moved paragraph: ${href}`, $diff.querySelector(`a[name="${href}"]`));
 				$diff.querySelector(`a[name="${href}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
 			});
 		});
+
+		if (this.wikishield.storage.data.settings.username_highlighting.enabled) {
+			const currentUsername = mw.config.get("wgUserName");
+			if (currentUsername) {
+				const diffContainer = this.elem("#diff-container");
+				// Find all elements (typically td cells) in the diff
+				const allElements = diffContainer.querySelectorAll("td");
+
+				allElements.forEach(elem => {
+					if (this.wikishield.util.usernameMatch(currentUsername, elem.textContent)) {
+						elem.style.outline = "2px solid #ffc107";
+						elem.style.outlineOffset = "-2px";
+					}
+				});
+			}
+		}
 
 		const firstChange = $diff.querySelector(".diff-addedline, .diff-deletedline");
 		if (firstChange) {
@@ -2156,6 +2148,8 @@ export class WikiShieldInterface {
 	* @param {Object} analysis The AI analysis object
 	*/
 	updateAIAnalysisDisplay(analysis) {
+		return; // AI analysis temporarily disabled
+
 		// Find or create AI analysis container
 		let aiContainer = document.querySelector("#ai-analysis-container");
 
@@ -2374,7 +2368,7 @@ export class WikiShieldInterface {
 
 		// Insert before the diff container
 		const diffContainer = this.elem("#diff-container");
-		if (diffContainer && diffContainer.parentElement) {
+		if (diffContainer?.parentElement) {
 			diffContainer.parentElement.insertBefore(noticeDiv, diffContainer);
 		}
 	}
@@ -2414,10 +2408,10 @@ export class WikiShieldInterface {
 		noticeDiv.style.cssText = `
 				margin: 10px 10px 0 10px;
 				padding: 8px 12px;
-				background: #d1ecf1;
-				border-left: 4px solid #17a2b8;
+				background: rgba(139, 92, 0, .15);
+				border-left: 4px solid #c5a000;
 				border-radius: 4px;
-				color: #0c5460;
+				color: #f0d48a;
 				display: flex;
 				align-items: center;
 				gap: 8px;
@@ -2428,14 +2422,14 @@ export class WikiShieldInterface {
 		noticeDiv.innerHTML = `
 				<span class="fa fa-clock-rotate-left"></span>
 				<span style="flex: 1;">Newer revision available on this page</span>
-				<a href="#" id="view-newest-edit" style="color: #004085; font-weight: 600; text-decoration: none; white-space: nowrap;">
+				<a href="#" id="view-newest-edit" style="color: #a3c5ff; font-weight: 600; text-decoration: none; white-space: nowrap;">
 					View latest →
 				</a>
 			`;
 
 		// Insert before the diff container
 		const diffContainer = this.elem("#diff-container");
-		if (diffContainer && diffContainer.parentElement) {
+		if (diffContainer?.parentElement) {
 			diffContainer.parentElement.insertBefore(noticeDiv, diffContainer);
 
 			// Add click handler
@@ -2469,18 +2463,18 @@ export class WikiShieldInterface {
 		const noticeDiv = document.createElement("div");
 		noticeDiv.id = "cannot-review-flagged-revision-notice";
 		noticeDiv.style.cssText = `
-				margin: 10px 10px 0 10px;
-				padding: 8px 12px;
-				background: #e9f5ff;
-				border-left: 4px solid #8cc9ff;
-				border-radius: 4px;
-				color: #0a3d62;
-				display: flex;
-				align-items: center;
-				gap: 8px;
-				font-size: 0.9em;
-				flex-shrink: 0;
-			`;
+			margin: 10px 10px 0 10px;
+			padding: 8px 12px;
+			background: #d1ecf1;
+			border-left: 4px solid #17a2b8;
+			border-radius: 4px;
+			color: #0c5460;
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			font-size: 0.9em;
+			flex-shrink: 0;
+		`;
 
 		noticeDiv.innerHTML = `
 				<span class="fa fa-shield-alt"></span>
@@ -2488,7 +2482,7 @@ export class WikiShieldInterface {
 			`;
 
 		const diffContainer = this.elem("#diff-container");
-		if (diffContainer && diffContainer.parentElement) {
+		if (diffContainer?.parentElement) {
 			diffContainer.parentElement.insertBefore(noticeDiv, diffContainer);
 		}
 
@@ -2673,7 +2667,7 @@ export class WikiShieldInterface {
 	* @returns {String} The color to display
 	*/
 	getORESColor(ores) {
-		const colors = colorPalettes[this.wikishield.options.selectedPalette];
+		const colors = colorPalettes[this.wikishield.storage.data.settings.theme.palette];
 		return colors[Math.floor(ores * colors.length)];
 	}
 
@@ -2702,7 +2696,8 @@ export class WikiShieldInterface {
 	* @param {Number} duration - How long to show (ms), default 5000
 	*/
 	showToast(title, message, duration = 5000, type = "default") {
-		if (this.wikishield.options.zen.enabled && !this.wikishield.options.zen.toasts) {
+		const zenMode = this.wikishield.storage.data.settings.zen_mode;
+		if (zenMode.enabled && !zenMode.toasts.enabled) {
 			return false;
 		}
 
@@ -2716,7 +2711,7 @@ export class WikiShieldInterface {
 		else if (type === "warning") toast.classList.add("warning");
 
 		// Select icon based on type
-		let icon = "⚠️";
+		let icon = "⚠️"; // TODO use font awesome
 		if (type === "success") icon = "✓";
 		else if (type === "error") icon = "✕";
 		else if (type === "warning") icon = "⚠️";
@@ -2753,7 +2748,7 @@ export class WikiShieldInterface {
 	* Hide and remove a toast alert
 	*/
 	hideToast(toast) {
-		if (!toast || !toast.parentElement) return;
+		if (!toast?.parentElement) return;
 
 		toast.classList.add("hidden");
 		setTimeout(() => {
@@ -2764,21 +2759,21 @@ export class WikiShieldInterface {
 	}
 
 	updateZenModeDisplay(updateMusic) {
-		const _zen_ = this.wikishield.options.zen;
+		const zenMode = this.wikishield.storage.data.settings.zen_mode;
 		if (updateMusic) {
-			if (_zen_.enabled && _zen_.music) {
-				this.wikishield.audioManager.playPlaylist(["music", "zen"]);
+			if (zenMode.enabled && zenMode.music.enabled) {
+				this.wikishield.audioManager.playPlaylist(["music", "zen_mode"]);
 			} else {
-				this.wikishield.audioManager.stopPlaylist(["music", "zen"]);
+				this.wikishield.audioManager.stopPlaylist(["music", "zen_mode"]);
 			}
 		}
 
-		if (_zen_.enabled && !_zen_.watchlist && this.wikishield.queue.currentQueueTab === "watchlist") {
+		if (zenMode.enabled && !zenMode.watchlist.enabled && this.wikishield.queue.currentQueueTab === "watchlist") {
 			this.wikishield.queue.switchQueueTab("recent");
 		}
 
 		document.querySelectorAll("[data-zen-show]").forEach(elem => {
-			elem.style.display = _zen_.enabled && !_zen_[elem.dataset.zenShow] ? "none" : "";
+			elem.style.display = zenMode.enabled && !zenMode[elem.dataset.zenShow].enabled ? "none" : "";
 		});
 	}
 
@@ -2953,19 +2948,13 @@ export class WikiShieldInterface {
 
 						// Show UAA reason selection dialog
 						const reason = await this.showUAAReasonDialog(username);
-
 						if (reason) {
-							// User selected a reason, proceed with report
-							const progressBar = new WikiShieldProgressBar();
-							progressBar.set("Reporting to UAA...", 0.5, "var(--main-blue)");
-
-							try {
-								await this.wikishield.reportToUAA(username, reason);
-								progressBar.set(`Reported ${username} to UAA`, 1, "var(--main-green)");
-							} catch (err) {
-								progressBar.set("Report failed", 1, "var(--main-red)");
-								console.error("UAA report error:", err);
-							}
+							this.wikishield.executeScript({
+								name: "reportToUAA",
+								params: {
+									reportMessage: reason,
+								}
+							}, undefined, undefined, { user: { name: username } }); // fake edit object
 
 							resolve(false);
 						} else {

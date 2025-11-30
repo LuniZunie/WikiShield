@@ -247,13 +247,11 @@ export class GeneralSettings extends Component {
 		const {
 			maxEditCount,
 			maxQueueSize,
-			minOresScore,
 			watchlistExpiry,
 			namespaces,
 			selectedNamespaces,
 			onMaxEditCountChange,
 			onMaxQueueSizeChange,
-			onMinOresScoreChange,
 			onWatchlistExpiryChange,
 			onNamespaceToggle,
 		} = this.props;
@@ -291,24 +289,6 @@ export class GeneralSettings extends Component {
 						/>
 					</SettingsSection>
 
-					<SettingsSection
-						compact
-						id="minimum-ores-score"
-						title="Minimum ORES score"
-						description={
-							<span>
-								Edits with an <a href="https://www.mediawiki.org/wiki/ORES" target="_blank">ORES score</a> below this threshold will not be shown
-							</span>
-						}
-					>
-						<NumericInput
-							value={minOresScore}
-							min={0}
-							max={1}
-							step={0.01}
-							onChange={onMinOresScoreChange}
-						/>
-					</SettingsSection>
 					<SettingsSection
 							compact
 							id="watchlist-expiry"
@@ -516,12 +496,14 @@ export class ZenSettings extends Component {
 		const {
 			enabled,
 
-			sounds,
+			sound,
 			music,
-			watchlist,
+
 			notices,
 			alerts,
-			editCount,
+			watchlist,
+
+			edit_counter,
 			toasts,
 		} = this.props;
 
@@ -550,8 +532,8 @@ export class ZenSettings extends Component {
 							description="Play sounds in Zen mode"
 					>
 						<Toggle
-							value={sounds}
-							onChange={this.props.onSoundsChange}
+							value={sound.enabled}
+							onChange={this.props.onSoundChange}
 						/>
 					</SettingsSection>
 					<SettingsSection
@@ -560,28 +542,8 @@ export class ZenSettings extends Component {
 							description="Play background music in Zen mode"
 					>
 						<Toggle
-							value={music}
+							value={music.enabled}
 							onChange={this.props.onMusicChange}
-						/>
-					</SettingsSection>
-					<SettingsSection
-						compact
-						title="Watchlist Updates"
-						description="Show watchlist update alerts in Zen mode"
-					>
-						<Toggle
-							value={watchlist}
-							onChange={this.props.onWatchlistChange}
-						/>
-					</SettingsSection>
-					<SettingsSection
-						compact
-						title="Notices"
-						description="Show notices in Zen mode"
-					>
-						<Toggle
-							value={notices}
-							onChange={this.props.onNoticesChange}
 						/>
 					</SettingsSection>
 					<SettingsSection
@@ -590,18 +552,39 @@ export class ZenSettings extends Component {
 						description="Show alerts in Zen mode"
 					>
 						<Toggle
-							value={alerts}
+							value={alerts.enabled}
 							onChange={this.props.onAlertsChange}
 						/>
 					</SettingsSection>
+					<SettingsSection
+						compact
+						title="Notices"
+						description="Show notices in Zen mode"
+					>
+						<Toggle
+							value={notices.enabled}
+							onChange={this.props.onNoticesChange}
+						/>
+					</SettingsSection>
+					<SettingsSection
+						compact
+						title="Watchlist Updates"
+						description="Show watchlist queue in Zen mode"
+					>
+						<Toggle
+							value={watchlist.enabled}
+							onChange={this.props.onWatchlistChange}
+						/>
+					</SettingsSection>
+
 					<SettingsSection
 						compact
 						title="Edit Count"
 						description="Show edit count in Zen mode"
 					>
 						<Toggle
-							value={editCount}
-							onChange={this.props.onEditCountChange}
+							value={edit_counter.enabled}
+							onChange={this.props.onEditCounterChange}
 						/>
 					</SettingsSection>
 					<SettingsSection
@@ -610,7 +593,7 @@ export class ZenSettings extends Component {
 						description="Show toast messages in Zen mode"
 					>
 						<Toggle
-							value={toasts}
+							value={toasts.enabled}
 							onChange={this.props.onToastsChange}
 						/>
 					</SettingsSection>
@@ -1019,7 +1002,7 @@ export class AutoReportingSettings extends Component {
 								<label class="checkbox-box">
 									<input
 										type="checkbox"
-										checked={selectedAutoReportReasons[warning] === true}
+										checked={selectedAutoReportReasons.has(warning)}
 										onChange={(e) => {
 											this.props.wikishield.audioManager.playSound([ "ui", "select" ]);
 											this.props.onWarningToggle(warning, e.target.checked);

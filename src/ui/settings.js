@@ -4,12 +4,10 @@
 */
 
 import { h, render } from 'preact';
-import { defaultSettings, colorPalettes } from '../config/defaults.js';
+import { colorPalettes } from '../config/defaults.js';
 import { namespaces } from '../data/namespaces.js';
 import { wikishieldHTML } from './templates.js';
 import { warningsLookup, getWarningFromLookup } from '../data/warnings.js';
-import { WikiShieldOllamaAI } from '../ai/ollama.js';
-// import { wikishieldEventData } from '../core/event-manager.js';
 import {
 	GeneralSettings,
 	AudioSettings,
@@ -26,17 +24,8 @@ import {
 	AboutSettings
 } from './settings-components.jsx';
 
-// Allowed keys for keyboard shortcuts
-export const wikishieldSettingsAllowedKeys = [
-	"!", "@", "#", "$", "%", "^", "&", "*", "(", ")",
-	"1", "2", "3", "4", "5", "6", "7", "8", "9", "0",
-	"q", "w", "e", "r", "t", "y", "u", "i", "o", "p",
-	"a", "s", "d", "f", "g", "h", "j", "k", "l",
-	"z", "x", "c", "v", "b", "n", "m",
-	"-", "=", "[", "]", "\\", ";", "'", ",", ".", "/", "enter",
-	"_", "+", "{", "}", "|", ":", "\"", "<", ">", "?", " ",
-	"arrowleft", "arrowup", "arrowdown", "arrowright"
-];
+import { AI } from '../ai/class.js';
+import { validControlKeys } from '../config/control-keys.js';
 
 export class WikiShieldSettingsInterface {
 	constructor(wikishield) {
@@ -222,7 +211,7 @@ export class WikiShieldSettingsInterface {
 		wrapper.classList.add("audio-volume-control");
 		container.appendChild(wrapper);
 
-		const value = this.wikishield.options.volumes?.[key] ?? volume;
+		const value = this.wikishield.storage.data.settings.audio.volume[key] ?? volume;
 
 		wrapper.innerHTML = `
 			<div class="audio-control-slider-container">
@@ -239,8 +228,8 @@ export class WikiShieldSettingsInterface {
 			slider.value = val;
 			input.value = val.toFixed(2);
 
-			const currentVolume = this.wikishield.options.volumes[key];
-			this.wikishield.options.volumes[key] = val;
+			const currentVolume = this.wikishield.storage.data.settings.audio.volume[key];
+			this.wikishield.storage.data.settings.audio.volume[key] = val;
 
 			if (currentVolume !== val) {
 				this.wikishield.audioManager.onvolumechanged();
@@ -260,7 +249,7 @@ export class WikiShieldSettingsInterface {
 		wrapper.classList.add("audio-volume-control");
 		container.appendChild(wrapper);
 
-		const value = this.wikishield.options.volumes?.[key] ?? volume;
+		const value = this.wikishield.storage.data.settings.audio.volume[key] ?? volume;
 
 		wrapper.innerHTML = `
 			<div class="audio-control-header">
@@ -289,10 +278,10 @@ export class WikiShieldSettingsInterface {
 			slider.value = val;
 			input.value = val.toFixed(2);
 
-			if (!this.wikishield.options.volumes) this.wikishield.options.volumes = {};
+			this.wikishield.storage.data.settings.audio.volume ??= {};
 
-			const currentVolume = this.wikishield.options.volumes[key];
-			this.wikishield.options.volumes[key] = val;
+			const currentVolume = this.wikishield.storage.data.settings.audio.volume[key];
+			this.wikishield.storage.data.settings.audio.volume[key] = val;
 
 			if (currentVolume !== val) {
 				this.wikishield.audioManager.onvolumechanged();
@@ -468,34 +457,31 @@ export class WikiShieldSettingsInterface {
 	* Open general settings section
 	*/
 	openGeneral() {
+		const settings = this.wikishield.storage.data.settings;
 		this.renderComponent(
 			h(GeneralSettings, {
 				wikishield: this.wikishield,
-				maxEditCount: this.wikishield.options.maxEditCount,
-				maxQueueSize: this.wikishield.options.maxQueueSize,
-				minOresScore: this.wikishield.options.minimumORESScore,
-				watchlistExpiry: this.wikishield.options.watchlistExpiry,
+				maxEditCount: settings.queue.max_edits,
+				maxQueueSize: settings.queue.max_size,
+				watchlistExpiry: settings.expiry.watchlist,
 				namespaces,
-				selectedNamespaces: this.wikishield.options.namespacesShown,
+				selectedNamespaces: settings.namespaces,
 				onMaxEditCountChange: (value) => {
-					this.wikishield.options.maxEditCount = value;
+					settings.queue.max_edits = value;
 				},
 				onMaxQueueSizeChange: (value) => {
-					this.wikishield.options.maxQueueSize = value;
-				},
-				onMinOresScoreChange: (value) => {
-					this.wikishield.options.minimumORESScore = value;
+					settings.queue.max_size = value;
 				},
 				onWatchlistExpiryChange: (value) => {
-					this.wikishield.options.watchlistExpiry = value;
+					settings.expiry.watchlist = value;
 				},
 				onNamespaceToggle: (nsid, checked) => {
 					if (checked) {
-						const set = new Set(this.wikishield.options.namespacesShown);
+						const set = new Set(settings.namespaces);
 						set.add(nsid);
-						this.wikishield.options.namespacesShown = [...set];
+						settings.namespaces = [...set];
 					} else {
-						this.wikishield.options.namespacesShown = this.wikishield.options.namespacesShown.filter(n => n !== nsid);
+						settings.namespaces = settings.namespaces.filter(n => n !== nsid);
 					}
 				},
 			})
@@ -554,7 +540,7 @@ export class WikiShieldSettingsInterface {
 		wrapper.classList.add("audio-volume-control");
 		masterContainer.appendChild(wrapper);
 
-		const masterValue = this.wikishield.options.volumes.master ?? 0.5;
+		const masterValue = this.wikishield.storage.data.settings.audio.volume.master ?? 1;
 
 		wrapper.innerHTML = `
 			<div class="audio-control-slider-container">
@@ -571,8 +557,8 @@ export class WikiShieldSettingsInterface {
 			masterSlider.value = val;
 			masterInput.value = val.toFixed(2);
 
-			const currentVolume = this.wikishield.options.volumes.master;
-			this.wikishield.options.volumes.master = val;
+			const currentVolume = this.wikishield.storage.data.settings.audio.volume.master;
+			this.wikishield.storage.data.settings.audio.volume.master = val;
 
 			if (currentVolume !== val) {
 				this.wikishield.audioManager.onvolumechanged();
@@ -585,18 +571,18 @@ export class WikiShieldSettingsInterface {
 		// ORES alert toggle
 		this.createToggle(
 			this.contentContainer.querySelector("#sound-alert-toggle"),
-			this.wikishield.options.enableSoundAlerts,
+			this.wikishield.storage.data.settings.audio.ores_alert.enabled,
 			(newValue) => {
-				this.wikishield.options.enableSoundAlerts = newValue;
+				this.wikishield.storage.data.settings.audio.ores_alert.enabled = newValue;
 			}
 		);
 
 		// ORES alert threshold
 		this.createNumericInput(
 			this.contentContainer.querySelector("#sound-alert-ores-score"),
-			this.wikishield.options.soundAlertORESScore, 0, 1, 0.05,
+			this.wikishield.storage.data.settings.audio.ores_alert.threshold, 0, 1, .05,
 			(newValue) => {
-				this.wikishield.options.soundAlertORESScore = newValue;
+				this.wikishield.storage.data.settings.audio.ores_alert.threshold = newValue;
 			}
 		);
 
@@ -789,11 +775,11 @@ export class WikiShieldSettingsInterface {
 		this.renderComponent(
 			h(PaletteSettings, {
 				wikishield: this.wikishield,
-				selectedPalette: this.wikishield.options.selectedPalette,
+				selectedPalette: this.wikishield.storage.data.settings.theme.palette,
 				colorPalettes,
 				onPaletteChange: (paletteIndex) => {
 					this.wikishield.audioManager.playSound([ "ui", "click" ]);
-					this.wikishield.options.selectedPalette = paletteIndex;
+					this.wikishield.storage.data.settings.theme.palette = paletteIndex;
 					document.querySelectorAll(".queue-edit-color").forEach(el => {
 						el.style.background = this.wikishield.interface.getORESColor(+el.dataset.rawOresScore);
 					});
@@ -813,39 +799,41 @@ export class WikiShieldSettingsInterface {
 		this.renderComponent(
 			h(ZenSettings, {
 				wikishield: this.wikishield,
-				...this.wikishield.options.zen,
+				...this.wikishield.storage.data.settings.zen_mode,
 
 				onEnableChange: value => {
-					this.wikishield.options.zen.enabled = value;
+					this.wikishield.storage.data.settings.zen_mode.enabled = value;
 					this.wikishield.interface.updateZenModeDisplay(true);
 				},
 
-				onSoundsChange: value => {
-					this.wikishield.options.zen.sounds = value;
+				onSoundChange: value => {
+					this.wikishield.storage.data.settings.zen_mode.sound.enabled = value;
 					this.wikishield.interface.updateZenModeDisplay();
 				},
 				onMusicChange: value => {
-					this.wikishield.options.zen.music = value;
+					this.wikishield.storage.data.settings.zen_mode.music = value;
 					this.wikishield.interface.updateZenModeDisplay(true);
 				},
-				onWatchlistChange: value => {
-					this.wikishield.options.zen.watchlist = value;
+
+				onAlertsChange: value => {
+					this.wikishield.storage.data.settings.zen_mode.alerts = value;
 					this.wikishield.interface.updateZenModeDisplay();
 				},
 				onNoticesChange: value => {
-					this.wikishield.options.zen.notices = value;
+					this.wikishield.storage.data.settings.zen_mode.notices = value;
 					this.wikishield.interface.updateZenModeDisplay();
 				},
-				onAlertsChange: value => {
-					this.wikishield.options.zen.alerts = value;
+				onWatchlistChange: value => {
+					this.wikishield.storage.data.settings.zen_mode.watchlist = value;
 					this.wikishield.interface.updateZenModeDisplay();
 				},
-				onEditCountChange: value => {
-					this.wikishield.options.zen.editCount = value;
+
+				onEditCounterChange: value => {
+					this.wikishield.storage.data.settings.zen_mode.edit_counter = value;
 					this.wikishield.interface.updateZenModeDisplay();
 				},
 				onToastsChange: value => {
-					this.wikishield.options.zen.toasts = value;
+					this.wikishield.storage.data.settings.zen_mode.toasts = value;
 					this.wikishield.interface.updateZenModeDisplay();
 				},
 			})
@@ -868,7 +856,7 @@ export class WikiShieldSettingsInterface {
 				</div>
 			`;
 
-		for (const control of this.wikishield.options.controlScripts) {
+		for (const control of this.wikishield.storage.data.control_scripts) {
 			const container = document.createElement("div");
 			container.classList.add("settings-section");
 			this.contentContainer.appendChild(container);
@@ -881,7 +869,7 @@ export class WikiShieldSettingsInterface {
 		const addButton = this.contentContainer.querySelector(".new-control-script");
 
 		addButton.addEventListener("click", () => {
-			this.wikishield.options.controlScripts.unshift({
+			this.wikishield.storage.data.control_scripts.unshift({
 				keys: [],
 				actions: []
 			});
@@ -896,13 +884,10 @@ export class WikiShieldSettingsInterface {
 	findDuplicateControls() {
 		const keys = {};
 
-		for (const control of this.wikishield.options.controlScripts) {
+		for (const control of this.wikishield.storage.data.control_scripts) {
 			for (const key of control.keys) {
-				if (!keys[key]) {
-					keys[key] = 0;
-				}
-
-				keys[key] += 1;
+				keys[key] ??= 0;
+				keys[key]++;
 			}
 		}
 
@@ -921,11 +906,7 @@ export class WikiShieldSettingsInterface {
 	updateDuplicateControls() {
 		const duplicateControls = this.findDuplicateControls();
 		[...document.querySelectorAll(".control-keys > div[data-key]")].forEach(elem => {
-			if (duplicateControls.includes(elem.dataset.key)) {
-				elem.classList.add("key-duplicate");
-			} else {
-				elem.classList.remove("key-duplicate");
-			}
+			elem.classList.toggle("key-duplicate", duplicateControls.includes(elem.dataset.key));
 		});
 	}
 
@@ -1012,7 +993,7 @@ export class WikiShieldSettingsInterface {
 
 		bottomContainer.querySelector(".control-delete").addEventListener("click", () => {
 			this.wikishield.audioManager.playSound([ "ui", "click" ]);
-			this.wikishield.options.controlScripts.splice(this.wikishield.options.controlScripts.indexOf(control), 1);
+			this.wikishield.storage.data.control_scripts.splice(this.wikishield.storage.data.control_scripts.indexOf(control), 1);
 			this.openControls();
 		});
 
@@ -1109,8 +1090,8 @@ export class WikiShieldSettingsInterface {
 
 			const select = itemContainer.querySelector("select");
 
-			for (const key in this.wikishield.interface.eventManager.events.conditions) {
-				const condition = this.wikishield.interface.eventManager.events.conditions[key];
+			for (const key in this.wikishield.interface.eventManager.conditions) {
+				const condition = this.wikishield.interface.eventManager.conditions[key];
 				if ("desc" in condition) {
 					select.innerHTML += `<option value=${key}>${condition.desc}</option>`;
 				}
@@ -1229,7 +1210,12 @@ export class WikiShieldSettingsInterface {
 			parameterElem.innerHTML += `<select></select>`;
 			const select = parameterElem.querySelector("select");
 
-			for (const choice of parameter.options) {
+			let options = parameter.options ?? [ ];
+			if (typeof parameter.showOption === "function") {
+				options = options.filter(opt => parameter.showOption(this.wikishield, opt));
+			}
+
+			for (const choice of options) {
 				select.innerHTML += `<option>${choice}</option>`;
 			}
 
@@ -1259,7 +1245,10 @@ export class WikiShieldSettingsInterface {
 	/**
 	* Open AI Analysis settings section
 	*/
-	openAI() {
+	openAI() { // TODO: Refactor into component, also allow for other AI providers
+		const settings = this.wikishield.storage.data.settings.AI;
+		const defaults = this.wikishield.defaultStorage.data.settings.AI;
+
 		this.clearContent();
 		this.contentContainer.innerHTML = `
 				<div class="settings-section" id="enable-ollama-ai">
@@ -1267,11 +1256,29 @@ export class WikiShieldSettingsInterface {
 					<div class="settings-section-desc">Use local AI models with complete privacy. Free & fast.</div>
 				</div>
 
+				<div class="settings-toggles-section">
+					<div class="settings-section-header">
+						<span class="settings-section-header-icon">Tools</span>
+					</div>
+					<div class="settings-section compact inline" id="edit-analysis-toggle">
+						<div class="settings-section-content">
+							<div class="settings-section-title">Edit Analysis</div>
+							<div class="settings-section-desc">Suggests actions to take on edits, such as "welcome", "thank", "rollback", "rever-and-warn"</div>
+						</div>
+					</div>
+					<div class="settings-section compact inline" id="username-analysis-toggle">
+						<div class="settings-section-content">
+							<div class="settings-section-title">Username Analysis</div>
+							<div class="settings-section-desc">Flags potentially problematic usernames and prompts you to report them to UAA</div>
+						</div>
+					</div>
+				</div>
+
 				<div class="settings-section" id="ollama-server-url">
 					<div class="settings-section-title">Server URL</div>
-					<div class="settings-section-desc">The URL of your local Ollama server (default: <code>http://localhost:11434</code>)</div>
+					<div class="settings-section-desc">The URL of your local Ollama server (default: <code>${defaults.Ollama.server}</code>)</div>
 					<div class="text-input-container">
-						<input type="text" id="ollama-url-input" value="${this.wikishield.options.ollamaServerUrl}" placeholder="http://localhost:11434" autoComplete="off">
+						<input type="text" id="ollama-url-input" value="${settings.Ollama.server}" placeholder="${defaults.Ollama.server}" autoComplete="off">
 						<button id="test-connection-btn">Test Connection</button>
 					</div>
 					<div class="settings-section compact connection-status-container">
@@ -1330,27 +1337,44 @@ ollama serve
 				</div>
 			`;
 
+		this.createToggle(
+			this.contentContainer.querySelector("#edit-analysis-toggle"),
+			settings.edit_analysis.enabled,
+			(newValue) => {
+				settings.edit_analysis.enabled = newValue;
+			}
+		);
+		this.createToggle(
+			this.contentContainer.querySelector("#username-analysis-toggle"),
+			settings.username_analysis.enabled,
+			(newValue) => {
+				settings.username_analysis.enabled = newValue;
+			}
+		);
+
 		// Enable/disable toggle
 		this.createToggle(
 			this.contentContainer.querySelector("#enable-ollama-ai"),
-			this.wikishield.options.enableOllamaAI,
+			settings.enabled,
 			(newValue) => {
-				this.wikishield.options.enableOllamaAI = newValue;
+				settings.enabled = newValue;
 
-				// Initialize or destroy Ollama AI instance
 				if (newValue) {
-					this.wikishield.ollamaAI = new WikiShieldOllamaAI(
-						this.wikishield.options.ollamaServerUrl,
-						this.wikishield.options.ollamaModel,
-						{
-							enableOllamaAI: this.wikishield.options.enableOllamaAI,
-							enableEditAnalysis: this.wikishield.options.enableEditAnalysis
-						}
-					);
-					this.wikishield.logger.log("Ollama AI integration enabled");
+					switch (settings.provider) {
+						case "Ollama": {
+							this.wikishield.AI = new AI.providers.Ollama(
+								this.wikishield,
+								settings.Ollama,
+							);
+						} break;
+						default: {
+							this.wikishield.AI?.cancel.all(true);
+							this.wikishield.AI = null;
+						} break;
+					}
 				} else {
-					this.wikishield.ollamaAI = null;
-					this.wikishield.logger.log("Ollama AI integration disabled");
+					this.wikishield.AI?.cancel.all(true);
+					this.wikishield.AI = null;
 				}
 			}
 		);
@@ -1358,11 +1382,10 @@ ollama serve
 		// Server URL input handler
 		const urlInput = this.contentContainer.querySelector("#ollama-url-input");
 		urlInput.addEventListener('change', () => {
-			this.wikishield.options.ollamaServerUrl = urlInput.value.trim();
-			if (this.wikishield.ollamaAI) {
-				this.wikishield.ollamaAI.serverUrl = this.wikishield.options.ollamaServerUrl;
+			settings.Ollama.server = urlInput.value.trim();
+			if (settings.provider === "Ollama" && this.wikishield.AI) {
+				this.wikishield.AI.cancel.all(true);
 			}
-			this.wikishield.logger.log(`Ollama server URL updated: ${this.wikishield.options.ollamaServerUrl}`);
 		});
 
 		// Test connection button
@@ -1372,9 +1395,7 @@ ollama serve
 
 		testBtn.addEventListener('click', async () => {
 			// Cancel all active AI requests
-			if (this.wikishield.ollamaAI) {
-				this.wikishield.ollamaAI.cancelAllAnalyses();
-			}
+			this.wikishield.AI?.cancel.all(true);
 
 			statusContainer.classList.add("testing");
 			statusContainer.classList.remove("connected", "failed");
@@ -1382,9 +1403,14 @@ ollama serve
 			statusSpan.innerHTML = 'Testing...';
 			testBtn.disabled = true;
 
-			const tempAI = new WikiShieldOllamaAI(this.wikishield.options.ollamaServerUrl, "", {});
-			const connected = await tempAI.testConnection();
+			let tempAI;
+			switch (settings.provider) {
+				case "Ollama": {
+					tempAI = new AI.providers.Ollama(this.wikishield, settings.Ollama);
+				} break;
+			}
 
+			const connected = tempAI instanceof AI && await tempAI.test();
 			if (connected) {
 				statusContainer.classList.add("connected");
 				statusContainer.classList.remove("testing", "failed");
@@ -1399,6 +1425,7 @@ ollama serve
 						<br><small>Make sure Ollama is running with CORS enabled (see instructions below)</small>
 					`;
 			}
+
 			testBtn.disabled = false;
 		});
 
@@ -1411,9 +1438,7 @@ ollama serve
 
 		refreshBtn.addEventListener('click', async () => {
 			// Cancel all active AI requests
-			if (this.wikishield.ollamaAI) {
-				this.wikishield.ollamaAI.cancelAllAnalyses();
-			}
+			this.wikishield.AI?.cancel.all(true);
 
 			$modelsContainer.classList.add("searching");
 			$modelsContainer.classList.remove("none", "error");
@@ -1423,9 +1448,14 @@ ollama serve
 			refreshBtn.disabled = true;
 
 			try {
-				const tempAI = new WikiShieldOllamaAI(this.wikishield.options.ollamaServerUrl, "", {});
-				const models = await tempAI.fetchModels();
+				let tempAI;
+				switch (settings.provider) {
+					case "Ollama": {
+						tempAI = new AI.providers.Ollama(this.wikishield, settings.Ollama);
+					} break;
+				}
 
+				const models = (tempAI instanceof AI && await tempAI.models()) || [ ];
 				if (models.length === 0) {
 					$modelsContainer.classList.add("none");
 					$modelsContainer.classList.remove("searching", "error");
@@ -1438,7 +1468,7 @@ ollama serve
 
 					$models.innerHTML = "";
 					models.forEach(model => {
-						const isSelected = model.name === this.wikishield.options.ollamaModel;
+						const isSelected = model.name === this.wikishield.storage.data.settings.AI.Ollama.model;
 						const size = this.wikishield.util.formatBytes(model.size);
 
 						const $model = document.createElement("div");
@@ -1481,14 +1511,13 @@ ollama serve
 						$models.appendChild($model);
 
 						$model.addEventListener('click', () => {
-							if (this.wikishield.ollamaAI) {
-								this.wikishield.ollamaAI.cancelAllAnalyses();
-							}
+							this.wikishield.AI?.cancel.all(true);
 
 							const modelName = model.name;
-							this.wikishield.options.ollamaModel = modelName;
-							if (this.wikishield.ollamaAI) {
-								this.wikishield.ollamaAI.model = modelName;
+							switch (settings.provider) {
+								case "Ollama": {
+									settings.Ollama.model = modelName;
+								} break;
 							}
 
 							$models.querySelectorAll(".model.selected").forEach(elem => {
@@ -1519,19 +1548,22 @@ ollama serve
 	}
 
 	openAutoReporting() {
-		this.wikishield.options.selectedAutoReportReasons ??= { };
 		this.renderComponent(
 			h(AutoReportingSettings, {
 				wikishield: this.wikishield,
-				enableAutoReporting: this.wikishield.options.enableAutoReporting,
+				enableAutoReporting: this.wikishield.storage.data.settings.auto_report.enabled,
 				autoReportReasons: Object.keys(warningsLookup).filter(title => !getWarningFromLookup(title).onlyWarn),
-				selectedAutoReportReasons: this.wikishield.options.selectedAutoReportReasons,
+				selectedAutoReportReasons: this.wikishield.storage.data.settings.auto_report.for,
 
 				onEnableChange: (newValue) => {
-					this.wikishield.options.enableAutoReporting = newValue;
+					this.wikishield.storage.data.settings.auto_report.enabled = newValue;
 				},
 				onWarningToggle: (key, isEnabled) => {
-					this.wikishield.options.selectedAutoReportReasons[key] = isEnabled;
+					if (isEnabled) {
+						this.wikishield.storage.data.settings.auto_report.for.add(key);
+					} else {
+						this.wikishield.storage.data.settings.auto_report.for.delete(key);
+					}
 				}
 			})
 		);
@@ -1541,23 +1573,17 @@ ollama serve
 	* Open gadgets settings seciton
 	*/
 	openGadgets() {
+		const settings = this.wikishield.storage.data.settings;
+
 		this.clearContent();
 		this.contentContainer.innerHTML = `
 				<div class="settings-toggles-section">
-					<div class="settings-section-header">
-						<span class="settings-section-header-icon">Simple</span>
-						<span></span>
-					</div>
+					<div class="settings-section-title">Gadgets</div>
+					<div class="settings-section-desc">Toggle various Wikishield features.</div>
                     <div class="settings-section compact inline" id="username-highlighting-toggle">
 						<div class="settings-section-content">
 							<div class="settings-section-title">Highlight username</div>
 							<div class="settings-section-desc">If your username appears in a diff, the edit is highlight in the queue and outlined in the diff.</div>
-						</div>
-					</div>
-                    <div class="settings-section compact inline" id="welcome-latin-toggle">
-						<div class="settings-section-content">
-							<div class="settings-section-title">Latin welcome</div>
-							<div class="settings-section-desc">When a Latin character is detected in a username, the Latin welcome template will be used instead of the default.</div>
 						</div>
 					</div>
 					<div class="settings-section compact inline" id="auto-welcome-toggle">
@@ -1567,62 +1593,21 @@ ollama serve
 						</div>
 					</div>
 				</div>
-
-				<div class="settings-toggles-section">
-					<div class="settings-section-header">
-						<span class="settings-section-header-icon">AI</span>
-						<span>Requires AI Analysis to be enabled</span>
-					</div>
-					<div class="settings-section compact inline" id="edit-analysis-toggle">
-						<div class="settings-section-content">
-							<div class="settings-section-title">Edit Analysis</div>
-							<div class="settings-section-desc">Suggests actions to take on edits, such as "welcome", "thank", "rollback", "rever-and-warn"</div>
-						</div>
-					</div>
-					<div class="settings-section compact inline" id="username-analysis-toggle">
-						<div class="settings-section-content">
-							<div class="settings-section-title">Username Analysis</div>
-							<div class="settings-section-desc">Flags potentially problematic usernames and prompts you to report them to UAA</div>
-						</div>
-					</div>
-				</div>
 			`;
 
 		this.createToggle(
 			this.contentContainer.querySelector("#username-highlighting-toggle"),
-			this.wikishield.options.enableUsernameHighlighting,
+			settings.username_highlighting.enabled,
 			(newValue) => {
-				this.wikishield.options.enableUsernameHighlighting = newValue;
+				settings.username_highlighting.enabled = newValue;
 			}
 		);
 
-		this.createToggle(
-			this.contentContainer.querySelector("#welcome-latin-toggle"),
-			this.wikishield.options.enableWelcomeLatin,
-			(newValue) => {
-				this.wikishield.options.enableWelcomeLatin = newValue;
-			}
-		);
 		this.createToggle(
 			this.contentContainer.querySelector("#auto-welcome-toggle"),
-			this.wikishield.options.enableAutoWelcome,
+			settings.auto_welcome.enabled,
 			(newValue) => {
-				this.wikishield.options.enableAutoWelcome = newValue;
-			}
-		);
-
-		this.createToggle(
-			this.contentContainer.querySelector("#edit-analysis-toggle"),
-			this.wikishield.options.enableEditAnalysis,
-			(newValue) => {
-				this.wikishield.options.enableEditAnalysis = newValue;
-			}
-		);
-		this.createToggle(
-			this.contentContainer.querySelector("#username-analysis-toggle"),
-			this.wikishield.options.enableUsernameAnalysis,
-			(newValue) => {
-				this.wikishield.options.enableUsernameAnalysis = newValue;
+				settings.auto_welcome.enabled = newValue;
 			}
 		);
 	}
@@ -1649,13 +1634,13 @@ ollama serve
 			}
 		};
 
-		const expiryString = this.wikishield.options.whitelistExpiry[key];
+		const expiryString = this.wikishield.storage.data.settings.expiry.whitelist[key];
 		this.clearContent();
 		this.contentContainer.innerHTML = `
 				<div class="settings-section">
 					<div class="settings-section-title">
 						Whitelisted ${key}
-						<div title="Whitelist expiry ${key}" description="${descriptionMap[key].short}" style="float: right; font-size: 0.8em; font-weight: normal; opacity: 0.7;">
+						<div title="Whitelist expiry for ${key}" description="${descriptionMap[key].short}" style="float: right; font-size: 0.8em; font-weight: normal; opacity: 0.7;">
 							<select id="whitelist-expiry">
 								<option value="none">None</option>
 								<option value="1 hour">1 hour</option>
@@ -1686,12 +1671,13 @@ ollama serve
 		const add = () => {
 			const value = input.value.trim();
 			if (value) {
-				const expiryMs = this.wikishield.util.expiryToMilliseconds(this.wikishield.options.whitelistExpiry[key]);
+				const expiryMs = this.wikishield.util.expiryToMilliseconds(this.wikishield.storage.data.settings.expiry.whitelist[key]);
 
 				const now = Date.now();
-				this.wikishield.whitelist[key].set(value, [ now, now + expiryMs ]);
+				this.wikishield.storage.data.whitelist[key].set(value, [ now, now + expiryMs ]);
 
-				this.wikishield.statistics.whitelist++;
+				this.wikishield.storage.data.items_whitelisted.total++;
+				this.wikishield.storage.data.items_whitelisted[key]++;
 
 				input.value = "";
 				this.openWhitelist(key); // Refresh the list
@@ -1704,9 +1690,9 @@ ollama serve
 		});
 
 		const whitelistExpiry = this.contentContainer.querySelector("#whitelist-expiry");
-		whitelistExpiry.value = this.wikishield.options.whitelistExpiry[key];
+		whitelistExpiry.value = this.wikishield.storage.data.settings.expiry.whitelist[key];
 		whitelistExpiry.addEventListener("change", () => {
-			this.wikishield.options.whitelistExpiry[key] = whitelistExpiry.value;
+			this.wikishield.storage.data.settings.expiry.whitelist[key] = whitelistExpiry.value;
 		});
 
 		this.createWhitelistList(container, key);
@@ -1720,7 +1706,7 @@ ollama serve
 		container.innerHTML = "";
 
 		// Sort by most recent first
-		const sortedEntries = [ ...this.wikishield.whitelist[key].entries() ].sort((a, b) => b[1][1] - a[1][1]);
+		const sortedEntries = [ ...this.wikishield.storage.data.whitelist[key].entries() ].sort((a, b) => b[1][1] - a[1][1]);
 
 		const createHref = value => {
 			switch (key) {
@@ -1755,7 +1741,7 @@ ollama serve
 					<button class="add-action-button remove-button">Remove</button>
 				`;
 			item.querySelector(".remove-button").addEventListener("click", () => {
-				this.wikishield.whitelist[key].delete(whitelist);
+				this.wikishield.storage.data.whitelist[key].delete(whitelist);
 				item.remove();
 
 				this.createWhitelistList(container, key); // Refresh the list
@@ -1792,12 +1778,12 @@ ollama serve
 			}
 		};
 
-		const expiryString = this.wikishield.options.highlightExpiry[key];
+		const expiryString = this.wikishield.storage.data.settings.expiry.highlight[key];
 		this.clearContent();
 		this.contentContainer.innerHTML = `
 				<div class="settings-section">
 					<div class="settings-section-title">
-						highlight ${key}
+						Highlighted ${key}
 						<div title="Highlight expiry for warned ${key}" description="${descriptionMap[key].short}" style="float: right; font-size: 0.8em; font-weight: normal; opacity: 0.7;">
 							<select id="highlight-expiry">
 								<option value="none">None</option>
@@ -1829,12 +1815,13 @@ ollama serve
 		const add = () => {
 			const value = input.value.trim();
 			if (value) {
-				const expiryMs = this.wikishield.util.expiryToMilliseconds(this.wikishield.options.highlightExpiry[key]);
+				const expiryMs = this.wikishield.util.expiryToMilliseconds(this.wikishield.storage.data.settings.expiry.highlight[key]);
 
 				const now = Date.now();
-				this.wikishield.highlight[key].set(value, [ now, now + expiryMs ]);
+				this.wikishield.storage.data.highlight[key].set(value, [ now, now + expiryMs ]);
 
-				this.wikishield.statistics.highlight++;
+				this.wikishield.storage.data.items_highlighted.total++;
+				this.wikishield.storage.data.items_highlighted[key]++;
 
 				input.value = "";
 				this.openHighlight(key); // Refresh the list
@@ -1847,9 +1834,9 @@ ollama serve
 		});
 
 		const highlightExpiry = this.contentContainer.querySelector("#highlight-expiry");
-		highlightExpiry.value = this.wikishield.options.highlightExpiry[key];
+		highlightExpiry.value = this.wikishield.storage.data.settings.expiry.highlight[key];
 		highlightExpiry.addEventListener("change", () => {
-			this.wikishield.options.highlightExpiry[key] = highlightExpiry.value;
+			this.wikishield.storage.data.settings.expiry.highlight[key] = highlightExpiry.value;
 		});
 
 		this.createHighlightList(container, key);
@@ -1863,7 +1850,7 @@ ollama serve
 		container.innerHTML = "";
 
 		// Sort by most recent first
-		const sortedEntries = [ ...this.wikishield.highlight[key].entries() ].sort((a, b) => b[1][1] - a[1][1]);
+		const sortedEntries = [ ...this.wikishield.storage.data.highlight[key].entries() ].sort((a, b) => b[1][1] - a[1][1]);
 
 		const createHref = value => {
 			switch (key) {
@@ -1898,7 +1885,7 @@ ollama serve
 					<button class="add-action-button remove-button">Remove</button>
 				`;
 			item.querySelector(".remove-button").addEventListener("click", () => {
-				this.wikishield.highlight[key].delete(highlight);
+				this.wikishield.storage.data.highlight[key].delete(highlight);
 				item.remove();
 
 				this.createHighlightList(container, key); // Refresh the list
@@ -1914,12 +1901,24 @@ ollama serve
 	* Open statistics settings section
 	*/
 	openStatistics() {
-		const stats = this.wikishield.statistics;
-		const revertRate = stats.reviewed > 0 ? Math.round(stats.reverts / stats.reviewed * 1000) / 10 : 0;
-		const sessionTime = Date.now() - (stats.sessionStart || Date.now());
-		const hours = Math.floor(sessionTime / (1000 * 60 * 60));
-		const minutes = Math.floor((sessionTime % (1000 * 60 * 60)) / (1000 * 60));
-		const editsPerHour = hours > 0 ? Math.round(stats.reviewed / hours * 10) / 10 : 0;
+		const stats = this.wikishield.storage.data.statistics;
+
+		const formatTime = ms => {
+			const seconds = Math.floor(ms / 1000);
+
+			const days = Math.floor(seconds / 86400);
+			const hours = Math.floor(seconds / 3600);
+			const mins = Math.floor(seconds / 60);
+			const secs = seconds % 60;
+
+			let str = "";
+			if (days > 0) str += `${days}d `;
+			if (hours > 0) str += `${hours}h `;
+			if (mins > 0) str += `${mins}m `;
+			str += `${secs}s`;
+
+			return str.trim();
+		};
 
 		this.clearContent();
 		this.contentContainer.innerHTML = `
@@ -1932,99 +1931,275 @@ ollama serve
 						<div class="stat-card">
 							<div class="inside shimmer shimmer-border">
 								<div class="front">
-									<div class="stat-value">${stats.reviewed}</div>
+									<div class="stat-value">${stats.edits_reviewed.total}</div>
 									<div class="stat-label">Edits Reviewed</div>
 								</div>
 								<div class="back">
+									<div class="stat-sublabel">
+										You have thanked ${
+											((stats.edits_reviewed.thanked / stats.edits_reviewed.total * 100) || 0).toFixed(1)
+										}% of the edits you reviewed
+									</div>
+								</div>
+							</div>
+						</div>
 
+						<div class="stat-card">
+							<div class="inside shimmer shimmer-border">
+								<div class="front">
+									<div class="stat-value">${stats.recent_changes_reviewed.total}</div>
+									<div class="stat-label">Recent Changes Reviewed</div>
+								</div>
+								<div class="back">
+									<div class="stat-sublabel">
+										Recent changes make up ${
+											((stats.recent_changes_reviewed.total / stats.edits_reviewed.total * 100) || 0).toFixed(1)
+										}% of your reviewed edits
+									</div>
 								</div>
 							</div>
 						</div>
 						<div class="stat-card">
 							<div class="inside shimmer shimmer-border">
 								<div class="front">
-									<div class="stat-value">${stats.reverts}</div>
+									<div class="stat-value">${stats.pending_changes_reviewed.total}</div>
+									<div class="stat-label">Pending Changes Reviewed</div>
+								</div>
+								<div class="back">
+									<div class="stat-sublabel">
+										You have accepted ${
+											stats.pending_changes_reviewed.accepted
+										} (${
+											((stats.pending_changes_reviewed.accepted / stats.pending_changes_reviewed.total * 100) || 0).toFixed(1)
+										}%) pending changes
+									</div>
+									<div class="stat-sublabel">
+										You stopped ${
+											stats.pending_changes_reviewed.rejected
+										} (${
+											((stats.pending_changes_reviewed.rejected / stats.pending_changes_reviewed.total * 100) || 0).toFixed(1)
+										}%) pending changes from entering the public eye
+									</div>
+									<div class="stat-sublabel">
+										Out of all the edits you've reviewed, ${
+											((stats.pending_changes_reviewed.total / stats.edits_reviewed.total * 100) || 0).toFixed(1)
+										}% of them were pending
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="stat-card">
+							<div class="inside shimmer shimmer-border">
+								<div class="front">
+									<div class="stat-value">${stats.watchlist_changes_reviewed.total}</div>
+									<div class="stat-label">Watchlist Changes Reviewed</div>
+								</div>
+								<div class="back">
+									<div class="stat-sublabel">
+										${
+											((stats.watchlist_changes_reviewed.total / stats.edits_reviewed.total * 100) || 0).toFixed(1)
+										}% of your edit reviews came from your watchlist
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<div class="stat-card">
+							<div class="inside shimmer shimmer-border">
+								<div class="front">
+									<div class="stat-value">${stats.reverts_made.total}</div>
 									<div class="stat-label">Reverts Made</div>
 								</div>
 								<div class="back">
-									<div class="stat-sublabel">${revertRate}% revert rate</div>
+									<div class="stat-sublabel">
+										${
+											((stats.reverts_made.total / stats.edits_reviewed.total * 100) || 0).toFixed(1)
+										}% of edits that cross your path are reverted
+									</div>
+									<div class="stat-sublabel">
+										You assumed good faith ${
+											((stats.reverts_made.good_faith / stats.reverts_made.total * 100) || 0).toFixed(1)
+										}% of the time
+									</div>
+									<div class="stat-sublabel">
+										${
+											((stats.reverts_made.from_recent_changes / stats.reverts_made.total * 100) || 0).toFixed(1)
+										}% of your reverts are from recent changes
+									</div>
+									<div class="stat-sublabel">
+										${
+											((stats.reverts_made.from_pending_changes / stats.reverts_made.total * 100) || 0).toFixed(1)
+										}% of your reverts were pending
+									</div>
+									<div class="stat-sublabel">
+										${
+											((stats.reverts_made.from_watchlist / stats.reverts_made.total * 100) || 0).toFixed(1)
+										}% of your reverts were from your watchlist
+									</div>
+									<div class="stat-sublabel">
+										and the last ${
+											((stats.reverts_made.from_loaded_edits / stats.reverts_made.total * 100) || 0).toFixed(1)
+										}% weren't even in your queue!
+									</div>
 								</div>
 							</div>
 						</div>
-						<div class="stat-card">
-							<div class="inside shimmer shimmer-border">
-								<div class="front">
-									<div class="stat-value">${stats.warnings}</div>
-									<div class="stat-label">Warnings Issued</div>
-								</div>
-								<div class="back">
 
-								</div>
-							</div>
-						</div>
 						<div class="stat-card">
 							<div class="inside shimmer shimmer-border">
 								<div class="front">
-									<div class="stat-value">${stats.reports}</div>
-									<div class="stat-label">Reports Filed</div>
-								</div>
-								<div class="back">
-
-								</div>
-							</div>
-						</div>
-						<div class="stat-card">
-							<div class="inside shimmer shimmer-border">
-								<div class="front">
-									<div class="stat-value">${stats.welcomes}</div>
+									<div class="stat-value">${stats.users_welcomed.total}</div>
 									<div class="stat-label">Users Welcomed</div>
 								</div>
 								<div class="back">
-
+									<div class="stat-sublabel">
+										${stats.edits_reviewed.total === stats.users_welcomed.total ?
+											`You welcome every user whose edit you review! (${stats.users_welcomed.total})` :
+											`For every ${
+												((stats.edits_reviewed.total / stats.users_welcomed.total) || 0).toFixed(3)
+											} edits you review, you welcome a new user`
+										}
+									</div>
 								</div>
 							</div>
 						</div>
+
 						<div class="stat-card">
 							<div class="inside shimmer shimmer-border">
 								<div class="front">
-									<div class="stat-value">${stats.blocks}</div>
-									<div class="stat-label">Blocks Issued</div>
+									<div class="stat-value">${stats.warnings_issued.total}</div>
+									<div class="stat-label">Warnings Issued</div>
 								</div>
 								<div class="back">
-
+									<div class="stat-sublabel">
+										${
+											((stats.warnings_issued.level_1 / stats.warnings_issued.total * 100) || 0).toFixed(1)
+										}% were level 1
+									</div>
+									<div class="stat-sublabel">
+										${
+											((stats.warnings_issued.level_2 / stats.warnings_issued.total * 100) || 0).toFixed(1)
+										}% were level 2
+									</div>
+									<div class="stat-sublabel">
+										${
+											((stats.warnings_issued.level_3 / stats.warnings_issued.total * 100) || 0).toFixed(1)
+										}% were level 3
+									</div>
+									<div class="stat-sublabel">
+										${
+											((stats.warnings_issued.level_4 / stats.warnings_issued.total * 100) || 0).toFixed(1)
+										}% were level 4
+									</div>
+									<div class="stat-sublabel">
+										${
+											((stats.warnings_issued.level_4im / stats.warnings_issued.total * 100) || 0).toFixed(1)
+										}% were level 4im
+									</div>
+									<div class="stat-sublabel">
+										...and the rest we were too lazy to track =)
+									</div>
 								</div>
 							</div>
 						</div>
 						<div class="stat-card">
 							<div class="inside shimmer shimmer-border">
 								<div class="front">
-									<div class="stat-value">${stats.whitelisted}</div>
+									<div class="stat-value">${stats.reports_filed.total}</div>
+									<div class="stat-label">Reports Filed</div>
+								</div>
+								<div class="back">
+									<div class="stat-sublabel">
+										AIV accounted for ${
+											((stats.reports_filed.AIV / stats.reports_filed.total * 100) || 0).toFixed(1)
+										}% of your reports
+									</div>
+									<div class="stat-sublabel">
+										another ${
+											((stats.reports_filed.UAA / stats.reports_filed.total * 100) || 0).toFixed(1)
+										}% were for UAA
+									</div>
+									<div class="stat-sublabel">
+										and the last ${
+											((stats.reports_filed.RFPP / stats.reports_filed.total * 100) || 0).toFixed(1)
+										}% were posted at RFPP (yes, we count that as a report)
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<div class="stat-card">
+							<div class="inside shimmer shimmer-border">
+								<div class="front">
+									<div class="stat-value">${stats.items_whitelisted.total}</div>
 									<div class="stat-label">Items Whitelisted</div>
 								</div>
 								<div class="back">
-
+									<div class="stat-sublabel">
+										${stats.items_whitelisted.users} (${
+											((stats.items_whitelisted.users / stats.items_whitelisted.total * 100) || 0).toFixed(1)
+										}%) users whitelisted
+									</div>
+									<div class="stat-sublabel">
+										${stats.items_whitelisted.pages} (${
+											((stats.items_whitelisted.pages / stats.items_whitelisted.total * 100) || 0).toFixed(1)
+										}%) pages whitelisted
+									</div>
+									<div class="stat-sublabel">
+										${stats.items_whitelisted.tags} (${
+											((stats.items_whitelisted.tags / stats.items_whitelisted.total * 100) || 0).toFixed(1)
+										}%) tags whitelisted
+									</div>
 								</div>
 							</div>
 						</div>
 						<div class="stat-card">
 							<div class="inside shimmer shimmer-border">
 								<div class="front">
-									<div class="stat-value">${stats.highlight}</div>
-									<div class="stat-label">Items highlight</div>
+									<div class="stat-value">${stats.items_highlighted.total}</div>
+									<div class="stat-label">Items Highlighted</div>
 								</div>
 								<div class="back">
-
+									<div class="stat-sublabel">
+										${stats.items_highlighted.users} (${
+											((stats.items_highlighted.users / stats.items_highlighted.total * 100) || 0).toFixed(1)
+										}%) users highlighted
+									</div>
+									<div class="stat-sublabel">
+										${stats.items_highlighted.pages} (${
+											((stats.items_highlighted.pages / stats.items_highlighted.total * 100) || 0).toFixed(1)
+										}%) pages highlighted
+									</div>
+									<div class="stat-sublabel">
+										${stats.items_highlighted.tags} (${
+											((stats.items_highlighted.tags / stats.items_highlighted.total * 100) || 0).toFixed(1)
+										}%) tags highlighted
+									</div>
 								</div>
 							</div>
 						</div>
 						<div class="stat-card">
 							<div class="inside shimmer shimmer-border">
 								<div class="front">
-									<div class="stat-value">${hours}h ${minutes}m</div>
+									<div class="stat-value">${formatTime(stats.session_time)}</div>
 									<div class="stat-label">Session Time</div>
 								</div>
 								<div class="back">
-									<div class="stat-sublabel">${editsPerHour} edits/hour</div>
+									<div class="stat-sublabel">
+										${
+											(stats.reports_filed.total / (stats.session_time / 8.64e+7) || 0).toFixed(2)
+										} reports per day
+									</div>
+									<div class="stat-sublabel">
+										${
+											(stats.reverts_made.total / (stats.session_time / 3.6e+6) || 0).toFixed(2)
+										} reverts per hour
+									</div>
+									<div class="stat-sublabel">
+										${
+											(stats.edits_reviewed.total / (stats.session_time / 6e+4) || 0).toFixed(2)
+										} reviews per minute
+									</div>
 								</div>
 							</div>
 						</div>
@@ -2034,19 +2209,11 @@ ollama serve
 
 		this.contentContainer.querySelector("#reset-stats-button").addEventListener("click", () => {
 			if (confirm("Are you sure you want to reset all statistics? This cannot be undone.")) {
-				this.wikishield.statistics = {
-					reviewed: 0,
-					reverts: 0,
-					reports: 0,
-					warnings: 0,
-					welcomes: 0,
-					whitelisted: 0,
-					highlight: 0,
-					blocks: 0,
-					sessionStart: Date.now()
-				};
+				this.wikishield.storage.data.statistics = { };
+				this.wikishield.storage.load(this.wikishield.storage.data); // This will recreate the default stats structure
+
+				this.wikishield.audioManager.playSound([ "other", "success" ]);
 				this.openStatistics();
-				// TODO wikishield.audioManager.playSound([ "status", "success" ]);
 			}
 		});
 	}
@@ -2065,361 +2232,10 @@ ollama serve
 		);
 	}
 
-	validateAndMergeSave(importedString) {
-		const result = {
-			success: false,
-			data: null,
-			warnings: [],
-			appliedCount: 0,
-			error: null
-		};
-
-		let parsed;
-		try {
-			parsed = typeof importedString === "string" ? JSON.parse(atob(importedString)) : importedString;
-			if (typeof parsed !== "object" || parsed === null) throw new Error("Parsed data is not an object");
-		} catch (err) {
-			result.error = "Invalid save string: " + err.message;
-			return result;
-		}
-
-		// Start with current save structure
-		const validated = {
-			changelog: this.wikishield.loadedChangelog ?? 0,
-			options: JSON.parse(JSON.stringify(this.wikishield.options)),
-			statistics: JSON.parse(JSON.stringify(this.wikishield.statistics)),
-			queueWidth: this.wikishield.queueWidth ?? "15vw",
-			detailsWidth: this.wikishield.detailsWidth ?? "15vw",
-			whitelist: Object.fromEntries(Object.entries(this.wikishield.whitelist).map(([ key, value ]) => [ key, [ ...value.entries() ] ])),
-			highlight: Object.fromEntries(Object.entries(this.wikishield.highlight).map(([ key, value ]) => [ key, [ ...value.entries() ] ])),
-		};
-
-		// --- Validate changelog ---
-		if ("changelog" in parsed) {
-			const version = parsed.changelog;
-			if (typeof version === "string" || typeof version === "number") {
-				validated.changelog = version;
-				result.appliedCount++;
-			} else {
-				result.warnings.push("changelog: Invalid type, must be string or number");
-			}
-		}
-
-		// --- Validate queueWidth and detailsWidth ---
-		const vwValidator = v => typeof v === "string" && /^\d+(\.\d+)?vw$/.test(v);
-		if ("queueWidth" in parsed) {
-			if (vwValidator(parsed.queueWidth)) {
-				validated.queueWidth = parsed.queueWidth;
-				result.appliedCount++;
-			} else {
-				result.warnings.push("queueWidth: Invalid format, must be like '15vw'");
-			}
-		}
-		if ("detailsWidth" in parsed) {
-			if (vwValidator(parsed.detailsWidth)) {
-				validated.detailsWidth = parsed.detailsWidth;
-				result.appliedCount++;
-			} else {
-				result.warnings.push("detailsWidth: Invalid format, must be like '15vw'");
-			}
-		}
-
-		// --- Validate statistics ---
-		if ("statistics" in parsed && typeof parsed.statistics === "object" && parsed.statistics !== null) {
-			validated.statistics = { ...validated.statistics };
-			for (const key of Object.keys(validated.statistics)) {
-				const val = parsed.statistics[key];
-				if (typeof val === "number" && !isNaN(val)) {
-					validated.statistics[key] = val;
-				} else if (val !== undefined) {
-					result.warnings.push(`statistics.${key}: Invalid, must be a number`);
-				}
-			}
-			result.appliedCount++;
-		}
-
-		// --- Validate options ---
-		if ("options" in parsed && typeof parsed.options === "object" && parsed.options !== null) {
-			const optResult = this.validateAndMergeSettings(parsed.options);
-			validated.options = optResult.settings;
-			result.appliedCount += optResult.appliedCount;
-			result.warnings.push(...optResult.warnings);
-		}
-
-		// --- Validate whitelist ---
-		if ("whitelist" in parsed) {
-			if (!Array.isArray(parsed.whitelist) && typeof parsed.whitelist === "object" && parsed.whitelist !== null) {
-				for (const key of ["users", "pages", "tags"]) {
-					if (Array.isArray(parsed.whitelist[key]) && parsed.whitelist[key].every(
-						entry => Array.isArray(entry) && typeof entry[0] === "string" && Array.isArray(entry[1])
-							&& entry[1].length === 2 && typeof entry[1][0] === "number" && typeof entry[1][1] === "number"
-					)) {
-						validated.whitelist[key] = parsed.whitelist[key];
-						result.appliedCount++;
-					} else if (parsed.whitelist[key] !== undefined) {
-						result.warnings.push(`whitelist.${key}: Must be array of [username, [timestamp, timestamp]]`);
-					}
-				}
-			} else {
-				parsed.whitelist = {
-					users: [],
-					pages: [],
-					tags: []
-				}
-			}
-		}
-
-		// --- Validate highlight ---
-		if ("highlight" in parsed) {
-			if (!Array.isArray(parsed.highlight) && typeof parsed.highlight === "object" && parsed.highlight !== null) {
-				for (const key of ["users", "pages", "tags"]) {
-					if (Array.isArray(parsed.highlight[key]) && parsed.highlight[key].every(
-						entry => Array.isArray(entry) && typeof entry[0] === "string" && Array.isArray(entry[1])
-							&& entry[1].length === 2 && typeof entry[1][0] === "number" && typeof entry[1][1] === "number"
-					)) {
-						validated.highlight[key] = parsed.highlight[key];
-						result.appliedCount++;
-					} else if (parsed.highlight[key] !== undefined) {
-						result.warnings.push(`highlight.${key}: Must be array of [username, [timestamp, timestamp]]`);
-					}
-				}
-			} else {
-				parsed.highlight = {
-					users: [],
-					pages: [],
-					tags: []
-				}
-			}
-		}
-
-		result.success = result.appliedCount > 0;
-		if (!result.success && !result.warnings.length) result.error = "No valid data found in import";
-		result.data = validated;
-		return result;
-	}
-
-	/**
-	* Validate and merge imported settings with current settings
-	* @param {Object} importedSettings The imported settings object
-	* @returns {Object} Result object with success status, merged settings, warnings, and applied count
-	*/
-	validateAndMergeSettings(importedSettings) {
-		const result = {
-			success: false,
-			settings: JSON.parse(JSON.stringify(this.wikishield.options)), // Start with current settings
-			warnings: [],
-			appliedCount: 0,
-			error: null
-		};
-
-		if (!importedSettings || typeof importedSettings !== 'object') {
-			result.error = 'Invalid settings format';
-			return result;
-		}
-
-		const defaults = defaultSettings;
-		const soundKeys = Object.keys(defaults.soundMappings); // Valid sound triggers
-		const expiryOptions = ["none", "1 hour", "1 day", "1 week", "1 month", "3 months", "6 months", "indefinite"];
-		const validThemes = ["theme-light", "theme-dark"];
-		const colorCount = colorPalettes.length;
-		const namespaceIds = defaults.namespacesShown;
-
-		const applyValue = (key, value, validator, errorMsg) => {
-			if (validator(value)) {
-				if (Array.isArray(key)) {
-					let obj = result.settings;
-					for (let i = 0; i < key.length - 1; i++) {
-						obj = obj[key[i]];
-					}
-					obj[key[key.length - 1]] = value;
-				} else {
-					result.settings[key] = value;
-				}
-
-				result.appliedCount++;
-			} else {
-				result.warnings.push(`${Array.isArray(key) ? key.join(".") : key}: ${errorMsg} (${value})`);
-			}
-		};
-
-		for (const [key, value] of Object.entries(importedSettings)) {
-			if (!(key in defaults)) {
-				result.warnings.push(`${key}: Unknown setting, ignored`);
-				delete result.settings[key];
-				continue;
-			}
-
-			try {
-				switch (key) {
-					case 'maxQueueSize':
-					case 'maxEditCount':
-						applyValue(key, Math.floor(value), v => Number.isInteger(v) && v >= 1 && v <= 500, "must be an integer 1-500");
-						break;
-
-					case 'minimumORESScore':
-					case 'soundAlertORESScore':
-					case 'masterVolume':
-						applyValue(key, value, v => typeof v === 'number' && v >= 0 && v <= 1, "must be a number 0-1");
-						break;
-
-					case 'enableUsernameHighlighting':
-					case 'enableWelcomeLatin':
-					case 'enableAutoWelcome':
-					case 'enableEditAnalysis':
-					case 'enableUsernameAnalysis':
-					case 'showTemps':
-					case 'showUsers':
-					case 'sortQueueItems':
-					case 'enableOllamaAI':
-					case 'enableAutoReporting':
-						applyValue(key, Boolean(value), v => typeof v === 'boolean', "must be a boolean");
-						break;
-
-					case 'selectedAutoReportReasons':
-						if (typeof value === 'object' && value !== null) {
-							result.settings.selectedAutoReportReasons = {};
-							for (const [reason, val] of Object.entries(value)) {
-								result.settings.selectedAutoReportReasons[reason] = Boolean(val);
-							}
-							result.appliedCount++;
-						} else {
-							result.warnings.push("selectedAutoReportReasons: Invalid format, must be an object");
-						}
-						break;
-
-					case 'volumes':
-						if (typeof value === 'object' && value !== null) {
-							result.settings.volumes = { ...result.settings.volumes };
-							let applied = 0;
-							for (const [volKey, volVal] of Object.entries(value)) {
-								if (typeof volVal === 'number' && volVal >= 0 && volVal <= 1) {
-									result.settings.volumes[volKey] = volVal;
-									applied++;
-								} else {
-									result.warnings.push(`volumes.${volKey}: Invalid value, must be 0-1`);
-								}
-							}
-							if (applied) result.appliedCount++;
-						} else {
-							result.warnings.push("volumes: Invalid format, must be an object");
-						}
-						break;
-
-					case 'soundMappings':
-						if (typeof value === 'object' && value !== null) {
-							const allowedSounds = Object.values(defaults.soundMappings); // use values, not keys
-							result.settings.soundMappings = { ...result.settings.soundMappings };
-							let applied = 0;
-							for (const [trigger, sound] of Object.entries(value)) {
-								if (allowedSounds.includes(sound)) {
-									result.settings.soundMappings[trigger] = sound;
-									applied++;
-								} else {
-									result.warnings.push(`soundMappings.${trigger}: Invalid sound`);
-								}
-							}
-							if (applied) result.appliedCount++;
-						} else {
-							result.warnings.push("soundMappings: Invalid format, must be an object");
-						}
-						break;
-
-
-					case 'watchlistExpiry':
-						if (typeof value === 'object' && value !== null) {
-							result.settings.watchlistExpiry = { ...result.settings.watchlistExpiry };
-							for (const subKey of Object.keys(defaults.watchlistExpiry)) {
-								if (subKey in value) {
-									applyValue([ 'watchlistExpiry', subKey ], value[subKey], v => typeof v === 'string' && expiryOptions.includes(v), `must be one of: ${expiryOptions.join(', ')}`);
-								}
-							}
-						}
-						break;
-					case 'highlightExpiry':
-						if (typeof value === 'object' && value !== null) {
-							result.settings.highlightExpiry = { ...result.settings.highlightExpiry };
-							for (const subKey of Object.keys(defaults.highlightExpiry)) {
-								if (subKey in value) {
-									applyValue([ 'highlightExpiry', subKey ], value[subKey], v => typeof v === 'string' && expiryOptions.includes(v), `must be one of: ${expiryOptions.join(', ')}`);
-								}
-							}
-						}
-						break;
-
-					case 'wiki':
-						applyValue(key, value, v => typeof v === 'string' && v.length >= 2 && v.length <= 20, "must be a string 2-20 chars");
-						break;
-
-					case 'namespacesShown':
-						if (Array.isArray(value)) {
-							const filtered = value.filter(v => namespaceIds.includes(v));
-							if (filtered.length) {
-								result.settings.namespacesShown = filtered;
-								result.appliedCount++;
-								if (filtered.length < value.length) result.warnings.push("namespacesShown: Some invalid IDs were excluded");
-							} else {
-								result.warnings.push("namespacesShown: No valid IDs found");
-							}
-						} else {
-							result.warnings.push("namespacesShown: Must be an array");
-						}
-						break;
-
-					case 'ollamaServerUrl':
-						applyValue(key, value, v => typeof v === 'string' && /^(https?:\/\/)/.test(v), "must be a valid URL starting with http:// or https://");
-						break;
-
-					case 'ollamaModel':
-						applyValue(key, value, v => typeof v === 'string', "must be a string");
-						break;
-
-					case 'controlScripts':
-						if (Array.isArray(value)) {
-							const valid = value.filter(s => Array.isArray(s.keys) && s.keys.length && Array.isArray(s.actions));
-							if (valid.length) {
-								result.settings.controlScripts = valid;
-								result.appliedCount++;
-								if (valid.length < value.length) result.warnings.push("controlScripts: Some invalid scripts were excluded");
-							} else {
-								result.warnings.push("controlScripts: No valid scripts found");
-							}
-						} else {
-							result.warnings.push("controlScripts: Must be an array");
-						}
-						break;
-
-					case 'selectedPalette':
-						applyValue(key, Math.floor(value), v => Number.isInteger(v) && v >= 0 && v < colorCount, `must be an integer 0-${colorCount - 1}`);
-						break;
-
-					case 'theme':
-						applyValue(key, value, v => typeof v === 'string' && validThemes.includes(v), `must be one of: ${validThemes.join(', ')}`);
-						break;
-
-					default:
-						if (typeof value === typeof defaults[key]) {
-							result.settings[key] = value;
-							result.appliedCount++;
-						} else {
-							result.warnings.push(`${key}: Type mismatch, expected ${typeof defaults[key]}`);
-						}
-				}
-			} catch (err) {
-				result.warnings.push(`${key}: Error applying value - ${err.message}`);
-			}
-		}
-
-		result.success = result.appliedCount > 0;
-		if (!result.success && !result.warnings.length) {
-			result.error = 'No valid settings found in import';
-		}
-
-		return result;
-	}
-
 	/**
 	* Open import/export settings section
 	*/
+	// TODO
 	openSaveSettings() {
 		this.clearContent();
 		this.contentContainer.innerHTML = `
@@ -2660,7 +2476,7 @@ ollama serve
 			return;
 		}
 
-		if (this.keypressCallback && wikishieldSettingsAllowedKeys.includes(event.key.toLowerCase())) {
+		if (this.keypressCallback && validControlKeys.includes(event.key.toLowerCase())) {
 			this.keypressCallback(event.key.toLowerCase());
 			event.preventDefault();
 		}

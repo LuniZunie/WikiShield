@@ -1,5 +1,7 @@
 import { namespaces } from "./namespaces.js";
 import { warningsLookup } from "./warnings.js";
+import { validControlKeys } from "../config/control-keys.js";
+import { validEvents, validConditions } from "../config/events.js";
 
 const isObject = v => v !== null && typeof v === "object" && !Array.isArray(v);
 const isURL = str => {
@@ -118,7 +120,7 @@ class Version {
     static get default() {
         return {
             version: 0,
-            changelog: 0,
+            changelog: "0",
 
             options: {
                 maxQueueSize: 50,
@@ -334,7 +336,7 @@ class Version {
                             {
                                 name: "welcome",
                                 params: {
-                                    template: "default"
+                                    template: "Mentor"
                                 }
                             }
                         ]
@@ -351,7 +353,7 @@ class Version {
                 warnings: 0,
                 welcomes: 0,
                 whitelisted: 0,
-                highlight: 0,
+                highlighted: 0,
                 blocks: 0,
                 sessionStart: Date.now()
             },
@@ -365,6 +367,8 @@ class Version {
                 pages: [ ],
                 tags: [ ]
             },
+            queueWidth: "15vw",
+            detailsWidth: "15vw"
         };
     }
 
@@ -402,10 +406,10 @@ class Version1 extends Version {
     static get default() {
         return {
             version: 1,
-            changelog: 3,
+            changelog: "3",
 
             settings: {
-                theme: {
+                theme: { // TODO move theme to root.layout, then move root.layout to root.UI
                     palette: 0,
                 },
 
@@ -426,9 +430,6 @@ class Version1 extends Version {
                 },
 
                 auto_welcome: {
-                    enabled: true,
-                },
-                latin_welcome: {
                     enabled: true,
                 },
 
@@ -466,26 +467,26 @@ class Version1 extends Version {
                 },
 
                 AI: {
-                    enabled: false,
-                    service: "ollama",
+                    enabled: true, // TODO set to false
+                    provider: "Ollama",
 
                     edit_analysis: {
                         enabled: true,
                     },
                     username_analysis: {
-                        enabled: true,
+                        enabled: false, // TODO set to true
                     },
 
-                    ollama: {
+                    Ollama: {
                         "server": "http://localhost:11434",
-                        "model": "",
+                        "model": "gemma3:12b", // TODO set to ""
                     }
                 },
 
                 audio: {
                     ores_alert: {
                         enabled: true,
-                        score: 0.95
+                        threshold: 0.95
                     },
 
                     volume: {
@@ -493,7 +494,7 @@ class Version1 extends Version {
                         "master.startup": 1,
 
                         "master.music": 1,
-                        "master.music.zen": 1,
+                        "master.music.zen_mode": 1,
 
                         "master.ui": 1,
                         "master.ui.click": 1,
@@ -504,9 +505,9 @@ class Version1 extends Version {
                         "master.queue": 1,
                         "master.queue.ores": 1,
                         "master.queue.mention": 1,
-                        "master.queue.recent": 1,
-                        "master.queue.flagged": 1,
-                        "master.queue.watchlist": 1,
+                        "master.queue.recent": 0,
+                        "master.queue.flagged": 0,
+                        "master.queue.watchlist": 0,
 
                         "master.notification": 1,
                         "master.notification.alert": 1,
@@ -514,6 +515,7 @@ class Version1 extends Version {
 
                         "master.action": 1,
                         "master.action.default": 1,
+                        "master.action.failed": 1,
                         "master.action.report": 1,
                         "master.action.block": 1,
                         "master.action.protect": 1,
@@ -550,6 +552,14 @@ class Version1 extends Version {
                     toasts: {
                         enabled: false,
                     },
+                }
+            },
+            layout: {
+                queue: {
+                    width: "15vw",
+                },
+                details: {
+                    width: "15vw",
                 }
             },
             control_scripts: [
@@ -655,7 +665,7 @@ class Version1 extends Version {
                         {
                             name: "welcome",
                             params: {
-                                template: "default"
+                                template: "Auto"
                             }
                         }
                     ]
@@ -673,6 +683,7 @@ class Version1 extends Version {
                 },
                 pending_changes_reviewed: {
                     total: 0,
+
                     accepted: 0,
                     rejected: 0,
                 },
@@ -682,9 +693,12 @@ class Version1 extends Version {
 
                 reverts_made: {
                     total: 0,
+                    good_faith: 0,
+
                     from_recent_changes: 0,
                     from_pending_changes: 0,
                     from_watchlist: 0,
+                    from_loaded_edits: 0,
                 },
 
                 users_welcomed: {
@@ -693,6 +707,7 @@ class Version1 extends Version {
 
                 warnings_issued: {
                     total: 0,
+
                     level_1: 0,
                     level_2: 0,
                     level_3: 0,
@@ -701,8 +716,10 @@ class Version1 extends Version {
                 },
                 reports_filed: {
                     total: 0,
+
                     AIV: 0,
                     UAA: 0,
+                    RFPP: 0,
                 },
 
                 items_whitelisted: {
@@ -723,8 +740,14 @@ class Version1 extends Version {
                 blocks_issued: {
                     total: 0,
                 },
-                protections_made: {
+                pages_protected: {
                     total: 0,
+                },
+
+                actions_executed: {
+                    total: 0,
+
+                    successful: 0
                 },
 
                 session_time: 0 // in milliseconds
@@ -747,6 +770,8 @@ class Version1 extends Version {
             this.loadedLogger.dev(`[INVALID_UPGRADE_ATTEMPT] Attempted to upgrade from version ${this.loadedData.version} to version ${this.number}, but this upgrade method only supports upgrades from version ${this.number - 1}.`);
             throw new Error("INVALID_UPGRADE_ATTEMPT");
         }
+
+        this.deprecated("options", "enableWelcomeLatin");
 
         this.deprecated("options", "volumes", "whoosh");
         this.deprecated("options", "volumes", "warn");
@@ -793,9 +818,6 @@ class Version1 extends Version {
                 auto_welcome: {
                     enabled: this.sanitize([ "options", "enableAutoWelcome" ], defaults.settings.auto_welcome.enabled),
                 },
-                latin_welcome: {
-                    enabled: this.sanitize([ "options", "enableWelcomeLatin" ], defaults.settings.latin_welcome.enabled),
-                },
 
                 expiry: {
                     watchlist: this.sanitize([ "options", "watchlistExpiry" ], defaults.settings.expiry.watchlist),
@@ -816,7 +838,13 @@ class Version1 extends Version {
                     enabled: this.sanitize([ "options", "enableAutoReporting" ], defaults.settings.auto_report.enabled),
 
                     for: this.sanitize([ "options", "selectedAutoReportReasons" ], defaults.settings.auto_report.for, (value) => {
-                        if (value !== null && typeof value === "object" && !Array.isArray(value)) {
+                        if (isObject(value)) {
+                            value["AI-generated"] = value["AI-Generated"];
+                            delete value["AI-Generated"];
+
+                            value["AI-generated (talk)"] = value["AI-Generated (talk)"];
+                            delete value["AI-Generated (talk)"];
+
                             return Object.keys(value).filter(key => value?.[key] === true);
                         }
 
@@ -826,7 +854,7 @@ class Version1 extends Version {
 
                 AI: {
                     enabled: this.sanitize([ "options", "enableOllamaAI" ], defaults.settings.AI.enabled),
-                    service: defaults.settings.AI.service, // did not exist in v0
+                    provider: defaults.settings.AI.provider, // did not exist in v0
 
                     edit_analysis: {
                         enabled: this.sanitize([ "options", "enableEditAnalysis" ], defaults.settings.AI.edit_analysis.enabled),
@@ -835,16 +863,16 @@ class Version1 extends Version {
                         enabled: this.sanitize([ "options", "enableUsernameAnalysis" ], defaults.settings.AI.username_analysis.enabled),
                     },
 
-                    ollama: {
-                        "server": this.sanitize([ "options", "ollamaServerUrl" ], defaults.settings.AI.ollama.server),
-                        "model": this.sanitize([ "options", "ollamaModel" ], defaults.settings.AI.ollama.model),
+                    Ollama: {
+                        "server": this.sanitize([ "options", "ollamaServerUrl" ], defaults.settings.AI.Ollama.server),
+                        "model": this.sanitize([ "options", "ollamaModel" ], defaults.settings.AI.Ollama.model),
                     }
                 },
 
                 audio: {
                     ores_alert: {
                         enabled: this.sanitize([ "options", "enableSoundAlerts" ], defaults.settings.audio.ores_alert.enabled),
-                        score: this.sanitize([ "options", "soundAlertORESScore" ], defaults.settings.audio.ores_alert.score)
+                        threshold: this.sanitize([ "options", "soundAlertORESScore" ], defaults.settings.audio.ores_alert.threshold)
                     },
 
                     volume: {
@@ -852,7 +880,7 @@ class Version1 extends Version {
                         "master.startup": defaults.settings.audio.volume["master.startup"], // did not exist in v0
 
                         "master.music": defaults.settings.audio.volume["master.music"], // did not exist in v0
-                        "master.music.zen": defaults.settings.audio.volume["master.music.zen"], // did not exist in v0
+                        "master.music.zen_mode": defaults.settings.audio.volume["master.music.zen_mode"], // did not exist in v0
 
                         "master.ui": defaults.settings.audio.volume["master.ui"], // did not exist in v0
                         "master.ui.click": this.sanitize([ "options", "volumes", "click" ], defaults.settings.audio.volume["master.ui.click"]),
@@ -873,6 +901,7 @@ class Version1 extends Version {
 
                         "master.action": defaults.settings.audio.volume["master.action"], // did not exist in v0
                         "master.action.default": defaults.settings.audio.volume["master.action.default"], // did not exist in v0
+                        "master.action.failed": defaults.settings.audio.volume["master.action.failed"], // did not exist in v0
                         "master.action.report": this.sanitize([ "options", "volumes", "report" ], defaults.settings.audio.volume["master.action.report"]),
                         "master.action.block": this.sanitize([ "options", "volumes", "block" ], defaults.settings.audio.volume["master.action.block"]),
                         "master.action.protect": this.sanitize([ "options", "volumes", "protection" ], defaults.settings.audio.volume["master.action.protect"]),
@@ -911,7 +940,97 @@ class Version1 extends Version {
                     },
                 }
             },
-            control_scripts: this.sanitize([ "options", "controlScripts" ], defaults.control_scripts),
+            layout: {
+                queue: {
+                    width: this.sanitize([ "queueWidth" ], defaults.layout.queue.width),
+                },
+                details: {
+                    width: this.sanitize([ "detailsWidth" ], defaults.layout.details.width),
+                }
+            },
+            control_scripts: this.sanitize([ "options", "controlScripts" ], defaults.control_scripts, (value) => {
+                if (Array.isArray(value)) {
+                    function updateActions(actions, ...path) {
+                        return actions.filter((action, index) => {
+                            index = +index;
+
+                            if (!isObject(action)) {
+                                return true; // malformed but don't care here
+                            }
+
+                            if (action.name === "if") {
+                                if (!(action.condition in validConditions)) {
+                                    return true; // malformed but don't care here
+                                }
+
+                                if (!Array.isArray(action.actions)) {
+                                    return true; // malformed but don't care here
+                                }
+
+                                action.actions = updateActions.call(this, action.actions, ...path, index, "actions");
+                            } else {
+                                switch (action.name) {
+                                    case "welcome": {
+                                        if (!isObject(action.params)) {
+                                            return true; // malformed but don't care here
+                                        }
+
+                                        switch (action.params.template) {
+                                            case "Links": {
+                                                action.params.template = "Graphical";
+                                            } break;
+                                            case "Latin": {
+                                                action.params.template = "Non-Latin";
+                                            } break;
+                                            case "Mentor": { // deprecated =(
+                                                this.loadedLogger.warn(`Skipped deprecated "Mentor" welcome template at key [${[...path, index, "params", "template"].join(" -> ")}].`, true);
+                                                return false;
+                                            } break;
+                                        }
+                                    } break;
+                                    case "warn": {
+                                        if (!isObject(action.params)) {
+                                            return true; // malformed but don't care here
+                                        }
+
+                                        switch (action.params.warningType) {
+                                            case "AI-Generated": {
+                                                action.params.warningType = "AI-generated";
+                                            } break;
+                                            case "AI-Generated (talk)": {
+                                                action.params.warningType = "AI-generated (talk)";
+                                            } break;
+                                        }
+                                    } break;
+                                }
+                            }
+
+                            return true;
+                        });
+                    }
+
+                    value.forEach((scope2, index) => {
+                        index = +index;
+                        if (!isObject(scope2)) {
+                            return;
+                        }
+
+                        if (!Array.isArray(scope2.keys)) {
+                            return;
+                        }
+
+                        if (!Array.isArray(scope2.actions)) {
+                            return;
+                        }
+
+                        scope2.actions = updateActions.call(this, scope2.actions, "control_scripts", index, "actions");
+                    });
+
+                    return value;
+                }
+
+                return undefined;
+            }),
             statistics: {
                 edits_reviewed: {
                     total: this.sanitize([ "statistics", "reviewed" ], defaults.statistics.edits_reviewed.total),
@@ -923,6 +1042,7 @@ class Version1 extends Version {
                 },
                 pending_changes_reviewed: {
                     total: defaults.statistics.pending_changes_reviewed.total, // did not exist in v0
+
                     accepted: defaults.statistics.pending_changes_reviewed.accepted, // did not exist in v0
                     rejected: defaults.statistics.pending_changes_reviewed.rejected, // did not exist in v0
                 },
@@ -931,15 +1051,19 @@ class Version1 extends Version {
                 },
                 reverts_made: {
                     total: this.sanitize([ "statistics", "reverts" ], defaults.statistics.reverts_made.total),
+                    good_faith: defaults.statistics.reverts_made.good_faith, // did not exist in v0
+
                     from_recent_changes: this.sanitize([ "statistics", "reverts" ], defaults.statistics.reverts_made.total),
                     from_pending_changes: defaults.statistics.reverts_made.from_pending_changes, // did not exist in v0
                     from_watchlist: defaults.statistics.reverts_made.from_watchlist, // did not exist in v0
+                    from_loaded_edits: defaults.statistics.reverts_made.from_loaded_edits, // did not exist in v0
                 },
                 users_welcomed: {
                     total: this.sanitize([ "statistics", "welcomes" ], defaults.statistics.users_welcomed.total),
                 },
                 warnings_issued: {
                     total: this.sanitize([ "statistics", "warnings" ], defaults.statistics.warnings_issued.total),
+
                     level_1: defaults.statistics.warnings_issued.level_1, // did not exist in v0
                     level_2: defaults.statistics.warnings_issued.level_2, // did not exist in v0
                     level_3: defaults.statistics.warnings_issued.level_3, // did not exist in v0
@@ -948,18 +1072,22 @@ class Version1 extends Version {
                 },
                 reports_filed: {
                     total: this.sanitize([ "statistics", "reports" ], defaults.statistics.reports_filed.total),
+
                     AIV: this.sanitize([ "statistics", "reports" ], defaults.statistics.reports_filed.total),
                     UAA: defaults.statistics.reports_filed.UAA, // did not exist in v0
+                    RFPP: defaults.statistics.reports_filed.RFPP // did not exist in v0
                 },
                 items_whitelisted: {
                     total: this.sanitize([ "statistics", "whitelisted" ], defaults.statistics.items_whitelisted.total),
+
                     users: this.sanitize([ "statistics", "whitelisted" ], defaults.statistics.items_whitelisted.users),
                     pages: defaults.statistics.items_whitelisted.pages, // did not exist in v0
                     tags: defaults.statistics.items_whitelisted.tags, // did not exist in v0
                 },
                 items_highlighted: {
-                    total: this.sanitize([ "statistics", "highlight" ], defaults.statistics.items_highlighted.total),
-                    users: this.sanitize([ "statistics", "highlight", ], defaults.statistics.items_highlighted.users),
+                    total: this.sanitize([ "statistics", "highlighted" ], defaults.statistics.items_highlighted.total),
+
+                    users: this.sanitize([ "statistics", "highlighted", ], defaults.statistics.items_highlighted.users),
                     pages: defaults.statistics.items_highlighted.pages, // did not exist in v0
                     tags: defaults.statistics.items_highlighted.tags, // did not exist in v0
                 },
@@ -967,8 +1095,14 @@ class Version1 extends Version {
                 blocks_issued: {
                     total: this.sanitize([ "statistics", "blocks" ], defaults.statistics.blocks_issued.total),
                 },
-                protections_made: {
-                    total: defaults.statistics.protections_made.total, // did not exist in v0
+                pages_protected: {
+                    total: defaults.statistics.pages_protected.total, // did not exist in v0
+                },
+
+                actions_executed: {
+                    total: defaults.statistics.actions_executed.total, // did not exist in v0
+
+                    successful: defaults.statistics.actions_executed.successful, // did not exist in v0
                 },
 
                 session_time: defaults.statistics.session_time, // was not stored properly in v0
@@ -995,7 +1129,7 @@ class Version1 extends Version {
             return false;
         }
 
-        if (typeof root.changelog !== "number" || !Number.isInteger(root.changelog) || root.changelog < 0) {
+        if (typeof root.changelog !== "string") {
             this.reset("changelog");
         }
 
@@ -1089,18 +1223,6 @@ class Version1 extends Version {
                     const value = scope2.enabled;
                     if (typeof value !== "boolean") {
                         this.reset("settings", "auto_welcome", "enabled");
-                    }
-                }
-            }
-
-            { // root.settings.latin_welcome
-                const scope2 = scope1.latin_welcome;
-                this.restrictObject(scope2, "settings", "latin_welcome");
-
-                { // root.settings.latin_welcome.enabled
-                    const value = scope2.enabled;
-                    if (typeof value !== "boolean") {
-                        this.reset("settings", "latin_welcome", "enabled");
                     }
                 }
             }
@@ -1210,10 +1332,10 @@ class Version1 extends Version {
                     }
                 }
 
-                { // root.settings.AI.service
-                    const value = scope2.service;
-                    if (value !== "ollama") {
-                        this.reset("settings", "AI", "service");
+                { // root.settings.AI.provider
+                    const value = scope2.provider;
+                    if (value !== "Ollama") {
+                        this.reset("settings", "AI", "provider");
                     }
                 }
 
@@ -1240,21 +1362,21 @@ class Version1 extends Version {
                     }
                 }
 
-                { // root.settings.AI.ollama
-                    const scope3 = scope2.ollama;
-                    this.restrictObject(scope3, "settings", "AI", "ollama");
+                { // root.settings.AI.Ollama
+                    const scope3 = scope2.Ollama;
+                    this.restrictObject(scope3, "settings", "AI", "Ollama");
 
-                    { // root.settings.AI.ollama.server
+                    { // root.settings.AI.Ollama.server
                         const value = scope3.server;
                         if (!isURL(value)) {
-                            this.reset("settings", "AI", "ollama", "server");
+                            this.reset("settings", "AI", "Ollama", "server");
                         }
                     }
 
-                    { // root.settings.AI.ollama.model
+                    { // root.settings.AI.Ollama.model
                         const value = scope3.model;
                         if (typeof value !== "string") {
-                            this.reset("settings", "AI", "ollama", "model");
+                            this.reset("settings", "AI", "Ollama", "model");
                         }
                     }
                 }
@@ -1275,10 +1397,10 @@ class Version1 extends Version {
                         }
                     }
 
-                    { // root.settings.audio.ores_alert.score
-                        const value = scope3.score;
+                    { // root.settings.audio.ores_alert.threshold
+                        const value = scope3.threshold;
                         if (!(typeof value === "number" && value >= 0.0 && value <= 1.0)) {
-                            this.reset("settings", "audio", "ores_alert", "score");
+                            this.reset("settings", "audio", "ores_alert", "threshold");
                         }
                     }
                 }
@@ -1291,7 +1413,7 @@ class Version1 extends Version {
                         "master.startup",
 
                         "master.music",
-                        "master.music.zen",
+                        "master.music.zen_mode",
 
                         "master.ui",
                         "master.ui.click",
@@ -1312,6 +1434,7 @@ class Version1 extends Version {
 
                         "master.action",
                         "master.action.default",
+                        "master.action.failed",
                         "master.action.report",
                         "master.action.block",
                         "master.action.protect",
@@ -1424,8 +1547,134 @@ class Version1 extends Version {
             }
         }
 
+        { // root.layout
+            const scope1 = root.layout;
+            this.restrictObject(scope1, "layout");
+
+            { // root.layout.queue
+                const scope2 = scope1.queue;
+                this.restrictObject(scope2, "layout", "queue");
+
+                { // root.layout.queue.width
+                    const value = scope2.width;
+                    if (!(typeof value === "string" && value.endsWith("vw"))) {
+                        this.reset("layout", "queue", "width");
+                    }
+
+                    const numericPart = parseFloat(value.slice(0, -2));
+                    if (!(typeof numericPart === "number" && !isNaN(numericPart) && numericPart >= 10 && numericPart <= 30)) {
+                        this.reset("layout", "queue", "width");
+                    }
+                }
+            }
+
+            { // root.layout.details
+                const scope2 = scope1.details;
+                this.restrictObject(scope2, "layout", "details");
+
+                { // root.layout.details.width
+                    const value = scope2.width;
+                    if (!(typeof value === "string" && value.endsWith("vw"))) {
+                        this.reset("layout", "details", "width");
+                    }
+
+                    const numericPart = parseFloat(value.slice(0, -2));
+                    if (!(typeof numericPart === "number" && !isNaN(numericPart) && numericPart >= 10 && numericPart <= 30)) {
+                        this.reset("layout", "details", "width");
+                    }
+                }
+            }
+        }
+
         { // root.control_scripts
-            // yk what for now let's not validate control scripts
+            const scope1 = root.control_scripts;
+            if (!Array.isArray(scope1)) {
+                this.reset("control_scripts");
+            }
+
+            function sanitizeActions(actions, ...path) {
+                return actions.filter((action, index) => {
+                    index = +index;
+
+                    if (!isObject(action)) {
+                        this.loadedLogger.warn(`Removing invalid action at path [ ${[ ...path, index ].join(" -> ")} ] from stored data.`);
+                        return false;
+                    }
+
+                    if (action.name === "if") {
+                        if (!(action.condition in validConditions)) {
+                            this.loadedLogger.warn(`Removing invalid condition [ ${action.condition} ] at path [ ${[ ...path, index, "condition" ].join(" -> ")} ] from stored data.`);
+                            return false;
+                        }
+
+                        if (!Array.isArray(action.actions)) {
+                            this.loadedLogger.warn(`Resetting invalid actions array at path [ ${[ ...path, index, "actions" ].join(" -> ")} ] in stored data.`);
+                            action.actions = [ ];
+                        }
+
+                        action.actions = sanitizeActions.call(this, action.actions, ...path, index, "actions");
+                    } else {
+                        if (!(action.name in validEvents)) {
+                            this.loadedLogger.warn(`Removing invalid action at path [ ${[ ...path, index, "name" ].join(" -> ")} ] from stored data.`);
+                            return false;
+                        }
+
+                        if (!isObject(action.params)) {
+                            this.loadedLogger.warn(`Resetting invalid params object at path [ ${[ ...path, index, "params" ].join(" -> ")} ] in stored data.`);
+                            action.params = { };
+                        }
+
+                        const references = validEvents[action.name].parameters ?? [ ];
+                        const validIds = new Set();
+                        for (const reference of references) {
+                            validIds.add(reference.id);
+                            if (reference.type === "choice") {
+                                if (!(reference.id in action.params)) {
+                                    this.loadedLogger.warn(`Resetting missing choice parameter [ ${reference.id} ] at path [ ${[ ...path, index, "params" ].join(" -> ")} ] in stored data.`);
+                                    action.params[reference.id] = reference.options[0];
+                                }
+
+                                if (!reference.options.includes(action.params[reference.id])) {
+                                    this.loadedLogger.warn(`Resetting invalid choice parameter [ ${reference.id} ] at path [ ${[ ...path, index, "params" ].join(" -> ")} ] in stored data.`);
+                                    action.params[reference.id] = reference.options[0];
+                                }
+                            }
+                        }
+
+                        for (const paramKey of Object.keys(action.params)) {
+                            if (!validIds.has(paramKey)) {
+                                this.loadedLogger.warn(`Removing invalid parameter [ ${paramKey} ] at path [ ${[ ...path, index, "params" ].join(" -> ")} ] from stored data.`);
+                                delete action.params[paramKey];
+                            }
+                        }
+                    }
+
+                    return true;
+                });
+            }
+
+            root.control_scripts = root.control_scripts.filter((scope2, index) => {
+                index = +index;
+                if (!isObject(scope2)) {
+                    this.loadedLogger.warn(`Removing invalid control script at path [ ${[ "control_scripts", index ].join(" -> ")} ] from stored data.`);
+                    return false;
+                }
+
+                if (!Array.isArray(scope2.keys)) {
+                    this.loadedLogger.warn(`Removing invalid keys array from control script at index [ ${index} ] in stored data.`);
+                    root.control_scripts[index].keys = [ ];
+                }
+
+                if (!Array.isArray(scope2.actions)) {
+                    this.loadedLogger.warn(`Removing invalid actions array from control script at index [ ${index} ] in stored data.`);
+                    root.control_scripts[index].actions = [ ];
+                }
+
+                root.control_scripts[index].keys = scope2.keys.filter((key) => validControlKeys.has(key));
+                root.control_scripts[index].actions = sanitizeActions.call(this, scope2.actions, "control_scripts", index, "actions");
+
+                return true;
+            });
         }
 
         { // root.statistics
@@ -1510,6 +1759,12 @@ class Version1 extends Version {
                         this.reset("statistics", "reverts_made", "total");
                     }
                 }
+                { // root.statistics.reverts_made.good_faith
+                    const value = scope2.good_faith;
+                    if (!isValidStatistic(value)) {
+                        this.reset("statistics", "reverts_made", "good_faith");
+                    }
+                }
 
                 { // root.statistics.reverts_made.from_recent_changes
                     const value = scope2.from_recent_changes;
@@ -1527,6 +1782,12 @@ class Version1 extends Version {
                     const value = scope2.from_watchlist;
                     if (!isValidStatistic(value)) {
                         this.reset("statistics", "reverts_made", "from_watchlist");
+                    }
+                }
+                { // root.statistics.reverts_made.from_loaded_edits
+                    const value = scope2.from_loaded_edits;
+                    if (!isValidStatistic(value)) {
+                        this.reset("statistics", "reverts_made", "from_loaded_edits");
                     }
                 }
             }
@@ -1609,6 +1870,12 @@ class Version1 extends Version {
                         this.reset("statistics", "reports_filed", "UAA");
                     }
                 }
+                { // root.statistics.reports_filed.RFPP
+                    const value = scope2.RFPP;
+                    if (!isValidStatistic(value)) {
+                        this.reset("statistics", "reports_filed", "RFPP");
+                    }
+                }
             }
 
             { // root.statistics.items_whitelisted
@@ -1683,14 +1950,33 @@ class Version1 extends Version {
                     }
                 }
             }
-            { // root.statistics.protections_made
-                const scope2 = scope1.protections_made;
-                this.restrictObject(scope2, "statistics", "protections_made");
+            { // root.statistics.pages_protected
+                const scope2 = scope1.pages_protected;
+                this.restrictObject(scope2, "statistics", "pages_protected");
 
-                { // root.statistics.protections_made.total
+                { // root.statistics.pages_protected.total
                     const value = scope2.total;
                     if (!isValidStatistic(value)) {
-                        this.reset("statistics", "protections_made", "total");
+                        this.reset("statistics", "pages_protected", "total");
+                    }
+                }
+            }
+
+            { // root.statistics.actions_executed
+                const scope2 = scope1.actions_executed;
+                this.restrictObject(scope2, "statistics", "actions_executed");
+
+                { // root.statistics.actions_executed.total
+                    const value = scope2.total;
+                    if (!isValidStatistic(value)) {
+                        this.reset("statistics", "actions_executed", "total");
+                    }
+                }
+
+                { // root.statistics.actions_executed.successful
+                    const value = scope2.successful;
+                    if (!isValidStatistic(value)) {
+                        this.reset("statistics", "actions_executed", "successful");
                     }
                 }
             }
@@ -1835,7 +2121,7 @@ export class StorageManager {
     load(data = { }) {
         const logger = new Logger();
 
-        let version = data.version ?? 0;
+        let version = data.version ??= 0;
         if (StorageManager.versions.has(version)) {
             const expectedVersion = StorageManager.version.number;
             while (version !== expectedVersion) {
@@ -1881,21 +2167,27 @@ export class StorageManager {
     }
 }
 
-// load from version 0 to latest
-const storage = new StorageManager();
-const logs = storage.load(Version.default);
-console.group("WikiShield Storage Logs");
-for (const log of logs) {
-    let prefix = `[${log.expected ? "✓" : "✗"}][${log.timestamp}][Storage]`;
+function Test(obj = Version.default, name = "default") {
+    // load from version 0 to latest
+    const storage = new StorageManager();
+    const logs = storage.load(obj);
 
-    let type = log.type;
-    if (type === "dev") {
-        type = "error";
-        prefix = `#DEV# ${prefix}`;
+    const allExpected = !logs.some(log => !log.expected);
+
+    console.groupCollapsed(`[${allExpected ? "✓" : "✗"}] WikiShield Storage Logs: ${name}`);
+    for (const log of logs) {
+        let prefix = `[${log.expected ? "✓" : "✗"}][${log.timestamp}][Storage]`;
+
+        let type = log.type;
+        if (type === "dev") {
+            type = "error";
+            prefix = `#DEV# ${prefix}`;
+        }
+
+        console[type](`${prefix} ${log.message}`);
     }
+    console.groupEnd();
 
-    console[type](`${prefix} ${log.message}`);
+    console.log(storage.data);
 }
-console.groupEnd();
-
-console.log(storage.data);
+Test();

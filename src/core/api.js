@@ -13,7 +13,6 @@ export class WikiShieldAPI {
 		this.wikishield = wikishield;
 		this.api = api;
 		this.cache = new Map();
-		this.testingMode = options.testingMode || false;
 		this.logger = options.logger;
 		this.util = options.util;
 		this.historyCount = options.historyCount || 10;
@@ -40,11 +39,6 @@ export class WikiShieldAPI {
 	* @returns {Promise<Boolean>}
 	*/
 	async edit(title, content, summary, params = {}) {
-		if (this.testingMode) {
-			console.log("Edit", { title, content, summary });
-			return true;
-		}
-
 		try {
 			await this.api.postWithEditToken(Object.assign({}, {
 				"action": "edit",
@@ -70,11 +64,6 @@ export class WikiShieldAPI {
 	* @returns {Promise<Boolean>}
 	*/
 	async appendText(title, content, summary) {
-		if (this.testingMode) {
-			console.log("Append text", { title, content, summary });
-			return true;
-		}
-
 		try {
 			await this.api.postWithEditToken({
 				"action": "edit",
@@ -88,6 +77,26 @@ export class WikiShieldAPI {
 			return true;
 		} catch (err) {
 			console.log(`Could not append text to page ${title}: ${err}`);
+			return false;
+		}
+	}
+
+	async newSection(title, sectionTitle, content, summary) {
+		try {
+			await this.api.postWithEditToken({
+				"action": "edit",
+				"title": title,
+				"section": "new",
+				"sectiontitle": sectionTitle,
+				"text": content,
+				"summary": summary,
+				"format": "json",
+				"tags": __TAGS__
+			});
+
+			return true;
+		} catch (err) {
+			this.logger?.log(`Could not create new section on page ${title}: ${err}`);
 			return false;
 		}
 	}
@@ -224,6 +233,22 @@ export class WikiShieldAPI {
 		}
 	}
 
+	async getPageTitleFromRevid(revid) {
+		try {
+			const response = await this.api.get({
+				"action": "query",
+				"prop": "revisions",
+				"revids": revid,
+				"format": "json",
+				"formatversion": 2
+			});
+
+			return response.query.pages[0].title;
+		} catch (err) {
+			this.logger?.log(`Could not fetch page title for revid ${revid}: ${err}`);
+		}
+	}
+
 	/**
 	* Get the difference between two revisions of the given page
 	* @param {String} title The title of the page
@@ -231,7 +256,7 @@ export class WikiShieldAPI {
 	* @param {Number} revid The new revision ID
 	* @returns {Promise<String>} The difference between the two revisions, in HTML format
 	*/
-	async diff(title, old_revid, revid) {
+	async diff(title, old_revid, revid, difftype = "table") {
 		try {
 			const response = await this.api.get({
 				"action": "compare",
@@ -239,6 +264,7 @@ export class WikiShieldAPI {
 				"torev": revid,
 				"prop": "diff",
 				"format": "json",
+				"difftype": difftype,
 				"formatversion": 2
 			});
 
@@ -862,11 +888,6 @@ export class WikiShieldAPI {
 	}
 
 	async acceptFlaggedEdit(edit, summary) {
-		if (this.testingMode) {
-			console.log("Accept flagged", { edit, summary });
-			return true;
-		}
-
 		try {
 			const res = await this.api.postWithToken("csrf", {
 				"action": "review",
@@ -874,7 +895,6 @@ export class WikiShieldAPI {
 				"comment": summary,
 				"tags": __TAGS__
 			});
-			console.log(res);
 
 			return true;
 		} catch (err) {
@@ -884,11 +904,6 @@ export class WikiShieldAPI {
 	}
 
 	async rejectFlaggedEdit(edit, summary) {
-		if (this.testingMode) {
-			console.log("Reject flagged", { edit, summary });
-			return true;
-		}
-
 		try {
 			const stableText = await this.getTextByRevid(edit.__FLAGGED__.stable_revid);
 			const res = await this.api.postWithToken("csrf", {
@@ -899,7 +914,6 @@ export class WikiShieldAPI {
 				"starttimestamp": edit.__FLAGGED__.timestamp,
 				"tags": __TAGS__
 			});
-			console.log(res);
 
 			return true;
 		} catch (err) {
@@ -976,11 +990,6 @@ export class WikiShieldAPI {
 	* @returns {Promise<Boolean>} Whether the rollback was successful
 	*/
 	async rollback(title, user, summary) {
-		if (this.testingMode) {
-			console.log("Rollback", { title, user, summary });
-			return true;
-		}
-
 		try {
 			const res = await this.api.rollback(title, user, {
 				"summary": summary,
@@ -1010,11 +1019,6 @@ export class WikiShieldAPI {
 	* @returns {Promise<Boolean>} Whether the undo was successful
 	*/
 	async undoEdit(edit, reason) {
-		if (this.testingMode) {
-			console.log("Undo", { edit, reason });
-			return true;
-		}
-
 		try {
 			// Get the revision ID to undo and the previous revision
 			const revid = edit.revid;
@@ -1057,11 +1061,6 @@ export class WikiShieldAPI {
 	* @returns {Promise<Boolean>} Whether the block was successful
 	*/
 	async block(user, summary, duration, blockCreation = false, blockEmail = false, blockTalk = false, anonOnly = true) {
-		if (this.testingMode) {
-			console.log("Block", { user, summary, duration });
-			return true;
-		}
-
 		try {
 			await this.api.postWithToken("csrf", Object.assign(
 				{
@@ -1090,11 +1089,6 @@ export class WikiShieldAPI {
 	* @returns {Promise<Boolean>} Whether the action was successful
 	*/
 	async thank(revid) {
-		if (this.testingMode) {
-			console.log("Thank", { revid });
-			return true;
-		}
-
 		try {
 			await this.api.postWithToken("csrf", {
 				"action": "thank",
@@ -1156,11 +1150,6 @@ export class WikiShieldAPI {
 	* @returns {Promise<Boolean>} Whether the protection was successful
 	*/
 	async protect(page, summary, details) {
-		if (this.testingMode) {
-			console.log("Protect", { page, summary, details });
-			return true;
-		}
-
 		try {
 			await this.api.postWithToken("csrf", {
 				"action": "protect",

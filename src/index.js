@@ -2,7 +2,7 @@
 
 import { fullTrim } from './utils/formatting.js';
 import { BuildAIAnalysisPrompt, BuildAIUsernamePrompt } from './ai/prompts.js';
-import { defaultSettings, colorPalettes } from './config/defaults.js';
+import { colorPalettes } from './config/defaults.js';
 import { warnings, warningTemplateColors, warningsLookup, getWarningFromLookup } from './data/warnings.js';
 import { namespaces } from './data/namespaces.js';
 import { wikishieldHTML } from './ui/templates.js';
@@ -10,7 +10,7 @@ import { wikishieldStyling } from './ui/styles.js';
 import { WikiShieldUtil } from './utils/helpers.js';
 import { WikiShieldLog } from './utils/logger.js';
 import { WikiShieldAPI } from './core/api.js';
-import { WikiShieldOllamaAI } from './ai/ollama.js';
+import { AI } from './ai/class.js';
 import { WikiShieldQueue } from './core/queue.js';
 import { createConditions, welcomeTemplates } from './data/events.js';
 import { WikiShieldEventManager } from './core/event-manager.js';
@@ -50,7 +50,6 @@ export const __script__ = {
 
 	// Construct wikishieldData from imported modules
 	const wikishieldData = {
-		defaultSettings,
 		colorPalettes,
 		warningTemplateColors,
 		warnings,
@@ -121,18 +120,6 @@ export const __script__ = {
 			// Initialize queue after wikishield is created (needs reference to wikishield)
 			wikishield.queue = new WikiShieldQueue(wikishield);
 
-			// Initialize event data after wikishield is created (avoids circular dependency)
-			wikishieldEventData = {
-				conditions: createConditions(wikishield),
-				welcomeTemplates: welcomeTemplates
-			};
-
-			// Set wikishieldEventData on the wikishield instance
-			wikishield.wikishieldEventData = wikishieldEventData;
-
-			// Initialize event manager's events with the event data
-			wikishield.interface.eventManager.initializeEvents(wikishieldEventData);
-
 			wikishield.init().then(() => {
 				const isIOS = /iP(ad|hone|od)/.test(navigator.userAgent);
 				const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
@@ -191,12 +178,7 @@ export const __script__ = {
 			// Initialize anyway if killswitch check fails (network issues shouldn't prevent loading)
 			wikishield = new WikiShield(wikishieldData);
 			wikishield.queue = new WikiShieldQueue(wikishield);
-			wikishieldEventData = {
-				conditions: createConditions(wikishield),
-				welcomeTemplates: welcomeTemplates
-			};
-			wikishield.wikishieldEventData = wikishieldEventData;
-			wikishield.interface.eventManager.initializeEvents(wikishieldEventData);
+
 			wikishield.init().then(() => {
 				const isIOS = /iP(ad|hone|od)/.test(navigator.userAgent);
 				const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);

@@ -175,24 +175,16 @@ select:focus-visible {
 }
 
 ::-webkit-scrollbar-thumb {
-	background: var(--light-border);
+	background: var(--dark-border);
 	border-radius: var(--radius-lg);
 	border: 2px solid transparent;
 	background-clip: content-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-	background: var(--light-text-secondary);
+	background: var(--dark-text-secondary);
 	border: 2px solid transparent;
 	background-clip: content-box;
-}
-
-[data-theme="dark"] ::-webkit-scrollbar-thumb {
-	background: var(--dark-border);
-}
-
-[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
-	background: var(--dark-text-secondary);
 }
 
 /* Floating iframe modal */

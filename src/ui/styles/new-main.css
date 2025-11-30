@@ -1689,6 +1689,59 @@ body {
                             text-transform: uppercase;
                         }
 
+                        & > .settings-left-menu-compact {
+                            display: flex;
+                            flex-wrap: wrap;
+                            gap: 8px;
+
+                            padding: 0 12px;
+
+                            & > .settings-left-menu-item {
+                                cursor: pointer;
+                                -webkit-user-select: none;
+                                        user-select: none;
+
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+
+                                border-radius: 10px;
+                                padding: 12px;
+
+                                font-size: 1.2em;
+                                font-weight: 500;
+
+                                transition: background .2s ease,
+                                        color .2s ease,
+                                        box-shadow .2s ease;
+
+                                /* Theme dependent */
+                                color: rgba(200, 200, 200, 1);
+
+                                &:first-child {
+                                    margin-left: 12px;
+                                }
+
+                                &:hover {
+                                    /* Theme dependent */
+                                    color: rgba(143, 163, 255, 1);
+
+                                    background: rgba(102, 126, 234, .15);
+                                }
+
+                                &.selected {
+                                    font-weight: 600;
+
+                                    /* Theme dependent */
+                                    box-shadow: 0 0 20px rgba(102, 126, 234, .2);
+
+                                    color: rgba(143, 163, 255, 1);
+
+                                    background: rgba(102, 126, 234, .2);
+                                }
+                            }
+                        }
+
                         & > .settings-left-menu-item {
                             cursor: pointer;
                             -webkit-user-select: none;
@@ -2736,16 +2789,18 @@ body {
 
                         .stats-grid {
                             display: grid;
-                            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                            grid-template-columns: repeat(3, 1fr);
                             gap: 16px;
 
                             margin-top: 20px;
 
                             & > .stat-card {
                                 cursor: pointer;
+                                -webkit-user-select: none;
+                                        user-select: none;
 
                                 width: 100%;
-                                height: 120px;
+                                height: 150px;
 
                                 background-color: transparent;
 
@@ -2753,8 +2808,8 @@ body {
 
                                 transition: transform .3s ease;
 
-                                &:hover {
-                                    transform: scale(1.1);
+                                &:hover, &:active {
+                                    transform: scale(1.05);
 
                                     & > .inside {
                                         transform: rotateY(180deg);
@@ -2796,7 +2851,6 @@ body {
                                         display: flex;
                                         flex-direction: column;
                                         align-items: center;
-                                        justify-content: center;
                                         width: 100%;
                                         height: 100%;
 
@@ -2816,6 +2870,8 @@ body {
                                         border-color: rgba(102, 126, 234, .25);
 
                                         &.front {
+                                            justify-content: center;
+
                                             /* Theme dependent */
                                             background: linear-gradient(135deg,
                                                 rgba(102, 126, 234, .15),
@@ -2825,11 +2881,27 @@ body {
                                         &.back {
                                             transform: rotateY(180deg);
 
+                                            overflow: hidden auto;
+
                                             /* Theme dependent */
                                             background: linear-gradient(135deg,
                                                 rgba(118, 75, 162, .15),
                                                 rgba(102, 126, 234, .15)
                                             );
+
+                                            &::-webkit-scrollbar {
+                                                width: 8px;
+                                            }
+                                            &::-webkit-scrollbar-thumb {
+                                                border-radius: 4px;
+
+                                                /* Theme dependent */
+                                                background: rgba(102, 126, 234, .4);
+                                            }
+                                            &::-webkit-scrollbar-track {
+                                                /* Theme dependent */
+                                                background: rgba(255, 255, 255, .05);
+                                            }
                                         }
 
                                         & > .stat-value {
@@ -2866,6 +2938,10 @@ body {
 
                                             /* Theme dependent */
                                             color: rgba(170, 170, 170, 1);
+
+                                            &:not(:last-child) {
+                                                margin-bottom: 8px;
+                                            }
                                         }
                                     }
                                 }
@@ -3604,6 +3680,10 @@ select, input:not([type=range]), textarea, button {
 
                 &.queue-edit-tags {
                     display: flex;
+
+                    &:empty {
+                        display: none;
+                    }
 
                     & > .queue-edit-tag {
                         flex-shrink: 0;

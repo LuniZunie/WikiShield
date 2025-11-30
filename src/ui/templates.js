@@ -92,7 +92,11 @@ export const wikishieldHTML = {
 						</span>
 					</div>
 				</div>
-				<div id="queue-items" class="queue-list"></div>
+				<div id="queue-items" class="queue-list">
+					<div class="queue-empty">
+						No edits in queue.
+					</div>
+				</div>
 				<div class="width-adjust" id="queue-width-adjust"></div>
 			</div>
 			<div id="alerts-panel" class="notification-panel">
@@ -413,14 +417,16 @@ export const wikishieldHTML = {
 					<div class="settings-category-header">
 						<span>WHITELIST</span>
 					</div>
-					<div class="settings-left-menu-item" id="settings-whitelist-users-button">
-						<span><i class="fas fa-user"></i>Users</span>
-					</div>
-					<div class="settings-left-menu-item" id="settings-whitelist-pages-button">
-						<span><i class="fas fa-file"></i>Pages</span>
-					</div>
-					<div class="settings-left-menu-item" id="settings-whitelist-tags-button">
-						<span><i class="fas fa-tag"></i>Tags</span>
+					<div class="settings-left-menu-compact">
+						<div class="settings-left-menu-item" id="settings-whitelist-users-button">
+							<i class="fas fa-user" title="Users"></i>
+						</div>
+						<div class="settings-left-menu-item" id="settings-whitelist-pages-button">
+							<i class="fas fa-file" title="Pages"></i>
+						</div>
+						<div class="settings-left-menu-item" id="settings-whitelist-tags-button">
+							<i class="fas fa-tag" title="Tags"></i>
+						</div>
 					</div>
 				</div>
 
@@ -428,14 +434,16 @@ export const wikishieldHTML = {
 					<div class="settings-category-header">
 						<span>HIGHLIGHT</span>
 					</div>
-					<div class="settings-left-menu-item" id="settings-highlight-users-button">
-						<span><i class="fas fa-user"></i>Users</span>
-					</div>
-					<div class="settings-left-menu-item" id="settings-highlight-pages-button">
-						<span><i class="fas fa-file"></i>Pages</span>
-					</div>
-					<div class="settings-left-menu-item" id="settings-highlight-tags-button">
-						<span><i class="fas fa-tag"></i>Tags</span>
+					<div class="settings-left-menu-compact">
+						<div class="settings-left-menu-item" id="settings-highlight-users-button">
+							<i class="fas fa-user" title="Users"></i>
+						</div>
+						<div class="settings-left-menu-item" id="settings-highlight-pages-button">
+							<i class="fas fa-file" title="Pages"></i>
+						</div>
+						<div class="settings-left-menu-item" id="settings-highlight-tags-button">
+							<i class="fas fa-tag" title="Tags"></i>
+						</div>
 					</div>
 				</div>
 

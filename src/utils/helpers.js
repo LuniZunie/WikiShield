@@ -2,6 +2,36 @@
  * WikiShieldUtil - Utility helper functions
  * Collection of helper methods for string manipulation, formatting, and conversions
  */
+
+function levenshtein(a, b) {
+	a = a.toLowerCase();
+	b = b.toLowerCase();
+
+	const matrix = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
+
+	const aLen = a.length;
+	for (let i = 0; i <= aLen; i++) {
+		matrix[i][0] = i;
+	}
+
+	const bLen = b.length;
+	for (let j = 0; j <= bLen; j++) {
+		matrix[0][j] = j;
+	}
+
+	for (let i = 1; i <= aLen; i++) {
+		for (let j = 1; j <= bLen; j++) {
+			const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+			matrix[i][j] = Math.min(
+				matrix[i - 1][j] + 1,      // Deletion
+				matrix[i][j - 1] + 1,      // Insertion
+				matrix[i - 1][j - 1] + cost // Substitution
+			);
+		}
+	}
+
+	return matrix[aLen][bLen];
+}
 export class WikiShieldUtil {
 	/**
 	 * Given a Date object, return a string in the format YYYY-MM-DDTHH:MM:SS
@@ -99,6 +129,7 @@ export class WikiShieldUtil {
 	 * @param {Number} len The length to truncate to
 	 * @returns {String} The truncated string
 	 */
+	// FIX will cutoff html tags awkwardly; consider a more robust solution if needed
 	maxStringLength(str, len) {
 		return str.length > len ? `${str.substring(0, len - 3).trimEnd()}...` : str;
 	}
@@ -169,5 +200,9 @@ export class WikiShieldUtil {
 			return val + " minute" + (val !== 1 ? "s" : "") + " ago";
 		}
 		return seconds + " second" + (seconds !== 1 ? "s" : "") + " ago";
+	}
+
+	usernameMatch(base, candidate, maxDistance = 2) {
+		return levenshtein(base, candidate) <= maxDistance;
 	}
 }

@@ -23,27 +23,27 @@ import { generateRandomUUID } from '../utils/UUID.js';
 const audio = {
     _dev_alert: {
         type: "sound",
-        volume: 0.5,
+        volume: 1,
         data: _dev_alert
     },
     startup: {
         type: "sound",
         title: "Startup Sound",
         description: "Sound played when WikiShield starts up.",
-        volume: 0.5,
+        volume: 1,
         data: startup
     },
     music: {
         type: "category",
         title: "Music",
         description: "Background music tracks.",
-        volume: 0.5,
+        volume: 1,
         properties: {
-            zen: {
+            zen_mode: {
                 type: "playlist",
                 title: "Zen Mode Music",
                 description: "Music played in Zen mode.",
-                volume: 0.5,
+                volume: 1,
                 tracks: [
                     {
                         type: "music",
@@ -77,132 +77,168 @@ const audio = {
         type: "category",
         title: "User Interface Sounds",
         description: "Sounds used for user interface interactions.",
-        volume: 0.5,
+        volume: 1,
         properties: {
             click: {
                 type: "sound",
                 title: "Click Sound",
                 description: "Sound played when clicking on interface elements.",
-                volume: 0.5,
+                volume: 1,
                 data: click
-            },
-            link: {
-                type: "sound",
-                title: "Link Sound",
-                description: "Sound played when opening links.",
-                volume: 0.5,
-                data: link
             },
             select: {
                 type: "sound",
                 title: "Select Sound",
                 description: "Sound played when selecting options.",
-                volume: 0.5,
+                volume: 1,
                 data: select
             },
             on: {
                 type: "sound",
                 title: "Toggle On Sound",
                 description: "Sound played when toggling something on.",
-                volume: 0.5,
+                volume: 1,
                 data: null
             },
             off: {
                 type: "sound",
                 title: "Toggle Off Sound",
                 description: "Sound played when toggling something off.",
-                volume: 0.5,
+                volume: 1,
                 data: null
             }
         }
     },
-    alerts: {
+    queue: {
         type: "category",
-        title: "Alert Sounds",
-        description: "Sounds used for various alerts and alerts.",
-        volume: 0.5,
+        title: "Queue Sounds",
+        description: "Sounds played for queue events.",
+        volume: 1,
+        properties: {
+            ores: {
+                type: "sound",
+                title: "ORES Alert",
+                description: "Sound played due to a high ORES score.",
+                volume: 1,
+                data: ores
+            },
+            mention: {
+                type: "sound",
+                title: "Mention Alert",
+                description: "Sound played when your username is mentioned in an edit.", // TODO add mention check to edit summary
+                volume: 1,
+                data: mention
+            },
+            recent: {
+                type: "sound",
+                title: "Recent Changes Alert",
+                description: "Sound played when there are new edits in the recent changes queue.",
+                volume: 0,
+                data: null
+            },
+            flagged: {
+                type: "sound",
+                title: "Flagged Revisions Alert",
+                description: "Sound played when there are new edits in the flagged revisions queue.",
+                volume: 0,
+                data: null
+            },
+            watchlist: {
+                type: "sound",
+                title: "Watchlist Alert",
+                description: "Sound played when there are new edits in the watchlist queue.",
+                volume: 0,
+                data: null
+            }
+        }
+    },
+    notification: {
+        type: "category",
+        title: "Notification Sounds",
+        description: "Sounds played for various notifications.",
+        volume: 1,
         properties: {
             alert: {
                 type: "sound",
-                title: "General Alert Sound",
+                title: "Alert Sound",
                 description: "Sound played for alerts.",
-                volume: 0.5,
+                volume: 1,
                 data: alert
             },
             notice: {
                 type: "sound",
                 title: "Notice Sound",
                 description: "Sound played for notices.",
-                volume: 0.5,
+                volume: 1,
                 data: notice
-            },
-            ores: {
-                type: "sound",
-                title: "ORES Alert Sound",
-                description: "Sound played for ORES alerts.",
-                volume: 0.5,
-                data: ores
-            },
-            mention: {
-                type: "sound",
-                title: "Mention Sound",
-                description: "Sound played when the user is mentioned.",
-                volume: 0.5,
-                data: mention
             }
         },
     },
-    actions: {
+    action: {
         type: "category",
         title: "Action Sounds",
         description: "Sounds played for various user actions.",
-        volume: 0.5,
+        volume: 1,
         properties: {
             default: {
                 type: "sound",
                 title: "Default Action Sound",
                 description: "Sound played for default actions.",
-                volume: 0.5,
+                volume: 1,
                 data: action
             },
-            warn: {
+            failed: {
                 type: "sound",
-                title: "Warning Action Sound",
-                description: "Sound played for warning actions.",
-                volume: 0.5,
-                data: warn
+                title: "Failed Action Sound",
+                description: "Sound played when an action fails.",
+                volume: 1,
+                data: null
             },
             report: {
                 type: "sound",
                 title: "Report Action Sound",
                 description: "Sound played for report actions.",
-                volume: 0.5,
+                volume: 1,
                 data: report
+            },
+            block: {
+                type: "sound",
+                title: "Block Action Sound",
+                description: "Sound played for block actions.",
+                volume: 1,
+                data: null
+            },
+            protect: {
+                type: "sound",
+                title: "Protect Action Sound",
+                description: "Sound played for protect actions.",
+                volume: 1,
+                data: null
             }
         }
     },
-};
-
-export const defaultVolumes = {
-    master: 0.5,
-    "startup": 0.5,
-    "music": 0.5,
-    "music.zen": 0.5,
-    "ui": 0.5,
-    "ui.click": 0.5,
-    "ui.link": 0.5,
-    "ui.select": 0.5,
-    "ui.on": 0.5,
-    "ui.off": 0.5,
-    "alerts": 0.5,
-    "alerts.alert": 0.5,
-    "alerts.notice": 0.5,
-    "alerts.ores": 0.5,
-    "alerts.mention": 0.5,
-    "actions": 0.5,
-    "actions.default": 0.5,
-    "actions.warn": 0.5,
-    "actions.report": 0.5
+    other: {
+        type: "category",
+        title: "Other Sounds",
+        description: "Miscellaneous sounds.",
+        volume: 1,
+        properties: {
+            success: {
+                type: "sound",
+                title: "Success Sound",
+                description: "Sound played for success notifications.",
+                volume: 1,
+                data: null
+            },
+            warn: {
+                type: "sound",
+                title: "Warning Sound",
+                description: "Sound played for warning notifications.",
+                volume: 1,
+                data: null
+            }
+        }
+    }
 };
 
 /**
@@ -332,7 +368,7 @@ class PlaylistController {
             navigator.mediaSession.metadata = new MediaMetadata({
                 title: track.title,
                 artist: track.artist,
-                album: "WikiShield",
+                album: "WikiShield", // TODO allow custom album name
                 artwork: [
                     { src: track.thumbnail, sizes: "512x512", type: "image/png" }
                 ]
@@ -564,7 +600,7 @@ export class AudioManager {
         this._unmuteAll();
     }
 
-    onvolumechanged() {
+    onvolumechanged() { // FIX
         // Update all active playlist volumes
         for (const controller of this.activePlaylists.values()) {
             if (controller.currentAudio) {
@@ -656,6 +692,8 @@ export class AudioManager {
     // ========================================
 
     getSound(path) {
+        // TODO dont play if muted by zen_mode
+
         let current = { type: "category", properties: this.audio };
 
         for (const segment of path) {
@@ -674,10 +712,11 @@ export class AudioManager {
     }
 
     getVolume(path) {
-        let volume = this.wikishield.options.volumes?.master ?? 0.5;
-        let current = { type: "category", properties: this.audio };
-        let pathParts = [];
+        path = [ "master", ...path ];
 
+        let volume = 1;
+        let current = { type: "category", properties: this.audio };
+        const pathParts = [];
         for (const segment of path) {
             pathParts.push(segment);
 
@@ -691,7 +730,7 @@ export class AudioManager {
 
             if (!current) break;
 
-            const specificVolume = this.wikishield.options.volumes?.[pathParts.join(".")];
+            const specificVolume = this.wikishield.storage.data.settings.audio.volume[pathParts.join(".")];
             if (specificVolume !== undefined) {
                 volume *= specificVolume;
             }
