@@ -3681,7 +3681,7 @@ select, input:not([type=range]), textarea, button {
                 &.queue-edit-tags {
                     display: flex;
 
-                    &:empty {
+                    &:not(:has(.queue-edit-tag)) {
                         display: none;
                     }
 

@@ -2288,10 +2288,9 @@ ollama serve
 
 		this.createToggle(
 			this.contentContainer.querySelector("#enable-cloud-storage"),
-			this.wikishield.options.enableCloudStorage,
+			this.wikishield.storage.data.settings.cloud_storage.enabled,
 			(newValue) => {
-				this.wikishield.options.enableCloudStorage = newValue;
-				mw.storage.store.setItem("WikiShield:CloudStorage", newValue);
+				this.wikishield.storage.data.settings.cloud_storage.enabled = newValue;
 			}
 		);
 
@@ -2348,7 +2347,7 @@ ollama serve
 			}
 		});
 
-		importBtn.addEventListener('click', () => {
+		importBtn.addEventListener('click', async () => {
 			if (importInput.style.display === 'none') {
 				importInput.style.display = 'block';
 				importBtn.innerHTML = '<span class="fa fa-check"></span> Apply Import';
@@ -2374,44 +2373,47 @@ ollama serve
 				}
 
 				try {
-					// Validate and merge settings
-					const validationResult = this.validateAndMergeSave(base64String);
+					const logs = await this.wikishield.init(base64String, true); // Try to import settings
 
-					if (validationResult.success) {
-						this.wikishield.init(validationResult.data, true); // Re-initialize with imported data
-
-						statusDiv.style.display = 'block';
-						statusDiv.style.background = 'rgba(40, 167, 69, 0.2)';
-						statusDiv.style.border = '2px solid #28a745';
-						statusDiv.style.color = '#28a745';
-
-						let warningsHtml = '';
-						if (validationResult.warnings.length > 0) {
-							warningsHtml = `
-									<div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(40, 167, 69, 0.3);">
-										<strong>Warnings:</strong>
-										<ul style="margin: 4px 0 0 20px; font-size: 0.9em;">
-											${validationResult.warnings.map(w => `<li>${w}</li>`).join('')}
-										</ul>
-									</div>
-								`;
+					const [ expected, unexpected ] = logs.reduce((acc, log) => {
+						if (log.expected) {
+							acc[0].push(log);
+						} else {
+							acc[1].push(log);
 						}
 
-						statusDiv.innerHTML = `
-								<div style="display: flex; align-items: start; gap: 8px;">
-									<span class="fa fa-check-circle" style="margin-top: 2px;"></span>
-									<div style="flex: 1;">
-										<strong>Settings imported successfully!</strong>
-										<div style="font-size: 0.9em; margin-top: 4px;">
-											${validationResult.appliedCount} setting(s) applied.
-										</div>
-										${warningsHtml}
-									</div>
+						return acc;
+					}, [ [ ], [ ] ]);
+
+					statusDiv.style.display = 'block';
+					statusDiv.style.background = 'rgba(40, 167, 69, 0.2)';
+					statusDiv.style.border = '2px solid #28a745';
+					statusDiv.style.color = '#28a745';
+
+					let warningsHtml = '';
+					if (unexpected.length > 0) {
+						warningsHtml = `
+								<div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(40, 167, 69, 0.3);">
+									<strong>Warnings:</strong>
+									<ul style="margin: 4px 0 0 20px; font-size: 0.9em;">
+										${unexpected.map(w => `<li>${w.message}</li>`).join('')}
+									</ul>
 								</div>
 							`;
-					} else {
-						throw new Error(validationResult.error);
 					}
+
+					statusDiv.innerHTML = `
+							<div style="display: flex; align-items: start; gap: 8px;">
+								<span class="fa fa-check-circle" style="margin-top: 2px;"></span>
+								<div style="flex: 1;">
+									<strong>Settings imported successfully!</strong>
+									<div style="font-size: 0.9em; margin-top: 4px;">
+										${unexpected.length} issue${unexpected.length === 1 ? '' : 's'} encountered.
+									</div>
+									${warningsHtml}
+								</div>
+							</div>
+						`;
 				} catch (error) {
 					statusDiv.style.display = 'block';
 					statusDiv.style.background = 'rgba(220, 53, 69, 0.2)';

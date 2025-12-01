@@ -784,7 +784,7 @@ export class WikiShieldAPI {
 	* @param {String} since The timestamp to start from
 	* @returns {Promise<Array>} The recent changes
 	*/
-	async queueList(listType, namespaces, since) {
+	async queueList(listType, namespaces, since, full = false) {
 		const options = {
 			get recent() {
 				return {
@@ -805,9 +805,9 @@ export class WikiShieldAPI {
 					"action": "query",
 					"list": "oldreviewedpages",
 					"ornamespace": namespaces,
-					"orlimit": 50,
+					"orlimit": "max",
 					"format": "json",
-					"orstart": since || "",
+					"orstart": since,
 					"ordir": since ? "newer" : "older"
 				};
 			},
@@ -815,7 +815,7 @@ export class WikiShieldAPI {
 				return {
 					"action": "query",
 					"list": "watchlist",
-					"wlnamespace": "*",
+					"wlnamespace": namespaces,
 					"wllimit": 25,
 					"wlprop": "title|ids|sizes|flags|user|tags|comment|timestamp",
 					"wltype": "edit",
@@ -861,22 +861,51 @@ export class WikiShieldAPI {
 						return { title: obj.title, ...page.revisions[0], __FLAGGED__: obj };
 					}));
 
-					const cache = { };
 					const list = promise.filter(p => p.status === "fulfilled").map(p => p.value);
+					if (full === false) {
+						return list;
+					}
+
+					const cache = { };
 					for (const item of list) {
-						const root = cache[item.title] ??= { };
-						if (item.user in root) {
-							if (root[item.user].revid < item.revid) {
-								item.__FLAGGED__.__count__ = root[item.user].__count__ + 1;
-								root[item.user] = item;
+						if (item.title in cache) {
+							cache[item.title].count++;
+							if (item.user in cache[item.title].users) {
+								cache[item.title].users[item.user]++;
+							} else {
+								cache[item.title].users[item.user] = 1;
+							}
+
+							if (item.revid > cache[item.title].newRevid) {
+								cache[item.title].newRevid = item.revid;
+								cache[item.title].newLen = item.newlen;
+								cache[item.title].newTimestamp = item.timestamp;
+							}
+
+							// <= because if SOMEHOW, an editor gets two back-to-back revids, it needs to account that previous = this one
+							if (item.old_revid <= cache[item.title].priorRevid) {
+								cache[item.title].priorRevid = item.old_revid;
+								cache[item.title].priorLen = item.oldlen;
+								cache[item.title].oldTimestamp = item.timestamp;
 							}
 						} else {
-							item.__FLAGGED__.__count__ = 1;
-							root[item.user] = item;
+							cache[item.title] = {
+								count: 1,
+								users: { [item.user]: 1 },
+
+								newRevid: item.revid,
+								priorRevid: item.old_revid,
+
+								newLen: item.newlen,
+								priorLen: item.oldlen,
+
+								newTimestamp: item.timestamp,
+								oldTimestamp: item.timestamp,
+							};
 						}
 					}
 
-					return Object.values(cache).flatMap(userEdits => Object.values(userEdits));
+					return cache;
 				} break;
 				case "watchlist": {
 					return response.query.watchlist;
@@ -905,13 +934,13 @@ export class WikiShieldAPI {
 
 	async rejectFlaggedEdit(edit, summary) {
 		try {
-			const stableText = await this.getTextByRevid(edit.__FLAGGED__.stable_revid);
+			const stableText = await this.getTextByRevid(edit.__FLAGGED__.priorRevid);
 			const res = await this.api.postWithToken("csrf", {
 				"action": "edit",
 				"title": edit.page.title,
 				"text": stableText,
 				"summary": summary,
-				"starttimestamp": edit.__FLAGGED__.timestamp,
+				"starttimestamp": edit.__FLAGGED__.oldTimestamp,
 				"tags": __TAGS__
 			});
 

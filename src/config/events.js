@@ -35,8 +35,41 @@ export const validEvents = {
 
             wikishield.storage.data.statistics.pending_changes_reviewed.accepted++;
 
-            const count = __FLAGGED__.__count__;
-            const message = `Accepted ${count ? `${count} ` : ""} pending edit${count === 1 ? "" : "s"} by ${wikishield.api.buildUser(currentEdit.user.name)}`;
+            const count = __FLAGGED__.count;
+            const countSection = `${count ? `${count} ` : ""} pending edit${count === 1 ? "" : "s"}`;
+
+            const sentenceJoin = (array) => {
+                if (array.length === 1) {
+                    return array[0];
+                } else if (array.length === 2) {
+                    return `${array[0]} and ${array[1]}`;
+                } else {
+                    return `${array.slice(0, -1).join(", ")}, and ${array[array.length - 1]}`;
+                }
+            };
+
+            const users = Object.entries(__FLAGGED__.users || { }).map(u => [ wikishield.api.buildUser(u[0]), u[1] ]);
+            users.sort((a, b) => b[1] - a[1]); // sort by number of edits descending
+            const numberOfUsersBeforeOverflow = Math.max(users.reduce((acc, u) => {
+                const usernameLen = u[0].length;
+                if (acc[0] + usernameLen <= 50) {
+                    return [ acc[0] + usernameLen, acc[1] + 1 ];
+                }
+
+                return acc;
+            }, [ 0, 0 ])[1], 1);
+
+            let userText = "";
+            const len = users.length;
+            if (len > numberOfUsersBeforeOverflow) {
+                const topUsers = users.slice(0, numberOfUsersBeforeOverflow - 1).map(u => u[0]);
+                const remaining = len - topUsers.length;
+                userText = `${topUsers.join(", ")}, and ${remaining} other${remaining === 1 ? "" : "s"}`;
+            } else {
+                userText = sentenceJoin(users.map(u => u[0]));
+            }
+
+            const message = `Accepted ${countSection} by ${userText}`;
             return await wikishield.api.acceptFlaggedEdit(currentEdit, wikishield.api.buildMessage(message, event.reason));
         }
     },
@@ -61,9 +94,41 @@ export const validEvents = {
 
             wikishield.storage.data.statistics.pending_changes_reviewed.rejected++;
 
-            const count = __FLAGGED__.__count__;
+            const count = __FLAGGED__.count;
             const countSection = `${count ? `${count} ` : ""} pending edit${count === 1 ? "" : "s"}`;
-            const message = `Rejected ${countSection} by ${wikishield.api.buildUser(currentEdit.user.name)} to [[Special:Diff/${__FLAGGED__.stable_revid}|last stable revision]]`;
+
+            const sentenceJoin = (array) => {
+                if (array.length === 1) {
+                    return array[0];
+                } else if (array.length === 2) {
+                    return `${array[0]} and ${array[1]}`;
+                } else {
+                    return `${array.slice(0, -1).join(", ")}, and ${array[array.length - 1]}`;
+                }
+            };
+
+            const users = Object.entries(__FLAGGED__.users || { }).map(u => [ wikishield.api.buildUser(u[0]), u[1] ]);
+            users.sort((a, b) => b[1] - a[1]); // sort by number of edits descending
+            const numberOfUsersBeforeOverflow = Math.max(users.reduce((acc, u) => {
+                const usernameLen = u[0].length;
+                if (acc[0] + usernameLen <= 50) {
+                    return [ acc[0] + usernameLen, acc[1] + 1 ];
+                }
+
+                return acc;
+            }, [ 0, 0 ])[1], 1);
+
+            let userText = "";
+            const len = users.length;
+            if (len > numberOfUsersBeforeOverflow) {
+                const topUsers = users.slice(0, numberOfUsersBeforeOverflow - 1).map(u => u[0]);
+                const remaining = len - topUsers.length;
+                userText = `${topUsers.join(", ")}, and ${remaining} other${remaining === 1 ? "" : "s"}`;
+            } else {
+                userText = sentenceJoin(users.map(u => u[0]));
+            }
+
+            const message = `Rejected ${countSection} by ${userText} to [[Special:Diff/${__FLAGGED__.priorRevid}|last stable revision]]`;
             return await wikishield.api.rejectFlaggedEdit(currentEdit, wikishield.api.buildMessage(message, event.reason));
         }
     },

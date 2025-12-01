@@ -467,19 +467,19 @@ class Version1 extends Version {
                 },
 
                 AI: {
-                    enabled: true, // TODO set to false
+                    enabled: false,
                     provider: "Ollama",
 
                     edit_analysis: {
                         enabled: true,
                     },
                     username_analysis: {
-                        enabled: false, // TODO set to true
+                        enabled: true,
                     },
 
                     Ollama: {
                         "server": "http://localhost:11434",
-                        "model": "gemma3:12b", // TODO set to ""
+                        "model": "",
                     }
                 },
 
@@ -2080,7 +2080,7 @@ class Version1 extends Version {
         return true;
     }
 
-    static format() {
+    static construct() {
         const root = this.loadedData;
         if (root?.version !== this.number) {
             this.loadedLogger.error(`Stored data version ${root?.version} does not match expected version ${this.number}.`);
@@ -2098,6 +2098,29 @@ class Version1 extends Version {
         root.whitelist.tags = new Map(root.whitelist.tags);
 
         return root;
+    }
+
+    static deconstruct() {
+        const root = this.loadedData;
+        if (root?.version !== this.number) {
+            this.loadedLogger.error(`Stored data version ${root?.version} does not match expected version ${this.number}.`);
+            return false;
+        }
+
+        root.settings.auto_report.for = [ ...root.settings.auto_report.for ];
+
+        root.highlight.users = [ ...root.highlight.users ];
+        root.highlight.pages = [ ...root.highlight.pages ];
+        root.highlight.tags = [ ...root.highlight.tags ];
+
+        root.whitelist.users = [ ...root.whitelist.users ];;
+        root.whitelist.pages = [ ...root.whitelist.pages ];
+        root.whitelist.tags = [ ...root.whitelist.tags ];
+
+        const data = structuredClone(root);
+        this.construct(); // reconstruct to restore Maps and Sets
+
+        return data;
     }
 }
 
@@ -2153,8 +2176,8 @@ export class StorageManager {
             StorageManager.version.init(logger, data);
             logger.log(`Validating storage at version ${version}.`, true);
             StorageManager.version.validate();
-            logger.log(`Formatting storage at version ${version}.`, true);
-            data = StorageManager.version.format();
+            logger.log(`Constructing storage at version ${version}.`, true);
+            data = StorageManager.version.construct();
 
             logger.log(`Storage loaded successfully at version ${version}.`, true);
             this.data = data;
@@ -2163,14 +2186,61 @@ export class StorageManager {
             this.reset(logger);
         }
 
-        return logger.getLogs();
+        return { data: this.data, logs: logger.getLogs() };
+    }
+
+    save() {
+        const logger = new Logger();
+
+        const version = StorageManager.version.number;
+        logger.log(`Initializing storage at version ${version}.`, true);
+        StorageManager.version.init(logger, this.data);
+        logger.log(`Deconstructing storage at version ${version}.`, true);
+        const data = StorageManager.version.deconstruct();
+
+        logger.log(`Storage saved successfully at version ${version}.`, true);
+        return { data, logs: logger.getLogs() };
+    }
+
+    decode(string) {
+        const json = window.atob(string);
+        const data = JSON.parse(json);
+
+        return this.load(data);
+    }
+
+    encode() {
+        const { data, logs } = this.save();
+        const json = JSON.stringify(data);
+        const string = window.btoa(json);
+
+        return { string, logs };
+    }
+
+    static outputLogs(logs, name = "<unknown>") { // TEMP
+        const allExpected = !logs.some(log => !log.expected);
+
+        console.groupCollapsed(`[${allExpected ? "✓" : "✗"}] WikiShield Storage Logs: ${name}`);
+        for (const log of logs) {
+            let prefix = `[${log.expected ? "✓" : "✗"}][${log.timestamp}][Storage]`;
+
+            let type = log.type;
+            if (type === "dev") {
+                type = "error";
+                prefix = `#DEV# ${prefix}`;
+            }
+
+            console[type](`${prefix} ${log.message}`);
+        }
+        console.groupEnd();
     }
 }
 
+// TODO, gotta test all versions properly, disable script if storage is acting up bc we don't want to corrupt data
 function Test(obj = Version.default, name = "default") {
     // load from version 0 to latest
     const storage = new StorageManager();
-    const logs = storage.load(obj);
+    const logs = storage.load(obj).logs
 
     const allExpected = !logs.some(log => !log.expected);
 

@@ -1,37 +1,16 @@
 import { h, render } from 'preact';
 import { MusicToast } from "./toast.jsx";
 
-import { _dev_alert } from './sfx/_dev.js';
-
-import { startup } from "./sfx/startup.js";
-
-import { click } from "./sfx/click.js";
-import { link } from "./sfx/link.js";
-import { select } from "./sfx/select.js";
-
-import { alert } from "./sfx/alert.js";
-import { notice } from "./sfx/notice.js";
-import { ores } from "./sfx/ores.js";
-import { mention } from "./sfx/mention.js";
-
-import { action } from "./sfx/action.js";
-import { warn } from "./sfx/warn.js";
-import { report } from "./sfx/report.js";
 import { type } from 'jquery';
 import { generateRandomUUID } from '../utils/UUID.js';
 
 const audio = {
-    _dev_alert: {
-        type: "sound",
-        volume: 1,
-        data: _dev_alert
-    },
     startup: {
         type: "sound",
         title: "Startup Sound",
         description: "Sound played when WikiShield starts up.",
         volume: 1,
-        data: startup
+        data: "https://media.luni.me/audio/sound/startup",
     },
     music: {
         type: "category",
@@ -84,14 +63,14 @@ const audio = {
                 title: "Click Sound",
                 description: "Sound played when clicking on interface elements.",
                 volume: 1,
-                data: click
+                data: "https://media.luni.me/audio/sound/click"
             },
             select: {
                 type: "sound",
                 title: "Select Sound",
                 description: "Sound played when selecting options.",
                 volume: 1,
-                data: select
+                data: "https://media.luni.me/audio/sound/select"
             },
             on: {
                 type: "sound",
@@ -120,14 +99,14 @@ const audio = {
                 title: "ORES Alert",
                 description: "Sound played due to a high ORES score.",
                 volume: 1,
-                data: ores
+                data: "https://media.luni.me/audio/sound/ores"
             },
             mention: {
                 type: "sound",
                 title: "Mention Alert",
                 description: "Sound played when your username is mentioned in an edit.", // TODO add mention check to edit summary
                 volume: 1,
-                data: mention
+                data: "https://media.luni.me/audio/sound/mention"
             },
             recent: {
                 type: "sound",
@@ -163,14 +142,14 @@ const audio = {
                 title: "Alert Sound",
                 description: "Sound played for alerts.",
                 volume: 1,
-                data: alert
+                data: "https://media.luni.me/audio/sound/alert"
             },
             notice: {
                 type: "sound",
                 title: "Notice Sound",
                 description: "Sound played for notices.",
                 volume: 1,
-                data: notice
+                data: "https://media.luni.me/audio/sound/notice"
             }
         },
     },
@@ -185,7 +164,7 @@ const audio = {
                 title: "Default Action Sound",
                 description: "Sound played for default actions.",
                 volume: 1,
-                data: action
+                data: "https://media.luni.me/audio/sound/action"
             },
             failed: {
                 type: "sound",
@@ -199,7 +178,7 @@ const audio = {
                 title: "Report Action Sound",
                 description: "Sound played for report actions.",
                 volume: 1,
-                data: report
+                data: "https://media.luni.me/audio/sound/report"
             },
             block: {
                 type: "sound",

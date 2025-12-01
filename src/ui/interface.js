@@ -938,7 +938,7 @@ export class WikiShieldInterface {
 						name: "highlightUser",
 						params: {}
 					},
-				].concat(autoReporting.enabled && autoReporting.has(warningType) ? [ reportObject ] : [])
+				].concat(autoReporting.enabled && autoReporting.for.has(warningType) ? [ reportObject ] : [])
 			});
 
 			this.selectedMenu = null;
@@ -1496,6 +1496,11 @@ export class WikiShieldInterface {
 					contextMenu.addEventListener("click", e => e.stopPropagation());
 				});
 
+				elem.addEventListener("click", () => {
+					this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab] = edit;
+					this.renderQueue(this.wikishield.queue.queue[this.wikishield.queue.currentQueueTab], edit);
+				});
+
 				// Add to DOM (temporarily append)
 				container.appendChild(elem);
 			}
@@ -1631,7 +1636,7 @@ export class WikiShieldInterface {
 		this.elem("#latest-edits-tab").classList.add("hidden");
 		this.elem("#consecutive-edits-tab").classList.add("hidden");
 
-		this.elem("#user-report-uaa").style.display = edit?.user?.name && (mw.util.isTemporaryUser(edit.user.name) || mw.util.isIPAddress(edit.user.name)) ? "none" : "";
+		this.elem("#user-report-uaa").style.display = edit?.user?.name && (edit.user.ip || edit.user.temporary) ? "none" : "";
 
 		document.querySelectorAll("#right-top > .icons > :not(.hidden)").forEach(el => el.classList.add("hidden"));
 
@@ -1652,7 +1657,7 @@ export class WikiShieldInterface {
 		// Remove any existing tooltips when switching diffs
 		this.removeTooltips();
 
-		document.querySelector("#pending-changes-container").classList.toggle("hidden", !this.wikishield.queue.flaggedRevisions.has(edit?.__FLAGGED__?.revid));
+		document.querySelector("#pending-changes-container").classList.toggle("hidden", !this.wikishield.queue.flaggedRevisions.has(edit?.revid));
 		if (edit === null) {
 			this.elem("#middle-top").innerHTML = "";
 			this.elem("#page-metadata").innerHTML = "";
@@ -1925,6 +1930,7 @@ export class WikiShieldInterface {
 		});
 
 		// Load block count and display next to warning level
+		// FIX look at the tooltip
 		blockCountPromise.then(async blockCount => {
 			const blockIndicator = document.querySelector("#user-contribs #user-block-count");
 			if (blockIndicator) {
@@ -1970,7 +1976,7 @@ export class WikiShieldInterface {
 					blockIndicator.style.display = "initial";
 					blockIndicator.setAttribute("data-tooltip", tooltipHtml);
 					blockIndicator.setAttribute("data-tooltip-html", "true");
-					blockIndicator.innerHTML = `${blockCount}×`;
+					blockIndicator.innerHTML = `${blockCount}&times;`;
 					blockIndicator.style.cursor = "help";
 					this.addTooltipListener(blockIndicator);
 				} else {
@@ -2059,7 +2065,35 @@ export class WikiShieldInterface {
 
 		document.querySelectorAll("#right-top > .tabs > .tab.selected").forEach(el => el.classList.remove("selected"));
 
-		if (showConsecutive) {
+		const flagged = this.wikishield.queue.flaggedRevisions.get(edit.revid);
+		if (flagged) {
+			const $diffSize = this.elem("#diff-size-text");
+			const sizediff = (flagged.newLen - flagged.oldLen) || 0;
+			$diffSize.innerHTML = this.wikishield.util.getChangeString(sizediff);
+			$diffSize.style.color = this.wikishield.util.getChangeColor(sizediff);
+
+			const numOfUsers = Object.values(flagged.users).length;
+
+			this.elem("#middle-top > .middle-top-comment").innerHTML = `
+				<div>
+					<span class="fa fa-edit"></span>
+					<span id="flagged-edits">${flagged.count} edit${flagged.count === 1 ? "" : "s"}</span>
+				</div>
+				<div>
+					<span class="fa fa-user"></span>
+					<span id="flagged-users">${numOfUsers} user${numOfUsers === 1 ? "" : "s"}</span>
+				</div>
+				<div>
+					<span class="fa fa-clock"></span>
+					<span id="consecutive-time" data-tooltip="${flagged.oldTimestamp}">
+						over the course of ${this.wikishield.formatNotificationTime(new Date(flagged.oldTimestamp))}
+					</span>
+				</div>
+			`;
+			this.addTooltipListener(this.elem("#consecutive-time"));
+
+			$diff.innerHTML = `<table>${edit.diff}</table>`;
+		} else if (showConsecutive) {
 			this.elem("#consecutive-edits-tab").classList.add("selected");
 
 			$diff.innerHTML = `<table></table>`;
@@ -2075,12 +2109,14 @@ export class WikiShieldInterface {
 
 				this.elem("#middle-top > .middle-top-comment").innerHTML = `
 					<div>
-						<span class="fa fa-clock"></span>
-						<span id="consecutive-time" data-tooltip="${data.oldestTimestamp}">${this.wikishield.formatNotificationTime(new Date(data.oldestTimestamp))}</span>
+						<span class="fa fa-edit"></span>
+						<span id="consecutive-edits">${data.count} edit${data.count === 1 ? "" : "s"}</span>
 					</div>
 					<div>
-						<span class="fa fa-edit"></span>
-						<span id="consecutive-edits">${data.count}</span>
+						<span class="fa fa-clock"></span>
+						<span id="consecutive-time" data-tooltip="${data.oldestTimestamp}">
+							over the course of ${this.wikishield.formatNotificationTime(new Date(data.oldestTimestamp))}
+						</span>
 					</div>
 				`;
 				this.addTooltipListener(this.elem("#consecutive-time"));
@@ -2533,11 +2569,13 @@ export class WikiShieldInterface {
 	*/
 	async checkForNewerRevision(edit) {
 		if (edit.__FLAGGED__) {
-			if (this.wikishield.queue.flaggedRevisions.has(edit.__FLAGGED__.revid)) {
+			if (this.wikishield.queue.flaggedRevisions.has(edit.revid)) {
 				this.hideCannotReviewFlaggedRevisionNotice();
 			} else {
 				this.showCannotReviewFlaggedRevisionNotice();
 			}
+
+			return;
 		}
 
 		try {

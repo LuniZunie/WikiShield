@@ -33,7 +33,7 @@ export class WikiShieldQueue {
 
 		this.backoff = 2000;
 
-		this.flaggedRevisions = new Set();
+		this.flaggedRevisions = new Map();
 
 		this.currentQueueTab = "recent"; // recent, flagged, watchlist
 	}
@@ -66,12 +66,12 @@ export class WikiShieldQueue {
 
 		try {
 			const whitelist = this.wikishield.storage.data.whitelist;
-			const namespaceString = this.wikishield.storage.data.settings.namespaces.join("|");
+			const namespaceString = type === "watchlist" ? "*" : this.wikishield.storage.data.settings.namespaces.join("|");
 
 			if (type === "flagged") {
-				const flagged = await this.wikishield.api.queueList(type, namespaceString);
+				const flagged = await this.wikishield.api.queueList(type, namespaceString, undefined, true);
 				this.flaggedRevisions.clear();
-				flagged.forEach(edit => this.flaggedRevisions.add(edit.revid));
+				Object.values(flagged).forEach(edit => this.flaggedRevisions.set(edit.newRevid, edit));
 			}
 
 			const lastRevid = this.lastRevid[type] || 0;
@@ -387,7 +387,7 @@ export class WikiShieldQueue {
 
 		let oldRev = null;
 		if (edit.__FLAGGED__) {
-			oldRev = edit.__FLAGGED__.stable_revid;
+			oldRev = this.flaggedRevisions.has(edit.revid)?.priorRevid;
 		}
 		oldRev ??= edit.old_revid || edit.parentid;
 
@@ -545,7 +545,7 @@ export class WikiShieldQueue {
 		};
 
 		const storage = this.wikishield.storage.data;
-		if (this.wikishield.AI && false) {
+		if (this.wikishield.AI) {
 			if (storage.settings.AI.edit_analysis.enabled) {
 				this.wikishield.AI.analyze.edit(queueItem)
 					.then(analysis => {
@@ -563,7 +563,7 @@ export class WikiShieldQueue {
 					});
 			}
 
-			if (!(queueItem.user.ip || queueItem.user.temporary) && !storage.whitelist.users.has(edit.user) && storage.settings.AI.username_analysis.enabled) {
+			if (!(queueItem.user.ip || queueItem.user.temporary) && !storage.whitelist.users.has(edit.user) && storage.settings.AI.username_analysis.enabled && false) { // TEMP remove false
 				this.wikishield.AI.analyze.username(edit)
 					.then(usernameAnalysis => {
 						queueItem.AI.username = usernameAnalysis;

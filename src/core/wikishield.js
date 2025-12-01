@@ -109,9 +109,7 @@ export class WikiShield {
 	}
 
 	async init(override = null, noInit = false) {
-		this.storage.load(override ?? await this.load());
-
-		const obj = override ?? await this.load();
+		const logs = this.storage.decode(override ?? await this.load()).logs;
 
 		if (this.storage.data.settings.AI.enabled) {
 			switch (this.storage.data.settings.AI.provider) {
@@ -120,22 +118,6 @@ export class WikiShield {
 						this,
 						this.storage.data.settings.AI.Ollama
 					);
-
-					const WS = this;
-					window.Test = async (...revisions) => {
-						for (const revision of revisions) {
-							console.group(`Testing Ollama AI for revision ${revision}`);
-							try {
-								await WS.queue.loadSpecificRevision(revision, await WS.api.getPageTitleFromRevid(revision), false);
-								const item = WS.queue.currentEdit[WS.queue.currentQueueTab];
-								const analysis = await WS.AI.analyze.edit(item);
-								console.log(analysis);
-							} catch (err) {
-								console.error(`Error testing Ollama AI for revision ${revision}:`, err);
-							}
-							console.groupEnd();
-						}
-					};
 				} break;
 				default: {
 					this.AI?.cancel.all();
@@ -158,7 +140,7 @@ export class WikiShield {
 			document.body.querySelector("#middle-top").style.width = `calc(100% - ${detailsWidth})`;
 			document.body.querySelector("#right-top").style.width = detailsWidth;
 
-			return;
+			return logs;
 		}
 
 		this.handleLoadingReported();
@@ -170,6 +152,8 @@ export class WikiShield {
 		}, 30000);
 
 		this.startInterface();
+
+		return logs;
 	}
 
 	/**
@@ -473,7 +457,7 @@ export class WikiShield {
 		const diff = Math.floor((Date.now() - date) / 1000); // seconds
 
 		// Handle future timestamps (clock skew)
-		if (diff < 0) return "Now";
+		if (diff < 0) return "0s";
 
 		if (diff < 60) {
 			return `${diff}s`;
@@ -1229,11 +1213,11 @@ export class WikiShield {
 
 							const result = await event.func(this, action.params, currentEdit);
 
-							this.storage.data.statistics.scripts_executed.total++;
+							this.storage.data.statistics.actions_executed.total++;
 							if (result === false) {
 								hasContinuity = false;
 							} else {
-								this.storage.data.statistics.scripts_executed.successful++;
+								this.storage.data.statistics.actions_executed.successful++;
 
 								if (event.includeInProgress) {
 									this.audioManager.playSound([ "actions", "default" ]);
@@ -1254,50 +1238,24 @@ export class WikiShield {
 
 	// TODO
 	async save(noSave = false) {
-		return;
+		const { string, logs } = this.storage.encode();
 
-		const obj = {
-			changelog: __script__.changelog.version,
+		StorageManager.outputLogs(logs); // TEMP
 
-			options: this.options,
-			whitelist: Object.fromEntries(Object.entries(this.whitelist).map(([ key, value ]) => [ key, [ ...value.entries() ] ])),
-			highlight: Object.fromEntries(Object.entries(this.highlight).map(([ key, value ]) => [ key, [ ...value.entries() ] ])),
-
-			queueWidth: this.queueWidth,
-			detailsWidth: this.detailsWidth,
-
-			statistics: this.statistics
-		};
-		const stringify = JSON.stringify(obj);
-
-		const string = btoa(stringify);
 		if (noSave) {
 			return string;
 		}
 
-		/* if ((mw.storage.store.getItem("WikiShield:CloudStorage") ?? defaultSettings.enableCloudStorage.toString()) === "true") {
-			return await this.api.edit(
-				`User:${mw.config.values.wgUserName}/ws-save.js`,
-				string,
-				this.api.buildMessage("Updating WikiShield save"),
-				{ minor: true }
-			);
-		} else {
-			mw.storage.store.setItem("WikiShield:Save", string);
-		} */
+		return await this.api.edit(
+			`User:${mw.config.values.wgUserName}/ws-save.js`,
+			string,
+			this.api.buildMessage("Updating WikiShield save"),
+			{ minor: true }
+		);
 	}
 
 	// TODO
 	async load() {
-		return { };
-
-		let data;
-		/* if ((mw.storage.store.getItem("WikiShield:CloudStorage") ?? defaultSettings.enableCloudStorage.toString()) === "true") {
-			data = await this.api.getSinglePageContent(`User:${mw.config.values.wgUserName}/ws-save.js`);
-		} else {
-			data = mw.storage.store.getItem("WikiShield:Save");
-		} */
-
-		return JSON.parse(atob(data || "e30="));
+		return await this.api.getSinglePageContent(`User:${mw.config.values.wgUserName}/ws-save.js`) ?? "e30=";
 	}
 }
