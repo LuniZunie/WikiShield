@@ -387,7 +387,7 @@ export class WikiShieldQueue {
 
 		let oldRev = null;
 		if (edit.__FLAGGED__) {
-			oldRev = this.flaggedRevisions.has(edit.revid)?.priorRevid;
+			oldRev = this.flaggedRevisions.get(edit.revid)?.priorRevid;
 		}
 		oldRev ??= edit.old_revid || edit.parentid;
 
@@ -443,7 +443,7 @@ export class WikiShieldQueue {
 			const tempDiv = document.createElement("div");
 			tempDiv.innerHTML = diff;
 			const diffText = tempDiv.textContent || tempDiv.innerText || "";
-			mentionsMe = _util_.usernameMatch(diffText, currentUsername);
+			mentionsMe = _util_.usernameMatch(currentUsername, diffText);
 		}
 
 		const wikishield = this.wikishield; // For use in getters below
@@ -522,7 +522,7 @@ export class WikiShieldQueue {
 			previousRevid: oldRev,
 			timestamp: edit.timestamp,
 			comment: edit.comment,
-			minor: "minor" in edit,
+			minor: edit.minor || false,
 			sizediff: (edit.newlen ? edit.newlen - edit.oldlen : edit.sizediff) || 0,
 			diff: diff,
 			tags: edit.tags,
@@ -1049,7 +1049,8 @@ export class WikiShieldQueue {
 				size: revisionData.size,
 				oldlen: revisionData.oldlen || 0,
 				newlen: revisionData.size,
-				title: pageTitle
+				title: pageTitle,
+				minor: revisionData.minor || false,
 			};
 
 			const item = await this.generateQueueItem(

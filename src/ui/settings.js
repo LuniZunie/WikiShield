@@ -494,12 +494,6 @@ export class WikiShieldSettingsInterface {
 	openAudio() {
 		this.clearContent();
 		this.contentContainer.innerHTML = `
-			<div class="settings-section">
-				<div class="settings-section-title">Master Volume</div>
-				<div class="settings-section-desc">Controls the overall volume of all sounds</div>
-				<div id="master-volume-control"></div>
-			</div>
-
 			<div class="settings-toggles-section">
 				<div class="settings-section-header">
 					<span class="settings-section-header-icon">ORES</span>
@@ -517,6 +511,12 @@ export class WikiShieldSettingsInterface {
 						<div class="settings-section-desc">Play a sound alert when an edit with an ORES score above this value is added</div>
 					</div>
 				</div>
+			</div>
+
+			<div class="settings-section">
+				<div class="settings-section-title">Master Volume</div>
+				<div class="settings-section-desc">Controls the overall volume of all sounds</div>
+				<div id="master-volume-control"></div>
 			</div>
 
 			<div id="sound-volumes-container" class="settings-section">
@@ -2057,7 +2057,7 @@ ollama serve
 											`You welcome every user whose edit you review! (${stats.users_welcomed.total})` :
 											`For every ${
 												((stats.edits_reviewed.total / stats.users_welcomed.total) || 0).toFixed(3)
-											} edits you review, you welcome a new user`
+											} edits you review, you ${stats.users_welcomed.total === 0 ? "still won't " : ""}welcome a new user`
 										}
 									</div>
 								</div>
@@ -2187,17 +2187,17 @@ ollama serve
 								<div class="back">
 									<div class="stat-sublabel">
 										${
-											(stats.reports_filed.total / (stats.session_time / 8.64e+7) || 0).toFixed(2)
+											(stats.reports_filed.total / (stats.session_time / 8.64e+7 || 1) || 0).toFixed(2)
 										} reports per day
 									</div>
 									<div class="stat-sublabel">
 										${
-											(stats.reverts_made.total / (stats.session_time / 3.6e+6) || 0).toFixed(2)
+											(stats.reverts_made.total / (stats.session_time / 3.6e+6 || 1) || 0).toFixed(2)
 										} reverts per hour
 									</div>
 									<div class="stat-sublabel">
 										${
-											(stats.edits_reviewed.total / (stats.session_time / 6e+4) || 0).toFixed(2)
+											(stats.edits_reviewed.total / (stats.session_time / 6e+4 || 1) || 0).toFixed(2)
 										} reviews per minute
 									</div>
 								</div>

@@ -1033,79 +1033,79 @@ class Version1 extends Version {
             }),
             statistics: {
                 edits_reviewed: {
-                    total: this.sanitize([ "statistics", "reviewed" ], defaults.statistics.edits_reviewed.total),
+                    total: defaults.statistics.edits_reviewed.total,
 
-                    thanked: defaults.statistics.edits_reviewed.thanked, // did not exist in v0
+                    thanked: defaults.statistics.edits_reviewed.thanked,
                 },
                 recent_changes_reviewed: {
-                    total: this.sanitize([ "statistics", "reviewed" ], defaults.statistics.recent_changes_reviewed.total),
+                    total: defaults.statistics.recent_changes_reviewed.total,
                 },
                 pending_changes_reviewed: {
-                    total: defaults.statistics.pending_changes_reviewed.total, // did not exist in v0
+                    total: defaults.statistics.pending_changes_reviewed.total,
 
-                    accepted: defaults.statistics.pending_changes_reviewed.accepted, // did not exist in v0
-                    rejected: defaults.statistics.pending_changes_reviewed.rejected, // did not exist in v0
+                    accepted: defaults.statistics.pending_changes_reviewed.accepted,
+                    rejected: defaults.statistics.pending_changes_reviewed.rejected,
                 },
                 watchlist_changes_reviewed: {
-                    total: defaults.statistics.watchlist_changes_reviewed.total, // did not exist in v0
+                    total: defaults.statistics.watchlist_changes_reviewed.total,
                 },
                 reverts_made: {
-                    total: this.sanitize([ "statistics", "reverts" ], defaults.statistics.reverts_made.total),
-                    good_faith: defaults.statistics.reverts_made.good_faith, // did not exist in v0
+                    total: defaults.statistics.reverts_made.total,
+                    good_faith: defaults.statistics.reverts_made.good_faith,
 
-                    from_recent_changes: this.sanitize([ "statistics", "reverts" ], defaults.statistics.reverts_made.total),
-                    from_pending_changes: defaults.statistics.reverts_made.from_pending_changes, // did not exist in v0
-                    from_watchlist: defaults.statistics.reverts_made.from_watchlist, // did not exist in v0
-                    from_loaded_edits: defaults.statistics.reverts_made.from_loaded_edits, // did not exist in v0
+                    from_recent_changes: defaults.statistics.reverts_made.from_recent_changes,
+                    from_pending_changes: defaults.statistics.reverts_made.from_pending_changes,
+                    from_watchlist: defaults.statistics.reverts_made.from_watchlist,
+                    from_loaded_edits: defaults.statistics.reverts_made.from_loaded_edits,
                 },
                 users_welcomed: {
-                    total: this.sanitize([ "statistics", "welcomes" ], defaults.statistics.users_welcomed.total),
+                    total: defaults.statistics.users_welcomed.total,
                 },
                 warnings_issued: {
-                    total: this.sanitize([ "statistics", "warnings" ], defaults.statistics.warnings_issued.total),
+                    total: defaults.statistics.warnings_issued.total,
 
-                    level_1: defaults.statistics.warnings_issued.level_1, // did not exist in v0
-                    level_2: defaults.statistics.warnings_issued.level_2, // did not exist in v0
-                    level_3: defaults.statistics.warnings_issued.level_3, // did not exist in v0
-                    level_4: defaults.statistics.warnings_issued.level_4, // did not exist in v0
-                    level_4im: defaults.statistics.warnings_issued.level_4im, // did not exist in v0
+                    level_1: defaults.statistics.warnings_issued.level_1,
+                    level_2: defaults.statistics.warnings_issued.level_2,
+                    level_3: defaults.statistics.warnings_issued.level_3,
+                    level_4: defaults.statistics.warnings_issued.level_4,
+                    level_4im: defaults.statistics.warnings_issued.level_4im,
                 },
                 reports_filed: {
-                    total: this.sanitize([ "statistics", "reports" ], defaults.statistics.reports_filed.total),
+                    total: defaults.statistics.reports_filed.total,
 
-                    AIV: this.sanitize([ "statistics", "reports" ], defaults.statistics.reports_filed.total),
-                    UAA: defaults.statistics.reports_filed.UAA, // did not exist in v0
-                    RFPP: defaults.statistics.reports_filed.RFPP // did not exist in v0
+                    AIV: defaults.statistics.reports_filed.AIV,
+                    UAA: defaults.statistics.reports_filed.UAA,
+                    RFPP: defaults.statistics.reports_filed.RFPP
                 },
                 items_whitelisted: {
-                    total: this.sanitize([ "statistics", "whitelisted" ], defaults.statistics.items_whitelisted.total),
+                    total: defaults.statistics.items_whitelisted.total,
 
-                    users: this.sanitize([ "statistics", "whitelisted" ], defaults.statistics.items_whitelisted.users),
-                    pages: defaults.statistics.items_whitelisted.pages, // did not exist in v0
-                    tags: defaults.statistics.items_whitelisted.tags, // did not exist in v0
+                    users: defaults.statistics.items_whitelisted.users,
+                    pages: defaults.statistics.items_whitelisted.pages,
+                    tags: defaults.statistics.items_whitelisted.tags,
                 },
                 items_highlighted: {
-                    total: this.sanitize([ "statistics", "highlighted" ], defaults.statistics.items_highlighted.total),
+                    total: defaults.statistics.items_highlighted.total,
 
-                    users: this.sanitize([ "statistics", "highlighted", ], defaults.statistics.items_highlighted.users),
-                    pages: defaults.statistics.items_highlighted.pages, // did not exist in v0
-                    tags: defaults.statistics.items_highlighted.tags, // did not exist in v0
+                    users: defaults.statistics.items_highlighted.users,
+                    pages: defaults.statistics.items_highlighted.pages,
+                    tags: defaults.statistics.items_highlighted.tags,
                 },
 
                 blocks_issued: {
-                    total: this.sanitize([ "statistics", "blocks" ], defaults.statistics.blocks_issued.total),
+                    total: defaults.statistics.blocks_issued.total,
                 },
                 pages_protected: {
-                    total: defaults.statistics.pages_protected.total, // did not exist in v0
+                    total: defaults.statistics.pages_protected.total,
                 },
 
                 actions_executed: {
-                    total: defaults.statistics.actions_executed.total, // did not exist in v0
+                    total: defaults.statistics.actions_executed.total,
 
-                    successful: defaults.statistics.actions_executed.successful, // did not exist in v0
+                    successful: defaults.statistics.actions_executed.successful,
                 },
 
-                session_time: defaults.statistics.session_time, // was not stored properly in v0
+                session_time: defaults.statistics.session_time,
             },
             highlight: {
                 users: this.sanitize([ "highlighted", "users" ], defaults.highlight.users),
@@ -1134,15 +1134,15 @@ class Version1 extends Version {
         }
 
         { // root.settings
-            const scope1 = root.settings;
-            this.restrictObject(scope1, "settings");
+            const scope = root.settings;
+            this.restrictObject(scope, "settings");
 
             { // root.settings.theme
-                const scope2 = scope1.theme;
-                this.restrictObject(scope2, "settings", "theme");
+                const scope = root.settings.theme;
+                this.restrictObject(scope, "settings", "theme");
 
                 { // root.settings.theme.palette
-                    const value = scope2.palette;
+                    const value = root.settings.theme.palette;
                     if (!(typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 3)) {
                         this.reset("settings", "theme", "palette");
                     }
@@ -1150,12 +1150,12 @@ class Version1 extends Version {
             }
 
             { // root.settings.namespaces
-                const value = scope1.namespaces;
+                const value = root.settings.namespaces;
                 if (!Array.isArray(value)) {
                     this.reset("settings", "namespaces");
                 }
 
-                scope1.namespaces = [ ...new Set(value) ].filter(v => {
+                root.settings.namespaces = [ ...new Set(root.settings.namespaces) ].filter(v => {
                     const valid = namespaces.some(ns => ns.id === v);
                     if (!valid) {
                         this.loadedLogger.warn(`Removing invalid namespace ID [ ${v} ] from stored data.`);
@@ -1166,25 +1166,25 @@ class Version1 extends Version {
             }
 
             { // root.settings.queue
-                const scope2 = scope1.queue;
-                this.restrictObject(scope2, "settings", "queue");
+                const scope = root.settings.queue;
+                this.restrictObject(scope, "settings", "queue");
 
                 { // root.settings.queue.max_size
-                    const value = scope2.max_size;
+                    const value = root.settings.queue.max_size;
                     if (!(typeof value === "number" && Number.isInteger(value) && value > 0)) {
                         this.reset("settings", "queue", "max_size");
                     }
                 }
 
                 { // root.settings.queue.max_edits
-                    const value = scope2.max_edits;
+                    const value = root.settings.queue.max_edits;
                     if (!(typeof value === "number" && Number.isInteger(value) && value > 0)) {
                         this.reset("settings", "queue", "max_edits");
                     }
                 }
 
                 { // root.settings.queue.min_ores
-                    const value = scope2.min_ores;
+                    const value = root.settings.queue.min_ores;
                     if (!(typeof value === "number" && value >= 0.0 && value <= 1.0)) {
                         this.reset("settings", "queue", "min_ores");
                     }
@@ -1192,11 +1192,11 @@ class Version1 extends Version {
             }
 
             { // root.settings.cloud_storage
-                const scope2 = scope1.cloud_storage;
-                this.restrictObject(scope2, "settings", "cloud_storage");
+                const scope = root.settings.cloud_storage;
+                this.restrictObject(scope, "settings", "cloud_storage");
 
                 { // root.settings.cloud_storage.enabled
-                    const value = scope2.enabled;
+                    const value = root.settings.cloud_storage.enabled;
                     if (typeof value !== "boolean") {
                         this.reset("settings", "cloud_storage", "enabled");
                     }
@@ -1204,11 +1204,11 @@ class Version1 extends Version {
             }
 
             { // root.settings.username_highlighting
-                const scope2 = scope1.username_highlighting;
-                this.restrictObject(scope2, "settings", "username_highlighting");
+                const scope = root.settings.username_highlighting;
+                this.restrictObject(scope, "settings", "username_highlighting");
 
                 { // root.settings.username_highlighting.enabled
-                    const value = scope2.enabled;
+                    const value = root.settings.username_highlighting.enabled;
                     if (typeof value !== "boolean") {
                         this.reset("settings", "username_highlighting", "enabled");
                     }
@@ -1216,11 +1216,11 @@ class Version1 extends Version {
             }
 
             { // root.settings.auto_welcome
-                const scope2 = scope1.auto_welcome;
-                this.restrictObject(scope2, "settings", "auto_welcome");
+                const scope = root.settings.auto_welcome;
+                this.restrictObject(scope, "settings", "auto_welcome");
 
                 { // root.settings.auto_welcome.enabled
-                    const value = scope2.enabled;
+                    const value = root.settings.auto_welcome.enabled;
                     if (typeof value !== "boolean") {
                         this.reset("settings", "auto_welcome", "enabled");
                     }
@@ -1230,36 +1230,36 @@ class Version1 extends Version {
             { // root.settings.expiry
                 const expiries = new Set([ "none", "1 hour", "1 day", "1 week", "1 month", "3 months", "6 months", "indefinite" ]);
 
-                const scope2 = scope1.expiry;
-                this.restrictObject(scope2, "settings", "expiry");
+                const scope = root.settings.expiry;
+                this.restrictObject(scope, "settings", "expiry");
 
                 { // root.settings.expiry.watchlist
-                    const value = scope2.watchlist;
+                    const value = root.settings.expiry.watchlist;
                     if (!expiries.has(value)) {
                         this.reset("settings", "expiry", "watchlist");
                     }
                 }
 
                 { // root.settings.expiry.whitelist
-                    const scope3 = scope2.whitelist;
-                    this.restrictObject(scope3, "settings", "expiry", "whitelist");
+                    const scope = root.settings.expiry.whitelist;
+                    this.restrictObject(scope, "settings", "expiry", "whitelist");
 
                     { // root.settings.expiry.whitelist.users
-                        const value = scope3.users;
+                        const value = root.settings.expiry.whitelist.users;
                         if (!expiries.has(value)) {
                             this.reset("settings", "expiry", "whitelist", "users");
                         }
                     }
 
                     { // root.settings.expiry.whitelist.pages
-                        const value = scope3.pages;
+                        const value = root.settings.expiry.whitelist.pages;
                         if (!expiries.has(value)) {
                             this.reset("settings", "expiry", "whitelist", "pages");
                         }
                     }
 
                     { // root.settings.expiry.whitelist.tags
-                        const value = scope3.tags;
+                        const value = root.settings.expiry.whitelist.tags;
                         if (!expiries.has(value)) {
                             this.reset("settings", "expiry", "whitelist", "tags");
                         }
@@ -1267,25 +1267,25 @@ class Version1 extends Version {
                 }
 
                 { // root.settings.expiry.highlight
-                    const scope3 = scope2.highlight;
-                    this.restrictObject(scope3, "settings", "expiry", "highlight");
+                    const scope = root.settings.expiry.highlight;
+                    this.restrictObject(scope, "settings", "expiry", "highlight");
 
                     { // root.settings.expiry.highlight.users
-                        const value = scope3.users;
+                        const value = root.settings.expiry.highlight.users;
                         if (!expiries.has(value)) {
                             this.reset("settings", "expiry", "highlight", "users");
                         }
                     }
 
                     { // root.settings.expiry.highlight.pages
-                        const value = scope3.pages;
+                        const value = root.settings.expiry.highlight.pages;
                         if (!expiries.has(value)) {
                             this.reset("settings", "expiry", "highlight", "pages");
                         }
                     }
 
                     { // root.settings.expiry.highlight.tags
-                        const value = scope3.tags;
+                        const value = root.settings.expiry.highlight.tags;
                         if (!expiries.has(value)) {
                             this.reset("settings", "expiry", "highlight", "tags");
                         }
@@ -1294,23 +1294,23 @@ class Version1 extends Version {
             }
 
             { // root.settings.auto_report
-                const scope2 = scope1.auto_report;
-                this.restrictObject(scope2, "settings", "auto_report");
+                const scope = root.settings.auto_report;
+                this.restrictObject(scope, "settings", "auto_report");
 
                 { // root.settings.auto_report.enabled
-                    const value = scope2.enabled;
+                    const value = root.settings.auto_report.enabled;
                     if (typeof value !== "boolean") {
                         this.reset("settings", "auto_report", "enabled");
                     }
                 }
 
                 { // root.settings.auto_report.for
-                    const value = scope2.for;
+                    const value = root.settings.auto_report.for;
                     if (!Array.isArray(value)) {
                         this.reset("settings", "auto_report", "for");
                     }
 
-                    scope2.for = [ ...new Set(scope2.for) ].filter(v => {
+                    root.settings.auto_report.for = [ ...new Set(root.settings.auto_report.for) ].filter(v => {
                         const valid = v in warningsLookup;
                         if (!valid) {
                             this.loadedLogger.warn(`Removing invalid auto-report reason [ ${v} ] from stored data.`);
@@ -1322,29 +1322,29 @@ class Version1 extends Version {
             }
 
             { // root.settings.AI
-                const scope2 = scope1.AI;
-                this.restrictObject(scope2, "settings", "AI");
+                const scope = root.settings.AI;
+                this.restrictObject(scope, "settings", "AI");
 
                 { // root.settings.AI.enabled
-                    const value = scope2.enabled;
+                    const value = root.settings.AI.enabled;
                     if (typeof value !== "boolean") {
                         this.reset("settings", "AI", "enabled");
                     }
                 }
 
                 { // root.settings.AI.provider
-                    const value = scope2.provider;
+                    const value = root.settings.AI.provider;
                     if (value !== "Ollama") {
                         this.reset("settings", "AI", "provider");
                     }
                 }
 
                 { // root.settings.AI.edit_analysis
-                    const scope3 = scope2.edit_analysis;
-                    this.restrictObject(scope3, "settings", "AI", "edit_analysis");
+                    const scope = root.settings.AI.edit_analysis;
+                    this.restrictObject(scope, "settings", "AI", "edit_analysis");
 
                     { // root.settings.AI.edit_analysis.enabled
-                        const value = scope3.enabled;
+                        const value = root.settings.AI.edit_analysis.enabled;
                         if (typeof value !== "boolean") {
                             this.reset("settings", "AI", "edit_analysis", "enabled");
                         }
@@ -1352,10 +1352,10 @@ class Version1 extends Version {
                 }
 
                 { // root.settings.AI.username_analysis
-                    const scope3 = scope2.username_analysis;
-                    this.restrictObject(scope3, "settings", "AI", "username_analysis");
+                    const scope = root.settings.AI.username_analysis;
+                    this.restrictObject(scope, "settings", "AI", "username_analysis");
                     { // root.settings.AI.username_analysis.enabled
-                        const value = scope3.enabled;
+                        const value = root.settings.AI.username_analysis.enabled;
                         if (typeof value !== "boolean") {
                             this.reset("settings", "AI", "username_analysis", "enabled");
                         }
@@ -1363,18 +1363,18 @@ class Version1 extends Version {
                 }
 
                 { // root.settings.AI.Ollama
-                    const scope3 = scope2.Ollama;
-                    this.restrictObject(scope3, "settings", "AI", "Ollama");
+                    const scope = root.settings.AI.Ollama;
+                    this.restrictObject(scope, "settings", "AI", "Ollama");
 
                     { // root.settings.AI.Ollama.server
-                        const value = scope3.server;
+                        const value = root.settings.AI.Ollama.server;
                         if (!isURL(value)) {
                             this.reset("settings", "AI", "Ollama", "server");
                         }
                     }
 
                     { // root.settings.AI.Ollama.model
-                        const value = scope3.model;
+                        const value = root.settings.AI.Ollama.model;
                         if (typeof value !== "string") {
                             this.reset("settings", "AI", "Ollama", "model");
                         }
@@ -1383,22 +1383,22 @@ class Version1 extends Version {
             }
 
             { // root.settings.audio
-                const scope2 = scope1.audio;
-                this.restrictObject(scope2, "settings", "audio");
+                const scope = root.settings.audio;
+                this.restrictObject(scope, "settings", "audio");
 
                 { // root.settings.audio.ores_alert
-                    const scope3 = scope2.ores_alert;
-                    this.restrictObject(scope3, "settings", "audio", "ores_alert");
+                    const scope = root.settings.audio.ores_alert;
+                    this.restrictObject(scope, "settings", "audio", "ores_alert");
 
                     { // root.settings.audio.ores_alert.enabled
-                        const value = scope3.enabled;
+                        const value = root.settings.audio.ores_alert.enabled;
                         if (typeof value !== "boolean") {
                             this.reset("settings", "audio", "ores_alert", "enabled");
                         }
                     }
 
                     { // root.settings.audio.ores_alert.threshold
-                        const value = scope3.threshold;
+                        const value = root.settings.audio.ores_alert.threshold;
                         if (!(typeof value === "number" && value >= 0.0 && value <= 1.0)) {
                             this.reset("settings", "audio", "ores_alert", "threshold");
                         }
@@ -1406,8 +1406,9 @@ class Version1 extends Version {
                 }
 
                 { // root.settings.audio.volume
-                    const scope3 = scope2.volume;
-                    this.restrictObject(scope3, "settings", "audio", "volume");
+                    const scope = root.settings.audio.volume;
+                    this.restrictObject(scope, "settings", "audio", "volume");
+
                     const volumeKeys = [
                         "master",
                         "master.startup",
@@ -1445,7 +1446,7 @@ class Version1 extends Version {
                     ];
 
                     for (const key of volumeKeys) {
-                        const value = scope3[key];
+                        const value = root.settings.audio.volume[key];
                         if (!(typeof value === "number" && value >= 0 && value <= 1)) {
                             this.reset("settings", "audio", "volume", key);
                         }
@@ -1454,22 +1455,22 @@ class Version1 extends Version {
             }
 
             { // root.settings.zen_mode
-                const scope2 = scope1.zen_mode;
-                this.restrictObject(scope2, "settings", "zen_mode");
+                const scope = root.settings.zen_mode;
+                this.restrictObject(scope, "settings", "zen_mode");
 
                 { // root.settings.zen_mode.enabled
-                    const value = scope2.enabled;
+                    const value = scope.enabled;
                     if (typeof value !== "boolean") {
                         this.reset("settings", "zen_mode", "enabled");
                     }
                 }
 
                 { // root.settings.zen_mode.sound
-                    const scope3 = scope2.sound;
-                    this.restrictObject(scope3, "settings", "zen_mode", "sound");
+                    const scope = root.settings.zen_mode.sound;
+                    this.restrictObject(scope, "settings", "zen_mode", "sound");
 
                     { // root.settings.zen_mode.sound.enabled
-                        const value = scope3.enabled;
+                        const value = root.settings.zen_mode.sound.enabled;
                         if (typeof value !== "boolean") {
                             this.reset("settings", "zen_mode", "sound", "enabled");
                         }
@@ -1477,11 +1478,11 @@ class Version1 extends Version {
                 }
 
                 { // root.settings.zen_mode.music
-                    const scope3 = scope2.music;
-                    this.restrictObject(scope3, "settings", "zen_mode", "music");
+                    const scope = root.settings.zen_mode.music;
+                    this.restrictObject(scope, "settings", "zen_mode", "music");
 
                     { // root.settings.zen_mode.music.enabled
-                        const value = scope3.enabled;
+                        const value = root.settings.zen_mode.music.enabled;
                         if (typeof value !== "boolean") {
                             this.reset("settings", "zen_mode", "music", "enabled");
                         }
@@ -1489,11 +1490,11 @@ class Version1 extends Version {
                 }
 
                 { // root.settings.zen_mode.alerts
-                    const scope3 = scope2.alerts;
-                    this.restrictObject(scope3, "settings", "zen_mode", "alerts");
+                    const scope = root.settings.zen_mode.alerts;
+                    this.restrictObject(scope, "settings", "zen_mode", "alerts");
 
                     { // root.settings.zen_mode.alerts.enabled
-                        const value = scope3.enabled;
+                        const value = root.settings.zen_mode.alerts.enabled;
                         if (typeof value !== "boolean") {
                             this.reset("settings", "zen_mode", "alerts", "enabled");
                         }
@@ -1501,11 +1502,11 @@ class Version1 extends Version {
                 }
 
                 { // root.settings.zen_mode.notices
-                    const scope3 = scope2.notices;
-                    this.restrictObject(scope3, "settings", "zen_mode", "notices");
+                    const scope = root.settings.zen_mode.notices;
+                    this.restrictObject(scope, "settings", "zen_mode", "notices");
 
                     { // root.settings.zen_mode.notices.enabled
-                        const value = scope3.enabled;
+                        const value = root.settings.zen_mode.notices.enabled;
                         if (typeof value !== "boolean") {
                             this.reset("settings", "zen_mode", "notices", "enabled");
                         }
@@ -1513,10 +1514,10 @@ class Version1 extends Version {
                 }
 
                 { // root.settings.zen_mode.watchlist
-                    const scope3 = scope2.watchlist;
-                    this.restrictObject(scope3, "settings", "zen_mode", "watchlist");
+                    const scope = root.settings.zen_mode.watchlist;
+                    this.restrictObject(scope, "settings", "zen_mode", "watchlist");
                     { // root.settings.zen_mode.watchlist.enabled
-                        const value = scope3.enabled;
+                        const value = root.settings.zen_mode.watchlist.enabled;
                         if (typeof value !== "boolean") {
                             this.reset("settings", "zen_mode", "watchlist", "enabled");
                         }
@@ -1524,10 +1525,10 @@ class Version1 extends Version {
                 }
 
                 { // root.settings.zen_mode.edit_counter
-                    const scope3 = scope2.edit_counter;
-                    this.restrictObject(scope3, "settings", "zen_mode", "edit_counter");
+                    const scope = root.settings.zen_mode.edit_counter;
+                    this.restrictObject(scope, "settings", "zen_mode", "edit_counter");
                     { // root.settings.zen_mode.edit_counter.enabled
-                        const value = scope3.enabled;
+                        const value = root.settings.zen_mode.edit_counter.enabled;
                         if (typeof value !== "boolean") {
                             this.reset("settings", "zen_mode", "edit_counter", "enabled");
                         }
@@ -1535,10 +1536,10 @@ class Version1 extends Version {
                 }
 
                 { // root.settings.zen_mode.toasts
-                    const scope3 = scope2.toasts;
-                    this.restrictObject(scope3, "settings", "zen_mode", "toasts");
+                    const scope = root.settings.zen_mode.toasts;
+                    this.restrictObject(scope, "settings", "zen_mode", "toasts");
                     { // root.settings.zen_mode.toasts.enabled
-                        const value = scope3.enabled;
+                        const value = root.settings.zen_mode.toasts.enabled;
                         if (typeof value !== "boolean") {
                             this.reset("settings", "zen_mode", "toasts", "enabled");
                         }
@@ -1548,15 +1549,15 @@ class Version1 extends Version {
         }
 
         { // root.layout
-            const scope1 = root.layout;
-            this.restrictObject(scope1, "layout");
+            const scope = root.layout;
+            this.restrictObject(scope, "layout");
 
             { // root.layout.queue
-                const scope2 = scope1.queue;
-                this.restrictObject(scope2, "layout", "queue");
+                const scope = root.layout.queue;
+                this.restrictObject(scope, "layout", "queue");
 
                 { // root.layout.queue.width
-                    const value = scope2.width;
+                    const value = root.layout.queue.width;
                     if (!(typeof value === "string" && value.endsWith("vw"))) {
                         this.reset("layout", "queue", "width");
                     }
@@ -1569,11 +1570,11 @@ class Version1 extends Version {
             }
 
             { // root.layout.details
-                const scope2 = scope1.details;
-                this.restrictObject(scope2, "layout", "details");
+                const scope = root.layout.details;
+                this.restrictObject(scope, "layout", "details");
 
                 { // root.layout.details.width
-                    const value = scope2.width;
+                    const value = root.layout.details.width;
                     if (!(typeof value === "string" && value.endsWith("vw"))) {
                         this.reset("layout", "details", "width");
                     }
@@ -1587,8 +1588,8 @@ class Version1 extends Version {
         }
 
         { // root.control_scripts
-            const scope1 = root.control_scripts;
-            if (!Array.isArray(scope1)) {
+            const scope = root.control_scripts;
+            if (!Array.isArray(scope)) {
                 this.reset("control_scripts");
             }
 
@@ -1653,25 +1654,25 @@ class Version1 extends Version {
                 });
             }
 
-            root.control_scripts = root.control_scripts.filter((scope2, index) => {
+            root.control_scripts = root.control_scripts.filter((scope, index) => {
                 index = +index;
-                if (!isObject(scope2)) {
+                if (!isObject(scope)) {
                     this.loadedLogger.warn(`Removing invalid control script at path [ ${[ "control_scripts", index ].join(" -> ")} ] from stored data.`);
                     return false;
                 }
 
-                if (!Array.isArray(scope2.keys)) {
+                if (!Array.isArray(scope.keys)) {
                     this.loadedLogger.warn(`Removing invalid keys array from control script at index [ ${index} ] in stored data.`);
                     root.control_scripts[index].keys = [ ];
                 }
 
-                if (!Array.isArray(scope2.actions)) {
+                if (!Array.isArray(scope.actions)) {
                     this.loadedLogger.warn(`Removing invalid actions array from control script at index [ ${index} ] in stored data.`);
                     root.control_scripts[index].actions = [ ];
                 }
 
-                root.control_scripts[index].keys = scope2.keys.filter((key) => validControlKeys.has(key));
-                root.control_scripts[index].actions = sanitizeActions.call(this, scope2.actions, "control_scripts", index, "actions");
+                root.control_scripts[index].keys = scope.keys.filter((key) => validControlKeys.has(key));
+                root.control_scripts[index].actions = sanitizeActions.call(this, scope.actions, "control_scripts", index, "actions");
 
                 return true;
             });
@@ -1680,22 +1681,22 @@ class Version1 extends Version {
         { // root.statistics
             const isValidStatistic = v => typeof v === "number" && Number.isInteger(v) && v >= 0;
 
-            const scope1 = root.statistics;
-            this.restrictObject(scope1, "statistics");
+            const scope = root.statistics;
+            this.restrictObject(scope, "statistics");
 
             { // root.statistics.edits_reviewed
-                const scope2 = scope1.edits_reviewed;
-                this.restrictObject(scope2, "statistics", "edits_reviewed");
+                const scope = root.statistics.edits_reviewed;
+                this.restrictObject(scope, "statistics", "edits_reviewed");
 
                 { // root.statistics.edits_reviewed.total
-                    const value = scope2.total;
+                    const value = root.statistics.edits_reviewed.total;
                     if (!isValidStatistic(value)) {
                         this.reset("statistics", "edits_reviewed", "total");
                     }
                 }
 
                 { // root.statistics.edits_reviewed.thanked
-                    const value = scope2.thanked;
+                    const value = root.statistics.edits_reviewed.thanked;
                     if (!isValidStatistic(value)) {
                         this.reset("statistics", "edits_reviewed", "thanked");
                     }
@@ -1703,46 +1704,46 @@ class Version1 extends Version {
             }
 
             { // root.statistics.recent_changes_reviewed
-                const scope2 = scope1.recent_changes_reviewed;
-                this.restrictObject(scope2, "statistics", "recent_changes_reviewed");
+                const scope = root.statistics.recent_changes_reviewed;
+                this.restrictObject(scope, "statistics", "recent_changes_reviewed");
 
                 { // root.statistics.recent_changes_reviewed.total
-                    const value = scope2.total;
+                    const value = root.statistics.recent_changes_reviewed.total;
                     if (!isValidStatistic(value)) {
                         this.reset("statistics", "recent_changes_reviewed", "total");
                     }
                 }
             }
             { // root.statistics.pending_changes_reviewed
-                const scope2 = scope1.pending_changes_reviewed;
-                this.restrictObject(scope2, "statistics", "pending_changes_reviewed");
+                const scope = root.statistics.pending_changes_reviewed;
+                this.restrictObject(scope, "statistics", "pending_changes_reviewed");
 
                 { // root.statistics.pending_changes_reviewed.total
-                    const value = scope2.total;
+                    const value = root.statistics.pending_changes_reviewed.total;
                     if (!isValidStatistic(value)) {
                         this.reset("statistics", "pending_changes_reviewed", "total");
                     }
                 }
 
                 { // root.statistics.pending_changes_reviewed.accepted
-                    const value = scope2.accepted;
+                    const value = root.statistics.pending_changes_reviewed.accepted;
                     if (!isValidStatistic(value)) {
                         this.reset("statistics", "pending_changes_reviewed", "accepted");
                     }
                 }
                 { // root.statistics.pending_changes_reviewed.rejected
-                    const value = scope2.rejected;
+                    const value = root.statistics.pending_changes_reviewed.rejected;
                     if (!isValidStatistic(value)) {
                         this.reset("statistics", "pending_changes_reviewed", "rejected");
                     }
                 }
             }
             { // root.statistics.watchlist_changes_reviewed
-                const scope2 = scope1.watchlist_changes_reviewed;
-                this.restrictObject(scope2, "statistics", "watchlist_changes_reviewed");
+                const scope = root.statistics.watchlist_changes_reviewed;
+                this.restrictObject(scope, "statistics", "watchlist_changes_reviewed");
 
                 { // root.statistics.watchlist_changes_reviewed.total
-                    const value = scope2.total;
+                    const value = root.statistics.watchlist_changes_reviewed.total;
                     if (!isValidStatistic(value)) {
                         this.reset("statistics", "watchlist_changes_reviewed", "total");
                     }
@@ -1750,42 +1751,42 @@ class Version1 extends Version {
             }
 
             { // root.statistics.reverts_made
-                const scope2 = scope1.reverts_made;
-                this.restrictObject(scope2, "statistics", "reverts_made");
+                const scope = root.statistics.reverts_made;
+                this.restrictObject(scope, "statistics", "reverts_made");
 
                 { // root.statistics.reverts_made.total
-                    const value = scope2.total;
+                    const value = root.statistics.reverts_made.total;
                     if (!isValidStatistic(value)) {
                         this.reset("statistics", "reverts_made", "total");
                     }
                 }
                 { // root.statistics.reverts_made.good_faith
-                    const value = scope2.good_faith;
+                    const value = root.statistics.reverts_made.good_faith;
                     if (!isValidStatistic(value)) {
                         this.reset("statistics", "reverts_made", "good_faith");
                     }
                 }
 
                 { // root.statistics.reverts_made.from_recent_changes
-                    const value = scope2.from_recent_changes;
+                    const value = root.statistics.reverts_made.from_recent_changes;
                     if (!isValidStatistic(value)) {
                         this.reset("statistics", "reverts_made", "from_recent_changes");
                     }
                 }
                 { // root.statistics.reverts_made.from_pending_changes
-                    const value = scope2.from_pending_changes;
+                    const value = root.statistics.reverts_made.from_pending_changes;
                     if (!isValidStatistic(value)) {
                         this.reset("statistics", "reverts_made", "from_pending_changes");
                     }
                 }
                 { // root.statistics.reverts_made.from_watchlist
-                    const value = scope2.from_watchlist;
+                    const value = root.statistics.reverts_made.from_watchlist;
                     if (!isValidStatistic(value)) {
                         this.reset("statistics", "reverts_made", "from_watchlist");
                     }
                 }
                 { // root.statistics.reverts_made.from_loaded_edits
-                    const value = scope2.from_loaded_edits;
+                    const value = root.statistics.reverts_made.from_loaded_edits;
                     if (!isValidStatistic(value)) {
                         this.reset("statistics", "reverts_made", "from_loaded_edits");
                     }
@@ -1793,11 +1794,11 @@ class Version1 extends Version {
             }
 
             { // root.statistics.users_welcomed
-                const scope2 = scope1.users_welcomed;
-                this.restrictObject(scope2, "statistics", "users_welcomed");
+                const scope = root.statistics.users_welcomed;
+                this.restrictObject(scope, "statistics", "users_welcomed");
 
                 { // root.statistics.users_welcomed.total
-                    const value = scope2.total;
+                    const value = root.statistics.users_welcomed.total;
                     if (!isValidStatistic(value)) {
                         this.reset("statistics", "users_welcomed", "total");
                     }
@@ -1805,42 +1806,42 @@ class Version1 extends Version {
             }
 
             { // root.statistics.warnings_issued
-                const scope2 = scope1.warnings_issued;
-                this.restrictObject(scope2, "statistics", "warnings_issued");
+                const scope = root.statistics.warnings_issued;
+                this.restrictObject(scope, "statistics", "warnings_issued");
 
                 { // root.statistics.warnings_issued.total
-                    const value = scope2.total;
+                    const value = root.statistics.warnings_issued.total;
                     if (!isValidStatistic(value)) {
                         this.reset("statistics", "warnings_issued", "total");
                     }
                 }
 
                 { // root.statistics.warnings_issued.level_1
-                    const value = scope2.level_1;
+                    const value = root.statistics.warnings_issued.level_1;
                     if (!isValidStatistic(value)) {
                         this.reset("statistics", "warnings_issued", "level_1");
                     }
                 }
                 { // root.statistics.warnings_issued.level_2
-                    const value = scope2.level_2;
+                    const value = root.statistics.warnings_issued.level_2;
                     if (!isValidStatistic(value)) {
                         this.reset("statistics", "warnings_issued", "level_2");
                     }
                 }
                 { // root.statistics.warnings_issued.level_3
-                    const value = scope2.level_3;
+                    const value = root.statistics.warnings_issued.level_3;
                     if (!isValidStatistic(value)) {
                         this.reset("statistics", "warnings_issued", "level_3");
                     }
                 }
                 { // root.statistics.warnings_issued.level_4
-                    const value = scope2.level_4;
+                    const value = root.statistics.warnings_issued.level_4;
                     if (!isValidStatistic(value)) {
                         this.reset("statistics", "warnings_issued", "level_4");
                     }
                 }
                 { // root.statistics.warnings_issued.level_4im
-                    const value = scope2.level_4im;
+                    const value = root.statistics.warnings_issued.level_4im;
                     if (!isValidStatistic(value)) {
                         this.reset("statistics", "warnings_issued", "level_4im");
                     }
@@ -1848,30 +1849,30 @@ class Version1 extends Version {
             }
 
             { // root.statistics.reports_filed
-                const scope2 = scope1.reports_filed;
-                this.restrictObject(scope2, "statistics", "reports_filed");
+                const scope = root.statistics.reports_filed;
+                this.restrictObject(scope, "statistics", "reports_filed");
 
                 { // root.statistics.reports_filed.total
-                    const value = scope2.total;
+                    const value = root.statistics.reports_filed.total;
                     if (!isValidStatistic(value)) {
                         this.reset("statistics", "reports_filed", "total");
                     }
                 }
 
                 { // root.statistics.reports_filed.AIV
-                    const value = scope2.AIV;
+                    const value = root.statistics.reports_filed.AIV;
                     if (!isValidStatistic(value)) {
                         this.reset("statistics", "reports_filed", "AIV");
                     }
                 }
                 { // root.statistics.reports_filed.UAA
-                    const value = scope2.UAA;
+                    const value = root.statistics.reports_filed.UAA;
                     if (!isValidStatistic(value)) {
                         this.reset("statistics", "reports_filed", "UAA");
                     }
                 }
                 { // root.statistics.reports_filed.RFPP
-                    const value = scope2.RFPP;
+                    const value = root.statistics.reports_filed.RFPP;
                     if (!isValidStatistic(value)) {
                         this.reset("statistics", "reports_filed", "RFPP");
                     }
@@ -1879,60 +1880,60 @@ class Version1 extends Version {
             }
 
             { // root.statistics.items_whitelisted
-                const scope2 = scope1.items_whitelisted;
-                this.restrictObject(scope2, "statistics", "items_whitelisted");
+                const scope = root.statistics.items_whitelisted;
+                this.restrictObject(scope, "statistics", "items_whitelisted");
 
                 { // root.statistics.items_whitelisted.total
-                    const value = scope2.total;
+                    const value = root.statistics.items_whitelisted.total;
                     if (!isValidStatistic(value)) {
                         this.reset("statistics", "items_whitelisted", "total");
                     }
                 }
 
                 { // root.statistics.items_whitelisted.users
-                    const value = scope2.users;
+                    const value = root.statistics.items_whitelisted.users;
                     if (!isValidStatistic(value)) {
                         this.reset("statistics", "items_whitelisted", "users");
                     }
                 }
                 { // root.statistics.items_whitelisted.pages
-                    const value = scope2.pages;
+                    const value = root.statistics.items_whitelisted.pages;
                     if (!isValidStatistic(value)) {
                         this.reset("statistics", "items_whitelisted", "pages");
                     }
                 }
                 { // root.statistics.items_whitelisted.tags
-                    const value = scope2.tags;
+                    const value = root.statistics.items_whitelisted.tags;
                     if (!isValidStatistic(value)) {
                         this.reset("statistics", "items_whitelisted", "tags");
                     }
                 }
             }
             { // root.statistics.items_highlighted
-                const scope2 = scope1.items_highlighted;
-                this.restrictObject(scope2, "statistics", "items_highlighted");
+                const scope = root.statistics.items_highlighted;
+                this.restrictObject(scope, "statistics", "items_highlighted");
 
                 { // root.statistics.items_highlighted.total
-                    const value = scope2.total;
+                    const value = root.statistics.items_highlighted.total;
                     if (!isValidStatistic(value)) {
                         this.reset("statistics", "items_highlighted", "total");
                     }
                 }
 
                 { // root.statistics.items_highlighted.users
-                    const value = scope2.users;
+                    const value = root.statistics.items_highlighted.users;
                     if (!isValidStatistic(value)) {
                         this.reset("statistics", "items_highlighted", "users");
                     }
                 }
                 { // root.statistics.items_highlighted.pages
-                    const value = scope2.pages;
+                    const value = root.statistics.items_highlighted.pages;
                     if (!isValidStatistic(value)) {
                         this.reset("statistics", "items_highlighted", "pages");
                     }
                 }
                 { // root.statistics.items_highlighted.tags
-                    const value = scope2.tags;
+                    const value = root.statistics.items_highlighted.tags;
                     if (!isValidStatistic(value)) {
                         this.reset("statistics", "items_highlighted", "tags");
                     }
@@ -1940,22 +1941,22 @@ class Version1 extends Version {
             }
 
             { // root.statistics.blocks_issued
-                const scope2 = scope1.blocks_issued;
-                this.restrictObject(scope2, "statistics", "blocks_issued");
+                const scope = root.statistics.blocks_issued;
+                this.restrictObject(scope, "statistics", "blocks_issued");
 
                 { // root.statistics.blocks_issued.total
-                    const value = scope2.total;
+                    const value = root.statistics.blocks_issued.total;
                     if (!isValidStatistic(value)) {
                         this.reset("statistics", "blocks_issued", "total");
                     }
                 }
             }
             { // root.statistics.pages_protected
-                const scope2 = scope1.pages_protected;
-                this.restrictObject(scope2, "statistics", "pages_protected");
+                const scope = root.statistics.pages_protected;
+                this.restrictObject(scope, "statistics", "pages_protected");
 
                 { // root.statistics.pages_protected.total
-                    const value = scope2.total;
+                    const value = root.statistics.pages_protected.total;
                     if (!isValidStatistic(value)) {
                         this.reset("statistics", "pages_protected", "total");
                     }
@@ -1963,18 +1964,18 @@ class Version1 extends Version {
             }
 
             { // root.statistics.actions_executed
-                const scope2 = scope1.actions_executed;
-                this.restrictObject(scope2, "statistics", "actions_executed");
+                const scope = root.statistics.actions_executed;
+                this.restrictObject(scope, "statistics", "actions_executed");
 
                 { // root.statistics.actions_executed.total
-                    const value = scope2.total;
+                    const value = root.statistics.actions_executed.total;
                     if (!isValidStatistic(value)) {
                         this.reset("statistics", "actions_executed", "total");
                     }
                 }
 
                 { // root.statistics.actions_executed.successful
-                    const value = scope2.successful;
+                    const value = root.statistics.actions_executed.successful;
                     if (!isValidStatistic(value)) {
                         this.reset("statistics", "actions_executed", "successful");
                     }
@@ -1982,7 +1983,7 @@ class Version1 extends Version {
             }
 
             { // root.statistics.session_time
-                const value = scope1.session_time;
+                const value = root.statistics.session_time;
                 if (!isValidStatistic(value)) {
                     this.reset("statistics", "session_time");
                 }
@@ -2014,66 +2015,66 @@ class Version1 extends Version {
         }
 
         { // root.highlight
-            const scope1 = root.highlight;
-            this.restrictObject(scope1, "highlight");
+            const scope = root.highlight;
+            this.restrictObject(scope, "highlight");
 
             { // root.highlight.users
-                const value = scope1.users;
+                const value = root.highlight.users;
                 if (!Array.isArray(value)) {
                     this.reset("highlight", "users");
                 }
 
-                scope1.users = scope1.users.filter(v => isValidExpiryMap(v));
+                root.highlight.users = root.highlight.users.filter(v => isValidExpiryMap(v));
             }
 
             { // root.highlight.pages
-                const value = scope1.pages;
+                const value = root.highlight.pages;
                 if (!Array.isArray(value)) {
                     this.reset("highlight", "pages");
                 }
 
-                scope1.pages = scope1.pages.filter(v => isValidExpiryMap(v));
+                root.highlight.pages = root.highlight.pages.filter(v => isValidExpiryMap(v));
             }
 
             { // root.highlight.tags
-                const value = scope1.tags;
+                const value = root.highlight.tags;
                 if (!Array.isArray(value)) {
                     this.reset("highlight", "tags");
                 }
 
-                scope1.tags = scope1.tags.filter(v => isValidExpiryMap(v));
+                root.highlight.tags = root.highlight.tags.filter(v => isValidExpiryMap(v));
             }
         }
 
         { // root.whitelist
-            const scope1 = root.whitelist;
-            this.restrictObject(scope1, "whitelist");
+            const scope = root.whitelist;
+            this.restrictObject(scope, "whitelist");
 
             { // root.whitelist.users
-                const value = scope1.users;
+                const value = root.whitelist.users;
                 if (!Array.isArray(value)) {
                     this.reset("whitelist", "users");
                 }
 
-                scope1.users = scope1.users.filter(v => isValidExpiryMap(v));
+                root.whitelist.users = root.whitelist.users.filter(v => isValidExpiryMap(v));
             }
 
             { // root.whitelist.pages
-                const value = scope1.pages;
+                const value = root.whitelist.pages;
                 if (!Array.isArray(value)) {
                     this.reset("whitelist", "pages");
                 }
 
-                scope1.pages = scope1.pages.filter(v => isValidExpiryMap(v));
+                root.whitelist.pages = root.whitelist.pages.filter(v => isValidExpiryMap(v));
             }
 
             { // root.whitelist.tags
-                const value = scope1.tags;
+                const value = root.whitelist.tags;
                 if (!Array.isArray(value)) {
                     this.reset("whitelist", "tags");
                 }
 
-                scope1.tags = scope1.tags.filter(v => isValidExpiryMap(v));
+                root.whitelist.tags = root.whitelist.tags.filter(v => isValidExpiryMap(v));
             }
         }
 

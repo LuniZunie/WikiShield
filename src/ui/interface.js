@@ -1301,7 +1301,6 @@ export class WikiShieldInterface {
 				// --- Attach context menu ---
 				elem.addEventListener("contextmenu", (event) => {
 					event.preventDefault();
-					this.wikishield.audioManager.playSound([ "ui", "click" ]);
 
 					// Remove existing menus
 					[...document.querySelectorAll(".context-menu")].forEach(e => e.remove());
@@ -1763,8 +1762,10 @@ export class WikiShieldInterface {
 						const timeInfo = warning.timestamp ? `${this.wikishield.formatNotificationTime(new Date(warning.timestamp))}` : "";
 						tooltipHtml += `<div class="tooltip-item user-warnings">`;
 						tooltipHtml += `<span class="tooltip-item-level">${this.wikishield.util.escapeHtml(templateDisplay)}</span>`;
+						tooltipHtml += `<div class="tooltip-item-details">`;
 						tooltipHtml += `<span class="tooltip-item-user">${this.wikishield.util.escapeHtml(userInfo)}</span>`;
 						tooltipHtml += `<br><span class="tooltip-item-time">${this.wikishield.util.escapeHtml(timeInfo)}</span>`;
+						tooltipHtml += `</div>`;
 						tooltipHtml += `</div>`;
 					});
 					if (warningHistory.length > 5) {
@@ -1862,7 +1863,7 @@ export class WikiShieldInterface {
 			const addWhitelistButton = this.elem("#page-whitelist");
 			const removeWhitelistButton = this.elem("#page-unwhitelist");
 			if (addWhitelistButton && removeWhitelistButton) {
-				// FIX, broken by context menu
+				// FIX, broken by context menu (and vice versa)
 				const func = () => {
 					const isWhitelisted = this.wikishield.storage.data.whitelist.pages.has(edit.page.title);
 					if (isWhitelisted) {
@@ -1883,7 +1884,7 @@ export class WikiShieldInterface {
 			const highlightButton = this.elem("#page-highlight");
 			const unhighlightButton = this.elem("#page-unhighlight");
 			if (highlightButton && unhighlightButton) {
-				// FIX, broken by context menu
+				// FIX, broken by context menu (and vice versa)
 				const func = () => {
 					const isHighlighted = this.wikishield.storage.data.highlight.pages.has(edit.page.title);
 					if (isHighlighted) {
@@ -1930,7 +1931,6 @@ export class WikiShieldInterface {
 		});
 
 		// Load block count and display next to warning level
-		// FIX look at the tooltip
 		blockCountPromise.then(async blockCount => {
 			const blockIndicator = document.querySelector("#user-contribs #user-block-count");
 			if (blockIndicator) {
@@ -1939,10 +1939,7 @@ export class WikiShieldInterface {
 
 					let tooltipHtml = `<div class="tooltip-title">Block History</div>`;
 
-					// limit to 5 items to match warnings
-					const limited = blockHistory.slice(0, 5);
-
-					for (const block of limited) {
+					for (const block of blockHistory) {
 						let blockerName = block.user || "Unknown";
 						blockerName = blockerName.replace(/<[^>]*>/g, '');
 
@@ -1950,8 +1947,6 @@ export class WikiShieldInterface {
 						duration = duration.replace(/<[^>]*>/g, '');
 
 						let reason = block.comment || "No reason specified";
-						reason = await this.wikishield.api.parseWikitext(reason);
-
 						const timestamp = block.timestamp ? this.wikishield.formatNotificationTime(new Date(block.timestamp)) : "";
 
 						const userInfo = blockerName ? `(User:${this.wikishield.util.escapeHtml(blockerName)})` : "";
@@ -1959,18 +1954,15 @@ export class WikiShieldInterface {
 						tooltipHtml += `<div class="tooltip-item user-blocks">`;
 
 						// equivalent to template + level
-						tooltipHtml += `<span class="tooltip-item-level">${reason}</span>`;
+						tooltipHtml += `<span class="tooltip-item-level">${this.wikishield.util.maxStringLength(reason, 100)}</span>`;
 
 						// same formatting as warning username
+						tooltipHtml += `<div class="tooltip-item-details">`;
 						tooltipHtml += `<span class="tooltip-item-user">${this.wikishield.util.escapeHtml(userInfo)}</span>`;
-
-						tooltipHtml += `<br><span class="tooltip-item-time">${this.wikishield.util.escapeHtml(timestamp)} — ${this.wikishield.util.escapeHtml(duration)}</span>`;
+						tooltipHtml += `<br><span class="tooltip-item-time">${this.wikishield.util.escapeHtml(duration)} (${this.wikishield.util.escapeHtml(timestamp)} ago)</span>`;
+						tooltipHtml += `</div>`;
 
 						tooltipHtml += `</div>`;
-					}
-
-					if (blockHistory.length > 5) {
-						tooltipHtml += `<div class="tooltip-more">... and ${blockHistory.length - 5} more</div>`;
 					}
 
 					blockIndicator.style.display = "initial";
@@ -2068,7 +2060,7 @@ export class WikiShieldInterface {
 		const flagged = this.wikishield.queue.flaggedRevisions.get(edit.revid);
 		if (flagged) {
 			const $diffSize = this.elem("#diff-size-text");
-			const sizediff = (flagged.newLen - flagged.oldLen) || 0;
+			const sizediff = flagged.diff_size || 0;
 			$diffSize.innerHTML = this.wikishield.util.getChangeString(sizediff);
 			$diffSize.style.color = this.wikishield.util.getChangeColor(sizediff);
 
@@ -2092,7 +2084,7 @@ export class WikiShieldInterface {
 			`;
 			this.addTooltipListener(this.elem("#consecutive-time"));
 
-			$diff.innerHTML = `<table>${edit.diff}</table>`;
+			$diff.innerHTML = `<table>${edit.diff ?? "No diff could be found"}</table>`;
 		} else if (showConsecutive) {
 			this.elem("#consecutive-edits-tab").classList.add("selected");
 
@@ -2121,12 +2113,12 @@ export class WikiShieldInterface {
 				`;
 				this.addTooltipListener(this.elem("#consecutive-time"));
 
-				$diff.innerHTML = `<table>${data.diff}</table>`;
+				$diff.innerHTML = `<table>${data.diff ?? "No diff could be found"}</table>`;
 			});
 		} else {
 			this.elem("#latest-edits-tab").classList.add("selected");
 
-			$diff.innerHTML = `<table>${edit.diff}</table>`;
+			$diff.innerHTML = `<table>${edit.diff ?? "No diff could be found"}</table>`;
 
 			const $diffSize = this.elem("#diff-size-text");
 			$diffSize.innerHTML = this.wikishield.util.getChangeString(edit.sizediff || 0);
@@ -2147,6 +2139,7 @@ export class WikiShieldInterface {
 
 		$diff.querySelectorAll(":is(.mw-diff-movedpara-left, .mw-diff-movedpara-right)").forEach(elem => {
 			const href = elem.href.split("#")[1];
+			delete elem.href; // Remove default link behavior
 			elem.addEventListener("click", (e) => {
 				e.preventDefault();
 
@@ -2389,7 +2382,7 @@ export class WikiShieldInterface {
 				padding: 8px 12px;
 				background: #f73214;
 				border-radius: 4px;
-				color: #0c5460;
+				color: #fff;
 				display: flex;
 				align-items: center;
 				gap: 8px;
@@ -2662,6 +2655,10 @@ export class WikiShieldInterface {
 			}
 
 			tooltip.style.opacity = 1;
+
+			elem.addEventListener("mousewheel", e => {
+				tooltip.scrollBy(0, e.deltaY);
+			});
 		});
 
 		elem.addEventListener("mouseleave", () => {

@@ -28,8 +28,8 @@ export const validEvents = {
             }
         ],
         func: async (wikishield, event, currentEdit) => {
-            const __FLAGGED__ = currentEdit?.__FLAGGED__;
-            if (!currentEdit?.__FLAGGED__) {
+            const __FLAGGED__ = wikishield.queue.flaggedRevisions.get(currentEdit.revid);
+            if (!__FLAGGED__) {
                 return false;
             }
 
@@ -87,7 +87,7 @@ export const validEvents = {
             }
         ],
         func: async (wikishield, event, currentEdit) => {
-            const __FLAGGED__ = currentEdit?.__FLAGGED__;
+            const __FLAGGED__ = wikishield.queue.flaggedRevisions.get(currentEdit.revid);
             if (!__FLAGGED__) {
                 return false;
             }
@@ -129,7 +129,7 @@ export const validEvents = {
             }
 
             const message = `Rejected ${countSection} by ${userText} to [[Special:Diff/${__FLAGGED__.priorRevid}|last stable revision]]`;
-            return await wikishield.api.rejectFlaggedEdit(currentEdit, wikishield.api.buildMessage(message, event.reason));
+            return await wikishield.api.rejectFlaggedEdit(currentEdit, wikishield.api.buildMessage(message, event.reason), __FLAGGED__.priorRevid);
         }
     },
 
@@ -171,7 +171,7 @@ export const validEvents = {
 
             const revertMenu = wikishield.interface.elem("#revert-menu");
             revertMenu.innerHTML = "";
-            wikishield.interface.createRevertMenu(revertMenu, wikishield.queue.currentEdit);
+            wikishield.interface.createRevertMenu(revertMenu, wikishield.queue.currentEdit[wikishield.queue.currentQueueTab]);
 
             if (menuItem) {
                 const trigger = menuItem.querySelector('.bottom-tool-trigger');
@@ -203,7 +203,7 @@ export const validEvents = {
 
             const warnMenu = wikishield.interface.elem("#warn-menu");
             warnMenu.innerHTML = "";
-            wikishield.interface.createWarnMenu(warnMenu, wikishield.queue.currentEdit);
+            wikishield.interface.createWarnMenu(warnMenu, wikishield.queue.currentEdit[wikishield.queue.currentQueueTab]);
 
             if (menuItem) {
                 const trigger = menuItem.querySelector('.bottom-tool-trigger');

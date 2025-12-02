@@ -19,15 +19,13 @@ export class WikiShieldAPI {
 	}
 
 	buildMessage(base, custom) {
-		const watermark = "([[:en:Wikipedia:Wikishield|WS]])";
-		if (custom) {
-			return `${base}: ${custom} ${watermark}`;
-		} else {
-			return `${base} ${watermark}`;
-		}
+		const watermark = " ([[:en:WP:WikiShield|WS]])";
+
+		const message = `${base}${custom ? `: ${custom}` : ""}`;
+		return `${this.wikishield.util.maxStringLength(message, 500 - watermark.length)}${watermark}`; // limit to 500 chars, watermark should always be included hehe
 	}
 	buildUser(username) {
-		return `[[Special:Contributions/${username}|${username}]] ([[User talk:${username}|talk]])`;
+		return `[[Special:Contribs/${username}|${username}]] ([[User talk:${username}|talk]])`;
 	}
 
 	/**
@@ -207,7 +205,7 @@ export class WikiShieldAPI {
 				"action": "query",
 				"prop": "revisions",
 				"revids": revid,
-				"rvprop": "ids|user|comment|timestamp|size|tags",
+				"rvprop": "ids|user|comment|timestamp|size|tags|flags",
 				"format": "json",
 				"formatversion": 2
 			});
@@ -225,11 +223,36 @@ export class WikiShieldAPI {
 				comment: rev.comment || "",
 				timestamp: rev.timestamp,
 				size: rev.size,
-				oldlen: rev.parentid ? null : 0  // Will need to fetch parent for actual oldlen
+				oldlen: rev.parentid ? await this.getRevisionSize(rev.parentid) : 0,
+				tags: rev.tags || [],
+				minor: rev.minor || false
 			};
 		} catch (err) {
 			this.logger?.log(`Could not fetch revision data for revid ${revid}: ${err}`);
 			return null;
+		}
+	}
+
+	async getRevisionSize(revid) {
+		try {
+			const response = await this.api.get({
+				"action": "query",
+				"prop": "revisions",
+				"revids": revid,
+				"rvprop": "size",
+				"format": "json",
+				"formatversion": 2
+			});
+
+			const page = response.query.pages[0];
+			if (page.missing || !page.revisions || page.revisions.length === 0) {
+				return 0;
+			}
+
+			return page.revisions[0].size;
+		} catch (err) {
+			this.logger?.log(`Could not fetch revision size for revid ${revid}: ${err}`);
+			return 0;
 		}
 	}
 
@@ -850,7 +873,7 @@ export class WikiShieldAPI {
 								"titles": obj.title,
 								"rvstartid": obj.revid,
 								"rvlimit": 1,
-								"rvprop": "title|ids|sizes|flags|user|tags|comment|timestamp",
+								"rvprop": "title|ids|size|flags|user|tags|comment|timestamp",
 								"format": "json",
 								"formatversion": 2
 							});
@@ -858,7 +881,12 @@ export class WikiShieldAPI {
 						}
 
 						const page = revision.query.pages[0];
-						return { title: obj.title, ...page.revisions[0], __FLAGGED__: obj };
+						return {
+							title: obj.title,
+							sizediff: obj.diff_size,
+							...page.revisions[0],
+							__FLAGGED__: obj
+						};
 					}));
 
 					const list = promise.filter(p => p.status === "fulfilled").map(p => p.value);
@@ -867,43 +895,33 @@ export class WikiShieldAPI {
 					}
 
 					const cache = { };
-					for (const item of list) {
-						if (item.title in cache) {
-							cache[item.title].count++;
-							if (item.user in cache[item.title].users) {
-								cache[item.title].users[item.user]++;
-							} else {
-								cache[item.title].users[item.user] = 1;
-							}
-
-							if (item.revid > cache[item.title].newRevid) {
-								cache[item.title].newRevid = item.revid;
-								cache[item.title].newLen = item.newlen;
-								cache[item.title].newTimestamp = item.timestamp;
-							}
-
-							// <= because if SOMEHOW, an editor gets two back-to-back revids, it needs to account that previous = this one
-							if (item.old_revid <= cache[item.title].priorRevid) {
-								cache[item.title].priorRevid = item.old_revid;
-								cache[item.title].priorLen = item.oldlen;
-								cache[item.title].oldTimestamp = item.timestamp;
-							}
-						} else {
-							cache[item.title] = {
-								count: 1,
-								users: { [item.user]: 1 },
-
-								newRevid: item.revid,
-								priorRevid: item.old_revid,
-
-								newLen: item.newlen,
-								priorLen: item.oldlen,
-
-								newTimestamp: item.timestamp,
-								oldTimestamp: item.timestamp,
-							};
+					await Promise.allSettled(list.map(async item => {
+						const between = await this.getRevisionsBetween(item.title, item.__FLAGGED__.stable_revid, item.revid); // newest first
+						if (between.length < 2) {
+							return;
 						}
-					}
+
+						const stable = between.pop(); // Remove the stable revision itself
+						cache[item.title] = {
+							count: between.length,
+							users: between.reduce((acc, rev) => {
+								if (rev.user in acc) {
+									acc[rev.user]++;
+								} else {
+									acc[rev.user] = 1;
+								}
+								return acc;
+							}, { }),
+
+							newRevid: item.revid,
+							priorRevid: stable.revid,
+
+							diff_size: item.size - stable.size,
+
+							newTimestamp: item.timestamp,
+							oldTimestamp: between[between.length - 1].timestamp,
+						};
+					}));
 
 					return cache;
 				} break;
@@ -932,9 +950,9 @@ export class WikiShieldAPI {
 		}
 	}
 
-	async rejectFlaggedEdit(edit, summary) {
+	async rejectFlaggedEdit(edit, summary, stableId) {
 		try {
-			const stableText = await this.getTextByRevid(edit.__FLAGGED__.priorRevid);
+			const stableText = await this.getTextByRevid(stableId);
 			const res = await this.api.postWithToken("csrf", {
 				"action": "edit",
 				"title": edit.page.title,
@@ -948,6 +966,27 @@ export class WikiShieldAPI {
 		} catch (err) {
 			console.error(err);
 			return false;
+		}
+	}
+
+	async getRevisionsBetween(page, startRevid, endRevid) {
+		try {
+			const response = await this.api.get({
+				"action": "query",
+				"prop": "revisions",
+				"titles": page,
+				"rvstartid": endRevid,
+				"rvendid": startRevid,
+				"rvprop": "title|ids|size|flags|user|tags|comment|timestamp",
+				"rvlimit": "max",
+				"format": "json",
+				"formatversion": 2
+			});
+			const revisions = response.query.pages[0].revisions;
+			return revisions;
+		} catch (err) {
+			this.logger?.log(`Could not fetch revisions between ${startRevid} and ${endRevid} for page ${page}: ${err}`);
+			return [];
 		}
 	}
 

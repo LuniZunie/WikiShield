@@ -971,7 +971,7 @@ body {
                         align-items: center;
                         justify-content: space-between;
                         flex-shrink: 0;
-                        height: 56px; /* TODO test 50px */
+                        height: 56px;
 
                         position: relative;
                         z-index: 2;
@@ -3760,6 +3760,7 @@ select, input:not([type=range]), textarea, button {
 
     max-width: 460px;
     min-width: 0;
+    max-height: 80vh;
 
     position: fixed;
     left: 0;
@@ -3771,6 +3772,7 @@ select, input:not([type=range]), textarea, button {
     padding: 12px 16px;
 
     overflow-wrap: break-word;
+    overflow: hidden auto;
 
     font-size: .95em;
     line-height: 1.45;
@@ -3840,8 +3842,8 @@ select, input:not([type=range]), textarea, button {
         border-color: rgba(255, 255, 255, .04);
 
         background: linear-gradient(135deg,
-            rgba(255, 255, 255, .025),
-            rgba(0, 0, 0, .06)
+            rgba(255, 255, 255, .075),
+            rgba(0, 0, 0, .25)
         );
 
         &:is(.user-warnings, .user-blocks) {
@@ -3869,26 +3871,33 @@ select, input:not([type=range]), textarea, button {
                 );
             }
 
-            & > :is(.tooltip-item-user, .tooltip-item-time) {
-                position: absolute;
-                bottom: 6px;
+            & > .tooltip-item-details {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
 
-                font-size: .82em;
-                font-weight: 400;
+                & > :is(.tooltip-item-user, .tooltip-item-time) {
+                    position: absolute;
+                    bottom: 6px;
 
-                opacity: .8;
+                    font-size: .82em;
+                    font-weight: 400;
 
-                &.tooltip-item-user {
-                    left: 10px;
+                    opacity: .8;
 
-                    /* Theme dependent */
-                    color: rgba(150, 210, 255, .9);
-                }
-                &.tooltip-item-time {
-                    right: 10px;
+                    &.tooltip-item-user {
+                        left: 10px;
 
-                    /* Theme dependent */
-                    color: rgba(220, 225, 235, .9);
+                        /* Theme dependent */
+                        color: rgba(150, 210, 255, .9);
+                    }
+                    &.tooltip-item-time {
+                        right: 10px;
+
+                        /* Theme dependent */
+                        color: rgba(220, 225, 235, .9);
+                    }
                 }
             }
         }
@@ -4352,11 +4361,11 @@ select, input:not([type=range]), textarea, button {
     text-shadow: 0 1px 0 rgba(0, 0, 0, .35);
 
     background: linear-gradient(135deg,
-        rgba(var(--background), .2),
-        rgba(var(--background), .06)
+        rgba(var(--background), .5),
+        rgba(var(--background), .3)
     );
-    -webkit-backdrop-filter: blur(6px);
-            backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px) brightness(0%);
+            backdrop-filter: blur(6px) brightness(0%);
 
     &.red {
         /* Theme dependent */
