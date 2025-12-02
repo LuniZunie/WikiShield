@@ -240,14 +240,6 @@ export class WikiShieldInterface {
 		let dots = [];
 		let animationFrame;
 
-		// Set canvas size
-		const resizeCanvas = () => {
-			canvas.width = window.innerWidth;
-			canvas.height = window.innerHeight;
-		};
-		resizeCanvas();
-		window.addEventListener('resize', resizeCanvas);
-
 		// Create dots
 		class Dot {
 			constructor() {
@@ -288,14 +280,58 @@ export class WikiShieldInterface {
 			}
 		}
 
-		// Initialize dots (one per 5000 pixels)
-		const numDots = Math.floor((canvas.width * canvas.height) / 5000);
-		for (let i = 0; i < numDots; i++) {
-			dots.push(new Dot());
-		}
+		// Set canvas size
+		const resizeCanvas = () => {
+			const oldWidth = canvas.width;
+			const oldHeight = canvas.height;
 
-		// Animation loop
+			canvas.width = window.innerWidth;
+			canvas.height = window.innerHeight;
+
+			const scaleX = canvas.width / oldWidth;
+			const scaleY = canvas.height / oldHeight;
+
+			// Rescale all existing dots
+			dots.forEach(dot => {
+				dot.x *= scaleX;
+				dot.y *= scaleY;
+			});
+
+			const idealCount = Math.floor((canvas.width * canvas.height) / 5000);
+			if (idealCount > dots.length) {
+				for (let i = dots.length; i < idealCount; i++) {
+					dots.push(new Dot());
+				}
+			} else if (idealCount < dots.length) {
+				dots.length = idealCount;
+			}
+		};
+		resizeCanvas();
+		window.addEventListener('resize', resizeCanvas);
+
+		let lastTimestamp = performance.now();
+		const lastDeltaTimes = new Array(15).fill(1000 / 60); // Start with 60 FPS
 		const animate = () => {
+			{ // FPS calculation
+				const now = performance.now();
+
+				const deltaTime = now - lastTimestamp;
+				lastTimestamp = now;
+
+				lastDeltaTimes.shift();
+				lastDeltaTimes.push(deltaTime);
+
+				const noOutliers = [ ...lastDeltaTimes ].sort((a, b) => a - b).slice(2, -2);
+
+				const averageDeltaTime = noOutliers.reduce((a, b) => a + b, 0) / noOutliers.length;
+				const fps = 1000 / averageDeltaTime;
+
+				if (fps < 30) {
+					ctx.clearRect(0, 0, canvas.width, canvas.height);
+					return;
+				}
+			}
+
 			ctx.clearRect(0, 0, canvas.width, canvas.height);
 
 			// Update and draw dots
@@ -307,20 +343,38 @@ export class WikiShieldInterface {
 			// Draw lines between close dots
 			const length = dots.length;
 			for (let i = 0; i < length; i++) {
+				const a = dots[i];
+
 				for (let j = i + 1; j < length; j++) {
-					const dx = dots[i].x - dots[j].x;
-					const dy = dots[i].y - dots[j].y;
+					const b = dots[j];
+
+					// Compute wrapped distances
+					let dx = a.x - b.x;
+					let dy = a.y - b.y;
+
+					// Wrap horizontally
+					if (dx > canvas.width / 2) dx -= canvas.width;
+					if (dx < -canvas.width / 2) dx += canvas.width;
+
+					// Wrap vertically
+					if (dy > canvas.height / 2) dy -= canvas.height;
+					if (dy < -canvas.height / 2) dy += canvas.height;
+
 					const distance = Math.sqrt(dx * dx + dy * dy);
 
 					if (distance < 150) {
 						ctx.beginPath();
-						ctx.moveTo(dots[i].x, dots[i].y);
-						ctx.lineTo(dots[j].x, dots[j].y);
+						ctx.moveTo(a.x, a.y);
+						ctx.lineTo(a.x - dx, a.y - dy);  // wrapped endpoint
 						const opacity = (1 - distance / 150) * 0.4;
-						// Blend colors between dots
-						const avgR = (parseInt(dots[i].color.split(',')[0]) + parseInt(dots[j].color.split(',')[0])) / 2;
-						const avgG = (parseInt(dots[i].color.split(',')[1]) + parseInt(dots[j].color.split(',')[1])) / 2;
-						const avgB = (parseInt(dots[i].color.split(',')[2]) + parseInt(dots[j].color.split(',')[2])) / 2;
+
+						const aSplit = a.color.split(',');
+						const bSplit = b.color.split(',');
+
+						const avgR = (parseInt(aSplit[0]) + parseInt(bSplit[0])) / 2;
+						const avgG = (parseInt(aSplit[1]) + parseInt(bSplit[1])) / 2;
+						const avgB = (parseInt(aSplit[2]) + parseInt(bSplit[2])) / 2;
+
 						ctx.strokeStyle = `rgba(${avgR}, ${avgG}, ${avgB}, ${opacity})`;
 						ctx.lineWidth = 1;
 						ctx.stroke();
