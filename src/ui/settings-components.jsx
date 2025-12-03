@@ -30,6 +30,33 @@ export class Toggle extends Component {
 	}
 }
 
+export class Radio extends Component {
+	render() {
+		const { value, options = [], onChange, name, id } = this.props;
+
+		return (
+			<div
+				id={id || ''}
+				class="settings-radio-group"
+			>
+				{options.map((option) => (
+					<div
+						data-key={option.value}
+						class={`settings-radio-option ${value === option.value ? 'selected' : ''}`}
+						onClick={e => {
+							e.target.closest('.settings-radio-group').querySelectorAll('.settings-radio-option.selected').forEach(el => el.classList.remove('selected'));
+							e.target.classList.add('selected');
+							onChange(option.value);
+						}}
+					>
+						{option.label}
+					</div>
+				))}
+			</div>
+		);
+	}
+}
+
 /**
  * Numeric Input Component
  */
@@ -340,6 +367,31 @@ export class GeneralSettings extends Component {
 	}
 }
 
+export class PerformanceSettings extends Component { // ts don't do shit
+	render() {
+		return (
+			<div>
+				<SettingsSection
+					title="Startup Animation"
+					description="Enable or disable the startup animation when launching WikiShield"
+				>
+					<Radio
+						id="performance-mode"
+						name="performance-mode"
+						value={this.props.startup}
+						options={[
+							{ value: 'always_off', label: 'Always Off' },
+							{ value: 'auto', label: 'Auto' },
+							{ value: 'always_on', label: 'Always On' }
+						]}
+						onChange={this.props.onStartupChange}
+					/>
+				</SettingsSection>
+			</div>
+		);
+	}
+}
+
 /**
  * Audio Settings Panel Component
  */
@@ -439,7 +491,7 @@ export class AudioSettings extends Component {
 /**
  * Appearance Settings Panel Component
  */
-export class PaletteSettings extends Component {
+export class QueueSettings extends Component {
 	constructor(props) {
 		super(props);
 		this.state = {

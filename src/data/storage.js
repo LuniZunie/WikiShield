@@ -413,6 +413,10 @@ class Version1 extends Version {
                     palette: 0,
                 },
 
+                performance: {
+                    startup: "auto",
+                },
+
                 namespaces: [ 0 ],
 
                 queue: {
@@ -799,6 +803,10 @@ class Version1 extends Version {
                     palette: this.sanitize([ "options", "selectedPalette" ], defaults.settings.theme.palette),
                 },
 
+                performance: {
+                    startup: defaults.settings.performance.startup, // did not exist in v0
+                },
+
                 namespaces: this.sanitize([ "options", "namespacesShown" ], defaults.settings.namespaces),
 
                 queue: {
@@ -1145,6 +1153,20 @@ class Version1 extends Version {
                     const value = root.settings.theme.palette;
                     if (!(typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 3)) {
                         this.reset("settings", "theme", "palette");
+                    }
+                }
+            }
+
+            { // root.settings.performance
+                const scope = root.settings.performance;
+                this.restrictObject(scope, "settings", "performance");
+
+                { // root.settings.performance.startup
+                    const validValues = new Set([ "always_off", "auto", "always_on" ]);
+                    const value = root.settings.performance.startup;
+
+                    if (!validValues.has(value)) {
+                        this.reset("settings", "performance", "startup");
                     }
                 }
             }

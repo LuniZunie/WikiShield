@@ -100,7 +100,7 @@ export class WikiShield {
 			if (typeof welcome.template === "string") {
 				this.api.pageExists(welcome.template.replace(/^subst:/, "Template:"))
 					.then(exists => {
-						if (!exists) {
+						if (exists === false) {
 							welcome.hide = true;
 						}
 					});
@@ -990,9 +990,11 @@ export class WikiShield {
 				}
 			}
 
+			const content = `{{${template.template}}}${template.sign ? ` ~~~~` : ""}`;
+
 			await this.api.edit(
 				talkPageName,
-				template.template,
+				content,
 				this.api.buildMessage("Welcoming to Wikipedia")
 			);
 

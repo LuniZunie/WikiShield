@@ -10,9 +10,10 @@ import { wikishieldHTML } from './templates.js';
 import { warningsLookup, getWarningFromLookup } from '../data/warnings.js';
 import {
 	GeneralSettings,
+	PerformanceSettings,
 	AudioSettings,
 
-	PaletteSettings,
+	QueueSettings,
 	ZenSettings,
 
 	WhitelistSettings,
@@ -406,10 +407,11 @@ export class WikiShieldSettingsInterface {
 
 		[
 			["#settings-general-button", this.openGeneral.bind(this)],
+			["#settings-performance-button", this.openPerformance.bind(this)],
 			["#settings-audio-button", this.openAudio.bind(this)],
 			["#settings-controls-button", this.openControls.bind(this)],
 
-			["#settings-palette-button", this.openPalette.bind(this)],
+			["#settings-queue-button", this.openQueue.bind(this)],
 			["#settings-zen-mode-button", this.openZen.bind(this)],
 
 			["#settings-ai-button", this.openAI.bind(this)],
@@ -484,6 +486,20 @@ export class WikiShieldSettingsInterface {
 						settings.namespaces = settings.namespaces.filter(n => n !== nsid);
 					}
 				},
+			})
+		);
+	}
+
+	openPerformance() {
+		const settings = this.wikishield.storage.data.settings;
+		this.renderComponent(
+			h(PerformanceSettings, {
+				wikishield: this.wikishield,
+
+				startup: settings.performance.startup,
+				onStartupChange: (value) => {
+					settings.performance.startup = value;
+				}
 			})
 		);
 	}
@@ -771,9 +787,9 @@ export class WikiShieldSettingsInterface {
 	/**
 	* Open appearance settings section (Dark mode only)
 	*/
-	openPalette() {
+	openQueue() {
 		this.renderComponent(
-			h(PaletteSettings, {
+			h(QueueSettings, {
 				wikishield: this.wikishield,
 				selectedPalette: this.wikishield.storage.data.settings.theme.palette,
 				colorPalettes,

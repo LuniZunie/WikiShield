@@ -8,6 +8,61 @@ const __TAGS__ = serversWithTags.has(mw.config.get("wgServerName")) ? "WikiShiel
 
 export const __pendingChangesServer__ = new Set([ "en.wikipedia.org", "de.wikipedia.org" ]);
 
+class Memory {
+	constructor(options = {}) {
+		this.order = [ ];
+		this.store = new Map();
+		this.timeouts = new Map();
+
+		this.timeout = options.timeout || 5 * 60 * 1000; // Default 5 minutes
+		this.maxSize = options.size || 1000; // Default max 1000 items
+	}
+
+	clear() {
+		this.store.clear();
+		this.timeouts.clear();
+	}
+
+	has(key) {
+		return this.store.has(key);
+	}
+
+	get(key) {
+		return this.store.get(key);
+	}
+
+	set(key, value) {
+		this.order.push(key);
+		this.store.set(key, value);
+
+		this.timeouts.set(key, setTimeout(() => { this.delete(key); }, this.timeout));
+
+		if (this.store.size > this.maxSize) {
+			const oldestKey = this.order.shift();
+			this.delete(oldestKey);
+		}
+	}
+
+	delete(key) {
+		this.store.delete(key);
+
+		clearTimeout(this.timeouts.get(key));
+		this.timeouts.delete(key);
+	}
+
+	size() {
+		return this.store.size;
+	}
+}
+
+const CACHE = {
+	diffs: new Memory(),
+	revSize: new Memory(),
+	revidToTitle: new Memory(),
+	categories: new Memory(),
+	ores: new Memory(),
+};
+
 export class WikiShieldAPI {
 	constructor(wikishield, api, options = {}) {
 		this.wikishield = wikishield;
@@ -26,6 +81,104 @@ export class WikiShieldAPI {
 	}
 	buildUser(username) {
 		return `[[Special:Contribs/${username}|${username}]] ([[User talk:${username}|talk]])`;
+	}
+
+	async getMultipleRevisionsInfo(requests) {
+		const username = mw.config.get("wgUserName");
+
+		const titles = [ ...new Set(requests.map(r => r.edit.title)) ];
+		const users = [ ...new Set(requests.map(r => r.edit.user)) ];
+		const revids = [ ...new Set(requests.map(r => r.edit.revid)) ];
+
+		const result = Array.from({ length: requests.length }, () => ({}));
+		const promises = [ ];
+
+		promises.push(this.editCount(users.join("|")).then(data => {
+			requests.forEach((request, index) => {
+				result[index].userEditCount = data[request.edit.user];
+			});
+		}));
+		promises.push(this.pageExists(users.map(u => `User talk:${u}`).join("|")).then(data => {
+			requests.forEach((request, index) => {
+				result[index].userTalk = data[`User talk:${request.edit.user}`];
+			});
+		}));
+		promises.push(this.isBlocked(users.join("|")).then(data => {
+			requests.forEach((request, index) => {
+				result[index].userBlocked = Boolean(data[request.edit.user]);
+			});
+		}));
+
+		promises.push(this.categories(titles.join("|")).then(data => {
+			requests.forEach((request, index) => {
+				result[index].pageCategories = data[request.edit.title];
+			});
+		}));
+		promises.push(this.getPageProtection(titles.join("|")).then(data => {
+			requests.forEach((request, index) => {
+				result[index].pageProtection = data[request.edit.title];
+			});
+		}));
+
+		promises.push(this.ores(revids.join("|")).then(data => {
+			requests.forEach((request, index) => {
+				result[index].editOres = data[request.edit.revid] || 0;
+			});
+		}));
+
+		for (const user of users) {
+			promises.push(this.contribs(user).then(data => {
+				requests.forEach((request, index) => {
+					if (request.edit.user === user) {
+						result[index].userContribs = data;
+					}
+				});
+			}));
+			promises.push(this.getBlocks(user).then(data => {
+				requests.forEach((request, index) => {
+					if (request.edit.user === user) {
+						result[index].userBlocks = data;
+					}
+				});
+			}));
+		}
+
+		for (const title of titles) {
+			promises.push(this.countReverts(title, username).then(data => {
+				requests.forEach((request, index) => {
+					if (request.edit.title === title) {
+						result[index].revertCount = data;
+					}
+				});
+			}));
+
+			promises.push(this.getPageMetadata(title).then(data => {
+				requests.forEach((request, index) => {
+					if (request.edit.title === title) {
+						result[index].pageMetadata = data;
+					}
+				});
+			}));
+			promises.push(this.history(title).then(data => {
+				requests.forEach((request, index) => {
+					if (request.edit.title === title) {
+						result[index].pageHistory = data;
+					}
+				});
+			}));
+		}
+
+		const length = requests.length;
+		for (let i = 0; i < length; i++) {
+			const request = requests[i];
+			promises.push(this.diff(request.edit.title, request.prevId, request.edit.revid).then(data => {
+				result[i].editDiff = data;
+			}));
+		}
+
+		await Promise.all(promises);
+
+		return result;
 	}
 
 	/**
@@ -49,7 +202,7 @@ export class WikiShieldAPI {
 
 			return true;
 		} catch (err) {
-			this.logger?.log(`Could not edit page ${title}: ${err}`);
+			console.log(`Could not edit page ${title}: ${err}`);
 			return false;
 		}
 	}
@@ -94,7 +247,7 @@ export class WikiShieldAPI {
 
 			return true;
 		} catch (err) {
-			this.logger?.log(`Could not create new section on page ${title}: ${err}`);
+			console.log(`Could not create new section on page ${title}: ${err}`);
 			return false;
 		}
 	}
@@ -124,10 +277,9 @@ export class WikiShieldAPI {
 				return [page.title, page.missing ? "" : page.revisions[0].slots.main.content];
 			});
 
-			return pages
-			.reduce((a, v) => ({ ...a, [v[0]]: v[1] }), {});
+			return pages.reduce((a, v) => ({ ...a, [v[0]]: v[1] }), {});
 		} catch (err) {
-			this.logger?.log(`Could not fetch page ${titles}: ${err}`);
+			console.log(`Could not fetch page ${titles}: ${err}`);
 		}
 	}
 
@@ -147,21 +299,28 @@ export class WikiShieldAPI {
 
 	/**
 	* Check if a page exists
-	* @param {String} title The title of the page to check
+	* @param {String} titles The titles of the pages to check, separated by "|"
 	* @returns {Promise<Boolean>} Whether the page exists
 	*/
-	async pageExists(title) {
+	async pageExists(titles) {
 		try {
 			const response = await this.api.get({
 				"action": "query",
-				"titles": title,
+				"prop": "revisions",
+				"titles": titles,
+				"rvprop": "content",
+				"rvslots": "*",
 				"format": "json",
 				"formatversion": 2
 			});
 
-			return response.query.pages[0].missing !== true;
+			const pages = response.query.pages.map(page => {
+				return [page.title, page.missing ? false : page.revisions[0].slots.main.content];
+			});
+
+			return pages.reduce((a, v) => ({ ...a, [v[0]]: v[1] }), {});
 		} catch (err) {
-			this.logger?.log(`Could not check if page ${title} exists: ${err}`);
+			console.log(`Could not check if page ${titles} exists: ${err}`);
 			return false;
 		}
 	}
@@ -190,7 +349,7 @@ export class WikiShieldAPI {
 			const page = response.query.pages[0];
 			return page.missing ? "" : page.revisions[0].slots.main.content;
 		} catch (err) {
-			this.logger?.log(`Could not fetch page with revid ${revid}: ${err}`);
+			console.log(`Could not fetch page with revid ${revid}: ${err}`);
 		}
 	}
 
@@ -228,13 +387,17 @@ export class WikiShieldAPI {
 				minor: rev.minor || false
 			};
 		} catch (err) {
-			this.logger?.log(`Could not fetch revision data for revid ${revid}: ${err}`);
+			console.log(`Could not fetch revision data for revid ${revid}: ${err}`);
 			return null;
 		}
 	}
 
 	async getRevisionSize(revid) {
 		try {
+			if (CACHE.revSize.has(revid)) {
+				return CACHE.revSize.get(revid);
+			}
+
 			const response = await this.api.get({
 				"action": "query",
 				"prop": "revisions",
@@ -246,18 +409,25 @@ export class WikiShieldAPI {
 
 			const page = response.query.pages[0];
 			if (page.missing || !page.revisions || page.revisions.length === 0) {
+				CACHE.revSize.set(revid, 0);
 				return 0;
 			}
 
-			return page.revisions[0].size;
+			const size = page.revisions[0].size;
+			CACHE.revSize.set(revid, size);
+			return size;
 		} catch (err) {
-			this.logger?.log(`Could not fetch revision size for revid ${revid}: ${err}`);
+			console.log(`Could not fetch revision size for revid ${revid}: ${err}`);
 			return 0;
 		}
 	}
 
 	async getPageTitleFromRevid(revid) {
 		try {
+			if (CACHE.revidToTitle.has(revid)) {
+				return CACHE.revidToTitle.get(revid);
+			}
+
 			const response = await this.api.get({
 				"action": "query",
 				"prop": "revisions",
@@ -266,9 +436,11 @@ export class WikiShieldAPI {
 				"formatversion": 2
 			});
 
-			return response.query.pages[0].title;
+			const title = response.query.pages[0].title;
+			CACHE.revidToTitle.set(revid, title);
+			return title;
 		} catch (err) {
-			this.logger?.log(`Could not fetch page title for revid ${revid}: ${err}`);
+			console.log(`Could not fetch page title for revid ${revid}: ${err}`);
 		}
 	}
 
@@ -281,19 +453,33 @@ export class WikiShieldAPI {
 	*/
 	async diff(title, old_revid, revid, difftype = "table") {
 		try {
-			const response = await this.api.get({
+			const cacheKey = `${old_revid}-${revid}`;
+			if (CACHE.diffs.has(cacheKey)) {
+				return CACHE.diffs.get(cacheKey);
+			}
+
+			const params = {
 				"action": "compare",
-				"fromrev": old_revid,
 				"torev": revid,
 				"prop": "diff",
 				"format": "json",
 				"difftype": difftype,
 				"formatversion": 2
-			});
+			};
+			if (old_revid) {
+				params.fromrev = old_revid;
+			} else {
+				params.fromslots = "main";
+				params["fromtext-main"] = "";
+			}
 
-			return response.compare.body;
+			const response = await this.api.get(params);
+
+			const rtn = response.compare.body;
+			CACHE.diffs.set(cacheKey, rtn);
+			return rtn;
 		} catch (err) {
-			this.logger?.log(`Could not fetch diff for page ${title}: ${err}`);
+			console.log(`Could not fetch diff for page ${title}: ${err}`);
 		}
 	}
 
@@ -324,29 +510,35 @@ export class WikiShieldAPI {
 
 			return revisions.filter(revision => revision.tags.some(tag => tag === "mw-undo" || tag === "mw-rollback" || tag === "mw-manual-revert")).length;
 		} catch (err) {
-			this.logger?.log(`Could not fetch revert count for page ${title}: ${err}`);
+			console.log(`Could not fetch revert count for page ${title}: ${err}`);
 		}
 	}
 
 	/**
-	* Get the categories of the revision
-	* @param {Number} revid The revision ID
+	* Get the categories of the title
+	* @param {String} titles The titles to get categories for, separated by "|"
 	* @returns {Promise<Object>} The categories object
 	*/
-	async categories(revid) {
+	async categories(titles) {
 		try {
+			if (CACHE.categories.has(titles)) {
+				return CACHE.categories.get(titles);
+			}
+
 			const response = await this.api.get({
 				"action": "query",
 				"prop": "categories",
-				"revids": revid,
+				"titles": titles,
 				"cllimit": "max",
 				"format": "json",
 				"formatversion": 2
 			});
 
-			return response.query.pages[0].categories;
+			const categories = response.query.pages.reduce((acc, page) => ({ ...acc, [page.title]: page.categories ? page.categories.map(cat => cat.title) : [] }), {});
+			CACHE.categories.set(titles, categories);
+			return categories;
 		} catch (err) {
-			this.logger?.log(`Could not fetch categories for revision ${revid}: ${err}`);
+			console.log(`Could not fetch categories for revision ${titles}: ${err}`);
 		}
 	}
 
@@ -412,8 +604,8 @@ export class WikiShieldAPI {
 
 			if (!foundEnd && response.continue) {
 				continueObj = response.continue;
-			} else if (!foundEnd) {
-				priorRevision = "created";
+			} else if (!foundEnd) { // TODO remove "user created this page" icon
+				priorRevision = 0; // Created
 				foundEnd = true;
 			}
 		}
@@ -453,7 +645,7 @@ export class WikiShieldAPI {
 
 			return response.query.usercontribs;
 		} catch (err) {
-			this.logger?.log(`Could not fetch contributions for user ${user}: ${err}`);
+			console.log(`Could not fetch contributions for user ${user}: ${err}`);
 		}
 	}
 
@@ -473,9 +665,9 @@ export class WikiShieldAPI {
 				"formatversion": 2
 			});
 
-			return response.query.users;
+			return response.query.users.reduce((acc, user) => ({ ...acc, [user.name]: user.editcount }), {});
 		} catch (err) {
-			this.logger?.log(`Could not fetch edit count for users ${users}: ${err}`);
+			console.log(`Could not fetch edit count for users ${users}: ${err}`);
 		}
 	}
 
@@ -498,32 +690,7 @@ export class WikiShieldAPI {
 
 			return response.query.logevents;
 		} catch (err) {
-			this.logger?.log(`Could not fetch filter log for user ${user}: ${err}`);
-		}
-	}
-
-	/**
-	* Get the number of times a user has been blocked
-	* @param {String} user The username to check
-	* @returns {Promise<Number>} The number of blocks
-	*/
-	async getBlockCount(user) {
-		try {
-			const response = await this.api.get({
-				"action": "query",
-				"list": "logevents",
-				"letype": "block",
-				"letitle": `User:${user}`,
-				"leaction": "block/block",
-				"lelimit": "max",
-				"format": "json",
-				"formatversion": 2
-			});
-
-			return response.query.logevents ? response.query.logevents.length : 0;
-		} catch (err) {
-			console.log(`Could not fetch block count for user ${user}:`, err);
-			return 0;
+			console.log(`Could not fetch filter log for user ${user}: ${err}`);
 		}
 	}
 
@@ -532,7 +699,7 @@ export class WikiShieldAPI {
 	* @param {String} user The username
 	* @returns {Promise<Array>} Array of block log entries
 	*/
-	async getBlockHistory(user) {
+	async getBlocks(user) {
 		try {
 			const response = await this.api.get({
 				"action": "query",
@@ -540,7 +707,7 @@ export class WikiShieldAPI {
 				"letype": "block",
 				"letitle": `User:${user}`,
 				"leaction": "block/block",
-				"lelimit": 10,
+				"lelimit": "max",
 				"leprop": "user|timestamp|comment|details",
 				"format": "json",
 				"formatversion": 2
@@ -564,16 +731,21 @@ export class WikiShieldAPI {
 				"action": "query",
 				"prop": "revisions",
 				"titles": page,
-				"rvprop": "title|ids|timestamp|comment|flags|sizediff|user|tags|size",
+				"rvprop": "title|ids|timestamp|comment|flags|user|tags|size",
 				"rvlimit": 11,
 				"format": "json",
 				"formatversion": 2
 			});
 
-			const revisions = response.query.pages[0].revisions;
+			const pageData = response.query.pages[0];
+			const revisions = pageData.revisions;
 
 			const count = Math.min(this.historyCount, revisions.length);
 			for (let i = 0; i < count; i++) {
+				revisions[i].ns = pageData.ns;
+				revisions[i].pageid = pageData.pageid;
+				revisions[i].title = pageData.title;
+
 				if (i + 1 < revisions.length) {
 					revisions[i].sizediff = revisions[i].size - revisions[i + 1].size;
 				} else {
@@ -583,57 +755,57 @@ export class WikiShieldAPI {
 
 			return revisions.splice(0, this.historyCount);
 		} catch (err) {
-			this.logger?.log(`Could not fetch history for page ${page}: ${err}`);
+			console.log(`Could not fetch history for page ${page}: ${err}`);
 		}
 	}
 
 	/**
 	* Get page protection information
-	* @param {String} page The page title
+	* @param {String} titles The page titles
 	* @returns {Promise<Object>} Protection info with level and type
 	*/
-	async getPageProtection(page) {
+	async getPageProtection(titles) {
 		try {
 			const response = await this.api.get({
 				"action": "query",
-				"titles": page,
+				"titles": titles,
 				"prop": "info",
 				"inprop": "protection",
 				"format": "json",
 				"formatversion": 2
 			});
 
-			const pageData = response.query.pages[0];
-			if (pageData && pageData.protection && pageData.protection.length > 0) {
-				// Get the highest protection level
-				const protections = pageData.protection;
-				let highestLevel = null;
-				let types = [];
+			return response.query.pages.reduce((acc, page) => {
+				if (page.protection && page.protection.length > 0) {
+					// Get the highest protection level
+					const protections = page.protection;
+					let highestLevel = null;
+					let types = [];
 
-				for (const prot of protections) {
-					if (prot.type !== "edit") {
-						continue;
+					for (const prot of protections) {
+						if (prot.type !== "edit") {
+							continue;
+						}
+
+						if (prot.level === "sysop") {
+							highestLevel = "full";
+						} else if (prot.level === "autoconfirmed" && highestLevel !== "full") {
+							highestLevel = "semi";
+						} else if (prot.level === "extendedconfirmed" && highestLevel !== "full") {
+							highestLevel = "extended";
+						}
 					}
 
-					if (prot.level === "sysop") {
-						highestLevel = "full";
-					} else if (prot.level === "autoconfirmed" && highestLevel !== "full") {
-						highestLevel = "semi";
-					} else if (prot.level === "extendedconfirmed" && highestLevel !== "full") {
-						highestLevel = "extended";
-					}
+					acc[page.title] = { protected: true, level: highestLevel };
+				} else {
+					acc[page.title] = { protected: false };
 				}
 
-				return {
-					protected: true,
-					level: highestLevel
-				};
-			}
-
-			return { protected: false };
+				return acc;
+			}, {});
 		} catch (err) {
 			console.log(`Could not fetch protection info for ${page}:`, err);
-			return { protected: false };
+			return {};
 		}
 	}
 
@@ -688,7 +860,7 @@ export class WikiShieldAPI {
 
 			return result;
 		} catch (err) {
-			this.logger?.log(`Could not fetch latest revisions: ${err}`);
+			console.log(`Could not fetch latest revisions: ${err}`);
 			return {};
 		}
 	}
@@ -780,7 +952,7 @@ export class WikiShieldAPI {
 
 			return result;
 		} catch (err) {
-			this.logger?.log(`Could not fetch metadata for page ${page}: ${err}`);
+			console.log(`Could not fetch metadata for page ${page}: ${err}`);
 			return { dateFormat: "Unknown", englishVariant: "Unknown" };
 		}
 	}
@@ -796,7 +968,7 @@ export class WikiShieldAPI {
 			});
 			return response.parse?.text || "";
 		} catch (err) {
-			this.logger?.log(`Could not parse wikitext: ${err}`);
+			console.log(`Could not parse wikitext: ${err}`);
 			return "";
 		}
 	}
@@ -930,7 +1102,7 @@ export class WikiShieldAPI {
 				} break;
 			}
 		} catch (err) {
-			this.logger?.log(`Could not fetch recent changes: ${err}`);
+			console.log(`Could not fetch recent changes: ${err}`);
 		}
 	}
 
@@ -985,7 +1157,7 @@ export class WikiShieldAPI {
 			const revisions = response.query.pages[0].revisions;
 			return revisions;
 		} catch (err) {
-			this.logger?.log(`Could not fetch revisions between ${startRevid} and ${endRevid} for page ${page}: ${err}`);
+			console.log(`Could not fetch revisions between ${startRevid} and ${endRevid} for page ${page}: ${err}`);
 			return [];
 		}
 	}
@@ -1001,6 +1173,10 @@ export class WikiShieldAPI {
 		}
 
 		try {
+			if (CACHE.ores.has(revids)) {
+				return CACHE.ores.get(revids);
+			}
+
 			const response = await this.api.get({
 				"action": "query",
 				"format": "json",
@@ -1018,19 +1194,20 @@ export class WikiShieldAPI {
 				] : [page.revisions[0].revid, 0];
 			});
 
-			return scores
-			.reduce((a, v) => ({ ...a, [v[0]]: v[1] }), {});
+			const cachedScores = scores.reduce((a, v) => ({ ...a, [v[0]]: v[1] }), {});
+			CACHE.ores.set(revids, cachedScores);
+			return cachedScores;
 		} catch (err) {
-			this.logger?.log(`Could not fetch ORES scores for revision ${revids}: ${err}`);
+			console.log(`Could not fetch ORES scores for revision ${revids}: ${err}`);
 		}
 	}
 
 	/**
-	* Check if the given users are blocked
-	* @param {String} users The users to get blocks for, separated by "|"
+	* Check if the given user is blocked
+	* @param {String} users The users to check
 	* @returns {Promise<Object>} The blocks
 	*/
-	async usersBlocked(users) {
+	async isBlocked(users) {
 		try {
 			const response = await this.api.get({
 				"action": "query",
@@ -1041,12 +1218,9 @@ export class WikiShieldAPI {
 				"formatversion": 2
 			});
 
-			const blocks = {};
-			users.split("|").forEach(user => blocks[user] = false);
-			response.query.blocks.forEach(block => blocks[block.user] = !block.partial);
-			return blocks;
+			return response.query.blocks.reduce((acc, block) => ({ ...acc, [block.user]: block }), {});
 		} catch (err) {
-			this.logger?.log(`Could not fetch blocks for users ${users}: ${err}`);
+			console.log(`Could not fetch blocks for users ${users}: ${err}`);
 		}
 	}
 

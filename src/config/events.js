@@ -569,7 +569,7 @@ export const validEvents = {
                 await wikishield.api.thank(currentEdit.revid);
 
                 const talkPageName = `User talk:${currentEdit.user.name}`;
-                if (!(await wikishield.api.pageExists(talkPageName))) { // if talk page doesn't exist, we can use the welcome, thanks template =)
+                if (await wikishield.api.pageExists(talkPageName) === false) { // if talk page doesn't exist, we can use the welcome, thanks template =)
                     await wikishield.api.newSection(talkPageName, "Thank you!", `{{subst:Thanks-autosign}}`, wikishield.api.buildMessage(message));
                 }
             } else if (mw.util.isIPAddress(currentEdit.user.name)) {
@@ -984,9 +984,7 @@ export const validConditions = {
 	"atFinalWarning": {
 		desc: "User already has a final warning (before any new warnings)",
 		check: (wikishield, edit) => {
-			// Check the ORIGINAL warning level from when edit was first queued
-			// This ensures we only report if they ALREADY had a final warning
-			const original = edit.user.originalWarningLevel?.toString() || edit.user.warningLevel.toString();
+			const original = edit.user.warningLevel.toString() || "0";
 			const result = ["4", "4im"].includes(original);
 			return result;
 		}

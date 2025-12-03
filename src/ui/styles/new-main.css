@@ -400,6 +400,26 @@ body {
                             gap: 0;
 
                             padding: 0 6px;
+
+                            &:is(.queue-highlight, .queue-user-empty-talk) {
+                                font-weight: 600;
+
+                                &.queue-highlight {
+                                    /* Theme dependent */
+                                    color: rgba(244, 196, 32, 1) !important;
+                                }
+                                &.queue-user-empty-talk {
+                                    /* Theme dependent */
+                                    color: rgba(255, 107, 107, 1) !important;
+                                }
+                            }
+
+                            & > a.user-blocked {
+                                font-style: italic;
+                                text-decoration: line-through;
+
+                                opacity: .7;
+                            }
                         }
                     }
 
@@ -2400,6 +2420,52 @@ body {
                             }
                         }
 
+                        .settings-radio-group {
+                            display: flex;
+                            flex-direction: row;
+                            gap: 12px;
+
+                            border-radius: 100vh;
+                            padding: 8px;
+
+                            /* Theme dependent */
+                            background: rgba(40, 43, 52, .7);
+
+                            & > .settings-radio-option {
+                                cursor: pointer;
+                                -webkit-user-select: none;
+                                        user-select: none;
+
+                                flex: 1;
+
+                                text-align: center;
+
+                                border-radius: 100vh;
+                                padding: 10px 16px;
+
+                                font-size: .9em;
+                                font-weight: 600;
+
+                                transition: background .2s ease,
+                                            color .2s ease;
+
+                                /* Theme dependent */
+                                color: rgba(192, 192, 192, 1);
+
+                                &:hover {
+                                    /* Theme dependent */
+                                    background: rgba(102, 126, 234, .2);
+                                    color: rgba(143, 163, 255, 1);
+                                }
+
+                                &.selected {
+                                    /* Theme dependent */
+                                    background: rgba(102, 126, 234, .3);
+                                    color: rgba(224, 224, 224, 1);
+                                }
+                            }
+                        }
+
                         .palette-selector {
                             display: grid;
                             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -3671,6 +3737,18 @@ select, input:not([type=range]), textarea, button {
                             color: rgba(255, 107, 107, 1);
                         }
                     }
+
+                    & > .fa {
+                        font-style: normal;
+                        text-decoration: none;
+                    }
+
+                    & > .user-blocked {
+                        font-style: italic;
+                        text-decoration: line-through;
+
+                        opacity: .7;
+                    }
                 }
 
                 &.queue-edit-summary {
@@ -3726,7 +3804,9 @@ select, input:not([type=range]), textarea, button {
                     flex-shrink: 0;
 
                     width: 25px;
+                }
 
+                &:not(.queue-edit-user) > .queue-edit-icon {
                     /* Theme dependent */
                     color: rgba(192, 192, 192, 1);
                 }
@@ -3878,23 +3958,16 @@ select, input:not([type=range]), textarea, button {
                 gap: 10px;
 
                 & > :is(.tooltip-item-user, .tooltip-item-time) {
-                    position: absolute;
-                    bottom: 6px;
-
                     font-size: .82em;
                     font-weight: 400;
 
                     opacity: .8;
 
                     &.tooltip-item-user {
-                        left: 10px;
-
                         /* Theme dependent */
                         color: rgba(150, 210, 255, .9);
                     }
                     &.tooltip-item-time {
-                        right: 10px;
-
                         /* Theme dependent */
                         color: rgba(220, 225, 235, .9);
                     }

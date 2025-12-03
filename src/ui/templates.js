@@ -378,6 +378,9 @@ export const wikishieldHTML = {
 					<div class="settings-left-menu-item" id="settings-general-button">
 						<span><i class="fas fa-gear"></i>General</span>
 					</div>
+					<div class="settings-left-menu-item" id="settings-performance-button">
+						<span><i class="fas fa-tachometer-alt"></i>Performance</span>
+					</div>
 					<div class="settings-left-menu-item" id="settings-audio-button">
 						<span><i class="fas fa-volume-high"></i>Audio</span>
 					</div>
@@ -390,8 +393,8 @@ export const wikishieldHTML = {
 					<div class="settings-category-header">
 						<span>APPEARANCE</span>
 					</div>
-					<div class="settings-left-menu-item" id="settings-palette-button">
-						<span><i class="fas fa-palette"></i>Palette</span>
+					<div class="settings-left-menu-item" id="settings-queue-button">
+						<span><i class="fas fa-list"></i>Queue</span>
 					</div>
 					<div class="settings-left-menu-item" id="settings-zen-mode-button">
 						<span><i class="fas fa-spa"></i>Zen Mode</span>

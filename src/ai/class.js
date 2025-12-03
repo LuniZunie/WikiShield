@@ -325,21 +325,22 @@ export class Ollama extends AI {
 				fetchOptions.signal = signal;
 			}
 
-			const response = await fetch(`${this.config.server}/api/generate`, fetchOptions).catch(err => {
-				throw err;
-			});
+            let response;
+            try {
+                response = await fetch(`${this.config.server}/api/generate`, fetchOptions);
 
-			if (!response.ok) {
-				throw new Error(`Ollama API error: ${response.status} ${response.statusText}`);
-			}
+                if (!response.ok) {
+                    throw new Error(`Ollama API error: ${response.status} ${response.statusText}`);
+                }
 
-			const data = await response.json();
+                const data = await response.json();
 
-			if (!data.response) {
-				throw new Error('Empty response from Ollama');
-			}
+                if (!data.response) {
+                    throw new Error('Empty response from Ollama');
+                }
 
-			return data.response;
+                return data.response;
+            } catch (err) { }
 		} catch (error) {
 			throw error;
 		}

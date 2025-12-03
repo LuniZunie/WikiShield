@@ -78,7 +78,7 @@ export const createConditions = (wikishield) => ({
 			// Check the ORIGINAL warning level from when edit was first queued
 			// This ensures we only report if they ALREADY had a final warning
 			// Not if they just received one in this action sequence
-			const original = edit.user.originalWarningLevel?.toString() || edit.user.warningLevel.toString();
+			const original = edit.user.warningLevel.toString();
 			const result = ["4", "4im"].includes(original);
 			return result;
 		}

@@ -14,6 +14,8 @@ import { __pendingChangesServer__ } from '../core/api.js';
 import { WikiShieldProgressBar } from './progress-bar.jsx';
 import { fullTrim } from '../utils/formatting.js';
 
+import React, { useEffect, useRef } from 'react';
+
 export class WikiShieldInterface {
 	constructor(wikishield) {
 		this.wikishield = wikishield;
@@ -87,6 +89,8 @@ export class WikiShieldInterface {
 		const ctx = canvas.getContext('2d');
 		let dots = [];
 		let animationFrame;
+		let targetDotCount = 0; // adaptive target count
+		const DPR = Math.min(window.devicePixelRatio || 1, 2); // cap DPR to avoid massive cost
 
 		// Create dots
 		class Dot {
@@ -104,6 +108,8 @@ export class WikiShieldInterface {
 					'217, 70, 239'    // Magenta
 				];
 				this.color = colors[Math.floor(Math.random() * colors.length)];
+				this.fill = `rgba(${this.color}, 0.8)`; // precompute style strings
+				this.shadow = `rgba(${this.color}, 0.8)`;
 			}
 
 			update() {
@@ -120,45 +126,62 @@ export class WikiShieldInterface {
 			draw() {
 				ctx.beginPath();
 				ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-				ctx.fillStyle = `rgba(${this.color}, 0.8)`;
-				ctx.shadowBlur = 10;
-				ctx.shadowColor = `rgba(${this.color}, 0.8)`;
+				ctx.fillStyle = this.fill;
+				// Drop shadow blur (expensive) in favor of simple fill
 				ctx.fill();
-				ctx.shadowBlur = 0;
 			}
 		}
 
 		// Set canvas size
+		// Throttled resize with DPR awareness
+		let resizeRAF = null;
 		const resizeCanvas = () => {
-			const oldWidth = canvas.width;
-			const oldHeight = canvas.height;
+			if (resizeRAF) return;
+			resizeRAF = requestAnimationFrame(() => {
+				resizeRAF = null;
+				const oldWidth = canvas.width;
+				const oldHeight = canvas.height;
 
-			canvas.width = window.innerWidth;
-			canvas.height = window.innerHeight;
+				canvas.width = Math.floor(window.innerWidth * DPR);
+				canvas.height = Math.floor(window.innerHeight * DPR);
+				canvas.style.width = `${window.innerWidth}px`;
+				canvas.style.height = `${window.innerHeight}px`;
 
-			const scaleX = canvas.width / oldWidth;
-			const scaleY = canvas.height / oldHeight;
+				ctx.setTransform(1, 0, 0, 1, 0, 0);
+				ctx.scale(DPR, DPR); // keep drawing coordinates in CSS px
 
-			// Rescale all existing dots
-			dots.forEach(dot => {
-				dot.x *= scaleX;
-				dot.y *= scaleY;
-			});
+				const scaleX = canvas.width / (oldWidth || canvas.width);
+				const scaleY = canvas.height / (oldHeight || canvas.height);
 
-			const idealCount = Math.floor((canvas.width * canvas.height) / 5000);
-			if (idealCount > dots.length) {
-				for (let i = dots.length; i < idealCount; i++) {
-					dots.push(new Dot());
+				// Rescale existing dots
+				dots.forEach(dot => {
+					dot.x *= scaleX;
+					dot.y *= scaleY;
+				});
+
+				// Adaptive target count based on area and DPR
+				targetDotCount = Math.floor((window.innerWidth * window.innerHeight) / 7000);
+				targetDotCount = Math.max(40, Math.min(250, targetDotCount));
+
+				// Grow/shrink to target
+				if (targetDotCount > dots.length) {
+					for (let i = dots.length; i < targetDotCount; i++) dots.push(new Dot());
+				} else if (targetDotCount < dots.length) {
+					dots.length = targetDotCount;
 				}
-			} else if (idealCount < dots.length) {
-				dots.length = idealCount;
-			}
+			});
 		};
 		resizeCanvas();
 		window.addEventListener('resize', resizeCanvas);
 
 		let lastTimestamp = performance.now();
 		const lastDeltaTimes = new Array(15).fill(1000 / 60); // Start with 60 FPS
+		// Spatial hash grid for neighbor queries
+		const GRID_SIZE = 160; // pixels, roughly link range
+		let averageFPS = 60;
+		let lowFpsStart = null; // timestamp when FPS fell below threshold
+		const LOW_FPS_THRESHOLD = 30; // kill if sustained below this
+		const LOW_FPS_DURATION_MS = 500; // duration to consider sustained
 		const animate = () => {
 			{ // FPS calculation
 				const now = performance.now();
@@ -173,10 +196,25 @@ export class WikiShieldInterface {
 
 				const averageDeltaTime = noOutliers.reduce((a, b) => a + b, 0) / noOutliers.length;
 				const fps = 1000 / averageDeltaTime;
+				averageFPS = fps;
 
-				if (fps < 30) {
-					ctx.clearRect(0, 0, canvas.width, canvas.height);
-					return;
+				// Kill animation if FPS stays too low for sustained period
+				if (fps < LOW_FPS_THRESHOLD) { // FIX always kill probably
+					if (lowFpsStart === null) lowFpsStart = now;
+					if (now - lowFpsStart >= LOW_FPS_DURATION_MS) {
+						if (animationFrame) cancelAnimationFrame(animationFrame);
+						animationFrame = null;
+						ctx.clearRect(0, 0, canvas.width, canvas.height);
+						return; // stop scheduling frames
+					}
+				} else {
+					lowFpsStart = null;
+				}
+
+				// If FPS tanks, reduce dot count a bit to recover
+				if (fps < 45 && dots.length > 60) {
+					dots.length = Math.max(60, Math.floor(dots.length * 0.9));
+					targetDotCount = dots.length;
 				}
 			}
 
@@ -188,44 +226,74 @@ export class WikiShieldInterface {
 				dot.draw();
 			});
 
-			// Draw lines between close dots
-			const length = dots.length;
-			for (let i = 0; i < length; i++) {
-				const a = dots[i];
+			// Draw lines between close dots using spatial hashing
+			const cols = Math.ceil(window.innerWidth / GRID_SIZE);
+			const rows = Math.ceil(window.innerHeight / GRID_SIZE);
+			const grid = new Array(cols * rows);
+			for (let i = 0; i < grid.length; i++) grid[i] = [];
 
-				for (let j = i + 1; j < length; j++) {
-					const b = dots[j];
+			// Assign dots to cells
+			dots.forEach((d, index) => {
+				const cx = Math.max(0, Math.min(cols - 1, Math.floor(d.x / GRID_SIZE)));
+				const cy = Math.max(0, Math.min(rows - 1, Math.floor(d.y / GRID_SIZE)));
+				grid[cy * cols + cx].push(index);
+			});
 
-					// Compute wrapped distances
-					let dx = a.x - b.x;
-					let dy = a.y - b.y;
+			const linkRange = 150; // px
+			const halfW = window.innerWidth / 2;
+			const halfH = window.innerHeight / 2;
+			for (let cy = 0; cy < rows; cy++) {
+				for (let cx = 0; cx < cols; cx++) {
+					const cellIdx = cy * cols + cx;
+					const indices = grid[cellIdx];
+					if (indices.length === 0) continue;
 
-					// Wrap horizontally
-					if (dx > canvas.width / 2) dx -= canvas.width;
-					if (dx < -canvas.width / 2) dx += canvas.width;
+					// Neighbors: current cell + 8 surrounding cells
+					for (let nyOff = -1; nyOff <= 1; nyOff++) {
+						const ny = (cy + nyOff + rows) % rows; // wrap vertically
+						for (let nxOff = -1; nxOff <= 1; nxOff++) {
+							const nx = (cx + nxOff + cols) % cols; // wrap horizontally
+							const nIdx = ny * cols + nx;
+							const neighbors = grid[nIdx];
+							if (neighbors.length === 0) continue;
 
-					// Wrap vertically
-					if (dy > canvas.height / 2) dy -= canvas.height;
-					if (dy < -canvas.height / 2) dy += canvas.height;
+							for (let ii = 0; ii < indices.length; ii++) {
+								const a = dots[indices[ii]];
+								for (let jj = 0; jj < neighbors.length; jj++) {
+									const bi = neighbors[jj];
+									if (bi <= indices[ii]) continue; // avoid duplicates
+									const b = dots[bi];
 
-					const distance = Math.sqrt(dx * dx + dy * dy);
+									let dx = a.x - b.x;
+									let dy = a.y - b.y;
+									// Wrap horizontally
+									if (dx > halfW) dx -= window.innerWidth;
+									if (dx < -halfW) dx += window.innerWidth;
+									// Wrap vertically
+									if (dy > halfH) dy -= window.innerHeight;
+									if (dy < -halfH) dy += window.innerHeight;
 
-					if (distance < 150) {
-						ctx.beginPath();
-						ctx.moveTo(a.x, a.y);
-						ctx.lineTo(a.x - dx, a.y - dy);  // wrapped endpoint
-						const opacity = (1 - distance / 150) * 0.4;
+									const dist2 = dx * dx + dy * dy;
+									if (dist2 < linkRange * linkRange) {
+										const distance = Math.sqrt(dist2);
+										const opacity = (1 - distance / linkRange) * 0.4;
 
-						const aSplit = a.color.split(',');
-						const bSplit = b.color.split(',');
+										const aSplit = a.color.split(',');
+										const bSplit = b.color.split(',');
+										const avgR = (parseInt(aSplit[0]) + parseInt(bSplit[0])) / 2;
+										const avgG = (parseInt(aSplit[1]) + parseInt(bSplit[1])) / 2;
+										const avgB = (parseInt(aSplit[2]) + parseInt(bSplit[2])) / 2;
 
-						const avgR = (parseInt(aSplit[0]) + parseInt(bSplit[0])) / 2;
-						const avgG = (parseInt(aSplit[1]) + parseInt(bSplit[1])) / 2;
-						const avgB = (parseInt(aSplit[2]) + parseInt(bSplit[2])) / 2;
-
-						ctx.strokeStyle = `rgba(${avgR}, ${avgG}, ${avgB}, ${opacity})`;
-						ctx.lineWidth = 1;
-						ctx.stroke();
+										ctx.beginPath();
+										ctx.moveTo(a.x, a.y);
+										ctx.lineTo(a.x - dx, a.y - dy);
+										ctx.strokeStyle = `rgba(${avgR}, ${avgG}, ${avgB}, ${opacity})`;
+										ctx.lineWidth = 1;
+										ctx.stroke();
+									}
+								}
+							}
+						}
 					}
 				}
 			}
@@ -1536,7 +1604,7 @@ export class WikiShieldInterface {
 	* @param {Boolean} includeUser include the name of the user who made the edit
 	* @param {Boolean} includeTime include the edit's timestamp
 	*/
-	generateEditHTML(edit, includeORES = true, includeTitle = true, includeUser = true, includeTime = false) {
+	generateEditHTML(edit, includeORES = true, includeTitle = true, includeUser = true, includeTime = true) {
 		let tagHTML = "";
 
 		const highlightedTags = this.wikishield.storage.data.highlight.tags;
@@ -1591,15 +1659,17 @@ export class WikiShieldInterface {
 		// Determine user highlight classes
 		let userClasses = "";
 		if (edit.user && this.wikishield.storage.data.highlight.users.has(typeof edit.user === "string" ? edit.user : edit.user.name)) {
-			userClasses = "queue-highlight";
+			userClasses += " queue-highlight";
 		} else if (edit.user && typeof edit.user === "object" && edit.user.emptyTalkPage) {
-			userClasses = "queue-user-empty-talk";
+			userClasses += " queue-user-empty-talk";
 		}
 
 		const userHTML = includeUser ? `
 				<div class="queue-edit-user ${userClasses}">
 					<span class="fa fa-user queue-edit-icon"></span>
-					${!edit.user ? "<em>Username removed</em>" : typeof edit.user === "string" ? edit.user : edit.user.name}
+					<span class=${edit.user?.blocked ? "user-blocked" : ""}>
+						${!edit.user ? "<em>Username removed</em>" : typeof edit.user === "string" ? edit.user : edit.user.name}
+					</span>
 				</div>` : "";
 		const timeHTML = includeTime ? `
 				<div class="queue-edit-time" data-tooltip="${new Date(edit.timestamp).toUTCString()}">
@@ -1632,6 +1702,11 @@ export class WikiShieldInterface {
 	* @param {Object} edit
 	*/
 	async newEditSelected(edit) {
+		this.currentEditAbortController?.abort();
+
+		const abortController = new AbortController();
+		this.currentEditAbortController = abortController;
+
 		this.elem("#latest-edits-tab").classList.add("hidden");
 		this.elem("#consecutive-edits-tab").classList.add("hidden");
 
@@ -1689,6 +1764,40 @@ export class WikiShieldInterface {
 				protIndicator.innerHTML = "";
 			}
 			return;
+		}
+
+		if (this.wikishield.AI) {
+			const storage = this.wikishield.storage.data;
+			if (edit.AI.edit === null && storage.settings.AI.edit_analysis.enabled) {
+				this.wikishield.AI.analyze.edit(edit)
+					.then(analysis => {
+						edit.AI.edit = analysis;
+					})
+					.catch(err => {
+						edit.AI.edit = {
+							error: err.message
+						};
+					})
+					.finally(() => {
+						if (this.currentEdit?.revid === edit.revid) {
+							this.wikishield.interface.updateAIAnalysisDisplay(analysis);
+						}
+					});
+			}
+
+			if (edit.AI.username === null && !(edit.user.ip || edit.user.temporary) && !storage.whitelist.users.has(edit.user) && storage.settings.AI.username_analysis.enabled && false) { // TEMP remove false
+				this.wikishield.AI.analyze.username(edit)
+					.then(usernameAnalysis => {
+						edit.AI.username = usernameAnalysis;
+
+						// TODO add .promptForUAAReport() here
+					})
+					.catch(err => {
+						edit.AI.username = {
+							error: err.message
+						};
+					});
+			}
 		}
 
 		if (!edit.seen) {
@@ -1752,35 +1861,32 @@ export class WikiShieldInterface {
 
 		// Fetch warning history for tooltip
 		if (edit.user.warningLevel !== "0") {
-			this.wikishield.api.getSinglePageContent(`User talk:${edit.user.name}`).then(talkContent => {
-				const warningHistory = this.wikishield.queue.getWarningHistory(talkContent);
-				if (warningHistory.length > 0) {
-					let tooltipHtml = '<div class="tooltip-title">Warning History</div>';
-					warningHistory.slice(0, 5).forEach(warning => {
-						const templateDisplay = `${warning.template}${warning.level}`;
-						const userInfo = warning.username ? `(User:${this.wikishield.util.escapeHtml(warning.username)})` : "";
-						const timeInfo = warning.timestamp ? `${this.wikishield.formatNotificationTime(new Date(warning.timestamp))}` : "";
-						tooltipHtml += `<div class="tooltip-item user-warnings">`;
-						tooltipHtml += `<span class="tooltip-item-level">${this.wikishield.util.escapeHtml(templateDisplay)}</span>`;
-						tooltipHtml += `<div class="tooltip-item-details">`;
-						tooltipHtml += `<span class="tooltip-item-user">${this.wikishield.util.escapeHtml(userInfo)}</span>`;
-						tooltipHtml += `<br><span class="tooltip-item-time">${this.wikishield.util.escapeHtml(timeInfo)}</span>`;
-						tooltipHtml += `</div>`;
-						tooltipHtml += `</div>`;
-					});
-					if (warningHistory.length > 5) {
-						tooltipHtml += `<div class="tooltip-more">... and ${warningHistory.length - 5} more</div>`;
-					}
-					userContribsLevel.setAttribute("data-tooltip", tooltipHtml);
-					userContribsLevel.setAttribute("data-tooltip-html", "true");
-				} else {
-					userContribsLevel.setAttribute("data-tooltip", `Warning level: ${edit.user.warningLevel}`);
-					userContribsLevel.setAttribute("data-tooltip-html", "false");
+			const warningHistory = edit.user.warningHistory;
+			if (warningHistory.length > 0) {
+				let tooltipHtml = '<div class="tooltip-title">Warning History</div>';
+				warningHistory.slice(0, 5).forEach(warning => {
+					const templateDisplay = `${warning.template}${warning.level}`;
+					const userInfo = warning.username ? `(User:${this.wikishield.util.escapeHtml(warning.username)})` : "";
+					const timeInfo = warning.timestamp ? `${this.wikishield.formatNotificationTime(new Date(warning.timestamp))}` : "";
+					tooltipHtml += `<div class="tooltip-item user-warnings">`;
+					tooltipHtml += `<span class="tooltip-item-level">${this.wikishield.util.escapeHtml(templateDisplay)}</span>`;
+					tooltipHtml += `<div class="tooltip-item-details">`;
+					tooltipHtml += `<span class="tooltip-item-user">${this.wikishield.util.escapeHtml(userInfo)}</span>`;
+					tooltipHtml += `<br><span class="tooltip-item-time">${this.wikishield.util.escapeHtml(timeInfo)}</span>`;
+					tooltipHtml += `</div>`;
+					tooltipHtml += `</div>`;
+				});
+				if (warningHistory.length > 5) {
+					tooltipHtml += `<div class="tooltip-more">... and ${warningHistory.length - 5} more</div>`;
 				}
-			}).catch(() => {
+				userContribsLevel.setAttribute("data-tooltip", tooltipHtml);
+				userContribsLevel.setAttribute("data-tooltip-html", "true");
+			} else {
 				userContribsLevel.setAttribute("data-tooltip", `Warning level: ${edit.user.warningLevel}`);
 				userContribsLevel.setAttribute("data-tooltip-html", "false");
-			}).finally(addToolipToWarningLevel);
+			}
+
+			addToolipToWarningLevel();
 		} else {
 			userContribsLevel.setAttribute("data-tooltip", "No warnings");
 			userContribsLevel.setAttribute("data-tooltip-html", "false");
@@ -1798,10 +1904,6 @@ export class WikiShieldInterface {
 		const titleFull = this.wikishield.util.escapeHtml(edit.page.title);
 		const username = this.wikishield.util.escapeHtml(this.wikishield.util.maxStringLength(edit.user.name, 30));
 		const usernameFull = this.wikishield.util.escapeHtml(edit.user.name);
-
-		// Fetch page protection info and user block count
-		const protectionPromise = this.wikishield.api.getPageProtection(edit.page.title);
-		const blockCountPromise = this.wikishield.api.getBlockCount(edit.user.name);
 
 		this.elem("#middle-top").innerHTML = `
 				<div class="middle-top-line">
@@ -1904,9 +2006,10 @@ export class WikiShieldInterface {
 		}
 
 		// Load protection info and display in page history header
-		protectionPromise.then(protection => {
+		{
 			const protIndicator = document.querySelector("#page-history #protection-indicator");
 			if (protIndicator) {
+				const protection = edit.page.protection;
 				if (protection.protected) {
 					let icon = "🔒";
 					let tooltip = "Protected";
@@ -1928,18 +2031,15 @@ export class WikiShieldInterface {
 					protIndicator.innerHTML = "";
 				}
 			}
-		});
+		};
 
-		// Load block count and display next to warning level
-		blockCountPromise.then(async blockCount => {
+		{
 			const blockIndicator = document.querySelector("#user-contribs #user-block-count");
 			if (blockIndicator) {
-				if (blockCount > 0) {
-					const blockHistory = await this.wikishield.api.getBlockHistory(edit.user.name);
-
+				const blocks = edit.user.blocks;
+				if (blocks.length > 0) {
 					let tooltipHtml = `<div class="tooltip-title">Block History</div>`;
-
-					for (const block of blockHistory) {
+					for (const block of blocks) {
 						let blockerName = block.user || "Unknown";
 						blockerName = blockerName.replace(/<[^>]*>/g, '');
 
@@ -1968,7 +2068,7 @@ export class WikiShieldInterface {
 					blockIndicator.style.display = "initial";
 					blockIndicator.setAttribute("data-tooltip", tooltipHtml);
 					blockIndicator.setAttribute("data-tooltip-html", "true");
-					blockIndicator.innerHTML = `${blockCount}&times;`;
+					blockIndicator.innerHTML = `${blocks.length}&times;`;
 					blockIndicator.style.cursor = "help";
 					this.addTooltipListener(blockIndicator);
 				} else {
@@ -1978,7 +2078,7 @@ export class WikiShieldInterface {
 					blockIndicator.removeAttribute("data-tooltip-html");
 				}
 			}
-		});
+		};
 
 		// Add tooltip listeners to the new elements
 		[...this.elem("#middle-top").querySelectorAll("[data-tooltip]")].forEach(e => {
@@ -1988,35 +2088,47 @@ export class WikiShieldInterface {
 		// Update page metadata display
 		const metadataElem = this.elem("#page-metadata");
 		if (metadataElem) {
-			const parts = [];
-			if (edit.page.dateFormat && edit.page.dateFormat !== "Unknown") {
-				parts.push(edit.page.dateFormat);
+			const parts = Object.values(edit.page.metadata).filter(v => v && v !== "Unknown");
+			metadataElem.innerHTML = parts.join(" • ");
+		}
+
+		const loadUserContribs = async (signal) => {
+			const _queue_ = this.wikishield.queue;
+			const contribs = edit.user.contribs;
+
+			const items = await _queue_.generateQueueItems(contribs.map(edit => ({ type: "contribs", edit, simple: true })));
+			if (signal.aborted) return;
+
+			for (const item of items) {
+				const current = item.revid === _queue_.currentEdit[_queue_.currentQueueTab].revid ? "queue-edit-current" : "";
+				const $edit = document.createElement("div");
+				$edit.className = `queue-edit ${current}`;
+				$edit.innerHTML = this.generateEditHTML(item);
+				contribsContainer.appendChild($edit);
+
+				$edit.addEventListener("click", () => _queue_.loadFromContribs(item));
 			}
-			if (edit.page.englishVariant && edit.page.englishVariant !== "Unknown") {
-				parts.push(edit.page.englishVariant);
+		};
+		loadUserContribs(abortController.signal);
+
+		const loadPageHistory = async (signal) => {
+			const _queue_ = this.wikishield.queue;
+			const history = edit.page.history;
+
+			const items = await _queue_.generateQueueItems(history.map(edit => ({ type: "history", edit, simple: true })));
+			if (signal.aborted) return;
+
+			for (const item of items) {
+				const current = item.revid === _queue_.currentEdit[_queue_.currentQueueTab].revid ? "queue-edit-current" : "";
+				const $edit = document.createElement("div");
+				$edit.className = `queue-edit ${current}`;
+				$edit.innerHTML = this.generateEditHTML(item);
+				historyContainer.appendChild($edit);
+
+				$edit.addEventListener("click", () => _queue_.loadFromHistory(item));
 			}
-			metadataElem.innerHTML = parts.length > 0 ? parts.join(" • ") : "";
-		}
-
-		for (const cedit of edit.user.contribs) {
-			const current = cedit.revid === this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab].revid ? "queue-edit-current" : "";
-
-			contribsContainer.innerHTML += `
-					<div class="queue-edit ${current}" data-revid="${cedit.revid}">
-						${this.generateEditHTML(cedit, false, true, false, true)}
-					</div>
-				`;
-		}
-
-		for (const hedit of edit.page.history) {
-			const current = hedit.revid === this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab].revid ? "queue-edit-current" : "";
-
-			historyContainer.innerHTML += `
-					<div class="queue-edit ${current}" data-revid="${hedit.revid}">
-						${this.generateEditHTML(hedit, false, false, true, true)}
-					</div>
-				`;
-		}
+		};
+		loadPageHistory(abortController.signal);
 
 		[
 			...contribsContainer.querySelectorAll("[data-tooltip]"),
