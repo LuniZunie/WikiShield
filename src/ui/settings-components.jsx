@@ -553,7 +553,6 @@ export class ZenSettings extends Component {
 
 			notices,
 			alerts,
-			watchlist,
 
 			edit_counter,
 			toasts,
@@ -616,16 +615,6 @@ export class ZenSettings extends Component {
 						<Toggle
 							value={notices.enabled}
 							onChange={this.props.onNoticesChange}
-						/>
-					</SettingsSection>
-					<SettingsSection
-						compact
-						title="Watchlist Updates"
-						description="Show watchlist queue in Zen mode"
-					>
-						<Toggle
-							value={watchlist.enabled}
-							onChange={this.props.onWatchlistChange}
 						/>
 					</SettingsSection>
 

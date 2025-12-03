@@ -1,9 +1,7 @@
 export const welcomes = {
     "Auto": {
         title: "Auto",
-        template: (edit) => {
-            // TODO
-        }
+        template: (user) => { }
     },
     "Default": {
         title: "Default",
@@ -65,4 +63,12 @@ export const welcomes = {
         template: "subst:Welcome-COI",
         sign: true
     },
+};
+
+welcomes["Auto"].template = user => {
+    if (!welcomes["Non-Latin"].hide && /[^\u0000-\u007F]/.test(user.name)) {
+        return "Non-Latin";
+    }
+
+    return "Default";
 };

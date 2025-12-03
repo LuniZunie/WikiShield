@@ -63,6 +63,11 @@ export class WikiShieldQueue {
 	* Fetch recent changes from the API
 	*/
 	async fetchRecentChanges(type = "recent") {
+		if (!this.wikishield.storage.data.settings.queue[type].enabled) {
+			window.setTimeout(this.fetchRecentChanges.bind(this, type), this.wikishield.__script__.config.refresh[type]);
+			return;
+		}
+
 		// TODO, instead of rejecting new edits when queue is full, remove edits at the bottom of the queue
 		if (this.queue[type].length >= this.wikishield.storage.data.settings.queue.max_size) {
 			window.setTimeout(this.fetchRecentChanges.bind(this, type), this.wikishield.__script__.config.refresh[type]);
@@ -229,7 +234,7 @@ export class WikiShieldQueue {
 			this.queue[type].push(item);
 
 			const hasBeenInQueue = this.hasBeenInQueue[type];
-			hasBeenInQueue.add(item.revid); // TODO previous items needs a limit bc of memory leak
+			hasBeenInQueue.add(item.revid);
 			if (hasBeenInQueue.size > 5000) { // when over 5000 items, trim down to 2500
 				const temp = new Set();
 
@@ -705,7 +710,11 @@ export class WikiShieldQueue {
 		}
 
 		// Store the edit we left in previousItems
-		this.previousItems[this.currentQueueTab].push({ ...editWeAreLeaving, fromHistory: Date.now() });
+		const previousItems = this.previousItems[this.currentQueueTab];
+		previousItems.push({ ...editWeAreLeaving, fromHistory: Date.now() });
+		if (previousItems.length > 1000) { // prevent theoretical memory leak, keep only the last 1000 previous items
+			previousItems.shift();
+		}
 
 		this.wikishield.interface.renderQueue(this.queue[this.currentQueueTab], this.currentEdit[this.currentQueueTab], this.currentQueueTab);
 

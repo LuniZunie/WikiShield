@@ -20,7 +20,7 @@ const audio = {
         properties: {
             zen_mode: {
                 type: "playlist",
-                title: "Zen Mode Music",
+                title: "Zen Mode",
                 description: "Music played in Zen mode.",
                 volume: 1,
                 tracks: [
@@ -224,7 +224,8 @@ const audio = {
  * Playlist controller class that manages a single playlist's state and playback
  */
 class PlaylistController {
-    constructor(playlistKey, tracks, audioManager) {
+    constructor(playlist, playlistKey, tracks, audioManager) {
+        this.playlist = playlist;
         this.playlistKey = playlistKey;
         this.tracks = tracks;
         this.audioManager = audioManager;
@@ -347,7 +348,7 @@ class PlaylistController {
             navigator.mediaSession.metadata = new MediaMetadata({
                 title: track.title,
                 artist: track.artist,
-                album: "WikiShield", // TODO allow custom album name
+                album: `${this.playlist.title} – ${track.title}`,
                 artwork: [
                     { src: track.thumbnail, sizes: "512x512", type: "image/png" }
                 ]
@@ -428,6 +429,13 @@ export class AudioManager {
     // ========================================
 
     async playSound(soundPath, abortController, preview = false) {
+        if (!preview) {
+            const zenMode = this.wikishield.storage.data.settings.zen_mode;
+            if (zenMode.enabled && !zenMode.sound.enabled) {
+                return;
+            }
+        }
+
         const sound = this.getSound(soundPath);
         if (!sound || !sound.data) return;
 
@@ -531,7 +539,7 @@ export class AudioManager {
         this._stopAllMusic();
 
         // Create and start new playlist controller
-        const controller = new PlaylistController(playlistKey, sound.tracks, this);
+        const controller = new PlaylistController(sound, playlistKey, sound.tracks, this);
         this.activePlaylists.set(playlistKey, controller);
         controller.start();
     }
@@ -671,8 +679,6 @@ export class AudioManager {
     // ========================================
 
     getSound(path) {
-        // TODO dont play if muted by zen_mode
-
         let current = { type: "category", properties: this.audio };
 
         for (const segment of path) {

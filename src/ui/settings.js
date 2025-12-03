@@ -839,10 +839,6 @@ export class WikiShieldSettingsInterface {
 					this.wikishield.storage.data.settings.zen_mode.notices = value;
 					this.wikishield.interface.updateZenModeDisplay();
 				},
-				onWatchlistChange: value => {
-					this.wikishield.storage.data.settings.zen_mode.watchlist = value;
-					this.wikishield.interface.updateZenModeDisplay();
-				},
 
 				onEditCounterChange: value => {
 					this.wikishield.storage.data.settings.zen_mode.edit_counter = value;
@@ -2251,7 +2247,6 @@ ollama serve
 	/**
 	* Open import/export settings section
 	*/
-	// TODO
 	openSaveSettings() {
 		this.clearContent();
 		this.contentContainer.innerHTML = `

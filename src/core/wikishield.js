@@ -144,8 +144,6 @@ export class WikiShield {
 		}
 
 		this.handleLoadingReported();
-		this.handleLoadingAlerts();
-		this.handleLoadingNotices();
 
 		this.entriesCleanupInterval = setInterval(() => {
 			this.cleanupExpiredEntries();
@@ -249,6 +247,10 @@ export class WikiShield {
 		this.queue.fetchRecentChanges("recent");
 		this.queue.fetchRecentChanges("flagged");
 		this.queue.fetchRecentChanges("watchlist");
+		this.queue.fetchRecentChanges("new_users");
+
+		this.handleLoadingAlerts();
+		this.handleLoadingNotices();
 	}
 
 	/**
@@ -474,7 +476,15 @@ export class WikiShield {
 	}
 
 	updateNotificationsCount() {
-		const totalUnread = this.alerts.filter(n => !n.read).length + this.notices.filter(n => !n.read).length;
+		let totalUnread = 0;
+		const zenMode = this.storage.data.settings.zen_mode;
+		if (!zenMode.enabled || zenMode.alerts.enabled) {
+			totalUnread += this.alerts.filter(n => !n.read).length;
+		}
+
+		if (!zenMode.enabled || zenMode.notices.enabled) {
+			totalUnread += this.notices.filter(n => !n.read).length;
+		}
 
 		if (totalUnread === 0) {
 			document.title = "WikiShield";
@@ -518,7 +528,10 @@ export class WikiShield {
 			}
 
 			if (hasNewAlerts && this.alerts.length > 0) {
-				this.audioManager.playSound([ "notification", "alert" ]);
+				const zenMode = this.storage.data.settings.zen_mode;
+				if (!zenMode.enabled || zenMode.alerts.enabled) {
+					this.audioManager.playSound([ "notification", "alert" ]);	
+				}
 			}
 
 			this.alerts.sort((a, b) => {
@@ -738,7 +751,10 @@ export class WikiShield {
 			}
 
 			if (hasNewNotices && this.notices.length > 0) {
-				this.audioManager.playSound([ "notification", "notice" ]);
+				const zenMode = this.storage.data.settings.zen_mode;
+				if (!zenMode.enabled || zenMode.notices.enabled) {
+					this.audioManager.playSound([ "notification", "notice" ]);	
+				}
 			}
 
 			this.notices.sort((a, b) => {
@@ -1238,7 +1254,6 @@ export class WikiShield {
 		return hasContinuity;
 	}
 
-	// TODO
 	async save(noSave = false) {
 		const { string, logs } = this.storage.encode();
 
@@ -1256,7 +1271,6 @@ export class WikiShield {
 		);
 	}
 
-	// TODO
 	async load() {
 		return await this.api.getSinglePageContent(`User:${mw.config.values.wgUserName}/ws-save.js`) ?? "e30=";
 	}

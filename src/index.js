@@ -19,6 +19,7 @@ import { WikiShieldInterface } from './ui/interface.js';
 import { WikiShieldProgressBar } from './ui/progress-bar.jsx';
 import { WikiShield } from './core/wikishield.js';
 import { killswitch_status, checkKillswitch, startKillswitchPolling } from './core/killswitch.js';
+import { StorageManager } from './data/storage.js';
 
 export const __script__ = {
 	version: "1.0.0",
@@ -36,10 +37,11 @@ export const __script__ = {
 	},
 
 	config: {
-		refresh: {
-			recent: 1000,
-			flagged: 1000,
-			watchlist: 1000,
+		refresh: { // TODO figure out best interval times
+			recent: 2000,
+			flagged: 2000,
+			watchlist: 2000,
+			new_users: 5000,
 		},
 		historyCount: 10,
 	},
@@ -83,6 +85,13 @@ export const __script__ = {
 	);
 
 	const load = () => {
+		const storageLogs = new StorageManager().load().logs;
+		if (storageLogs.some(log => !log.expected)) {
+			StorageManager.outputLogs(storageLogs, "LoadTest");
+			mw.notify("An error has occurred with the WikiShield storage system that could lead to data loss. For that reason, WikiShield has been automatically disabled. Please check your browser console for more information and immediately report this to the development team.", { type: 'error' });
+			return;
+		}
+
 		window.onpopstate = (event) => {
 			if (event.state?.page !== "WikiShield") {
 				window.location.reload();

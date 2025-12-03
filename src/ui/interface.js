@@ -1511,7 +1511,8 @@ export class WikiShieldInterface {
 
 								contextHighlightBtn.textContent = this.wikishield.storage.data.highlight.pages.has(pageTitle) ? "Unhighlight page" : "Highlight page";
 
-								this.renderQueue(this.wikishield.queue.queue[this.wikishield.queue.currentQueueTab], this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab]);
+								const _queue_ = this.wikishield.queue;
+								this.renderQueue(_queue_.queue[_queue_.currentQueueTab], _queue_.currentEdit[_queue_.currentQueueTab]);
 								contextMenu.remove();
 							});
 						}
@@ -1526,22 +1527,30 @@ export class WikiShieldInterface {
 
 						const currentIndex = queue.findIndex(e => e.revid === edit.revid);
 						if (currentIndex !== -1) {
+							const _queue_ = this.wikishield.queue;
+
 							queue.splice(currentIndex, 1);
-							this.removeQueueItem(this.wikishield.queue.currentQueueTab, edit.revid);
+							this.removeQueueItem(_queue_.currentQueueTab, edit.revid);
 
 							if (edit === currentEdit) {
 								if (queue.length > 0) {
 									if (currentIndex < queue.length) {
-										this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab] = queue[currentIndex];
+										_queue_.currentEdit[_queue_.currentQueueTab] = queue[currentIndex];
 									} else {
-										this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab] = queue[queue.length - 1];
+										_queue_.currentEdit[_queue_.currentQueueTab] = queue[queue.length - 1];
 									}
 								} else {
-									this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab] = null;
+									_queue_.currentEdit[_queue_.currentQueueTab] = null;
 								}
 							}
-							this.wikishield.queue.previousItems[this.wikishield.queue.currentQueueTab].push(edit);
-							this.renderQueue(this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab]);
+
+							const previousItems = _queue_.previousItems[_queue_.currentQueueTab];
+							previousItems.push({ ...editWeAreLeaving, fromHistory: Date.now() });
+							if (previousItems.length > 1000) { // prevent theoretical memory leak, keep only the last 1000 previous items
+								previousItems.shift();
+							}
+
+							this.renderQueue(_queue_.queue[_queue_.currentQueueTab], _queue_.currentEdit[_queue_.currentQueueTab]);
 						}
 						contextMenu.remove();
 					});
@@ -2913,10 +2922,6 @@ export class WikiShieldInterface {
 			} else {
 				this.wikishield.audioManager.stopPlaylist(["music", "zen_mode"]);
 			}
-		}
-
-		if (zenMode.enabled && !zenMode.watchlist.enabled && this.wikishield.queue.currentQueueTab === "watchlist") {
-			this.wikishield.queue.switchQueueTab("recent");
 		}
 
 		document.querySelectorAll("[data-zen-show]").forEach(elem => {

@@ -409,7 +409,7 @@ class Version1 extends Version {
             changelog: "3",
 
             settings: {
-                theme: { // TODO move theme to root.layout, then move root.layout to root.UI
+                theme: {
                     palette: 0,
                 },
 
@@ -422,7 +422,24 @@ class Version1 extends Version {
                 queue: {
                     max_size: 100,
                     max_edits: 50,
-                    min_ores: 0.0
+                    min_ores: 0.0,
+
+                    recent: {
+                        enabled: true,
+                        order: 0,
+                    },
+                    flagged: {
+                        enabled: true,
+                        order: 1,
+                    },
+                    watchlist: {
+                        enabled: true,
+                        order: 2,
+                    },
+                    new_users: {
+                        enabled: false,
+                        order: 3,
+                    },
                 },
 
                 cloud_storage: {
@@ -544,9 +561,6 @@ class Version1 extends Version {
                         enabled: true,
                     },
                     notices: {
-                        enabled: false,
-                    },
-                    watchlist: {
                         enabled: false,
                     },
 
@@ -794,6 +808,8 @@ class Version1 extends Version {
 
         this.deprecated("options", "theme");
 
+        this.deprecated("options", "zen", "watchlist");
+
         const defaults = this.default;
         return {
             changelog: this.sanitize([ "changelog" ], defaults.changelog),
@@ -812,7 +828,24 @@ class Version1 extends Version {
                 queue: {
                     max_size: this.sanitize([ "options", "maxQueueSize" ], defaults.settings.queue.max_size),
                     max_edits: this.sanitize([ "options", "maxEditCount" ], defaults.settings.queue.max_edits),
-                    min_ores: this.sanitize([ "options", "minimumORESScore" ], defaults.settings.queue.min_ores)
+                    min_ores: this.sanitize([ "options", "minimumORESScore" ], defaults.settings.queue.min_ores),
+
+                    recent: {
+                        enabled: defaults.settings.queue.recent.enabled, // did not exist in v0
+                        order: defaults.settings.queue.recent.order, // did not exist in v0
+                    },
+                    flagged: {
+                        enabled: defaults.settings.queue.flagged.enabled, // did not exist in v0
+                        order: defaults.settings.queue.flagged.order, // did not exist in v0
+                    },
+                    watchlist: {
+                        enabled: defaults.settings.queue.watchlist.enabled, // did not exist in v0
+                        order: defaults.settings.queue.watchlist.order, // did not exist in v0
+                    },
+                    new_users: {
+                        enabled: defaults.settings.queue.new_users.enabled, // did not exist in v0
+                        order: defaults.settings.queue.new_users.order, // did not exist in v0
+                    },
                 },
 
                 cloud_storage: {
@@ -935,9 +968,6 @@ class Version1 extends Version {
                     },
                     notices: {
                         enabled: this.sanitize([ "options", "zen", "notifications" ], defaults.settings.zen_mode.notices.enabled),
-                    },
-                    watchlist: {
-                        enabled: this.sanitize([ "options", "zen", "watchlist" ], defaults.settings.zen_mode.watchlist.enabled),
                     },
 
                     edit_counter: {
@@ -1211,6 +1241,27 @@ class Version1 extends Version {
                         this.reset("settings", "queue", "min_ores");
                     }
                 }
+
+                [ "recent", "flagged", "watchlist", "new_users" ].forEach((section, _, queues) => {
+                    { // root.settings.queue[section]
+                        const scope = root.settings.queue[section];
+                        this.restrictObject(scope, "settings", "queue", section);
+
+                        { // root.settings.queue[section].enabled
+                            const value = root.settings.queue[section].enabled;
+                            if (typeof value !== "boolean") {
+                                this.reset("settings", "queue", section, "enabled");
+                            }
+                        }
+
+                        { // root.settings.queue[section].order
+                            const value = root.settings.queue[section].order;
+                            if (!(typeof value === "number" && Number.isInteger(value) && value >= 0 && value < queues.length)) {
+                                this.reset("settings", "queue", section, "order");
+                            }
+                        }
+                    }
+                });
             }
 
             { // root.settings.cloud_storage
@@ -1531,17 +1582,6 @@ class Version1 extends Version {
                         const value = root.settings.zen_mode.notices.enabled;
                         if (typeof value !== "boolean") {
                             this.reset("settings", "zen_mode", "notices", "enabled");
-                        }
-                    }
-                }
-
-                { // root.settings.zen_mode.watchlist
-                    const scope = root.settings.zen_mode.watchlist;
-                    this.restrictObject(scope, "settings", "zen_mode", "watchlist");
-                    { // root.settings.zen_mode.watchlist.enabled
-                        const value = root.settings.zen_mode.watchlist.enabled;
-                        if (typeof value !== "boolean") {
-                            this.reset("settings", "zen_mode", "watchlist", "enabled");
                         }
                     }
                 }
@@ -2258,29 +2298,3 @@ export class StorageManager {
         console.groupEnd();
     }
 }
-
-// TODO, gotta test all versions properly, disable script if storage is acting up bc we don't want to corrupt data
-function Test(obj = Version.default, name = "default") {
-    // load from version 0 to latest
-    const storage = new StorageManager();
-    const logs = storage.load(obj).logs
-
-    const allExpected = !logs.some(log => !log.expected);
-
-    console.groupCollapsed(`[${allExpected ? "✓" : "✗"}] WikiShield Storage Logs: ${name}`);
-    for (const log of logs) {
-        let prefix = `[${log.expected ? "✓" : "✗"}][${log.timestamp}][Storage]`;
-
-        let type = log.type;
-        if (type === "dev") {
-            type = "error";
-            prefix = `#DEV# ${prefix}`;
-        }
-
-        console[type](`${prefix} ${log.message}`);
-    }
-    console.groupEnd();
-
-    console.log(storage.data);
-}
-Test();
