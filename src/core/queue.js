@@ -430,7 +430,7 @@ export class WikiShieldQueue {
 						>
 							<span class="fa fa-user queue-edit-icon"></span>
 							<a
-								class=${response.userBlocked ? "user-blocked" : ""}
+								class="${response.userBlocked ? "user-blocked" : ""}"
 								href="${util.pageLink(`Special:Contributions/${edit.user}`)}"
 								target="_blank"
 								data-tooltip="${util.escapeHtml(edit.user)}"
@@ -525,18 +525,19 @@ export class WikiShieldQueue {
 							};
 						})
 						.finally(() => {
-							if (this.currentEdit?.revid === queueItem.revid) {
-								this.wikishield.interface.updateAIAnalysisDisplay(analysis);
+							if (this.currentEdit[this.currentQueueTab]?.revid === queueItem.revid) {
+								this.wikishield.interface.updateAIAnalysisDisplay(queueItem.AI.edit);
 							}
 						});
 				}
 
-				if (!(queueItem.user.ip || queueItem.user.temporary) && !storage.whitelist.users.has(edit.user) && storage.settings.AI.username_analysis.enabled && false) { // TEMP remove false
-					this.wikishield.AI.analyze.username(edit)
+				if (!(queueItem.user.ip || queueItem.user.temporary) && !storage.whitelist.users.has(edit.user) && storage.settings.AI.username_analysis.enabled) {
+					this.wikishield.AI.analyze.username(queueItem)
 						.then(usernameAnalysis => {
 							queueItem.AI.username = usernameAnalysis;
-
-							// TODO add .promptForUAAReport() here
+							if (usernameAnalysis.flag) {
+								this.promptForUAAReport(queueItem, usernameAnalysis);
+							}
 						})
 						.catch(err => {
 							queueItem.AI.username = {
@@ -855,7 +856,7 @@ export class WikiShieldQueue {
 	* This is called when username analysis flags a username
 	* @param {Object} edit The edit object with username analysis
 	*/
-	async promptForUAAReport(edit) {
+	async promptForUAAReport(edit, usernameAnalysis) {
 		// Only check registered users (not TEMPs)
 		if (!edit.user?.name || mw.util.isTemporaryUser(edit.user.name) || mw.util.isIPAddress(edit.user.name)) {
 			return;
@@ -866,23 +867,20 @@ export class WikiShieldQueue {
 		}
 
 		// Show confirmation dialog with AI analysis
-		const violationLabel = usernameAnalysis.violationType !== 'none'
-		? ` (${usernameAnalysis.violationType})`
-		: '';
+		const violationLabel = usernameAnalysis.issues.map(issue => `${issue.severity} ${issue.policy} violation`).join(", ");
 		const confidencePercent = Math.round(usernameAnalysis.confidence * 100);
 
 		const confirmed = await this.wikishield.interface.showConfirmationDialog(
 			"Report Username to UAA",
-			`The username <span class="confirmation-modal-username">${this.wikishield.util.escapeHtml(edit.user.name)}</span> may violate Wikipedia's username policy${violationLabel}.<br><br>
-				<span style="font-size: 0.9em; color: #888;">Would you like to report it to <a href="https://en.wikipedia.org/wiki/Wikipedia:Usernames_for_administrator_attention" target="_blank" style="color: #0645ad;">Usernames for administrator attention (UAA)</a>?</span><br><br>
+			`The username <span class="confirmation-modal-username">${this.wikishield.util.escapeHtml(edit.user.name)}</span> for ${violationLabel || "no specific issue"}.<br><br>
 				<strong>AI Confidence:</strong> ${confidencePercent}%<br>
-				<strong>Reasoning:</strong> ${this.wikishield.util.escapeHtml(usernameAnalysis.reasoning)}<br>`,
+				<strong>Reasoning:</strong> ${this.wikishield.util.escapeHtml(usernameAnalysis.explanation)}<br>`,
 			edit.user.name,
 			true
 		);
 
 		if (confirmed) {
-			const reason = await this.wikishield.interface.showUAAReasonDialog(username);
+			const reason = await this.wikishield.interface.showUAAReasonDialog(edit.user.name);
 			if (reason) {
 				await this.wikishield.executeScript({
 					name: "reportToUAA",

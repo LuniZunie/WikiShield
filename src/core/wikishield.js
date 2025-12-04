@@ -32,8 +32,9 @@ export class WikiShield {
 			util: this.util,
 			historyCount: __script__.config.historyCount
 		});
-		this.checkWarningTemplates();
-		this.checkWelcomeTemplates();
+		// TEMP: ADD BACK
+		// this.checkWarningTemplates();
+		// this.checkWelcomeTemplates();
 
 		// Initialize queue - will be set after wikishield global is assigned
 		this.queue = null;
@@ -65,9 +66,54 @@ export class WikiShield {
 		this.wikishieldData = wikishieldData;
 		this.WikiShieldProgressBar = WikiShieldProgressBar;
 
-		const ollama = new AI.providers.Ollama(this, { model: "gemma3:4b", server: "http://localhost:11435" });
-		ollama.analyze.username({ user: { name: "pro-anti-air" }, page: { title: "Google" } })
-    		.then(res => alert(res));
+		// TEMP
+		{
+			const ws = new WebSocket('ws://localhost:8080');
+
+			ws.onopen = () => console.log('Connected to server');
+			ws.onclose = () => console.log('Disconnected from server');
+			ws.onerror = (error) => console.log('WebSocket error:', error);
+			const templates = [
+				"uw-ublock", "uw-uhblock", "uw-causeblock", "uw-ublock-wellknown", "uw-ublock-double",
+				"uw-uhblock-double", "uw-softerblock", "uw-spamublock", "uw-vaublock", "uw-botublock",
+				"uw-botuhblock", "uw-adminublock", "uw-adminuhblock"
+			];
+
+			const func = (async (cont = {}) => {
+				let start, end;
+
+				let resolve = null;
+				ws.onmessage = (event) => {
+					const res = JSON.parse(event.data);
+					if (res.action === 'next') {
+						end = performance.now();
+
+						setTimeout(() => {
+							resolve();
+						}, Math.max(0, 250 - (end - start)));
+					}
+				};
+
+				const text = [];
+				const gen = this.api.getBlockLogsGenerator(cont);
+				for (let i = 0; i < 100000; i++) {
+					start = performance.now();
+
+					const logs = await gen.next();
+					ws.send(JSON.stringify({ action: 'loaded', continue: logs.value.continue || null }));
+					ws.send(JSON.stringify(logs.value.logs.filter(log => templates.some(template => log.reason.includes(template)))));
+
+					await new Promise(res => resolve = res);
+				}
+			});
+
+			ws.onmessage = (event) => {
+				const res = JSON.parse(event.data);
+				if (res.action === 'send_continue') {
+					func(res.continue);
+				}
+			};
+		}
 	}
 
 	checkWarningTemplates() {
@@ -534,7 +580,7 @@ export class WikiShield {
 			if (hasNewAlerts && this.alerts.length > 0) {
 				const zenMode = this.storage.data.settings.zen_mode;
 				if (!zenMode.enabled || zenMode.alerts.enabled) {
-					this.audioManager.playSound([ "notification", "alert" ]);	
+					this.audioManager.playSound([ "notification", "alert" ]);
 				}
 			}
 
@@ -757,7 +803,7 @@ export class WikiShield {
 			if (hasNewNotices && this.notices.length > 0) {
 				const zenMode = this.storage.data.settings.zen_mode;
 				if (!zenMode.enabled || zenMode.notices.enabled) {
-					this.audioManager.playSound([ "notification", "notice" ]);	
+					this.audioManager.playSound([ "notification", "notice" ]);
 				}
 			}
 

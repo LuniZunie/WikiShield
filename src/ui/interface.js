@@ -1366,219 +1366,16 @@ export class WikiShieldInterface {
 					this.addTooltipListener(elem);
 				}
 
-				// --- Attach context menu ---
-				elem.addEventListener("contextmenu", (event) => {
-					event.preventDefault();
-
-					// Remove existing menus
-					[...document.querySelectorAll(".context-menu")].forEach(e => e.remove());
-
-					const contextMenu = document.createElement("div");
-					contextMenu.classList.add("context-menu");
-					contextMenu.innerHTML = wikishieldHTML["edit-context-menu"];
-					document.body.appendChild(contextMenu);
-
-					contextMenu.style.left = event.clientX + "px";
-					contextMenu.style.top = event.clientY + "px";
-
-					contextMenu.querySelector("#context-ores-number").innerText = Math.round(edit.ores * 100) || 0;
-					contextMenu.querySelector("#context-ores-number").style.color = this.getORESColor(edit.ores || 0);
-
-					// whitelist button text
-					{ // users whitelist & highlight
-						const username = edit.user.name;
-
-						const contextWhitelistBtn = contextMenu.querySelector("#context-whitelist-user");
-						if (contextWhitelistBtn) {
-							contextWhitelistBtn.textContent = this.wikishield.storage.data.whitelist.users.has(username) ? "Unwhitelist user" : "Whitelist user";
-							contextWhitelistBtn.addEventListener("click", () => {
-								if (this.wikishield.whitelist.users.has(username)) {
-									this.wikishield.executeScript({
-										actions: [
-											{
-												name: "unwhitelistUser",
-												params: {}
-											}
-										]
-									}, undefined, undefined, edit);
-								} else {
-									this.wikishield.executeScript({
-										actions: [
-											{
-												name: "whitelistUser",
-												params: {}
-											}
-										]
-									}, undefined, undefined, edit);
-								}
-
-								contextWhitelistBtn.textContent = this.wikishield.storage.data.whitelist.users.has(username) ? "Unwhitelist user" : "Whitelist user";
-
-								this.renderQueue(this.wikishield.queue.queue[this.wikishield.queue.currentQueueTab], this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab]);
-								contextMenu.remove();
-							});
-						}
-
-						const contextHighlightBtn = contextMenu.querySelector("#context-highlight-user");
-						if (contextHighlightBtn) {
-							contextHighlightBtn.textContent = this.wikishield.storage.data.highlight.users.has(username) ? "Unhighlight user" : "Highlight user";
-							contextHighlightBtn.addEventListener("click", () => {
-								if (this.wikishield.storage.data.highlight.users.has(username)) {
-									this.wikishield.executeScript({
-										actions: [
-											{
-												name: "unhighlightUser",
-												params: {}
-											}
-										]
-									}, undefined, undefined, edit);
-								} else {
-									this.wikishield.executeScript({
-										actions: [
-											{
-												name: "highlightUser",
-												params: {}
-											}
-										]
-									}, undefined, undefined, edit);
-								}
-
-								contextHighlightBtn.textContent = this.wikishield.storage.data.highlight.users.has(username) ? "Unhighlight user" : "Highlight user";
-
-								this.renderQueue(this.wikishield.queue.queue[this.wikishield.queue.currentQueueTab], this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab]);
-								contextMenu.remove();
-							});
-						}
-					}
-
-					{ // pages whitelist & highlight
-						const pageTitle = edit.page.title;
-
-						const contextWhitelistBtn = contextMenu.querySelector("#context-whitelist-page");
-						if (contextWhitelistBtn) {
-							contextWhitelistBtn.textContent = this.wikishield.storage.data.whitelist.pages.has(pageTitle) ? "Unwhitelist page" : "Whitelist page";
-							contextWhitelistBtn.addEventListener("click", () => {
-								if (this.wikishield.whitelist.pages.has(pageTitle)) {
-									this.wikishield.executeScript({
-										actions: [
-											{
-												name: "unwhitelistPage",
-												params: {}
-											}
-										]
-									}, undefined, undefined, edit);
-								} else {
-									this.wikishield.executeScript({
-										actions: [
-											{
-												name: "whitelistPage",
-												params: {}
-											}
-										]
-									}, undefined, undefined, edit);
-								}
-
-								contextWhitelistBtn.textContent = this.wikishield.storage.data.whitelist.pages.has(pageTitle) ? "Unwhitelist page" : "Whitelist page";
-
-								this.renderQueue(this.wikishield.queue.queue[this.wikishield.queue.currentQueueTab], this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab]);
-								contextMenu.remove();
-							});
-						}
-
-						const contextHighlightBtn = contextMenu.querySelector("#context-highlight-page");
-						if (contextHighlightBtn) {
-							contextHighlightBtn.textContent = this.wikishield.storage.data.highlight.pages.has(pageTitle) ? "Unhighlight page" : "Highlight page";
-							contextHighlightBtn.addEventListener("click", () => {
-								if (this.wikishield.storage.data.highlight.pages.has(pageTitle)) {
-									this.wikishield.executeScript({
-										actions: [
-											{
-												name: "unhighlightPage",
-												params: {}
-											}
-										]
-									}, undefined, undefined, edit);
-								} else {
-									this.wikishield.executeScript({
-										actions: [
-											{
-												name: "highlightPage",
-												params: {}
-											}
-										]
-									}, undefined, undefined, edit);
-								}
-
-								contextHighlightBtn.textContent = this.wikishield.storage.data.highlight.pages.has(pageTitle) ? "Unhighlight page" : "Highlight page";
-
-								const _queue_ = this.wikishield.queue;
-								this.renderQueue(_queue_.queue[_queue_.currentQueueTab], _queue_.currentEdit[_queue_.currentQueueTab]);
-								contextMenu.remove();
-							});
-						}
-					}
-
-					// Remove item
-					contextMenu.querySelector("#context-remove").addEventListener("click", () => {
-						this.wikishield.audioManager.playSound([ "ui", "click" ]);
-						if (this.wikishield.AI) {
-							this.wikishield.AI.cancel.edit(edit.revid);
-						}
-
-						const currentIndex = queue.findIndex(e => e.revid === edit.revid);
-						if (currentIndex !== -1) {
-							const _queue_ = this.wikishield.queue;
-
-							queue.splice(currentIndex, 1);
-							this.removeQueueItem(_queue_.currentQueueTab, edit.revid);
-
-							if (edit === currentEdit) {
-								if (queue.length > 0) {
-									if (currentIndex < queue.length) {
-										_queue_.currentEdit[_queue_.currentQueueTab] = queue[currentIndex];
-									} else {
-										_queue_.currentEdit[_queue_.currentQueueTab] = queue[queue.length - 1];
-									}
-								} else {
-									_queue_.currentEdit[_queue_.currentQueueTab] = null;
-								}
-							}
-
-							const previousItems = _queue_.previousItems[_queue_.currentQueueTab];
-							previousItems.push({ ...editWeAreLeaving, fromHistory: Date.now() });
-							if (previousItems.length > 1000) { // prevent theoretical memory leak, keep only the last 1000 previous items
-								previousItems.shift();
-							}
-
-							this.renderQueue(_queue_.queue[_queue_.currentQueueTab], _queue_.currentEdit[_queue_.currentQueueTab]);
-						}
-						contextMenu.remove();
-					});
-
-					// Open history
-					contextMenu.querySelector("#context-open-history").addEventListener("click", (e) => {
-						const url = this.wikishield.util.pageLink(`Special:PageHistory/${edit.page.title}`);
-						window.open(url, "_blank");
-						contextMenu.remove();
-					});
-
-					// Open contributions
-					contextMenu.querySelector("#context-open-contribs").addEventListener("click", (e) => {
-						const url = this.wikishield.util.pageLink(`Special:Contributions/${edit.user.name}`);
-						window.open(url, "_blank");
-						contextMenu.remove();
-					});
-
-					contextMenu.addEventListener("click", e => e.stopPropagation());
-				});
-
 				elem.addEventListener("click", () => {
 					this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab] = edit;
 					this.renderQueue(this.wikishield.queue.queue[this.wikishield.queue.currentQueueTab], edit);
 				});
 
-				// Add to DOM (temporarily append)
 				container.appendChild(elem);
+
+				elem.querySelectorAll("[data-tooltip]").forEach(tooltip => {
+					this.addTooltipListener(tooltip);
+				});
 			}
 
 			// Move to correct position in DOM to match queue order
@@ -1613,7 +1410,7 @@ export class WikiShieldInterface {
 	* @param {Boolean} includeUser include the name of the user who made the edit
 	* @param {Boolean} includeTime include the edit's timestamp
 	*/
-	generateEditHTML(edit, includeORES = true, includeTitle = true, includeUser = true, includeTime = true) {
+	generateEditHTML(edit) {
 		let tagHTML = "";
 
 		const highlightedTags = this.wikishield.storage.data.highlight.tags;
@@ -1649,54 +1446,54 @@ export class WikiShieldInterface {
 		const summaryFull = edit.comment ? this.wikishield.util.escapeHtml(edit.comment) : "";
 
 		// Add minor edit indicator before summary
-		const minorIndicator = edit.minor ? `<span class="minor-indicator" data-tooltip="Minor edit">m</span> ` : "";
+		const minorIndicator = edit.minor ? `<span class="minor-indicator" data-tooltip="Minor edit" data-tooltip-delay="500">m</span> ` : "";
 
 		// Format ORES score for display
 		const oresScore = edit.ores || 0;
 		const oresPercent = Math.round(oresScore * 100);
 
-		const oresHTML = includeORES ? `<div class="queue-edit-color" data-ores-score="${oresPercent}%" data-raw-ores-score="${oresScore}" style="background: ${this.getORESColor(oresScore)};"></div>` : "";
-		const titleHTML = includeTitle ? `
+		const oresHTML = `<div class="queue-edit-color" data-ores-score="${oresPercent}%" data-raw-ores-score="${oresScore}" style="background: ${this.getORESColor(edit.ores)};"></div>`;
+		const titleHTML = `
 				<div
-					class="queue-edit-title ${this.wikishield.storage.data.highlight.pages.has(edit.page ? edit.page.title : edit.title) ? "queue-highlight" : ""}"
-					data-tooltip="${edit.page ? edit.page.title : edit.title}"
+					class="queue-edit-title ${this.wikishield.storage.data.highlight.pages.has(edit.page.title) ? "queue-highlight" : ""}"
+					data-tooltip="${this.wikishield.util.escapeHtml(edit.page.title)}" data-tooltip-delay="500"
 				>
 					<span class="fa fa-file-lines queue-edit-icon"></span>
-					${edit.page ? edit.page.title : edit.title}
-				</div>` : "";
+					${edit.page.title}
+				</div>`;
 
 		// Determine user highlight classes
 		let userClasses = "";
-		if (edit.user && this.wikishield.storage.data.highlight.users.has(typeof edit.user === "string" ? edit.user : edit.user.name)) {
+		if (edit.user && this.wikishield.storage.data.highlight.users.has(edit.user.name)) {
 			userClasses += " queue-highlight";
 		} else if (edit.user && typeof edit.user === "object" && edit.user.emptyTalkPage) {
 			userClasses += " queue-user-empty-talk";
 		}
 
-		const userHTML = includeUser ? `
-				<div class="queue-edit-user ${userClasses}">
+		const userHTML = `
+				<div class="queue-edit-user ${userClasses}" data-tooltip="${edit.user.name}" data-tooltip-delay="500">
 					<span class="fa fa-user queue-edit-icon"></span>
-					<span class=${edit.user?.blocked ? "user-blocked" : ""}>
-						${!edit.user ? "<em>Username removed</em>" : typeof edit.user === "string" ? edit.user : edit.user.name}
+					<span class="${edit.user.blocked ? "user-blocked" : ""}">
+						${edit.user.name}
 					</span>
-				</div>` : "";
-		const timeHTML = includeTime ? `
-				<div class="queue-edit-time" data-tooltip="${new Date(edit.timestamp).toUTCString()}">
+				</div>`;
+		const timeHTML = `
+				<div class="queue-edit-time" data-tooltip="${new Date(edit.timestamp).toUTCString()}" data-tooltip-delay="500">
 					<span class="fa fa-clock queue-edit-icon"></span>
 					${this.wikishield.util.timeAgo(edit.timestamp)}
-				</div>` : "";
+				</div>`;
 
 		return `
 				${oresHTML}
 				<div class="queue-edit-content">
 					${titleHTML}
 					${userHTML}
-					<div class="queue-edit-summary" data-tooltip="${summaryFull}">
+					<div class="queue-edit-summary" data-tooltip="${summaryFull}" data-tooltip-delay="500">
 						<span class="fa fa-comment-dots queue-edit-icon"></span>
 						${minorIndicator}${summaryTruncated || "<em>No summary provided</em>"}
 					</div>
 					${timeHTML}
-					<div class="queue-edit-tags">
+					<div class="queue-edit-tags" data-tooltip="${edit.tags.join(", ")}" data-tooltip-delay="500">
 						${tagHTML}
 					</div>
 				</div>
@@ -1752,7 +1549,7 @@ export class WikiShieldInterface {
 			// Remove AI analysis container when no edit
 			const aiContainer = document.querySelector("#ai-analysis-container");
 			if (aiContainer) {
-				aiContainer.remove();
+				aiContainer.classList.add("hidden");
 			}
 
 			// Remove old edit notice when no edit
@@ -1786,20 +1583,20 @@ export class WikiShieldInterface {
 						edit.AI.edit = {
 							error: err.message
 						};
-					})
-					.finally(() => {
-						if (this.currentEdit?.revid === edit.revid) {
-							this.wikishield.interface.updateAIAnalysisDisplay(analysis);
+					}).finally(() => {
+						if (this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab]?.revid === edit.revid) {
+							this.updateAIAnalysisDisplay(edit.AI.edit);
 						}
 					});
 			}
 
-			if (edit.AI.username === null && !(edit.user.ip || edit.user.temporary) && !storage.whitelist.users.has(edit.user) && storage.settings.AI.username_analysis.enabled && false) { // TEMP remove false
+			if (edit.AI.username === null && !(edit.user.ip || edit.user.temporary) && !storage.whitelist.users.has(edit.user) && storage.settings.AI.username_analysis.enabled) {
 				this.wikishield.AI.analyze.username(edit)
 					.then(usernameAnalysis => {
 						edit.AI.username = usernameAnalysis;
-
-						// TODO add .promptForUAAReport() here
+						if (usernameAnalysis.flag) {
+							this.wikishield.queue.promptForUAAReport(edit, usernameAnalysis);
+						}
 					})
 					.catch(err => {
 						edit.AI.username = {
@@ -1832,7 +1629,6 @@ export class WikiShieldInterface {
 
 		// Start checking for newer revisions on THIS Wikipedia page
 		this.startNewerRevisionCheck(edit);
-
 
 		if (!edit.__FLAGGED__) {
 			edit.consecutive.then(data => {
@@ -1974,7 +1770,6 @@ export class WikiShieldInterface {
 			const addWhitelistButton = this.elem("#page-whitelist");
 			const removeWhitelistButton = this.elem("#page-unwhitelist");
 			if (addWhitelistButton && removeWhitelistButton) {
-				// FIX, broken by context menu (and vice versa)
 				const func = () => {
 					const isWhitelisted = this.wikishield.storage.data.whitelist.pages.has(edit.page.title);
 					if (isWhitelisted) {
@@ -1995,7 +1790,6 @@ export class WikiShieldInterface {
 			const highlightButton = this.elem("#page-highlight");
 			const unhighlightButton = this.elem("#page-unhighlight");
 			if (highlightButton && unhighlightButton) {
-				// FIX, broken by context menu (and vice versa)
 				const func = () => {
 					const isHighlighted = this.wikishield.storage.data.highlight.pages.has(edit.page.title);
 					if (isHighlighted) {
@@ -2105,17 +1899,39 @@ export class WikiShieldInterface {
 			const _queue_ = this.wikishield.queue;
 			const contribs = edit.user.contribs;
 
+			for (const cItem of contribs) {
+				const $edit = document.createElement("div");
+				$edit.className = `queue-edit no-transition ${cItem.revid === _queue_.currentEdit[_queue_.currentQueueTab].revid ? "queue-edit-current" : ""}`;
+				$edit.innerHTML = this.generateEditHTML({
+					page: { title: cItem.title },
+					user: { name: cItem.user },
+					comment: "Loading...",
+					timestamp: cItem.timestamp,
+					sizediff: 0,
+					ores: NaN,
+					tags: cItem.tags || []
+				});
+				contribsContainer.appendChild($edit);
+
+				requestAnimationFrame(() => $edit.classList.remove("no-transition"));
+			}
+
 			const items = await _queue_.generateQueueItems(contribs.map(edit => ({ type: "contribs", edit, simple: true })));
 			if (signal.aborted) return;
 
+			contribsContainer.innerHTML = "";
 			for (const item of items) {
-				const current = item.revid === _queue_.currentEdit[_queue_.currentQueueTab].revid ? "queue-edit-current" : "";
 				const $edit = document.createElement("div");
-				$edit.className = `queue-edit ${current}`;
+				$edit.className = `queue-edit no-transition ${item.revid === _queue_.currentEdit[_queue_.currentQueueTab].revid ? "queue-edit-current" : ""}`;
 				$edit.innerHTML = this.generateEditHTML(item);
 				contribsContainer.appendChild($edit);
 
 				$edit.addEventListener("click", () => _queue_.loadFromContribs(item));
+				$edit.querySelectorAll("[data-tooltip]").forEach(elem => {
+					this.addTooltipListener(elem);
+				});
+
+				requestAnimationFrame(() => $edit.classList.remove("no-transition"));
 			}
 		};
 		loadUserContribs(abortController.signal);
@@ -2124,17 +1940,39 @@ export class WikiShieldInterface {
 			const _queue_ = this.wikishield.queue;
 			const history = edit.page.history;
 
+			for (const hItem of history) {
+				const $edit = document.createElement("div");
+				$edit.className = `queue-edit no-transition ${hItem.revid === _queue_.currentEdit[_queue_.currentQueueTab].revid ? "queue-edit-current" : ""}`;
+				$edit.innerHTML = this.generateEditHTML({
+					page: { title: hItem.title },
+					user: { name: hItem.user },
+					comment: "Loading...",
+					timestamp: hItem.timestamp,
+					sizediff: 0,
+					ores: NaN,
+					tags: hItem.tags || []
+				});
+				historyContainer.appendChild($edit);
+
+				requestAnimationFrame(() => $edit.classList.remove("no-transition"));
+			}
+
 			const items = await _queue_.generateQueueItems(history.map(edit => ({ type: "history", edit, simple: true })));
 			if (signal.aborted) return;
 
+			historyContainer.innerHTML = "";
 			for (const item of items) {
-				const current = item.revid === _queue_.currentEdit[_queue_.currentQueueTab].revid ? "queue-edit-current" : "";
 				const $edit = document.createElement("div");
-				$edit.className = `queue-edit ${current}`;
+				$edit.className = `queue-edit no-transition ${item.revid === _queue_.currentEdit[_queue_.currentQueueTab].revid ? "queue-edit-current" : ""}`;
 				$edit.innerHTML = this.generateEditHTML(item);
 				historyContainer.appendChild($edit);
 
 				$edit.addEventListener("click", () => _queue_.loadFromHistory(item));
+				$edit.querySelectorAll("[data-tooltip]").forEach(elem => {
+					this.addTooltipListener(elem);
+				});
+
+				requestAnimationFrame(() => $edit.classList.remove("no-transition"));
 			}
 		};
 		loadPageHistory(abortController.signal);
@@ -2158,8 +1996,7 @@ export class WikiShieldInterface {
 			existingNotice.remove();
 		}
 
-		// Display AI analysis if available
-		this.updateAIAnalysisDisplay(edit.aiAnalysis);
+		this.updateAIAnalysisDisplay(edit.AI.analysis);
 
 		this.hide3RRNotice();
 		if (edit.reverts >= 3) {
@@ -2298,184 +2135,34 @@ export class WikiShieldInterface {
 	* @param {Object} analysis The AI analysis object
 	*/
 	updateAIAnalysisDisplay(analysis) {
-		return; // AI analysis temporarily disabled
+		const $analysis = this.elem("#ai-analysis-container");
 
-		// Find or create AI analysis container
-		let aiContainer = document.querySelector("#ai-analysis-container");
-
-		if (!analysis) {
-			// Remove AI container if no analysis
-			if (aiContainer) {
-				aiContainer.remove();
-			}
+		if (!analysis || analysis.error) {
+			$analysis.classList.add("hidden");
 			return;
 		}
 
-		if (!aiContainer) {
-			// Create container if it doesn't exist
-			const diffContainer = document.querySelector("#diff-container");
-			if (!diffContainer) return;
+		$analysis.classList.remove("hidden");
 
-			aiContainer = document.createElement("div");
-			aiContainer.id = "ai-analysis-container";
-			aiContainer.style.cssText = `
-					margin: 12px;
-					padding: 0;
-					border-radius: 12px;
-					background: linear-gradient(135deg,
-						rgba(102, 126, 234, 0.95) 0%,
-						rgba(118, 75, 162, 0.95) 50%,
-						rgba(102, 126, 234, 0.9) 100%);
-					-webkit-backdrop-filter: blur(20px);
-					backdrop-filter: blur(20px);
-					color: white;
-					box-shadow:
-						0 8px 24px rgba(102, 126, 234, 0.4),
-						inset 0 1px 0 rgba(255, 255, 255, 0.2),
-						inset 0 -1px 0 rgba(0, 0, 0, 0.1);
-					border: 1px solid rgba(255, 255, 255, 0.15);
-					overflow: hidden;
-					flex-shrink: 0;
-					transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-				`;
-			diffContainer.parentElement.insertBefore(aiContainer, diffContainer);
+		const $assessment = $analysis.querySelector(":scope > .header > .assessment");
+		$assessment.innerText = analysis.assessment;
+		$assessment.className = `assessment ${analysis.assessment.toLowerCase().replace(/\s+/g, "-")}`;
+
+		$analysis.querySelector(":scope > .header > .confidence").innerText = `${Math.round((analysis.confidence || 0) * 100)}% confidence`;
+
+		$analysis.querySelector(":scope > .explanation").innerText = analysis.explanation || "No explanation provided.";
+
+		const $issues = $analysis.querySelector(":scope > .issues");
+		$issues.innerHTML = "";
+
+		for (const issue of analysis.issues || []) {
+			const issueElem = document.createElement("div");
+			issueElem.className = `issue ${issue.severity.toLowerCase().replace(/\s+/g, "-")}`;
+			issueElem.innerText = issue.policy;
+			$issues.appendChild(issueElem);
 		}
 
-		if (analysis.error) {
-			aiContainer.innerHTML = `
-					<div style="display: flex; align-items: center; gap: 10px; padding: 16px; background: rgba(220, 53, 69, 0.15); border-left: 4px solid #dc3545;">
-						<span class="fa fa-exclamation-triangle" style="font-size: 1.3em; color: #ff6b6b;"></span>
-						<span style="font-weight: 500;">AI analysis failed: ${analysis.error}</span>
-					</div>
-				`;
-			return;
-		}
-
-		// Build issue badges
-		let issueHTML = '';
-		if (analysis.hasIssues && analysis.issues && analysis.issues.length > 0) {
-			const severityColors = {
-				'critical': 'rgba(220, 53, 69, 0.95)',
-				'major': 'rgba(253, 126, 20, 0.95)',
-				'minor': 'rgba(255, 193, 7, 0.95)'
-			};
-
-			const typeIcons = {
-				'vandalism': 'fa-skull-crossbones',
-				'spam': 'fa-spam',
-				'pov': 'fa-balance-scale',
-				'unsourced': 'fa-question-circle',
-				'attack': 'fa-bomb',
-				'copyright': 'fa-copyright',
-				'disruptive': 'fa-circle-exclamation',
-				'error': 'fa-bug',
-				'policy': 'fa-gavel',
-				'ai-generated': 'fa-robot'
-			};
-
-			issueHTML = '<div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;">';
-			for (const issue of analysis.issues.slice(0, 5)) {
-				const iconClass = typeIcons[issue.type] || 'fa-exclamation-circle';
-				const bgColor = severityColors[issue.severity] || 'rgba(108, 117, 125, 0.95)';
-				issueHTML += `
-					<span style="
-						display: inline-flex;
-						align-items: center;
-						gap: 4px;
-						padding: 4px 8px;
-						background: ${bgColor};
-						border-radius: 6px;
-						font-size: 0.75em;
-						font-weight: 600;
-						letter-spacing: 0.2px;
-						box-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
-						border: 1px solid rgba(255, 255, 255, 0.2);
-						cursor: help;
-						transition: all 0.2s ease;
-					" data-tooltip="${this.wikishield.util.escapeHtml(issue.description)}"
-					onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 3px 10px rgba(0, 0, 0, 0.3)';"
-					onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 6px rgba(0, 0, 0, 0.2)';">
-						<span class="fa ${iconClass}"></span>
-						${issue.type}
-					</span>
-				`;
-			}
-			if (analysis.issues.length > 5) {
-				issueHTML += `<span style="opacity: 0.85; font-size: 0.75em; padding: 4px 8px; background: rgba(0, 0, 0, 0.15); border-radius: 6px; font-weight: 500;">+${analysis.issues.length - 5} more</span>`;
-			}
-			issueHTML += '</div>';
-		}
-
-		// Build recommendation/action badge
-		const actionColors = {
-			'rollback': 'rgba(220, 53, 69, 0.95)',
-			'warn-and-revert': 'rgba(231, 76, 60, 0.95)',
-			'warn': 'rgba(253, 126, 20, 0.95)',
-			'report-aiv': 'rgba(142, 68, 173, 0.95)',
-			'review': 'rgba(255, 193, 7, 0.95)',
-			'approve': 'rgba(40, 167, 69, 0.95)',
-			'thank': 'rgba(23, 162, 184, 0.95)',
-			'welcome': 'rgba(32, 201, 151, 0.95)'
-		};
-		const actionIcons = {
-			'rollback': 'fa-rotate-left',
-			'warn-and-revert': 'fa-exclamation-triangle',
-			'warn': 'fa-exclamation-triangle',
-			'report-aiv': 'fa-gavel',
-			'review': 'fa-eye',
-			'approve': 'fa-check-circle',
-			'thank': 'fa-heart',
-			'welcome': 'fa-paper-plane'
-		};
-
-		const action = analysis.action || 'review';
-		const actionColor = actionColors[action] || 'rgba(108, 117, 125, 0.95)';
-		const actionIcon = actionIcons[action] || 'fa-question';
-		const probability = analysis.probability || 0;
-
-		aiContainer.innerHTML = `
-			<div style="padding: 10px 12px;">
-				<!-- Compact Header -->
-				<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-					<div style="display: flex; align-items: center; gap: 6px;">
-						<span class="fa fa-robot" style="font-size: 1.1em;"></span>
-						<strong style="font-size: 0.95em; letter-spacing: 0.3px;">AI Analysis</strong>
-						<span style="padding: 3px 8px; background: rgba(255,255,255,0.25); border-radius: 6px; font-size: 0.8em; font-weight: 700;">
-							${probability}%
-						</span>
-						<span style="padding: 3px 8px; background: rgba(255,255,255,0.18); border-radius: 6px; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">
-							${analysis.confidence || 'unknown'}
-						</span>
-					</div>
-					<span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; background: ${actionColor}; border-radius: 6px; font-size: 0.8em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;">
-						<span class="fa ${actionIcon}"></span>
-						${action.replace(/-/g, ' ')}
-					</span>
-				</div>
-
-				<!-- Compact Summary -->
-				<div style="font-size: 0.85em; line-height: 1.4; margin-bottom: 6px; opacity: 0.95;">
-					${analysis.summary}
-				</div>
-
-				${analysis.reasoning ? `
-				<div style="font-size: 0.8em; line-height: 1.3; padding: 6px 8px; background: rgba(0,0,0,0.15); border-radius: 4px; margin-bottom: 6px; border-left: 3px solid rgba(143,163,255,0.5); opacity: 0.9;">
-					<strong style="font-size: 0.85em;">🔍</strong> ${analysis.reasoning}
-				</div>
-				` : ''}
-
-				<!-- Compact Recommendation -->
-				<div style="font-size: 0.82em; line-height: 1.3; padding: 6px 8px; background: rgba(255,255,255,0.08); border-radius: 4px; margin-bottom: ${analysis.hasIssues && analysis.issues && analysis.issues.length > 0 ? '8px' : '0'}; border-left: 3px solid rgba(40,167,69,0.6); opacity: 0.95;">
-					<strong style="font-size: 0.85em;">💡</strong> ${analysis.recommendation}
-				</div>
-
-				<!-- Compact Issues -->
-				${issueHTML}
-			</div>
-		`;
-
-		// Add tooltip listeners to issue badges
-		aiContainer.querySelectorAll('[data-tooltip]').forEach(elem => {
+		$analysis.querySelectorAll('[data-tooltip]').forEach(elem => {
 			this.addTooltipListener(elem);
 		});
 	}
@@ -2775,11 +2462,14 @@ export class WikiShieldInterface {
 				tooltip.style.top = Math.max(10, elemBox.bottom + 10) + "px";
 			}
 
-			tooltip.style.opacity = 1;
-
 			elem.addEventListener("mousewheel", e => {
 				tooltip.scrollBy(0, e.deltaY);
 			});
+
+			tooltip.style.opacity = 0;
+			setTimeout(() => {
+				tooltip.style.opacity = 1;
+			}, +elem.dataset.tooltipDelay || 10);
 		});
 
 		elem.addEventListener("mouseleave", () => {
@@ -2792,8 +2482,7 @@ export class WikiShieldInterface {
 	*/
 	removeTooltips() {
 		[...document.querySelectorAll(".tooltip")].forEach(elem => {
-			elem.style.opacity = 0;
-			window.setTimeout(() => elem.remove(), 200);
+			elem.remove();
 		});
 	}
 
@@ -2823,6 +2512,11 @@ export class WikiShieldInterface {
 	* @returns {String} The color to display
 	*/
 	getORESColor(ores) {
+		if (isNaN(ores) || ores < 0) {
+			return "rgba(128, 128, 128, 0.5)"; // Gray for unknown
+		}
+
+		ores = Math.min(Math.max(ores || 0, 0), 1); // Clamp between 0 and 1
 		const colors = colorPalettes[this.wikishield.storage.data.settings.theme.palette];
 		return colors[Math.floor(ores * colors.length)];
 	}

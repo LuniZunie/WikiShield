@@ -131,6 +131,16 @@ export const wikishieldHTML = {
 				</div>
 				<div id="right-content">
 					<div id="main-container">
+						<div id="ai-analysis-container" class="hidden shimmer shimmer-border">
+							<div class="header">
+								<i class="fas fa-robot"></i>
+								<span class="title">AI Analysis</span>
+								<span class="assessment"></span>
+								<span class="confidence"></span>
+							</div>
+							<div class="explanation"></div>
+							<div class="issues"></div>
+						</div>
 						<div id="diff-container"></div>
 						<div id="pending-changes-container" class="hidden">
 							<div class="accept">Accept</div>
