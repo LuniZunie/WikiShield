@@ -1263,7 +1263,7 @@ export class WikiShieldSettingsInterface {
 					<div class="settings-section compact inline" id="edit-analysis-toggle">
 						<div class="settings-section-content">
 							<div class="settings-section-title">Edit Analysis</div>
-							<div class="settings-section-desc">Suggests actions to take on edits, such as "welcome", "thank", "rollback", "rever-and-warn"</div>
+							<div class="settings-section-desc">Suggests actions to take on edits, such as "welcome", "thank", "rollback", "revert-and-warn"</div>
 						</div>
 					</div>
 					<div class="settings-section compact inline" id="username-analysis-toggle">
