@@ -85,7 +85,7 @@ export const __script__ = {
 	);
 
 	const load = () => {
-		const storageLogs = new StorageManager().load().logs;
+		const storageLogs = new StorageManager().load(StorageManager.versions.get(0).default).logs;
 		if (storageLogs.some(log => !log.expected)) {
 			StorageManager.outputLogs(storageLogs, "LoadTest");
 			mw.notify("An error has occurred with the WikiShield storage system that could lead to data loss. For that reason, WikiShield has been automatically disabled. Please check your browser console for more information and immediately report this to the development team.", { type: 'error' });

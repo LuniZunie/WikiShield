@@ -64,6 +64,10 @@ export class WikiShield {
 
 		this.wikishieldData = wikishieldData;
 		this.WikiShieldProgressBar = WikiShieldProgressBar;
+
+		const ollama = new AI.providers.Ollama(this, { model: "gemma3:4b", server: "http://localhost:11435" });
+		ollama.analyze.username({ user: { name: "pro-anti-air" }, page: { title: "Google" } })
+    		.then(res => alert(res));
 	}
 
 	checkWarningTemplates() {
