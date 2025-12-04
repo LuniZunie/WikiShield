@@ -721,45 +721,6 @@ export class WikiShieldAPI {
 	}
 
 	/**
-	* Generator function to fetch block logs with continuation
-	* @param {String} user The username to get block logs for
-	* @param {Number} limit Number of entries per batch (default: 50)
-	* @yields {Array} Array of block log entries for each batch
-	*/
-	async* getBlockLogsGenerator(continueObj = {}, limit = "max") { // TEMP
-		while (true) {
-			try {
-				const response = await this.api.get({
-					"action": "query",
-					"list": "blocks",
-					"bklimit": limit,
-					"bkshow": "account",
-					"format": "json",
-					"formatversion": 2,
-					...continueObj
-				});
-
-				const logs = response.query?.blocks || [];
-
-				if (logs.length === 0) {
-					return;
-				}
-
-				yield { logs, continue: response.continue };
-
-				if (!response.continue) {
-					return;
-				}
-
-				continueObj = response.continue;
-			} catch (err) {
-				console.log(`Could not fetch block logs for user ${user}:`, err);
-				return;
-			}
-		}
-	}
-
-	/**
 	* Get the history of the given page
 	* @param {String} page The page to get the history for
 	* @returns {Promise<Array>} The history
