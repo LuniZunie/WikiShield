@@ -10,6 +10,11 @@ export class WikiShieldQueue {
 			flagged: new Set(),
 			watchlist: new Set()
 		};
+		this.haltedFetchedChanges = {
+			recent: [],
+			flagged: [],
+			watchlist: []
+		};
 		this.queue = {
 			recent: [],
 			flagged: [],
@@ -92,6 +97,9 @@ export class WikiShieldQueue {
 				const time = new Date(recentChanges[0].timestamp);
 				this.lastTimestamp[type] = this.wikishield.util.utcString(time);
 			}
+
+			recentChanges = recentChanges.concat(this.haltedFetchedChanges[type]);
+			this.haltedFetchedChanges[type] = [ ];
 
 			switch (type) {
 				default:
@@ -190,12 +198,24 @@ export class WikiShieldQueue {
 			if (type === "recent") {
 				const max = this.wikishield.storage.data.settings.queue.max_edits;
 				recentChanges.forEach(edit => {
+					if (isNaN(ores[edit.revid])) {
+						this.haltedFetchedChanges[type].push(edit);
+						return;
+					}
+
 					if (editCounts[edit.user] <= max && ((ores[edit.revid] || 0) >= minORES || hasHighlight(edit))) {
 						filtered.push({ type, edit });
 					}
 				});
 			} else {
-				filtered = recentChanges.map(edit => ({ type, edit }));
+				recentChanges.forEach(edit => {
+					if (isNaN(ores[edit.revid])) {
+						this.haltedFetchedChanges[type].push(edit);
+						return;
+					}
+
+					filtered.push({ type, edit });
+				});
 			}
 
 			if (filtered.length > 0) {

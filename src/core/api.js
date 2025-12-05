@@ -60,7 +60,6 @@ const CACHE = {
 	revSize: new Memory(),
 	revidToTitle: new Memory(),
 	categories: new Memory(),
-	ores: new Memory(),
 };
 
 export class WikiShieldAPI {
@@ -1173,10 +1172,6 @@ export class WikiShieldAPI {
 		}
 
 		try {
-			if (CACHE.ores.has(revids)) {
-				return CACHE.ores.get(revids);
-			}
-
 			const response = await this.api.get({
 				"action": "query",
 				"format": "json",
@@ -1187,16 +1182,20 @@ export class WikiShieldAPI {
 				"rvslots": "*"
 			});
 
+			const avg = (arr) => arr.reduce((a, b) => a + b, 0) / arr.length;
 			const scores = response.query.pages.map(page => {
-				return "goodfaith" in page.revisions[0].oresscores ? [
-					page.revisions[0].revid,
-					page.revisions[0].oresscores.goodfaith.false
-				] : [page.revisions[0].revid, 0];
+				const scores = [];
+				if ("damaging" in page.revisions[0].oresscores) {
+					scores.push(page.revisions[0].oresscores.damaging.true);
+				}
+				if ("goodfaith" in page.revisions[0].oresscores) {
+					scores.push(page.revisions[0].oresscores.goodfaith.false);
+				}
+
+				return [ page.revisions[0].revid, scores.length > 0 ? avg(scores) : NaN ];
 			});
 
-			const cachedScores = scores.reduce((a, v) => ({ ...a, [v[0]]: v[1] }), {});
-			CACHE.ores.set(revids, cachedScores);
-			return cachedScores;
+			return scores.reduce((a, v) => ({ ...a, [v[0]]: v[1] }), {});
 		} catch (err) {
 			console.log(`Could not fetch ORES scores for revision ${revids}: ${err}`);
 		}
