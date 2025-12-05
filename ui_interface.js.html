@@ -1,0 +1,3192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="utf-8">
+    <title>ui/interface.js - WikiShield Documentation</title>
+    
+    <meta name="description" content="API documentation for WikiShield - Wikipedia anti-vandalism tool" />
+    
+        <meta name="keywords" content="wikishield, wikipedia, documentation, api, anti-vandalism" />
+        <meta name="keyword" content="wikishield, wikipedia, documentation, api, anti-vandalism" />
+    
+    
+    
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc.css">
+    <script src="scripts/nav.js" defer></script>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav >
+    
+    <input type="text" id="nav-search" placeholder="Search" />
+    
+    
+    <h2><a href="index.html">Home</a></h2><h2><a href="https://github.com/LuniZunie/WikiShield" target="_blank" class="menu-item" id="github-link" >GitHub</a></h2><h2><a href="https://en.wikipedia.org/wiki/Wikipedia:WikiShield" target="_blank" class="menu-item" id="wikipedia-link" >Wikipedia</a></h2><h3>Modules</h3><ul><li><a href="module-core_killswitch.html">core/killswitch</a><ul class='members'><li data-type='member'><a href="module-core_killswitch.html#.killswitch_config">killswitch_config</a></li><li data-type='member'><a href="module-core_killswitch.html#.killswitch_status">killswitch_status</a></li></ul><ul class='methods'><li data-type='method'><a href="module-core_killswitch.html#.checkKillswitch">checkKillswitch</a></li><li data-type='method'><a href="module-core_killswitch.html#.startKillswitchPolling">startKillswitchPolling</a></li></ul></li></ul><h3>Classes</h3><ul><li><a href="AISettings.html">AISettings</a></li><li><a href="AboutSettings.html">AboutSettings</a></li><li><a href="AudioSettings.html">AudioSettings</a></li><li><a href="GeneralSettings.html">GeneralSettings</a></li><li><a href="HighlightedSettings.html">HighlightedSettings</a></li><li><a href="NumericInput.html">NumericInput</a></li><li><a href="PaletteSettings.html">PaletteSettings</a></li><li><a href="ProgressBarComponent.html">ProgressBarComponent</a><ul class='methods'><li data-type='method'><a href="ProgressBarComponent.html#scheduleRemoval">scheduleRemoval</a></li><li data-type='method'><a href="ProgressBarComponent.html#updateProgress">updateProgress</a></li></ul></li><li><a href="SaveSettings.html">SaveSettings</a></li><li><a href="SettingsCompactGrid.html">SettingsCompactGrid</a></li><li><a href="SettingsSection.html">SettingsSection</a></li><li><a href="StatisticsSettings.html">StatisticsSettings</a></li><li><a href="Toggle.html">Toggle</a></li><li><a href="UserList.html">UserList</a></li><li><a href="VolumeControl.html">VolumeControl</a></li><li><a href="WhitelistSettings.html">WhitelistSettings</a></li><li><a href="WikiShieldLog.html">WikiShieldLog</a><ul class='methods'><li data-type='method'><a href="WikiShieldLog.html#log">log</a></li></ul></li><li><a href="WikiShieldProgressBar.html">WikiShieldProgressBar</a><ul class='methods'><li data-type='method'><a href="WikiShieldProgressBar.html#cleanup">cleanup</a></li><li data-type='method'><a href="WikiShieldProgressBar.html#processQueue">processQueue</a></li><li data-type='method'><a href="WikiShieldProgressBar.html#remove">remove</a></li><li data-type='method'><a href="WikiShieldProgressBar.html#set">set</a></li></ul></li><li><a href="WikiShieldQueue.html">WikiShieldQueue</a><ul class='methods'><li data-type='method'><a href="WikiShieldQueue.html#addQueueItem">addQueueItem</a></li><li data-type='method'><a href="WikiShieldQueue.html#checkAndAutoReportUAA">checkAndAutoReportUAA</a></li><li data-type='method'><a href="WikiShieldQueue.html#checkAndAutoWelcome">checkAndAutoWelcome</a></li><li data-type='method'><a href="WikiShieldQueue.html#checkForOutdatedEdits">checkForOutdatedEdits</a></li><li data-type='method'><a href="WikiShieldQueue.html#delete">delete</a></li><li data-type='method'><a href="WikiShieldQueue.html#fetchRecentChanges">fetchRecentChanges</a></li><li data-type='method'><a href="WikiShieldQueue.html#generateQueueItem">generateQueueItem</a></li><li data-type='method'><a href="WikiShieldQueue.html#getWarningHistory">getWarningHistory</a></li><li data-type='method'><a href="WikiShieldQueue.html#getWarningLevel">getWarningLevel</a></li><li data-type='method'><a href="WikiShieldQueue.html#loadFromContribs">loadFromContribs</a></li><li data-type='method'><a href="WikiShieldQueue.html#loadFromHistory">loadFromHistory</a></li><li data-type='method'><a href="WikiShieldQueue.html#loadSpecificRevision">loadSpecificRevision</a></li><li data-type='method'><a href="WikiShieldQueue.html#nextItem">nextItem</a></li><li data-type='method'><a href="WikiShieldQueue.html#playAlertSound">playAlertSound</a></li><li data-type='method'><a href="WikiShieldQueue.html#playBlockSound">playBlockSound</a></li><li data-type='method'><a href="WikiShieldQueue.html#playClickSound">playClickSound</a></li><li data-type='method'><a href="WikiShieldQueue.html#playNotificationSound">playNotificationSound</a></li><li data-type='method'><a href="WikiShieldQueue.html#playProtectionSound">playProtectionSound</a></li><li data-type='method'><a href="WikiShieldQueue.html#playReportSound">playReportSound</a></li><li data-type='method'><a href="WikiShieldQueue.html#playRollbackSound">playRollbackSound</a></li><li data-type='method'><a href="WikiShieldQueue.html#playSound">playSound</a></li><li data-type='method'><a href="WikiShieldQueue.html#playSparkleSound">playSparkleSound</a></li><li data-type='method'><a href="WikiShieldQueue.html#playThankSound">playThankSound</a></li><li data-type='method'><a href="WikiShieldQueue.html#playWarnSound">playWarnSound</a></li><li data-type='method'><a href="WikiShieldQueue.html#playWatchlistSound">playWatchlistSound</a></li><li data-type='method'><a href="WikiShieldQueue.html#playWhooshSound">playWhooshSound</a></li><li data-type='method'><a href="WikiShieldQueue.html#prevItem">prevItem</a></li><li data-type='method'><a href="WikiShieldQueue.html#promptForUAAReport">promptForUAAReport</a></li></ul></li><li><a href="WikiShieldUtil.html">WikiShieldUtil</a><ul class='methods'><li data-type='method'><a href="WikiShieldUtil.html#encodeuri">encodeuri</a></li><li data-type='method'><a href="WikiShieldUtil.html#escapeHtml">escapeHtml</a></li><li data-type='method'><a href="WikiShieldUtil.html#expiryToMilliseconds">expiryToMilliseconds</a></li><li data-type='method'><a href="WikiShieldUtil.html#getChangeColor">getChangeColor</a></li><li data-type='method'><a href="WikiShieldUtil.html#getChangeString">getChangeString</a></li><li data-type='method'><a href="WikiShieldUtil.html#maxStringLength">maxStringLength</a></li><li data-type='method'><a href="WikiShieldUtil.html#monthSectionName">monthSectionName</a></li><li data-type='method'><a href="WikiShieldUtil.html#padString">padString</a></li><li data-type='method'><a href="WikiShieldUtil.html#pageLink">pageLink</a></li><li data-type='method'><a href="WikiShieldUtil.html#timeAgo">timeAgo</a></li><li data-type='method'><a href="WikiShieldUtil.html#utcString">utcString</a></li></ul></li><li><a href="ZenSettings.html">ZenSettings</a></li></ul><h3>Global</h3><ul><li><a href="global.html#BuildAIAnalysisPrompt">BuildAIAnalysisPrompt</a></li><li><a href="global.html#BuildAIUsernamePrompt">BuildAIUsernamePrompt</a></li><li><a href="global.html#ProgressBar">ProgressBar</a></li><li><a href="global.html#createConditions">createConditions</a></li><li><a href="global.html#fullTrim">fullTrim</a></li><li><a href="global.html#injectNamedStyles">injectNamedStyles</a></li><li><a href="global.html#injectStyles">injectStyles</a></li><li><a href="global.html#loadStyles">loadStyles</a></li><li><a href="global.html#serversWithTags">serversWithTags</a></li><li><a href="global.html#useProgressBar">useProgressBar</a></li><li><a href="global.html#welcomeTemplates">welcomeTemplates</a></li><li><a href="global.html#wikishieldStyling">wikishieldStyling</a></li></ul>
+    
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">ui/interface.js</h1>
+    
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+* WikiShieldInterface - Main UI management
+* Handles rendering and managing the user interface
+*/
+
+import { WikiShieldEventManager } from '../core/event-manager.js';
+import { WikiShieldSettingsInterface } from './settings.js';
+import { wikishieldStyling } from './styles.js';
+import { wikishieldHTML } from './templates.js';
+import { __script__ } from '../index.js';
+import { getWarningFromLookup, warnings, warningTemplateColors } from '../data/warnings.js';
+import { colorPalettes } from '../config/defaults.js';
+import { WikiShieldProgressBar } from './progress-bar.jsx';
+
+export class WikiShieldInterface {
+	constructor(wikishield) {
+		this.wikishield = wikishield;
+		this.selectedWidthAdjust = null;
+		this.startingSectionWidth = null;
+		this.startingMouseX = null;
+		this.lastCurrentEdit = null;
+		this.newerRevisionInterval = null; // For periodic newer revision checking
+
+		this.queueWidth = undefined;
+		this.detailsWidth = undefined;
+
+		this.eventManager = new WikiShieldEventManager(this.wikishield);
+		this.settings = new WikiShieldSettingsInterface(this.wikishield);
+		this.selectedMenu = null;
+		this.selectedSubmenu = null;
+	}
+
+	/**
+	* Create a stylesheet with the given theme's style
+	* @param {String} name
+	*/
+	loadTheme(name) {
+		this.removeTheme();
+
+		// Apply base styles first
+		const baseStyle = document.createElement("style");
+		baseStyle.classList.add("this.wikishield-theme-base");
+		baseStyle.innerHTML = wikishieldStyling.base;
+		document.head.appendChild(baseStyle);
+
+		// Always apply dark theme
+		const style = document.createElement("style");
+		style.classList.add("this.wikishield-theme");
+		style.innerHTML = wikishieldStyling["theme-dark"];
+		document.head.appendChild(style);
+
+		// Set the data-theme attribute to dark
+		document.documentElement.setAttribute("data-theme", "dark");
+
+		// Add dark-mode class to body
+		document.body.classList.add("dark-mode");
+
+		// Save the theme preference (always dark)
+		this.wikishield.options.theme = "theme-dark";
+	}
+
+	/**
+	* Remove all theme stylesheets
+	*/
+	removeTheme() {
+		document.querySelectorAll(".this.wikishield-theme, .this.wikishield-theme-base").forEach(elem => elem.remove());
+		document.documentElement.removeAttribute("data-theme");
+		document.body.classList.remove("dark-mode");
+	}
+
+	/**
+	* Open a Wikipedia page in a floating iframe
+	* @param {String} url The URL to open
+	* @param {String} title The title to display in the header
+	*/
+	openFloatingIframe(url, title) {
+		// Remove any existing iframe overlay
+		this.closeFloatingIframe();
+
+		// Create overlay
+		const overlay = document.createElement("div");
+		overlay.classList.add("wiki-iframe-overlay");
+		overlay.id = "wiki-iframe-overlay";
+
+		// Create container
+		const container = document.createElement("div");
+		container.classList.add("wiki-iframe-container");
+
+		// Create header
+		const header = document.createElement("div");
+		header.classList.add("wiki-iframe-header");
+
+		const titleDiv = document.createElement("div");
+		titleDiv.classList.add("wiki-iframe-title");
+		titleDiv.innerHTML = `
+				&lt;span class="fa fa-book">&lt;/span>
+				&lt;span class="wiki-iframe-title-text">${this.escapeHTML(title)}&lt;/span>
+			`;
+
+		const controls = document.createElement("div");
+		controls.classList.add("wiki-iframe-controls");
+
+		const openNewTabBtn = document.createElement("button");
+		openNewTabBtn.classList.add("wiki-iframe-btn");
+		openNewTabBtn.innerHTML = `&lt;span class="fa fa-external-link-alt">&lt;/span> Open in New Tab`;
+		openNewTabBtn.addEventListener("click", () => {
+			window.open(url, "_blank");
+		});
+
+		const closeBtn = document.createElement("button");
+		closeBtn.classList.add("wiki-iframe-btn", "close-btn");
+		closeBtn.innerHTML = `&lt;span class="fa fa-times">&lt;/span> Close`;
+		closeBtn.addEventListener("click", () => {
+			this.closeFloatingIframe();
+		});
+
+		controls.appendChild(openNewTabBtn);
+		controls.appendChild(closeBtn);
+
+		header.appendChild(titleDiv);
+		header.appendChild(controls);
+
+		// Create content area with loading indicator
+		const content = document.createElement("div");
+		content.classList.add("wiki-iframe-content");
+
+		const loading = document.createElement("div");
+		loading.classList.add("wiki-iframe-loading");
+		loading.innerHTML = `
+				&lt;div class="wiki-iframe-spinner">&lt;/div>
+				&lt;span>Loading Wikipedia page...&lt;/span>
+			`;
+
+		content.appendChild(loading);
+
+		// Create iframe
+		const iframe = document.createElement("iframe");
+		iframe.src = url;
+		iframe.setAttribute("sandbox", "allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox");
+
+		// Track if iframe loaded successfully
+		let iframeLoaded = false;
+
+		// Remove loading indicator when iframe loads successfully
+		iframe.addEventListener("load", () => {
+			iframeLoaded = true;
+			loading.remove();
+		});
+
+		// Handle iframe load errors
+		iframe.addEventListener("error", () => {
+			loading.innerHTML = `
+					&lt;span class="fa fa-exclamation-triangle" style="color: var(--danger); font-size: 2rem;">&lt;/span>
+					&lt;span>This page cannot be displayed in a frame. &lt;a href="${url}" target="_blank" style="color: var(--primary); text-decoration: underline;">Open in new tab instead&lt;/a>&lt;/span>
+				`;
+		});
+
+		// Detect X-Frame-Options blocking (iframe doesn't fire error for this)
+		// If iframe hasn't loaded after 3 seconds, assume it's blocked
+		setTimeout(() => {
+			if (!iframeLoaded) {
+				// Wikipedia likely blocked the iframe due to X-Frame-Options
+				this.closeFloatingIframe();
+				window.open(url, "_blank");
+
+				// Show a toast notification explaining what happened
+				this.showToast("Wikipedia doesn't allow embedding. Opening in a new tab instead.", "info");
+			}
+		}, 3000);
+
+		content.appendChild(iframe);
+
+		// Assemble the modal
+		container.appendChild(header);
+		container.appendChild(content);
+		overlay.appendChild(container);
+
+		// Close on overlay click (but not container click)
+		overlay.addEventListener("click", (e) => {
+			if (e.target === overlay) {
+				this.closeFloatingIframe();
+			}
+		});
+
+		// Prevent clicks inside container from closing
+		container.addEventListener("click", (e) => {
+			e.stopPropagation();
+		});
+
+		// Close on Escape key
+		const escapeHandler = (e) => {
+			if (e.key === "Escape") {
+				this.closeFloatingIframe();
+			}
+		};
+		document.addEventListener("keydown", escapeHandler);
+		overlay.dataset.escapeHandler = "true";
+
+		// Add to document
+		document.body.appendChild(overlay);
+	}	/**
+	* Close the floating iframe if it exists
+	*/
+	closeFloatingIframe() {
+		const overlay = document.getElementById("wiki-iframe-overlay");
+		if (overlay) {
+			// Remove escape key handler
+			if (overlay.dataset.escapeHandler) {
+				document.removeEventListener("keydown", this.closeFloatingIframe);
+			}
+			overlay.remove();
+		}
+	}
+
+	/**
+	* Escape HTML to prevent XSS
+	* @param {String} text
+	* @returns {String}
+	*/
+	escapeHTML(text) {
+		const div = document.createElement("div");
+		div.textContent = text;
+		return div.innerHTML;
+	}
+
+	/**
+	* Build the starting page
+	*/
+	async build() {
+		document.head.innerHTML = `
+			&lt;title>WikiShield&lt;/title>
+			&lt;style>${wikishieldStyling.initial}&lt;/style>
+		`;
+
+		document.body.innerHTML = wikishieldHTML.initial(__script__.version);
+
+		// Initialize animated dots background
+		const canvas = document.getElementById('dots-canvas');
+		const ctx = canvas.getContext('2d');
+		let dots = [];
+		let animationFrame;
+
+		// Create dots
+		class Dot {
+			constructor() {
+				this.x = Math.random() * canvas.width;
+				this.y = Math.random() * canvas.height;
+				this.vx = (Math.random() - 0.5) * 0.5;
+				this.vy = (Math.random() - 0.5) * 0.5;
+				this.radius = 2;
+				// Random neon color
+				const colors = [
+					'102, 126, 234',  // Blue
+					'240, 147, 251',  // Pink
+					'118, 75, 162',   // Purple
+					'217, 70, 239'    // Magenta
+				];
+				this.color = colors[Math.floor(Math.random() * colors.length)];
+			}
+
+			update() {
+				this.x += this.vx;
+				this.y += this.vy;
+
+				// Wrap around edges
+				if (this.x &lt; 0) this.x = canvas.width;
+				if (this.x > canvas.width) this.x = 0;
+				if (this.y &lt; 0) this.y = canvas.height;
+				if (this.y > canvas.height) this.y = 0;
+			}
+
+			draw() {
+				ctx.beginPath();
+				ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+				ctx.fillStyle = `rgba(${this.color}, 0.8)`;
+				ctx.shadowBlur = 10;
+				ctx.shadowColor = `rgba(${this.color}, 0.8)`;
+				ctx.fill();
+				ctx.shadowBlur = 0;
+			}
+		}
+
+		// Set canvas size
+		const resizeCanvas = () => {
+			const oldWidth = canvas.width;
+			const oldHeight = canvas.height;
+
+			canvas.width = window.innerWidth;
+			canvas.height = window.innerHeight;
+
+			const scaleX = canvas.width / oldWidth;
+			const scaleY = canvas.height / oldHeight;
+
+			// Rescale all existing dots
+			dots.forEach(dot => {
+				dot.x *= scaleX;
+				dot.y *= scaleY;
+			});
+
+			const idealCount = Math.floor((canvas.width * canvas.height) / 5000);
+			if (idealCount > dots.length) {
+				for (let i = dots.length; i &lt; idealCount; i++) {
+					dots.push(new Dot());
+				}
+			} else if (idealCount &lt; dots.length) {
+				dots.length = idealCount;
+			}
+		};
+		resizeCanvas();
+		window.addEventListener('resize', resizeCanvas);
+
+		let lastTimestamp = performance.now();
+		const lastDeltaTimes = new Array(15).fill(1000 / 60); // Start with 60 FPS
+		const animate = () => {
+			{ // FPS calculation
+				const now = performance.now();
+
+				const deltaTime = now - lastTimestamp;
+				lastTimestamp = now;
+
+				lastDeltaTimes.shift();
+				lastDeltaTimes.push(deltaTime);
+
+				const noOutliers = [ ...lastDeltaTimes ].sort((a, b) => a - b).slice(2, -2);
+
+				const averageDeltaTime = noOutliers.reduce((a, b) => a + b, 0) / noOutliers.length;
+				const fps = 1000 / averageDeltaTime;
+
+				if (fps &lt; 30) {
+					ctx.clearRect(0, 0, canvas.width, canvas.height);
+					return;
+				}
+			}
+
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+			// Update and draw dots
+			dots.forEach(dot => {
+				dot.update();
+				dot.draw();
+			});
+
+			// Draw lines between close dots
+			const length = dots.length;
+			for (let i = 0; i &lt; length; i++) {
+				const a = dots[i];
+
+				for (let j = i + 1; j &lt; length; j++) {
+					const b = dots[j];
+
+					// Compute wrapped distances
+					let dx = a.x - b.x;
+					let dy = a.y - b.y;
+
+					// Wrap horizontally
+					if (dx > canvas.width / 2) dx -= canvas.width;
+					if (dx &lt; -canvas.width / 2) dx += canvas.width;
+
+					// Wrap vertically
+					if (dy > canvas.height / 2) dy -= canvas.height;
+					if (dy &lt; -canvas.height / 2) dy += canvas.height;
+
+					const distance = Math.sqrt(dx * dx + dy * dy);
+
+					if (distance &lt; 150) {
+						ctx.beginPath();
+						ctx.moveTo(a.x, a.y);
+						ctx.lineTo(a.x - dx, a.y - dy);  // wrapped endpoint
+						const opacity = (1 - distance / 150) * 0.4;
+
+						const aSplit = a.color.split(',');
+						const bSplit = b.color.split(',');
+
+						const avgR = (parseInt(aSplit[0]) + parseInt(bSplit[0])) / 2;
+						const avgG = (parseInt(aSplit[1]) + parseInt(bSplit[1])) / 2;
+						const avgB = (parseInt(aSplit[2]) + parseInt(bSplit[2])) / 2;
+
+						ctx.strokeStyle = `rgba(${avgR}, ${avgG}, ${avgB}, ${opacity})`;
+						ctx.lineWidth = 1;
+						ctx.stroke();
+					}
+				}
+			}
+
+			animationFrame = requestAnimationFrame(animate);
+		};
+
+		animate();
+
+		// Sound design - create audio context for sound effects
+		let audioContext = null;
+
+		// Function to play a synth tone
+		const playSynthTone = (frequency, duration, volume = 0.15, type = 'sine') => {
+			if (!audioContext) return;
+
+			const oscillator = audioContext.createOscillator();
+			const gainNode = audioContext.createGain();
+
+			oscillator.connect(gainNode);
+			gainNode.connect(audioContext.destination);
+
+			oscillator.frequency.value = frequency;
+			oscillator.type = type;
+
+			gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
+			gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+
+			oscillator.start(audioContext.currentTime);
+			oscillator.stop(audioContext.currentTime + duration);
+		};
+
+		// Play startup sound sequence
+		const playStartupSound = () => {
+			if (!audioContext) {
+				try {
+					const construct = window.AudioContext || window.webkitAudioContext;
+					audioContext = new construct();
+				} catch (e) {
+					return;
+				}
+			}
+
+			// Epic startup sequence
+			playSynthTone(523.25, 0.15, 0.12, 'sine'); // C5
+			setTimeout(() => playSynthTone(659.25, 0.15, 0.12, 'sine'), 150); // E5
+			setTimeout(() => playSynthTone(783.99, 0.15, 0.12, 'sine'), 300); // G5
+			setTimeout(() => playSynthTone(1046.50, 0.4, 0.15, 'sine'), 450); // C6
+		};
+
+		// Play hover sound
+		const playHoverSound = () => {
+			playSynthTone(800, 0.05, 0.08, 'sine');
+		};
+
+		// Play click sound
+		const playClickSound = () => {
+			playSynthTone(1200, 0.1, 0.1, 'square');
+			setTimeout(() => playSynthTone(1000, 0.08, 0.08, 'square'), 50);
+		};
+
+		// Initialize audio on first user interaction
+		const initAudio = () => {
+			if (!audioContext) {
+				try {
+					const construct = window.AudioContext || window.webkitAudioContext;
+					audioContext = new construct();
+					playStartupSound();
+				} catch (e) {
+					// Audio not supported - silently fail
+				}
+			}
+		};
+
+		// Add sound effects to buttons and links
+		const addSoundToElement = (selector, soundType) => {
+			const elem = this.elem(selector);
+			if (elem) {
+				if (soundType === 'hover') {
+					elem.addEventListener("mouseenter", playHoverSound);
+				} else if (soundType === 'click') {
+					elem.addEventListener("click", () => {
+						initAudio();
+						playClickSound();
+					});
+				}
+			}
+		};
+
+		// Add sounds to interactive elements
+		addSoundToElement("#start-button", "hover");
+		addSoundToElement("#start-button", "click");
+
+		document.querySelectorAll(".about-link").forEach(link => {
+			link.addEventListener("mouseenter", playHoverSound);
+			link.addEventListener("click", () => {
+				initAudio();
+				playClickSound();
+			});
+		});
+
+		// Play startup sound after a short delay
+		setTimeout(() => {
+			initAudio();
+		}, 500);
+
+		if (this.wikishield.rights.rollback) {
+			this.elem("#rollback-needed").style.display = "none";
+			this.elem("#start-button").style.display = "";
+		} else {
+			this.elem("#rollback-needed").style.display = "";
+			this.elem("#start-button").style.display = "none";
+		}
+
+		this.elem("#start-button").addEventListener("click", () => {
+			// Stop the dots animation
+			if (animationFrame) {
+				cancelAnimationFrame(animationFrame);
+			}
+			this.wikishield.start();
+		});
+
+		this.loadTheme("theme-dark");
+
+		this.updateZenModeDisplay();
+	}
+
+	/**
+	* Build the main interface, and link buttons to events
+	*/
+	start() {
+		document.head.innerHTML = `
+				&lt;title>WikiShield&lt;/title>
+				&lt;style>${wikishieldStyling.main}&lt;/style>
+				${wikishieldHTML.head}
+			`;
+
+		this.loadTheme("theme-dark");
+
+		document.body.innerHTML = wikishieldHTML.main;
+
+		// Modern bottom menu system
+		[...document.querySelectorAll(".bottom-tool-trigger")].forEach(trigger => {
+			trigger.addEventListener("click", (e) => {
+				e.stopPropagation();
+				const item = trigger.closest(".bottom-tool-item");
+				const menu = document.querySelector(`#${item.dataset.menu}-menu`);
+				const isOpen = menu.classList.contains("show");
+
+				switch (item.dataset.menu) {
+					case "revert": {
+						menu.innerHTML = "";
+						this.createRevertMenu(menu, this.wikishield.queue.currentEdit);
+					} break;
+					case "warn": {
+						menu.innerHTML = "";
+						this.createWarnMenu(menu, this.wikishield.queue.currentEdit);
+					} break;
+				}
+
+				// Close all menus
+				this.closeAllBottomMenus();
+
+				// Toggle this menu
+				if (!isOpen) {
+					menu.classList.add("show");
+					trigger.classList.add("active");
+
+					// Position menu based on available space
+					this.positionBottomMenu(item, menu);
+				}
+			});
+		});
+
+		// Submenu triggers
+		[...document.querySelectorAll(".submenu-trigger")].forEach(trigger => {
+			trigger.addEventListener("mouseenter", () => {
+				// Close other submenus
+				const parentMenu = trigger.closest(".bottom-tool-menu");
+				if (parentMenu) {
+					parentMenu.querySelectorAll(".submenu").forEach(s => s.classList.remove("show"));
+				}
+
+				// Show this submenu
+				const submenu = trigger.querySelector(".submenu");
+				if (submenu) {
+					submenu.classList.add("show");
+					this.positionSubmenu(submenu, trigger);
+				}
+			});
+		});
+
+		// Menu options that close on click
+		[...document.querySelectorAll(".menu-option:not(.submenu-trigger)")].forEach(option => {
+			option.addEventListener("click", () => {
+				this.closeAllBottomMenus();
+			});
+		});
+
+		// Prevent submenu clicks from closing menu
+		[...document.querySelectorAll(".submenu")].forEach(submenu => {
+			submenu.addEventListener("click", (e) => e.stopPropagation());
+		});
+
+		[
+			this.elem("#delete-queue"),
+			this.elem("#open-settings"),
+			this.elem("#notifications-icon"),
+			this.elem("#watchlist-icon"),
+			this.elem("#user-contribs-level")
+		].forEach(e => this.addTooltipListener(e));
+
+		// Notification icon click handler
+		this.elem("#notifications-icon").addEventListener("click", (e) => {
+			const panel = this.elem("#notifications-panel");
+			panel.classList.toggle("show");
+		});
+
+		// Mark all as read handler
+		this.elem("#mark-all-notifications-read").addEventListener("click", () => {
+			this.wikishield.markAllNotificationsRead();
+		});
+
+		// Watchlist icon click handler
+		this.elem("#watchlist-icon").addEventListener("click", (e) => {
+			const panel = this.elem("#watchlist-panel");
+			panel.classList.toggle("show");
+		});
+
+		// Mark all as read handler
+		this.elem("#mark-all-watchlist-read").addEventListener("click", () => {
+			this.wikishield.markAllWatchlistRead();
+		});
+
+		// Close notifications panel when clicking outside
+		document.addEventListener("click", (e) => {
+			for (const id of [ "notifications", "watchlist" ]) {
+				const panel = this.elem(`#${id}-panel`);
+				const icon = this.elem(`#${id}-icon`);
+				if (panel &amp;&amp; !panel.contains(e.target) &amp;&amp; !icon.contains(e.target)) {
+					panel.classList.remove("show");
+				}
+			}
+
+			if (!e.target.closest(".bottom-tool-menu")) {
+				this.closeAllBottomMenus();
+			}
+		});
+
+		const $latestTab = this.elem("#latest-edits-tab");
+		$latestTab.addEventListener("click", event => {
+			this.updateDiffContainer(this.wikishield.queue.currentEdit, false);
+		});
+		this.addTooltipListener($latestTab);
+
+		const $consecutiveTab = this.elem("#consecutive-edits-tab");
+		$consecutiveTab.addEventListener("click", event => {
+			this.updateDiffContainer(this.wikishield.queue.currentEdit, true);
+		});
+		this.addTooltipListener($consecutiveTab);
+
+		this.addTooltipListener(this.elem("#right-top > .icons > .created-page"));
+
+		this.eventManager.linkButton(
+			this.elem("#delete-queue"),
+			"deleteQueue", true
+		);
+
+		this.eventManager.linkButton(
+			this.elem("#open-settings"),
+			"openSettings", true
+		);
+
+		this.eventManager.linkButton(
+			this.elem("#user-open-user-page"),
+			"openUserPage"
+		);
+
+		this.eventManager.linkButton(
+			this.elem("#user-open-user-talk"),
+			"openUserTalk"
+		);
+
+		this.eventManager.linkButton(
+			this.elem("#user-view-contribs"),
+			"openUserContribs"
+		);
+
+		this.eventManager.linkButton(
+			this.elem("#user-view-filter-log"),
+			"openFilterLog"
+		);
+
+		this.eventManager.linkButton(
+			this.elem("#user-whitelist"),
+			"whitelistUser"
+		);
+
+		this.eventManager.linkButton(
+			this.elem("#user-unwhitelist"),
+			"unwhitelistUser"
+		);
+
+		this.eventManager.linkButton(
+			this.elem("#user-highlight"),
+			"highlightUser"
+		);
+
+		this.eventManager.linkButton(
+			this.elem("#user-unhighlight"),
+			"unhighlightUser"
+		);
+
+		this.eventManager.linkButton(
+			this.elem("#page-open-page"),
+			"openPage"
+		);
+
+		this.eventManager.linkButton(
+			this.elem("#page-open-talk"),
+			"openTalk"
+		);
+
+		this.eventManager.linkButton(
+			this.elem("#page-view-history"),
+			"openHistory"
+		);
+
+		this.eventManager.linkButton(
+			this.elem("#edit-view-revision"),
+			"openRevision"
+		);
+
+		this.eventManager.linkButton(
+			this.elem("#edit-view-diff"),
+			"openDiff"
+		);
+
+		this.eventManager.linkButton(
+			this.elem("#edit-thank-user"),
+			"thankUser"
+		);
+
+		this.createSubmenu(
+			this.elem("#edit-rollback .submenu"),
+			"rollback"
+		);
+
+		this.createSubmenu(
+			this.elem("#edit-rollback-goodfaith .submenu"),
+			"rollbackGoodFaith"
+		);
+
+		this.createSubmenu(
+			this.elem("#edit-undo .submenu"),
+			"undo"
+		);
+
+		this.createSubmenu(
+			this.elem("#user-report-aiv .submenu"),
+			"reportToAIV"
+		);
+
+		this.createSubmenu(
+			this.elem("#user-report-uaa .submenu"),
+			"reportToUAA"
+		);
+
+		this.eventManager.linkButton(
+			this.elem("#page-whitelist"),
+			"whitelistPage"
+		);
+
+		this.eventManager.linkButton(
+			this.elem("#page-unwhitelist"),
+			"unwhitelistPage"
+		);
+
+		this.eventManager.linkButton(
+			this.elem("#page-highlight"),
+			"highlightPage"
+		);
+
+		this.eventManager.linkButton(
+			this.elem("#page-unhighlight"),
+			"unhighlightPage"
+		);
+
+		this.createSubmenu(
+			this.elem("#page-request-protection .submenu"),
+			"requestProtection"
+		);
+
+		this.createSubmenu(
+			this.elem("#user-welcome .submenu"),
+			"welcome"
+		);
+
+		if (!this.wikishield.rights.block) {
+			[...document.querySelectorAll(".tool-block")].forEach(elem => elem.style.display = "none");
+		}
+
+		if (!this.wikishield.rights.protect) {
+			[...document.querySelectorAll(".tool-protect")].forEach(elem => elem.style.display = "none");
+		}
+
+		[...this.elem("#bottom-tools").querySelectorAll("[data-tooltip]")]
+			.forEach(elem => this.addTooltipListener(elem));
+
+		const queueWidthAdjust = this.elem("#queue-width-adjust");
+		const queue = this.elem("#queue");
+
+		const detailsWidthAdjust = this.elem("#details-width-adjust");
+		const details = this.elem("#right-details");
+
+		const savedQueueWidth = this.wikishield.queueWidth;
+		const savedDetailsWidth = this.wikishield.detailsWidth;
+
+		if (savedQueueWidth) {
+			queue.style.width = savedQueueWidth;
+			this.elem("#right-container").style.width = `calc(100% - ${savedQueueWidth})`;
+		}
+
+		if (savedDetailsWidth) {
+			details.style.width = savedDetailsWidth;
+			this.elem("#main-container").style.width = `calc(100% - ${savedDetailsWidth})`;
+			this.elem("#middle-top").style.width = `calc(100% - ${savedDetailsWidth})`;
+			this.elem("#right-top").style.width = savedDetailsWidth;
+		}
+
+		const clamp = (val, min, max) => Math.min(Math.max(val, min), max);
+
+		const startResize = (handle, section, event) => {
+			event.preventDefault();
+
+			this.activeHandle = handle;
+			this.section = section;
+
+			// fixed pixel baseline
+			this.startX = event.clientX;
+			this.startWidthPx = section.getBoundingClientRect().width;
+
+			// fixed window width baseline (so vw conversion is stable)
+			this.windowWidthPx = window.innerWidth;
+		};
+
+		queueWidthAdjust.addEventListener("pointerdown", (e) =>
+			startResize(queueWidthAdjust, queue, e)
+		);
+		detailsWidthAdjust.addEventListener("pointerdown", (e) =>
+			startResize(detailsWidthAdjust, details, e)
+		);
+
+		window.addEventListener("pointerup", () => {
+			if (this.activeHandle === queueWidthAdjust) {
+				this.wikishield.queueWidth = queue.style.width;
+			}
+
+			if (this.activeHandle === detailsWidthAdjust) {
+				this.wikishield.detailsWidth = details.style.width;
+			}
+
+			this.activeHandle = null;
+			this.section = null;
+		});
+
+		window.addEventListener("pointermove", (event) => {
+			if (!this.activeHandle) return;
+
+			const dx = event.clientX - this.startX;
+
+			let newWidthPx;
+
+			if (this.activeHandle === queueWidthAdjust) {
+				// Left resizer increases with rightward drag
+				newWidthPx = this.startWidthPx + dx;
+			} else {
+				// Right resizer increases with leftward drag
+				newWidthPx = this.startWidthPx - dx;
+			}
+
+			// Clamp in pixels
+			const minPx = this.windowWidthPx * 0.10; // 10vw
+			const maxPx = this.windowWidthPx * 0.30; // 30vw
+			newWidthPx = clamp(newWidthPx, minPx, maxPx);
+
+			// Convert to vw once
+			const newWidthVw = (newWidthPx / this.windowWidthPx) * 100;
+			this.section.style.width = newWidthVw + "vw";
+
+			// Update siblings based on section identity
+			if (this.activeHandle === queueWidthAdjust) {
+				this.elem("#right-container").style.width = `calc(100% - ${newWidthVw}vw)`;
+			}
+
+			if (this.activeHandle === detailsWidthAdjust) {
+				this.elem("#main-container").style.width = `calc(100% - ${newWidthVw}vw)`;
+				this.elem("#middle-top").style.width = `calc(100% - ${newWidthVw}vw)`;
+				this.elem("#right-top").style.width = `${newWidthVw}vw`;
+			}
+		});
+
+		window.addEventListener("click", () => {
+			[...document.querySelectorAll(".context-menu")].forEach(elem => elem.remove());
+		});
+
+		// Intercept Wikipedia links for floating iframe
+		document.addEventListener("click", (e) => {
+			// Check if the click was on a link or inside a link
+			const link = e.target.closest("a[href][target='_blank']");
+
+			if (!link) return;
+
+			const url = link.getAttribute("href");
+
+			// Only intercept Wikipedia links
+			if (!url || !url.includes("wikipedia.org")) return;
+
+			// Middle click (button 1) should open in new tab normally
+			if (e.button === 1) return;
+
+			// Ctrl/Cmd + click should open in new tab normally
+			if (e.ctrlKey || e.metaKey) return;
+
+			// Prevent default behavior and open in floating iframe
+			e.preventDefault();
+			e.stopPropagation();
+
+			// Extract page title from URL for display
+			let pageTitle = "Wikipedia";
+			try {
+				const urlObj = new URL(url);
+				const pathParts = urlObj.pathname.split("/");
+				if (pathParts.length > 2) {
+					pageTitle = decodeURIComponent(pathParts[pathParts.length - 1]).replace(/_/g, " ");
+				}
+			} catch (err) {
+				console.error("Failed to parse URL:", err);
+			}
+
+			// Open Wikipedia links in new tab
+			window.open(url, "_blank");
+		}, true); // Use capture phase to intercept before other handlers
+
+		// Also handle auxclick for middle mouse button
+		document.addEventListener("auxclick", (e) => {
+			const link = e.target.closest("a[href][target='_blank']");
+			if (!link) return;
+
+			const url = link.getAttribute("href");
+			if (!url || !url.includes("wikipedia.org")) return;
+
+			// Middle click (button 1) - allow default behavior (open in new tab)
+			if (e.button === 1) {
+				// Default behavior will handle this
+				return;
+			}
+		}, true);
+
+		if (this.wikishield.loadedChangelog !== __script__.changelog.version || __script__.changelog.version.endsWith("!")) {
+			const container = document.createElement("div");
+			container.classList.add("settings-container");
+			document.body.appendChild(container);
+
+			container.innerHTML = `
+					&lt;div class="settings">
+						&lt;div class="settings-section changelog">
+							${__script__.changelog.HTML}
+						&lt;/div>
+						&lt;button id="close-changelog" class="add-action-button">Close&lt;/button>
+					&lt;/div>
+				`;
+
+			document.getElementById("close-changelog").addEventListener("click", () => {
+				container.remove();
+			});
+		}
+	}
+
+	/**
+	* Update which menu elements are selected and open
+	*/
+	updateMenuElements() {
+		// Legacy function kept for compatibility
+		// Modern menu system uses closeAllBottomMenus()
+	}
+
+	/**
+	* Close all bottom menu popups
+	*/
+	closeAllMenus() {
+		this.closeAllBottomMenus();
+	}
+
+	/**
+	* Close all bottom menus (modern system)
+	*/
+	closeAllBottomMenus() {
+		document.querySelectorAll(".bottom-tool-menu").forEach(menu => menu.classList.remove("show"));
+		document.querySelectorAll(".bottom-tool-trigger").forEach(trigger => trigger.classList.remove("active"));
+		document.querySelectorAll(".submenu").forEach(submenu => submenu.classList.remove("show"));
+	}
+
+	/**
+	* Position bottom menu based on available space
+	* @param {HTMLElement} menu The menu to position
+	*/
+	positionBottomMenu(button, menu) {
+		// Reset positioning
+		menu.style.left = '';
+		menu.style.right = '';
+		menu.style.top = '';
+		menu.style.bottom = '';
+
+		const position = () => {
+			if (!menu.classList.contains("show")) return;
+
+			const menuRect = menu.getBoundingClientRect();
+			const btnRect = button.getBoundingClientRect();
+			const vw = window.innerWidth;
+			const vh = window.innerHeight;
+
+			// Horizontal alignment
+			const fitsLeft = btnRect.left + menuRect.width &lt;= vw;
+			if (fitsLeft) {
+				menu.style.left = `${btnRect.left}px`;
+				menu.style.right = 'auto';
+			} else {
+				menu.style.right = `${vw - btnRect.right}px`;
+				menu.style.left = 'auto';
+			}
+
+			// Vertical alignment
+			const fitsAbove = btnRect.top >= menuRect.height;
+			if (fitsAbove) {
+				// Align bottom of menu with top of button
+				menu.style.bottom = `${vh - btnRect.top}px`;
+				menu.style.top = 'auto';
+			} else {
+				// Align top of menu with bottom of button
+				menu.style.top = `${btnRect.bottom}px`;
+				menu.style.bottom = 'auto';
+			}
+
+			requestAnimationFrame(position);
+		};
+
+		requestAnimationFrame(position);
+	}
+
+	/**
+	* Position submenu based on available space
+	* @param {HTMLElement} submenu The submenu to position
+	* @param {HTMLElement} trigger The trigger element
+	*/
+	positionSubmenu(submenu, trigger) {
+		// Reset positioning
+		submenu.style.left = '';
+		submenu.style.right = '';
+		submenu.style.top = '';
+		submenu.style.bottom = '';
+
+		const position = () => {
+			if (!submenu.classList.contains("show")) {
+				return;
+			}
+
+			const submenuRect = submenu.getBoundingClientRect();
+			const triggerRect = trigger.getBoundingClientRect();
+			const viewportWidth = window.innerWidth;
+			const viewportHeight = window.innerHeight;
+
+			// Check horizontal space
+			const spaceRight = viewportWidth - triggerRect.right;
+			const spaceLeft = triggerRect.left;
+
+			// Position to left if not enough space on right
+			if (spaceRight &lt; submenuRect.width + 20 &amp;&amp; spaceLeft > spaceRight) {
+				submenu.style.left = 'auto';
+				submenu.style.right = 'calc(100% + 4px)';
+			}
+
+			// Check vertical space
+			const spaceBelow = viewportHeight - triggerRect.bottom;
+			const spaceAbove = triggerRect.top;
+
+			// Adjust vertical position if menu goes off screen
+			if (submenuRect.bottom > viewportHeight &amp;&amp; spaceAbove > spaceBelow) {
+				submenu.style.top = 'auto';
+				submenu.style.bottom = '0';
+			}
+
+			requestAnimationFrame(() => position());
+		};
+
+		requestAnimationFrame(() => position());
+	}
+
+	/**
+	* Position submenu based on available space
+	* @param {HTMLElement} submenu The submenu to position
+	* @param {HTMLElement} trigger The trigger element
+	*/
+	positionLevelsMenu(button, menu) {
+		// Reset previous positioning
+		menu.style.left = '';
+		menu.style.right = '';
+		menu.style.top = '';
+		menu.style.bottom = '';
+
+		const position = () => {
+			if (!menu.classList.contains("show")) return;
+
+			const menuRect = menu.getBoundingClientRect();
+			const btnRect = button.getBoundingClientRect();
+			const vw = window.innerWidth;
+			const vh = window.innerHeight;
+
+			// Horizontal alignment
+			const fitsRight = btnRect.right + menuRect.width &lt;= vw;
+			if (fitsRight) {
+				// Align menu's left with button's right
+				menu.style.left = `${btnRect.right + 8}px`;
+				menu.style.right = 'auto';
+			} else {
+				// Align menu's right with button's left
+				menu.style.right = `${vw - btnRect.left - 8}px`;
+				menu.style.left = 'auto';
+			}
+
+			// Vertical alignment - centered
+			let top = btnRect.top + (btnRect.height - menuRect.height) / 2;
+			// Prevent menu from going off the top
+			if (top &lt; 0) top = 0;
+			// Prevent menu from going off the bottom
+			if (top + menuRect.height > vh) top = vh - menuRect.height;
+
+			menu.style.top = `${top}px`;
+			menu.style.bottom = 'auto';
+
+			requestAnimationFrame(position);
+		};
+
+		requestAnimationFrame(position);
+	}
+
+	/**
+	* Create the menu for warning types
+	* @param {HTMLElement} container
+	*/
+	createRevertMenu(container, currentEdit) {
+		document.querySelectorAll(".levels-menu").forEach(menu => menu.remove());
+
+		const menu = document.createElement("div");
+		menu.className = "warning-menu";
+		container.appendChild(menu);
+
+		menu.addEventListener("click", (e) => {
+			document.body.querySelectorAll(".levels-menu.show").forEach(menu => menu.classList.remove("show"));
+		});
+
+		const execute = async (warningType, level) => {
+			const reportObject = {
+				name: "if",
+				condition: "atFinalWarning",
+				actions: [
+					{
+						name: "if",
+						condition: "operatorNonAdmin",
+						actions: [
+							{
+								name: "reportToAIV",
+								params: {
+									reportMessage: "Vandalism past final warning"
+								}
+							}
+						]
+					}
+				]
+			};
+
+			await this.wikishield.executeScript({
+				actions: [
+					{
+						name: "nextEdit",
+						params: {}
+					},
+					{
+						name: "rollback",
+						params: {
+							summary: getWarningFromLookup(warningType).summary
+						}
+					},
+					{
+						name: "warn",
+						params: {
+							warningType,
+							level,
+						}
+					},
+					{
+						name: "highlightUser",
+						params: {}
+					},
+				].concat(this.wikishield.options.enableAutoReporting &amp;&amp; this.wikishield.options.selectedAutoReportReasons[warningType] ?
+					[ reportObject ] : []
+				)
+			});
+
+			this.selectedMenu = null;
+			this.updateMenuElements();
+		};
+
+		for (const [ title, category ] of Object.entries(warnings.revert)) {
+			const section = document.createElement("div");
+			section.className = "warning-menu-section";
+
+			const header = document.createElement("h2");
+			header.textContent = title;
+			section.appendChild(header);
+
+			const divider = document.createElement("div");
+			divider.className = "menu-divider";
+			section.appendChild(divider);
+
+			for (const warning of category) {
+				if (typeof warning.show === "function" &amp;&amp; !warning.show(currentEdit)) {
+					continue;
+				}
+
+				const item = document.createElement("div");
+				item.className = "warning-menu-item";
+
+				const icon = document.createElement("span");
+				icon.className = `icon ${warning.icon}` ?? "icon fas fa-mouse-pointer";
+				item.appendChild(icon);
+
+				const label = document.createElement("span");
+				label.className = "warning-menu-title";
+				label.textContent = warning.title;
+				item.appendChild(label);
+
+				const helpIcon = document.createElement("span");
+				helpIcon.className = "fas fa-circle-question";
+				helpIcon.dataset.tooltip = warning.description;
+				item.appendChild(helpIcon);
+				this.addTooltipListener(helpIcon);
+
+				const levelsButton = document.createElement("span");
+				levelsButton.className = "warning-menu-button warning-menu-levels-button";
+				levelsButton.textContent = "advanced";
+				item.appendChild(levelsButton);
+
+				const levelsMenu = document.createElement("div");
+				levelsMenu.className = "levels-menu bottom-tool-menu";
+
+				for (const [ templateLabel, template ] of Object.entries(warning.templates || { })) {
+					if (template === null || template.exists === false) continue;
+
+					const levelButton = document.createElement("span");
+					levelButton.className = "levels-menu-item";
+					levelButton.textContent = template.label || templateLabel;
+					levelButton.style.backgroundColor = warningTemplateColors[templateLabel];
+					levelsMenu.appendChild(levelButton);
+
+					levelButton.addEventListener("click", async () => {
+						await execute(warning.title, templateLabel);
+					});
+				}
+
+				document.body.appendChild(levelsMenu);
+
+				levelsButton.addEventListener("click", e => {
+					e.stopPropagation();
+
+					levelsMenu.classList.toggle("show");
+					document.body.querySelectorAll(".levels-menu.show").forEach(menu => {
+						if (menu !== levelsMenu) {
+							menu.classList.remove("show");
+						}
+					});
+
+					this.positionLevelsMenu(levelsButton, levelsMenu);
+				});
+
+				item.addEventListener("click", async e => {
+					if (e.target.closest(".warning-menu-levels-button")) {
+						return;
+					}
+
+					await execute(warning.title, "auto");
+				});
+
+				section.appendChild(item);
+			}
+
+			menu.appendChild(section);
+		}
+	}
+
+	/**
+	* Create the warn menu (without rollback)
+	* @param {HTMLElement} container Container element for the menu
+	*/
+	createWarnMenu(container, currentEdit) {
+		document.querySelectorAll(".levels-menu").forEach(menu => menu.remove());
+
+		const menu = document.createElement("div");
+		menu.className = "warning-menu";
+		container.appendChild(menu);
+
+		menu.addEventListener("click", (e) => {
+			document.body.querySelectorAll(".levels-menu.show").forEach(menu => menu.classList.remove("show"));
+		});
+
+		const execute = async (warningType, level) => {
+			await this.wikishield.executeScript({
+				actions: [
+					{
+						name: "warn",
+						params: {
+							warningType,
+							level,
+						}
+					},
+					{
+						name: "highlightUser",
+						params: {}
+					}
+				]
+			});
+
+			this.selectedMenu = null;
+			this.updateMenuElements();
+		};
+
+		for (const [ title, category ] of Object.entries(warnings.warn)) {
+			const section = document.createElement("div");
+			section.className = "warning-menu-section";
+
+			const header = document.createElement("h2");
+			header.textContent = title;
+			section.appendChild(header);
+
+			const divider = document.createElement("div");
+			divider.className = "menu-divider";
+			section.appendChild(divider);
+
+			for (const warning of category) {
+				if (typeof warning.show === "function" &amp;&amp; !warning.show(currentEdit)) {
+					continue;
+				}
+
+				const item = document.createElement("div");
+				item.className = "warning-menu-item";
+
+				const icon = document.createElement("span");
+				icon.className = `icon ${warning.icon}` ?? "icon fas fa-mouse-pointer";
+				item.appendChild(icon);
+
+				const label = document.createElement("span");
+				label.className = "warning-menu-title";
+				label.textContent = warning.title;
+				item.appendChild(label);
+
+				const helpIcon = document.createElement("span");
+				helpIcon.className = "fas fa-circle-question";
+				helpIcon.setAttribute("data-tooltip", warning.description);
+				item.appendChild(helpIcon);
+				this.addTooltipListener(helpIcon);
+
+				const levelsButton = document.createElement("span");
+				levelsButton.className = "warning-menu-button warning-menu-levels-button";
+				levelsButton.textContent = "advanced";
+				item.appendChild(levelsButton);
+
+				const levelsMenu = document.createElement("div");
+				levelsMenu.className = "levels-menu bottom-tool-menu";
+
+				for (const [ templateLabel, template ] of Object.entries(warning.templates || { })) {
+					if (template === null || template.exists === false) continue;
+
+					const levelButton = document.createElement("span");
+					levelButton.className = "levels-menu-item";
+					levelButton.textContent = template.label || templateLabel;
+					levelButton.style.backgroundColor = warningTemplateColors[templateLabel];
+					levelsMenu.appendChild(levelButton);
+
+					levelButton.addEventListener("click", async () => {
+						await execute(warning.title, templateLabel);
+					});
+				}
+
+				document.body.appendChild(levelsMenu);
+
+				levelsButton.addEventListener("click", e => {
+					e.stopPropagation();
+
+					levelsMenu.classList.toggle("show");
+					document.body.querySelectorAll(".levels-menu.show").forEach(menu => {
+						if (menu !== levelsMenu) {
+							menu.classList.remove("show");
+						}
+					});
+
+					this.positionLevelsMenu(levelsButton, levelsMenu);
+				});
+
+				item.addEventListener("click", async e => {
+					if (e.target.closest(".warning-menu-levels-button")) {
+						return;
+					}
+
+					await execute(warning.title, "auto");
+				});
+
+				section.appendChild(item);
+			}
+
+			menu.appendChild(section);
+		}
+	}
+
+	/**
+	* Create a form for a submenu based on an event
+	* @param {HTMLElement} container Container element for the submenu
+	* @param {String} eventName EventManager event name
+	*/
+	createSubmenu(container, eventName) {
+		if (!container) return; // Safety check
+
+		const event = this.eventManager.events[eventName];
+		container.innerHTML = `
+				&lt;div class="bottom-subcontent-title">${event.description}&lt;/div>
+			`;
+
+		for (const param of (event.parameters || [])) {
+			container.innerHTML += `&lt;div class="bottom-subcontent-input-title">${param.title}&lt;/div>`;
+
+			switch (param.type) {
+				case "choice":
+				const optionHTML = param.options.reduce((prev, cur) => prev + `&lt;option>${cur}&lt;/option>`, "");
+				container.innerHTML += `
+							&lt;select data-paramid="${param.id}">
+								${optionHTML}
+							&lt;/select>
+						`;
+				break;
+				case "text":
+				container.innerHTML += `&lt;input type="text" data-paramid="${param.id}">`;
+				break;
+				default:
+				break;
+			}
+		}
+
+		const button = document.createElement("button");
+		button.innerText = "Submit";
+		button.classList.add("bottom-subcontent-button");
+		container.appendChild(button);
+		button.addEventListener("click", () => {
+			const params = {};
+			for (const param of (event.parameters || [])) {
+				const input = container.querySelector(`[data-paramid="${param.id}"]`);
+				params[param.id] = input.value;
+			}
+			this.wikishield.executeScript({
+				actions: [
+					{
+						name: eventName,
+						params
+					}
+				]
+			});
+			this.closeAllBottomMenus();
+		});
+	}
+
+	/**
+	* Add edits to the queue if they aren't already there
+	* @param {Object} queue
+	* @param {Object} currentEdit
+	*/
+	renderQueue(queue, currentEdit) {
+		const container = this.elem("#queue-items");
+		this.elem("#queue-top-items").innerText = queue.length + " item" + (queue.length === 1 ? "" : "s");
+
+		// Build a map of existing DOM elements
+		const domMap = new Map();
+		for (const el of container.children) {
+			domMap.set(+el.dataset.revid, el);
+		}
+
+		let previous = null;
+		for (const edit of queue) {
+			let elem = domMap.get(edit.revid);
+			if (!elem) {
+				elem = document.createElement("div");
+				elem.classList.add("queue-edit");
+				elem.dataset.revid = edit.revid.toString();
+				elem.innerHTML = this.generateEditHTML(edit);
+
+				if (edit.mentionsMe &amp;&amp; this.wikishield.options.enableUsernameHighlighting) {
+					elem.classList.add("queue-edit-mentions-me");
+					elem.dataset.tooltip = "This edit contains your username";
+					this.addTooltipListener(elem);
+				}
+
+				// --- Attach context menu ---
+				elem.addEventListener("contextmenu", (event) => {
+					event.preventDefault();
+					this.wikishield.queue.playClickSound();
+
+					// Remove existing menus
+					[...document.querySelectorAll(".context-menu")].forEach(e => e.remove());
+
+					const contextMenu = document.createElement("div");
+					contextMenu.classList.add("context-menu");
+					contextMenu.innerHTML = wikishieldHTML["edit-context-menu"];
+					document.body.appendChild(contextMenu);
+
+					contextMenu.style.left = event.clientX + "px";
+					contextMenu.style.top = event.clientY + "px";
+
+					contextMenu.querySelector("#context-ores-number").innerText = Math.round(edit.ores * 100) || 0;
+					contextMenu.querySelector("#context-ores-number").style.color = this.getORESColor(edit.ores || 0);
+
+					// whitelist button text
+					{ // users whitelist &amp; highlighted
+						const username = edit.user.name;
+
+						const contextWhitelistBtn = contextMenu.querySelector("#context-whitelist-user");
+						if (contextWhitelistBtn) {
+							if (this.wikishield.whitelist.users.has(username)) {
+								contextWhitelistBtn.textContent = "Unwhitelist user";
+							} else {
+								contextWhitelistBtn.textContent = "Whitelist user";
+							}
+
+							contextWhitelistBtn.addEventListener("click", () => {
+								this.wikishield.queue.playSparkleSound();
+
+								if (this.wikishield.whitelist.users.has(username)) {
+									this.wikishield.whitelist.users.delete(username);
+									this.wikishield.logger.log(`Removed ${username} from whitelist`);
+								} else {
+									const expiryMs = this.wikishield.util.expiryToMilliseconds(this.wikishield.options.whitelistExpiry.users);
+
+									const now = Date.now();
+									this.wikishield.whitelist.users.set(username, [ now, now + expiryMs ]);
+
+									this.wikishield.statistics.whitelist++;
+									this.wikishield.logger.log(`Added ${username} to user whitelist until ${new Date(now + expiryMs).toLocaleString()}`);
+								}
+
+								if (this.wikishield.whitelist.users.has(username)) {
+									contextWhitelistBtn.textContent = "Unwhitelist user";
+								} else {
+									contextWhitelistBtn.textContent = "Whitelist user";
+								}
+
+								this.renderQueue(this.wikishield.queue.queue, this.wikishield.queue.currentEdit);
+								contextMenu.remove();
+							});
+						}
+
+						const contextHighlightBtn = contextMenu.querySelector("#context-highlight-user");
+						if (contextHighlightBtn) {
+							if (this.wikishield.highlighted.users.has(username)) {
+								contextHighlightBtn.textContent = "Unhighlight user";
+							} else {
+								contextHighlightBtn.textContent = "Highlight user";
+							}
+
+							contextHighlightBtn.addEventListener("click", () => {
+								this.wikishield.queue.playSparkleSound();
+
+								if (this.wikishield.highlighted.users.has(username)) {
+									this.wikishield.highlighted.users.delete(username);
+									this.wikishield.logger.log(`Removed ${username} from highlighted users`);
+								} else {
+									const expiryMs = this.wikishield.util.expiryToMilliseconds(this.wikishield.options.highlightedExpiry.users);
+
+									const now = Date.now();
+									this.wikishield.highlighted.users.set(username, [ now, now + expiryMs ]);
+
+									this.wikishield.statistics.highlighted++;
+									this.wikishield.logger.log(`Highlighted user ${username} until ${new Date(now + expiryMs).toLocaleString()}`);
+								}
+
+								if (this.wikishield.highlighted.users.has(username)) {
+									contextHighlightBtn.textContent = "Unhighlight user";
+								} else {
+									contextHighlightBtn.textContent = "Highlight user";
+								}
+
+								this.renderQueue(this.wikishield.queue.queue, this.wikishield.queue.currentEdit);
+								contextMenu.remove();
+							});
+						}
+					}
+
+					{ // pages whitelist &amp; highlighted
+						const pageTitle = edit.page.title;
+
+						const contextWhitelistBtn = contextMenu.querySelector("#context-whitelist-page");
+						if (contextWhitelistBtn) {
+							if (this.wikishield.whitelist.pages.has(pageTitle)) {
+								contextWhitelistBtn.textContent = "Unwhitelist page";
+							} else {
+								contextWhitelistBtn.textContent = "Whitelist page";
+							}
+
+							contextWhitelistBtn.addEventListener("click", () => {
+								this.wikishield.queue.playSparkleSound();
+								if (this.wikishield.whitelist.pages.has(pageTitle)) {
+									this.wikishield.whitelist.pages.delete(pageTitle);
+									this.wikishield.logger.log(`Removed ${pageTitle} from page whitelist`);
+								} else {
+									const expiryMs = this.wikishield.util.expiryToMilliseconds(this.wikishield.options.whitelistExpiry.pages);
+
+									const now = Date.now();
+									this.wikishield.whitelist.pages.set(pageTitle, [ now, now + expiryMs ]);
+
+									this.wikishield.statistics.whitelist++;
+									this.wikishield.logger.log(`Added ${pageTitle} to page whitelist until ${new Date(now + expiryMs).toLocaleString()}`);
+								}
+
+								this.renderQueue(this.wikishield.queue.queue, this.wikishield.queue.currentEdit);
+								contextMenu.remove();
+							});
+						}
+
+						const contextHighlightBtn = contextMenu.querySelector("#context-highlight-page");
+						if (contextHighlightBtn) {
+							if (this.wikishield.highlighted.pages.has(pageTitle)) {
+								contextHighlightBtn.textContent = "Unhighlight page";
+							} else {
+								contextHighlightBtn.textContent = "Highlight page";
+							}
+
+							contextHighlightBtn.addEventListener("click", () => {
+								this.wikishield.queue.playSparkleSound();
+
+								if (this.wikishield.highlighted.pages.has(pageTitle)) {
+									this.wikishield.highlighted.pages.delete(pageTitle);
+									this.wikishield.logger.log(`Removed ${pageTitle} from highlighted pages`);
+								} else {
+									const expiryMs = this.wikishield.util.expiryToMilliseconds(this.wikishield.options.highlightedExpiry.pages);
+
+									const now = Date.now();
+									this.wikishield.highlighted.pages.set(pageTitle, [ now, now + expiryMs ]);
+
+									this.wikishield.statistics.highlighted++;
+									this.wikishield.logger.log(`Highlighted page ${pageTitle} until ${new Date(now + expiryMs).toLocaleString()}`);
+								}
+
+								this.renderQueue(this.wikishield.queue.queue, this.wikishield.queue.currentEdit);
+								contextMenu.remove();
+							});
+						}
+					}
+
+					// Remove item
+					contextMenu.querySelector("#context-remove").addEventListener("click", () => {
+						this.wikishield.queue.playClickSound();
+						if (this.wikishield.ollamaAI) {
+							this.wikishield.ollamaAI.cancelAnalysis(edit.revid);
+						}
+
+						const currentIndex = queue.findIndex(e => e.revid === edit.revid);
+						if (currentIndex !== -1) {
+							queue.splice(currentIndex, 1);
+							this.removeQueueItem(edit.revid);
+
+							if (edit === currentEdit) {
+								if (queue.length > 0) {
+									if (currentIndex &lt; queue.length) {
+										this.wikishield.queue.currentEdit = queue[currentIndex];
+									} else {
+										this.wikishield.queue.currentEdit = queue[queue.length - 1];
+									}
+								} else {
+									this.wikishield.queue.currentEdit = null;
+								}
+							}
+							this.wikishield.queue.previousItems.push(edit);
+							this.renderQueue(queue, this.wikishield.queue.currentEdit);
+						}
+						contextMenu.remove();
+					});
+
+					// Open history
+					contextMenu.querySelector("#context-open-history").addEventListener("click", (e) => {
+						this.wikishield.queue.playClickSound();
+						const url = this.wikishield.util.pageLink(`Special:PageHistory/${edit.page.title}`);
+						this.wikishield.interface.eventManager.openWikipediaLink(url, `History: ${edit.page.title}`, e);
+						contextMenu.remove();
+					});
+
+					// Open contributions
+					contextMenu.querySelector("#context-open-contribs").addEventListener("click", (e) => {
+						this.wikishield.queue.playClickSound();
+						const url = this.wikishield.util.pageLink(`Special:Contributions/${edit.user.name}`);
+						this.wikishield.interface.eventManager.openWikipediaLink(url, `Contributions: ${edit.user.name}`, e);
+						contextMenu.remove();
+					});
+
+					contextMenu.addEventListener("click", (mevent) => mevent.stopPropagation());
+				});
+
+				// --- Click to select ---
+				elem.addEventListener("click", () => {
+					this.wikishield.queue.currentEdit = edit;
+					this.renderQueue(this.wikishield.queue.queue, edit);
+
+					if (edit &amp;&amp; this.wikishield.options.enableOllamaAI &amp;&amp; this.wikishield.ollamaAI) {
+						this.wikishield.ollamaAI.analyzeEdit(edit)
+						.then(analysis => {
+							edit.aiAnalysis = analysis;
+							if (this.wikishield.queue.currentEdit === edit &amp;&amp; this.wikishield.interface) {
+								this.wikishield.interface.updateAIAnalysisDisplay(analysis);
+							}
+						})
+						.catch(err => console.error("AI analysis failed:", err));
+					}
+				});
+
+				// Add to DOM (temporarily append)
+				container.appendChild(elem);
+			}
+
+			// Move to correct position in DOM to match queue order
+			if (previous === null) {
+				if (elem !== container.firstChild) {
+					container.insertBefore(elem, container.firstChild);
+				}
+			} else if (elem.previousSibling !== previous) {
+				container.insertBefore(elem, previous.nextSibling);
+			}
+
+			elem.classList.toggle("queue-edit-current", edit === currentEdit);
+			previous = elem;
+		}
+
+		// Remove stale DOM nodes not in queue
+		for (const [revid, el] of domMap.entries()) {
+			if (!queue.find(e => e.revid === revid)) el.remove();
+		}
+
+		if (this.lastCurrentEdit !== currentEdit) {
+			this.lastCurrentEdit = currentEdit;
+			this.newEditSelected(currentEdit);
+		}
+	}
+
+	/**
+	* Generate the HTML for a single edit in the queue, user edits, or page history sections
+	* @param {Object} edit
+	* @param {Boolean} includeORES include the ORES score of the edit
+	* @param {Boolean} includeTitle include the page title
+	* @param {Boolean} includeUser include the name of the user who made the edit
+	* @param {Boolean} includeTime include the edit's timestamp
+	*/
+	generateEditHTML(edit, includeORES = true, includeTitle = true, includeUser = true, includeTime = false) {
+		let tagHTML = "";
+		// Ensure edit.tags is an array before iterating
+		if (edit.tags &amp;&amp; Array.isArray(edit.tags)) {
+			const cache = new Map();
+			edit.tags.sort((a, b) => {
+				let aScore;
+				if (cache.has(a)) {
+					aScore = cache.get(a);
+				} else {
+					aScore = this.wikishield.highlighted.tags.has(a) ? 0 : 1;
+					cache.set(a, aScore);
+				}
+
+				let bScore;
+				if (cache.has(b)) {
+					bScore = cache.get(b);
+				} else {
+					bScore = this.wikishield.highlighted.tags.has(b) ? 0 : 1;
+					cache.set(b, bScore);
+				}
+
+				return aScore - bScore;
+			});
+
+			for (const tag of edit.tags) {
+				tagHTML += `&lt;span class="queue-edit-tag ${this.wikishield.highlighted.tags.has(tag) ? "queue-highlight" : ""}">${tag}&lt;/span>`;
+			}
+		}
+
+		const diff = edit.sizediff || 0;
+		const summaryTruncated = edit.comment ? this.wikishield.util.escapeHtml(this.wikishield.util.maxStringLength(edit.comment, 100)) : "";
+		const summaryFull = edit.comment ? this.wikishield.util.escapeHtml(edit.comment) : "";
+
+		// Add minor edit indicator before summary
+		const minorIndicator = edit.minor ? `&lt;span class="minor-indicator" data-tooltip="Minor edit">m&lt;/span> ` : "";
+
+		// Format ORES score for display
+		const oresScore = edit.ores || 0;
+		const oresPercent = Math.round(oresScore * 100);
+		const oresLabel = oresPercent &lt; 30 ? "Good" : oresPercent &lt; 70 ? "Review" : "Likely Bad";
+
+		const oresHTML = includeORES ? `&lt;div class="queue-edit-color" data-ores-score="${oresPercent}%" data-raw-ores-score="${oresScore}" style="background: ${this.getORESColor(oresScore)};">&lt;/div>` : "";
+		const titleHTML = includeTitle ? `
+				&lt;div
+					class="queue-edit-title ${this.wikishield.highlighted.pages.has(edit.page ? edit.page.title : edit.title) ? "queue-highlight" : ""}"
+					data-tooltip="${edit.page ? edit.page.title : edit.title}"
+				>
+					&lt;span class="fa fa-file-lines queue-edit-icon">&lt;/span>
+					${edit.page ? edit.page.title : edit.title}
+				&lt;/div>` : "";
+
+		// Determine user highlight classes
+		let userClasses = "";
+		if (edit.user &amp;&amp; this.wikishield.highlighted.users.has(typeof edit.user === "string" ? edit.user : edit.user.name)) {
+			userClasses = "queue-highlight";
+		} else if (edit.user &amp;&amp; typeof edit.user === "object" &amp;&amp; edit.user.emptyTalkPage) {
+			userClasses = "queue-user-empty-talk";
+		}
+
+		const userHTML = includeUser ? `
+				&lt;div class="queue-edit-user ${userClasses}">
+					&lt;span class="fa fa-user queue-edit-icon">&lt;/span>
+					${!edit.user ? "&lt;em>Username removed&lt;/em>" : typeof edit.user === "string" ? edit.user : edit.user.name}
+				&lt;/div>` : "";
+		const timeHTML = includeTime ? `
+				&lt;div class="queue-edit-time" data-tooltip="${new Date(edit.timestamp).toUTCString()}">
+					&lt;span class="fa fa-clock queue-edit-icon">&lt;/span>
+					${this.wikishield.util.timeAgo(edit.timestamp)}
+				&lt;/div>` : "";
+
+		return `
+				${oresHTML}
+				&lt;div class="queue-edit-content">
+					${titleHTML}
+					${userHTML}
+					&lt;div class="queue-edit-summary" data-tooltip="${summaryFull}">
+						&lt;span class="fa fa-comment-dots queue-edit-icon">&lt;/span>
+						${minorIndicator}${summaryTruncated || "&lt;em>No summary provided&lt;/em>"}
+					&lt;/div>
+					${timeHTML}
+					&lt;div class="queue-edit-tags">
+						${tagHTML}
+					&lt;/div>
+				&lt;/div>
+				&lt;div class="queue-edit-change" style="${Math.abs(diff) >= 500 ? "font-weight: bold;" : ""}color: ${this.wikishield.util.getChangeColor(diff)}">
+					${this.wikishield.util.getChangeString(diff)}
+				&lt;/div>
+			`;
+	}
+
+	/**
+	* Update the main container when a new edit is selected
+	* @param {Object} edit
+	*/
+	async newEditSelected(edit) {
+		this.elem("#latest-edits-tab").classList.add("hidden");
+		this.elem("#consecutive-edits-tab").classList.add("hidden");
+
+		this.elem("#user-report-uaa").style.display = edit?.user?.name &amp;&amp; mw.util.isTemporaryUser(edit?.user?.name) ? "none" : "";
+
+		document.querySelectorAll("#right-top > .icons > :not(.hidden)").forEach(el => el.classList.add("hidden"));
+
+		this.hide3RRNotice();
+		this.hideNewerEditButton();
+
+		// Close all bottom menu popups when switching pages
+		this.closeAllMenus();
+
+		const userContribsLevel = this.elem("#user-contribs-level");
+		const contribsContainer = this.elem("#user-contribs-content"),
+		historyContainer = this.elem("#page-history-content");
+
+		contribsContainer.innerHTML = "";
+		historyContainer.innerHTML = "";
+
+		// Remove any existing tooltips when switching diffs
+		this.removeTooltips();
+
+		if (edit === null) {
+			this.elem("#middle-top").innerHTML = "";
+			this.elem("#page-metadata").innerHTML = "";
+			this.elem("#user-contribs-count").innerText = "_ edits";
+			userContribsLevel.style.display = "none";
+			this.elem("#diff-container").innerHTML = "";
+			this.elem("#protection-indicator").innerHTML = "";
+
+			// Remove AI analysis container when no edit
+			const aiContainer = document.querySelector("#ai-analysis-container");
+			if (aiContainer) {
+				aiContainer.remove();
+			}
+
+			// Remove old edit notice when no edit
+			const noticeContainer = document.querySelector("#old-edit-notice");
+			if (noticeContainer) {
+				noticeContainer.remove();
+			}
+
+			// Hide block count indicator
+			const blockIndicator = document.querySelector("#user-contribs #block-count-indicator");
+			if (blockIndicator) {
+				blockIndicator.style.display = "none";
+				blockIndicator.innerHTML = "";
+			}
+			// Clear protection indicator
+			const protIndicator = document.querySelector("#page-history #protection-indicator");
+			if (protIndicator) {
+				protIndicator.innerHTML = "";
+			}
+			return;
+		}
+
+		if (!edit.seen) {
+			this.wikishield.statistics.reviewed++;
+			edit.seen = true;
+		}
+
+		// Stop checking for newer revisions on the previous edit
+		this.stopNewerRevisionCheck();
+
+		// Start checking for newer revisions on THIS Wikipedia page
+		this.startNewerRevisionCheck(edit);
+
+		edit.consecutive.then(data => {
+			// no longer most recent edit
+			if (!Object.is(this.wikishield.queue.currentEdit, edit)) {
+				return;
+			}
+
+			// don't show button if user created page, no longer most recent, or if there is only 1 edit
+			if (data.count &lt;= 1 || typeof data.priorRev === "string") {
+				if (data.priorRev === "created") {
+					this.elem("#right-top > .icons > .created-page").classList.remove("hidden");
+				}
+
+				return;
+			}
+
+			this.elem("#latest-edits-tab").classList.remove("hidden");
+			this.elem("#consecutive-edits-tab").classList.remove("hidden");
+		});
+
+		userContribsLevel.style.display = "initial";
+		userContribsLevel.style.background = warningTemplateColors[edit.user.warningLevel] || "grey";
+		userContribsLevel.innerText = edit.user.warningLevel;
+
+		const addToolipToWarningLevel = () => {
+			// Clone and replace the element to remove old event listeners (prevents memory leak/crash)
+			const newUserContribsLevel = userContribsLevel.cloneNode(true);
+			userContribsLevel.parentNode.replaceChild(newUserContribsLevel, userContribsLevel);
+
+			// Add tooltip listener to the fresh warning level indicator
+			this.addTooltipListener(newUserContribsLevel);
+		};
+
+		// Fetch warning history for tooltip
+		if (edit.user.warningLevel !== "0") {
+			this.wikishield.api.getSinglePageContent(`User talk:${edit.user.name}`).then(talkContent => {
+				const warningHistory = this.wikishield.queue.getWarningHistory(talkContent);
+				if (warningHistory.length > 0) {
+					let tooltipHtml = '&lt;div class="tooltip-title">Warning History&lt;/div>';
+					warningHistory.slice(0, 5).forEach(warning => {
+						const templateDisplay = `${warning.template}${warning.level}`;
+						const userInfo = warning.username ? `(User:${this.wikishield.util.escapeHtml(warning.username)})` : "";
+						const timeInfo = warning.timestamp ? `${this.wikishield.formatNotificationTime(new Date(warning.timestamp))}` : "";
+						tooltipHtml += `&lt;div class="tooltip-item">`;
+						tooltipHtml += `&lt;span class="tooltip-item-level">${this.wikishield.util.escapeHtml(templateDisplay)}&lt;/span>`;
+						tooltipHtml += `&lt;span class="tooltip-item-user">${this.wikishield.util.escapeHtml(userInfo)}&lt;/span>`;
+						tooltipHtml += `&lt;br>&lt;span class="tooltip-item-time">${this.wikishield.util.escapeHtml(timeInfo)}&lt;/span>`;
+						tooltipHtml += `&lt;/div>`;
+					});
+					if (warningHistory.length > 5) {
+						tooltipHtml += `&lt;div class="tooltip-more">... and ${warningHistory.length - 5} more&lt;/div>`;
+					}
+					userContribsLevel.setAttribute("data-tooltip", tooltipHtml);
+					userContribsLevel.setAttribute("data-tooltip-html", "true");
+				} else {
+					userContribsLevel.setAttribute("data-tooltip", `Warning level: ${edit.user.warningLevel}`);
+					userContribsLevel.setAttribute("data-tooltip-html", "false");
+				}
+			}).catch(() => {
+				userContribsLevel.setAttribute("data-tooltip", `Warning level: ${edit.user.warningLevel}`);
+				userContribsLevel.setAttribute("data-tooltip-html", "false");
+			}).finally(addToolipToWarningLevel);
+		} else {
+			userContribsLevel.setAttribute("data-tooltip", "No warnings");
+			userContribsLevel.setAttribute("data-tooltip-html", "false");
+
+			addToolipToWarningLevel();
+		}
+
+		this.elem("#user-contribs-count").innerText = edit.user.editCount === -1 ? "N/A edits"
+		: edit.user.editCount + " edit" + (edit.user.editCount === 1 ? "" : "s");
+
+		const summaryTruncated = edit.comment ? this.wikishield.util.escapeHtml(this.wikishield.util.maxStringLength(edit.comment, 150)) : "";
+		const summaryFull = edit.comment ? this.wikishield.util.escapeHtml(edit.comment) : "";
+		const minorIndicator = edit.minor ? `&lt;span class="minor-indicator" data-tooltip="Minor edit">m&lt;/span> ` : "";
+		const title = this.wikishield.util.escapeHtml(this.wikishield.util.maxStringLength(edit.page.title, 50));
+		const titleFull = this.wikishield.util.escapeHtml(edit.page.title);
+		const username = this.wikishield.util.escapeHtml(this.wikishield.util.maxStringLength(edit.user.name, 30));
+		const usernameFull = this.wikishield.util.escapeHtml(edit.user.name);
+
+		// Fetch page protection info and user block count
+		const protectionPromise = this.wikishield.api.getPageProtection(edit.page.title);
+		const blockCountPromise = this.wikishield.api.getBlockCount(edit.user.name);
+
+		this.elem("#middle-top").innerHTML = `
+				&lt;div style="display: flex; overflow: auto hidden; white-space: nowrap">
+					${edit.display.pageTitle}
+					${edit.display.username}
+					&lt;div>
+						&lt;span class="fa fa-pencil">&lt;/span>
+						&lt;span id="diff-size-text" style="color: ${this.wikishield.util.getChangeColor(0)}">${this.wikishield.util.getChangeString(0)}&lt;/span>
+					&lt;/div>
+				&lt;/div>
+				&lt;div class="middle-top-comment">
+
+				&lt;/div>
+			`;
+
+		{ // users whitelist &amp; highlight buttons
+			const addWhitelistButton = this.elem("#user-whitelist");
+			const removeWhitelistButton = this.elem("#user-unwhitelist");
+			if (addWhitelistButton &amp;&amp; removeWhitelistButton) {
+				const func = () => {
+					const isWhitelisted = this.wikishield.whitelist.users.has(edit.user.name);
+					if (isWhitelisted) {
+						addWhitelistButton.style = "display: none;";
+						removeWhitelistButton.style = "";
+					} else {
+						addWhitelistButton.style = "";
+						removeWhitelistButton.style = "display: none;";
+					}
+				};
+
+				addWhitelistButton.onclick = func;
+				removeWhitelistButton.onclick = func;
+
+				func();
+			}
+
+			const highlightButton = this.elem("#user-highlight");
+			const unhighlightButton = this.elem("#user-unhighlight");
+			if (highlightButton &amp;&amp; unhighlightButton) {
+				const func = () => {
+					const isHighlighted = this.wikishield.highlighted.users.has(edit.user.name);
+					if (isHighlighted) {
+						highlightButton.style = "display: none;";
+						unhighlightButton.style = "";
+					} else {
+						highlightButton.style = "";
+						unhighlightButton.style = "display: none;";
+					}
+				};
+
+				highlightButton.onclick = func;
+				unhighlightButton.onclick = func;
+
+				func();
+			}
+		}
+
+		{ // pages whitelist &amp; highlight buttons
+			const addWhitelistButton = this.elem("#page-whitelist");
+			const removeWhitelistButton = this.elem("#page-unwhitelist");
+			if (addWhitelistButton &amp;&amp; removeWhitelistButton) {
+				const func = () => {
+					const isWhitelisted = this.wikishield.whitelist.pages.has(edit.page.title);
+					if (isWhitelisted) {
+						addWhitelistButton.style = "display: none;";
+						removeWhitelistButton.style = "";
+					} else {
+						addWhitelistButton.style = "";
+						removeWhitelistButton.style = "display: none;";
+					}
+				};
+
+				addWhitelistButton.onclick = func;
+				removeWhitelistButton.onclick = func;
+
+				func();
+			}
+
+			const highlightButton = this.elem("#page-highlight");
+			const unhighlightButton = this.elem("#page-unhighlight");
+			if (highlightButton &amp;&amp; unhighlightButton) {
+				const func = () => {
+					const isHighlighted = this.wikishield.highlighted.pages.has(edit.page.title);
+					if (isHighlighted) {
+						highlightButton.style = "display: none;";
+						unhighlightButton.style = "";
+					} else {
+						highlightButton.style = "";
+						unhighlightButton.style = "display: none;";
+					}
+				};
+
+				highlightButton.onclick = func;
+				unhighlightButton.onclick = func;
+
+				func();
+			}
+		}
+
+		// Load protection info and display in page history header
+		protectionPromise.then(protection => {
+			const protIndicator = document.querySelector("#page-history #protection-indicator");
+			if (protIndicator) {
+				if (protection.protected) {
+					let icon = "🔒";
+					let tooltip = "Protected";
+
+					if (protection.level === "full") {
+						icon = "🔒";
+						tooltip = "Fully protected";
+					} else if (protection.level === "extended") {
+						icon = "🔐";
+						tooltip = "Extended confirmed protected";
+					} else if (protection.level === "semi") {
+						icon = "🔓";
+						tooltip = "Semi-protected";
+					}
+
+					protIndicator.innerHTML = `&lt;span style="cursor: help;" data-tooltip="${tooltip}">${icon}&lt;/span>`;
+					this.addTooltipListener(protIndicator.querySelector("[data-tooltip]"));
+				} else {
+					protIndicator.innerHTML = "";
+				}
+			}
+		});
+
+		// Load block count and display next to warning level
+		blockCountPromise.then(async blockCount => {
+			const blockIndicator = document.querySelector("#user-contribs #block-count-indicator");
+			if (blockIndicator) {
+				if (blockCount > 0) {
+					const blockHistory = await this.wikishield.api.getBlockHistory(edit.user.name);
+
+					let tooltipHtml = `&lt;div class="tooltip-title">Block History&lt;/div>`;
+
+					// limit to 5 items to match warnings
+					const limited = blockHistory.slice(0, 5);
+
+					limited.forEach(block => {
+						let blockerName = block.user || "Unknown";
+						blockerName = blockerName.replace(/&lt;[^>]*>/g, '');
+
+						let duration = block.params?.duration || "Unknown duration";
+						duration = duration.replace(/&lt;[^>]*>/g, '');
+
+						let reason = block.comment || "No reason specified";
+						reason = reason.replace(/&lt;[^>]*>/g, '');
+
+						const timestamp = block.timestamp ? this.wikishield.formatNotificationTime(new Date(block.timestamp)) : "";
+
+						const userInfo = blockerName ? `(User:${this.wikishield.util.escapeHtml(blockerName)})` : "";
+
+						tooltipHtml += `&lt;div class="tooltip-item">`;
+
+						// equivalent to template + level
+						tooltipHtml += `&lt;span class="tooltip-item-level">${this.wikishield.util.escapeHtml(reason)}&lt;/span>`;
+
+						// same formatting as warning username
+						tooltipHtml += `&lt;span class="tooltip-item-user">${this.wikishield.util.escapeHtml(userInfo)}&lt;/span>`;
+
+						tooltipHtml += `&lt;br>&lt;span class="tooltip-item-time">${this.wikishield.util.escapeHtml(timestamp)} — ${this.wikishield.util.escapeHtml(duration)}&lt;/span>`;
+
+						tooltipHtml += `&lt;/div>`;
+					});
+
+					if (blockHistory.length > 5) {
+						tooltipHtml += `&lt;div class="tooltip-more">... and ${blockHistory.length - 5} more&lt;/div>`;
+					}
+
+					blockIndicator.style.display = "initial";
+					blockIndicator.setAttribute("data-tooltip", tooltipHtml);
+					blockIndicator.setAttribute("data-tooltip-html", "true");
+					blockIndicator.innerHTML = `${blockCount}×`;
+					blockIndicator.style.cursor = "help";
+					this.addTooltipListener(blockIndicator);
+				} else {
+					blockIndicator.style.display = "none";
+					blockIndicator.innerHTML = "";
+					blockIndicator.removeAttribute("data-tooltip");
+					blockIndicator.removeAttribute("data-tooltip-html");
+				}
+			}
+		});
+
+		// Add tooltip listeners to the new elements
+		[...this.elem("#middle-top").querySelectorAll("[data-tooltip]")].forEach(e => {
+			this.addTooltipListener(e);
+		});
+
+		// Update page metadata display
+		const metadataElem = this.elem("#page-metadata");
+		if (metadataElem) {
+			const parts = [];
+			if (edit.page.dateFormat &amp;&amp; edit.page.dateFormat !== "Unknown") {
+				parts.push(edit.page.dateFormat);
+			}
+			if (edit.page.englishVariant &amp;&amp; edit.page.englishVariant !== "Unknown") {
+				parts.push(edit.page.englishVariant);
+			}
+			metadataElem.innerHTML = parts.length > 0 ? parts.join(" • ") : "";
+		}
+
+		for (const cedit of edit.user.contribs) {
+			const current = cedit.revid === this.wikishield.queue.currentEdit.revid ? "queue-edit-current" : "";
+
+			contribsContainer.innerHTML += `
+					&lt;div class="queue-edit ${current}" data-revid="${cedit.revid}">
+						${this.generateEditHTML(cedit, false, true, false, true)}
+					&lt;/div>
+				`;
+		}
+
+		for (const hedit of edit.page.history) {
+			const current = hedit.revid === this.wikishield.queue.currentEdit.revid ? "queue-edit-current" : "";
+
+			historyContainer.innerHTML += `
+					&lt;div class="queue-edit ${current}" data-revid="${hedit.revid}">
+						${this.generateEditHTML(hedit, false, false, true, true)}
+					&lt;/div>
+				`;
+		}
+
+		[
+			...contribsContainer.querySelectorAll("[data-tooltip]"),
+			...historyContainer.querySelectorAll("[data-tooltip]")
+		].forEach(elem => this.addTooltipListener(elem));
+
+		[...contribsContainer.querySelectorAll(".queue-edit")].forEach(elem => {
+			elem.addEventListener("click", () => this.wikishield.queue.loadFromContribs(elem.dataset.revid));
+		});
+
+		[...historyContainer.querySelectorAll(".queue-edit")].forEach(elem => {
+			elem.addEventListener("click", () => this.wikishield.queue.loadFromHistory(elem.dataset.revid));
+		});
+
+		// Remove any existing old edit notice
+		const existingNotice = document.querySelector("#old-edit-notice");
+		if (existingNotice) {
+			existingNotice.remove();
+		}
+
+		if (this.wikishield.options.enableUsernameHighlighting) {
+			const currentUsername = mw.config.get("wgUserName");
+			if (currentUsername) {
+				const diffContainer = this.elem("#diff-container");
+				// Find all elements (typically td cells) in the diff
+				const allElements = diffContainer.querySelectorAll("td");
+
+				allElements.forEach(elem => {
+					if (elem.textContent.includes(currentUsername)) {
+						elem.style.outline = "2px solid #ffc107";
+						elem.style.outlineOffset = "-2px";
+					}
+				});
+			}
+		}
+
+		// Display AI analysis if available
+		this.updateAIAnalysisDisplay(edit.aiAnalysis);
+
+		this.hide3RRNotice();
+		if (edit.reverts >= 3) {
+			this.show3RRNotice(edit.reverts);
+		}
+
+		this.updateDiffContainer(edit, false);
+	}
+
+	updateDiffContainer(edit, showConsecutive = false) {
+		if (!edit) {
+			return;
+		}
+
+		document.querySelectorAll("#right-top > .tabs > .tab.selected").forEach(el => el.classList.remove("selected"));
+
+		if (showConsecutive) {
+			this.elem("#consecutive-edits-tab").classList.add("selected");
+
+			this.elem("#diff-container").innerHTML = `&lt;table>&lt;/table>`;
+
+			edit.consecutive.then(data => {
+				if (!Object.is(this.wikishield.queue.currentEdit, edit)) {
+					return; // no longer most recent edit
+				}
+
+				const $diffSize = this.elem("#diff-size-text");
+				$diffSize.innerHTML = this.wikishield.util.getChangeString(data.totalSizediff || 0);
+				$diffSize.style.color = this.wikishield.util.getChangeColor(data.totalSizediff || 0);
+
+				this.elem("#middle-top > .middle-top-comment").innerHTML = `
+					&lt;div>
+						&lt;span class="fa fa-clock">&lt;/span>
+						&lt;span id="consecutive-time" data-tooltip="${data.oldestTimestamp}">${this.wikishield.formatNotificationTimeShort(new Date(data.oldestTimestamp))}&lt;/span>
+					&lt;/div>
+					&lt;div>
+						&lt;span class="fa fa-edit">&lt;/span>
+						&lt;span id="consecutive-edits">${data.count}&lt;/span>
+					&lt;/div>
+				`;
+				this.addTooltipListener(this.elem("#consecutive-time"));
+
+				this.elem("#diff-container").innerHTML = `&lt;table>${data.diff}&lt;/table>`;
+			});
+		} else {
+			this.elem("#latest-edits-tab").classList.add("selected");
+
+			this.elem("#diff-container").innerHTML = `&lt;table>${edit.diff}&lt;/table>`;
+
+			const $diffSize = this.elem("#diff-size-text");
+			$diffSize.innerHTML = this.wikishield.util.getChangeString(edit.sizediff || 0);
+			$diffSize.style.color = this.wikishield.util.getChangeColor(edit.sizediff || 0);
+
+			const minorIndicator = edit.minor ? `&lt;span class="minor-indicator" data-tooltip="Minor edit">m&lt;/span> ` : "";
+			const summaryTruncated = edit.comment ? this.wikishield.util.escapeHtml(this.wikishield.util.maxStringLength(edit.comment, 100)) : "";
+			const summaryFull = edit.comment ? this.wikishield.util.escapeHtml(edit.comment) : "";
+
+			const $summary = this.elem("#middle-top > .middle-top-comment");
+			$summary.innerHTML = `
+				&lt;span class="fa fa-comment-dots">&lt;/span>
+				&lt;span class="summary" data-tooltip="${summaryFull}">${minorIndicator}${summaryTruncated || "&lt;em>No summary provided&lt;/em>"}&lt;/span>
+			`;
+
+			this.addTooltipListener($summary.querySelector(".summary"));
+		}
+
+		// Scroll to the first changed line in the diff
+		const diffContainer = this.elem("#diff-container");
+		const firstChange = diffContainer.querySelector(".diff-addedline, .diff-deletedline");
+		if (firstChange) {
+			// Use setTimeout to ensure the DOM is fully rendered before scrolling
+			setTimeout(() => {
+				firstChange.scrollIntoView({ behavior: "smooth", block: "center" });
+			}, 100);
+		}
+	}
+
+	/**
+	* Update or create AI analysis display
+	* @param {Object} analysis The AI analysis object
+	*/
+	updateAIAnalysisDisplay(analysis) {
+		// Find or create AI analysis container
+		let aiContainer = document.querySelector("#ai-analysis-container");
+
+		if (!analysis) {
+			// Remove AI container if no analysis
+			if (aiContainer) {
+				aiContainer.remove();
+			}
+			return;
+		}
+
+		if (!aiContainer) {
+			// Create container if it doesn't exist
+			const diffContainer = document.querySelector("#diff-container");
+			if (!diffContainer) return;
+
+			aiContainer = document.createElement("div");
+			aiContainer.id = "ai-analysis-container";
+			aiContainer.style.cssText = `
+					margin: 12px;
+					padding: 0;
+					border-radius: 12px;
+					background: linear-gradient(135deg,
+						rgba(102, 126, 234, 0.95) 0%,
+						rgba(118, 75, 162, 0.95) 50%,
+						rgba(102, 126, 234, 0.9) 100%);
+					-webkit-backdrop-filter: blur(20px);
+					backdrop-filter: blur(20px);
+					color: white;
+					box-shadow:
+						0 8px 24px rgba(102, 126, 234, 0.4),
+						inset 0 1px 0 rgba(255, 255, 255, 0.2),
+						inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+					border: 1px solid rgba(255, 255, 255, 0.15);
+					overflow: hidden;
+					flex-shrink: 0;
+					transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+				`;
+			diffContainer.parentElement.insertBefore(aiContainer, diffContainer);
+		}
+
+		if (analysis.error) {
+			aiContainer.innerHTML = `
+					&lt;div style="display: flex; align-items: center; gap: 10px; padding: 16px; background: rgba(220, 53, 69, 0.15); border-left: 4px solid #dc3545;">
+						&lt;span class="fa fa-exclamation-triangle" style="font-size: 1.3em; color: #ff6b6b;">&lt;/span>
+						&lt;span style="font-weight: 500;">AI analysis failed: ${analysis.error}&lt;/span>
+					&lt;/div>
+				`;
+			return;
+		}
+
+		// Build issue badges
+		let issueHTML = '';
+		if (analysis.hasIssues &amp;&amp; analysis.issues &amp;&amp; analysis.issues.length > 0) {
+			const severityColors = {
+				'critical': 'rgba(220, 53, 69, 0.95)',
+				'major': 'rgba(253, 126, 20, 0.95)',
+				'minor': 'rgba(255, 193, 7, 0.95)'
+			};
+
+			const typeIcons = {
+				'vandalism': 'fa-skull-crossbones',
+				'spam': 'fa-spam',
+				'pov': 'fa-balance-scale',
+				'unsourced': 'fa-question-circle',
+				'attack': 'fa-bomb',
+				'copyright': 'fa-copyright',
+				'disruptive': 'fa-circle-exclamation',
+				'error': 'fa-bug',
+				'policy': 'fa-gavel',
+				'ai-generated': 'fa-robot'
+			};
+
+			issueHTML = '&lt;div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;">';
+			for (const issue of analysis.issues.slice(0, 5)) {
+				const iconClass = typeIcons[issue.type] || 'fa-exclamation-circle';
+				const bgColor = severityColors[issue.severity] || 'rgba(108, 117, 125, 0.95)';
+				issueHTML += `
+					&lt;span style="
+						display: inline-flex;
+						align-items: center;
+						gap: 4px;
+						padding: 4px 8px;
+						background: ${bgColor};
+						border-radius: 6px;
+						font-size: 0.75em;
+						font-weight: 600;
+						letter-spacing: 0.2px;
+						box-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
+						border: 1px solid rgba(255, 255, 255, 0.2);
+						cursor: help;
+						transition: all 0.2s ease;
+					" data-tooltip="${this.wikishield.util.escapeHtml(issue.description)}"
+					onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 3px 10px rgba(0, 0, 0, 0.3)';"
+					onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 6px rgba(0, 0, 0, 0.2)';">
+						&lt;span class="fa ${iconClass}">&lt;/span>
+						${issue.type}
+					&lt;/span>
+				`;
+			}
+			if (analysis.issues.length > 5) {
+				issueHTML += `&lt;span style="opacity: 0.85; font-size: 0.75em; padding: 4px 8px; background: rgba(0, 0, 0, 0.15); border-radius: 6px; font-weight: 500;">+${analysis.issues.length - 5} more&lt;/span>`;
+			}
+			issueHTML += '&lt;/div>';
+		}
+
+		// Build recommendation/action badge
+		const actionColors = {
+			'rollback': 'rgba(220, 53, 69, 0.95)',
+			'warn-and-revert': 'rgba(231, 76, 60, 0.95)',
+			'warn': 'rgba(253, 126, 20, 0.95)',
+			'report-aiv': 'rgba(142, 68, 173, 0.95)',
+			'review': 'rgba(255, 193, 7, 0.95)',
+			'approve': 'rgba(40, 167, 69, 0.95)',
+			'thank': 'rgba(23, 162, 184, 0.95)',
+			'welcome': 'rgba(32, 201, 151, 0.95)'
+		};
+		const actionIcons = {
+			'rollback': 'fa-rotate-left',
+			'warn-and-revert': 'fa-exclamation-triangle',
+			'warn': 'fa-exclamation-triangle',
+			'report-aiv': 'fa-gavel',
+			'review': 'fa-eye',
+			'approve': 'fa-check-circle',
+			'thank': 'fa-heart',
+			'welcome': 'fa-paper-plane'
+		};
+
+		const action = analysis.action || 'review';
+		const actionColor = actionColors[action] || 'rgba(108, 117, 125, 0.95)';
+		const actionIcon = actionIcons[action] || 'fa-question';
+		const probability = analysis.probability || 0;
+
+		aiContainer.innerHTML = `
+			&lt;div style="padding: 10px 12px;">
+				&lt;!-- Compact Header -->
+				&lt;div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+					&lt;div style="display: flex; align-items: center; gap: 6px;">
+						&lt;span class="fa fa-robot" style="font-size: 1.1em;">&lt;/span>
+						&lt;strong style="font-size: 0.95em; letter-spacing: 0.3px;">AI Analysis&lt;/strong>
+						&lt;span style="padding: 3px 8px; background: rgba(255,255,255,0.25); border-radius: 6px; font-size: 0.8em; font-weight: 700;">
+							${probability}%
+						&lt;/span>
+						&lt;span style="padding: 3px 8px; background: rgba(255,255,255,0.18); border-radius: 6px; font-size: 0.75em; font-weight: 600; text-transform: uppercase;">
+							${analysis.confidence || 'unknown'}
+						&lt;/span>
+					&lt;/div>
+					&lt;span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; background: ${actionColor}; border-radius: 6px; font-size: 0.8em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;">
+						&lt;span class="fa ${actionIcon}">&lt;/span>
+						${action.replace(/-/g, ' ')}
+					&lt;/span>
+				&lt;/div>
+
+				&lt;!-- Compact Summary -->
+				&lt;div style="font-size: 0.85em; line-height: 1.4; margin-bottom: 6px; opacity: 0.95;">
+					${analysis.summary}
+				&lt;/div>
+
+				${analysis.reasoning ? `
+				&lt;div style="font-size: 0.8em; line-height: 1.3; padding: 6px 8px; background: rgba(0,0,0,0.15); border-radius: 4px; margin-bottom: 6px; border-left: 3px solid rgba(143,163,255,0.5); opacity: 0.9;">
+					&lt;strong style="font-size: 0.85em;">🔍&lt;/strong> ${analysis.reasoning}
+				&lt;/div>
+				` : ''}
+
+				&lt;!-- Compact Recommendation -->
+				&lt;div style="font-size: 0.82em; line-height: 1.3; padding: 6px 8px; background: rgba(255,255,255,0.08); border-radius: 4px; margin-bottom: ${analysis.hasIssues &amp;&amp; analysis.issues &amp;&amp; analysis.issues.length > 0 ? '8px' : '0'}; border-left: 3px solid rgba(40,167,69,0.6); opacity: 0.95;">
+					&lt;strong style="font-size: 0.85em;">💡&lt;/strong> ${analysis.recommendation}
+				&lt;/div>
+
+				&lt;!-- Compact Issues -->
+				${issueHTML}
+			&lt;/div>
+		`;
+
+		// Add tooltip listeners to issue badges
+		aiContainer.querySelectorAll('[data-tooltip]').forEach(elem => {
+			this.addTooltipListener(elem);
+		});
+	}
+
+	/**
+	* Show a notice that you have broken 3RR
+	* @param {Number} count The revision ID of the newer edit
+	*/
+	show3RRNotice(count) {
+		// Remove any existing notice first
+		this.hide3RRNotice();
+
+		// Validate inputs
+		if (count &lt; 3) {
+			console.error("Cannot show 3RR notice: improper revert count");
+			return;
+		}
+
+		// Create the notice using the same style as old-edit-notice
+		const noticeDiv = document.createElement("div");
+		noticeDiv.id = "warn-3RR-notice";
+
+		noticeDiv.style.cssText = `
+				margin: 10px 10px 0 10px;
+				padding: 8px 12px;
+				background: #f73214;
+				border-radius: 4px;
+				color: #0c5460;
+				display: flex;
+				align-items: center;
+				gap: 8px;
+				font-size: 0.9em;
+				flex-shrink: 0;
+			`;
+
+		noticeDiv.innerHTML = `
+				&lt;span class="fa fa-warning">&lt;/span>
+				&lt;span style="flex: 1;">&lt;b>3RR:&lt;/b> You have made ${count} reverts on this article in the last 24 hours.&lt;/span>
+			`;
+
+		// Insert before the diff container
+		const diffContainer = this.elem("#diff-container");
+		if (diffContainer &amp;&amp; diffContainer.parentElement) {
+			diffContainer.parentElement.insertBefore(noticeDiv, diffContainer);
+		}
+	}
+
+	/**
+	* Hide the newer edit button if it exists
+	*/
+	hide3RRNotice() {
+		const existingNotice = document.querySelector("#warn-3RR-notice");
+		if (existingNotice) {
+			existingNotice.remove();
+		}
+	}
+
+	/**
+	* Show a button indicating there's a newer revision on the current Wikipedia page
+	* @param {Number} newerRevid The revision ID of the newer edit
+	* @param {String} pageTitle The title of the Wikipedia page
+	*/
+	showNewerEditButton(newerRevid, pageTitle) {
+		// Remove any existing notice first
+		this.hideNewerEditButton();
+
+		// Validate inputs
+		if (!newerRevid || !pageTitle) {
+			console.error("Cannot show newer edit button: missing revid or page title");
+			return;
+		}
+
+		// Create the notice using the same style as old-edit-notice
+		const noticeDiv = document.createElement("div");
+		noticeDiv.id = "old-edit-notice";
+		noticeDiv.setAttribute("data-newer-revision", "true"); // Mark this as a newer revision notice
+		noticeDiv.setAttribute("data-target-revid", newerRevid);
+		noticeDiv.setAttribute("data-target-page", pageTitle);
+
+		noticeDiv.style.cssText = `
+				margin: 10px 10px 0 10px;
+				padding: 8px 12px;
+				background: #d1ecf1;
+				border-left: 4px solid #17a2b8;
+				border-radius: 4px;
+				color: #0c5460;
+				display: flex;
+				align-items: center;
+				gap: 8px;
+				font-size: 0.9em;
+				flex-shrink: 0;
+			`;
+
+		noticeDiv.innerHTML = `
+				&lt;span class="fa fa-clock-rotate-left">&lt;/span>
+				&lt;span style="flex: 1;">Newer revision available on this page&lt;/span>
+				&lt;a href="#" id="view-newest-edit" style="color: #004085; font-weight: 600; text-decoration: none; white-space: nowrap;">
+					View latest →
+				&lt;/a>
+			`;
+
+		// Insert before the diff container
+		const diffContainer = this.elem("#diff-container");
+		if (diffContainer &amp;&amp; diffContainer.parentElement) {
+			diffContainer.parentElement.insertBefore(noticeDiv, diffContainer);
+
+			// Add click handler
+			document.getElementById("view-newest-edit").addEventListener("click", (e) => {
+				e.preventDefault();
+				const targetRevid = noticeDiv.getAttribute("data-target-revid");
+				const targetPage = noticeDiv.getAttribute("data-target-page");
+
+				if (targetRevid &amp;&amp; targetPage) {
+					this.wikishield.queue.loadSpecificRevision(Number(targetRevid), targetPage);
+				}
+			});
+		}
+	}
+
+	/**
+	* Hide the newer edit button if it exists
+	*/
+	hideNewerEditButton() {
+		const existingNotice = document.querySelector("#old-edit-notice[data-newer-revision='true']");
+		if (existingNotice) {
+			existingNotice.remove();
+		}
+	}
+
+	/**
+	* Start periodic checking for newer revisions on the current Wikipedia page
+	* @param {Object} edit The current edit being viewed
+	*/
+	startNewerRevisionCheck(edit) {
+		// Clear any existing interval and hide any old buttons
+		this.stopNewerRevisionCheck();
+
+		// Immediately check for newer revisions
+		this.checkForNewerRevision(edit);
+
+		// Set up periodic checking every 10 seconds
+		this.newerRevisionInterval = setInterval(() => {
+			// Only continue checking if we're still viewing the exact same edit
+			if (this.wikishield.queue.currentEdit &amp;&amp; this.wikishield.queue.currentEdit.revid === edit.revid) {
+				this.checkForNewerRevision(edit);
+			} else {
+				// We've switched to a different edit, stop this check
+				this.stopNewerRevisionCheck();
+			}
+		}, 10000);
+	}
+
+	/**
+	* Stop periodic checking for newer revisions and hide the button
+	*/
+	stopNewerRevisionCheck() {
+		// Clear the interval timer
+		if (this.newerRevisionInterval) {
+			clearInterval(this.newerRevisionInterval);
+			this.newerRevisionInterval = null;
+		}
+		// Always remove the button when stopping
+		this.hideNewerEditButton();
+	}
+
+	/**
+	* Check if there's a newer revision on the current Wikipedia page
+	* @param {Object} edit The current edit being viewed
+	*/
+	async checkForNewerRevision(edit) {
+		try {
+			const pageTitle = edit.page.title;
+			const currentRevid = edit.revid;
+
+			// Fetch the ACTUAL latest revision ID from Wikipedia API
+			const latestRevisions = await this.wikishield.api.getLatestRevisions(pageTitle);
+			const latestRevid = latestRevisions[pageTitle];
+
+			if (!latestRevid) {
+				// API call failed or page doesn't exist
+				this.hideNewerEditButton();
+				return;
+			}
+
+			// Simple check: is there a revision with a higher ID than the one we're viewing?
+			if (latestRevid > currentRevid) {
+				// YES - there's a newer revision on this Wikipedia page
+				this.showNewerEditButton(latestRevid, pageTitle);
+			} else {
+				// NO - we're viewing the latest revision
+				this.hideNewerEditButton();
+			}
+		} catch (err) {
+			console.error("Failed to check for newer revision:", err);
+			this.hideNewerEditButton();
+		}
+	}
+
+	/**
+	* Create a tooltip when an element is hovered over
+	* @param {HTMLElement} elem
+	*/
+	addTooltipListener(elem) {
+		elem.addEventListener("mouseenter", () => {
+			this.removeTooltips();
+
+			if (!elem.dataset.tooltip) {
+				return;
+			}
+
+			const tooltip = document.createElement("div");
+			tooltip.classList.add("tooltip");
+
+			// Check if tooltip content is HTML or plain text
+			if (elem.dataset.tooltipHtml === "true") {
+				tooltip.innerHTML = elem.dataset.tooltip;
+			} else {
+				tooltip.innerText = elem.dataset.tooltip;
+			}
+
+			document.body.appendChild(tooltip);
+
+			// Force a reflow to ensure dimensions are calculated
+			tooltip.offsetHeight;
+
+			const tooltipWidth = tooltip.getBoundingClientRect().width,
+			tooltipHeight = tooltip.getBoundingClientRect().height;
+			const elemBox = elem.getBoundingClientRect();
+
+			// Calculate center position for the tooltip
+			const centerLeft = (elemBox.left + elemBox.right - tooltipWidth) / 2;
+
+			const canFitRight = elemBox.right &lt; window.innerWidth - tooltipWidth - 30;
+			const canFitLeft = elemBox.left > tooltipWidth + 30;
+			// Check if tooltip can fit centered AND if centered position is actually on screen
+			const canFitMiddle = centerLeft > 10 &amp;&amp; centerLeft + tooltipWidth &lt; window.innerWidth - 10;
+			const canFitTop = canFitMiddle &amp;&amp; elemBox.top > tooltipHeight + 30;
+			const canFitBottom = canFitMiddle &amp;&amp; elemBox.bottom &lt; window.innerHeight - tooltipHeight - 30;
+
+			// Position the tooltip
+			if (canFitTop) {
+				tooltip.style.left = (elemBox.left + elemBox.right - tooltipWidth) / 2 + "px";
+				tooltip.style.top = (elemBox.top - tooltipHeight - 10) + "px";
+			} else if (canFitBottom) {
+				tooltip.style.left = (elemBox.left + elemBox.right - tooltipWidth) / 2 + "px";
+				tooltip.style.top = (elemBox.bottom + 10) + "px";
+			} else if (canFitRight) {
+				tooltip.style.left = (elemBox.right + 10) + "px";
+				tooltip.style.top = (elemBox.top - 4) + "px";
+			} else if (canFitLeft) {
+				tooltip.style.left = (elemBox.left - 10 - tooltipWidth) + "px";
+				tooltip.style.top = (elemBox.top - 4) + "px";
+			} else {
+				// Fallback: center on element, clip if necessary
+				tooltip.style.left = Math.max(10, (elemBox.left + elemBox.right - tooltipWidth) / 2) + "px";
+				tooltip.style.top = Math.max(10, elemBox.bottom + 10) + "px";
+			}
+
+			tooltip.style.opacity = 1;
+		});
+
+		elem.addEventListener("mouseleave", () => {
+			this.removeTooltips();
+		});
+	}
+
+	/**
+	* Delete all existing tooltip elements
+	*/
+	removeTooltips() {
+		[...document.querySelectorAll(".tooltip")].forEach(elem => {
+			elem.style.opacity = 0;
+			window.setTimeout(() => elem.remove(), 200);
+		});
+	}
+
+	/**
+	* Remove all elements from the queue
+	*/
+	clearQueue() {
+		this.elem("#queue-items").innerHTML = "";
+	}
+
+	/**
+	* Remove a specific item from the queue
+	* @param {Number} revid
+	*/
+	removeQueueItem(revid) {
+		const elem = this.elem(`.queue-edit[data-revid="${revid}"]`);
+
+		if (elem) {
+			elem.remove();
+		}
+	}
+
+	/**
+	* From the ORES score, get the color to display
+	* @param {Number} ores The ORES score
+	* @returns {String} The color to display
+	*/
+	getORESColor(ores) {
+		const colors = colorPalettes[this.wikishield.options.selectedPalette];
+		return colors[Math.floor(ores * colors.length)];
+	}
+
+	/**
+	* Return a specific element
+	* @param {String} selector
+	* @returns
+	*/
+	elem(selector) {
+		return document.querySelector(selector);
+	}
+
+	/**
+	* Escape HTML to prevent XSS
+	*/
+	escapeHtml(text) {
+		const div = document.createElement('div');
+		div.textContent = text;
+		return div.innerHTML;
+	}
+
+	/**
+	* Show a toast notification on screen
+	* @param {String} title - Title of the notification
+	* @param {String} message - Message content
+	* @param {Number} duration - How long to show (ms), default 5000
+	*/
+	showToast(title, message, duration = 5000, type = "default") {
+		if (this.wikishield.options.zen.enabled &amp;&amp; !this.wikishield.options.zen.toasts) {
+			return; // Do not play sounds in Zen mode if disabled
+		}
+
+		// Create toast element
+		const toast = document.createElement("div");
+		toast.classList.add("toast-notification");
+
+		// Add type class for styling
+		if (type === "success") toast.classList.add("success");
+		else if (type === "error") toast.classList.add("error");
+		else if (type === "warning") toast.classList.add("warning");
+
+		// Select icon based on type
+		let icon = "⚠️";
+		if (type === "success") icon = "✓";
+		else if (type === "error") icon = "✕";
+		else if (type === "warning") icon = "⚠️";
+
+		toast.innerHTML = `
+				&lt;div class="toast-icon">${icon}&lt;/div>
+				&lt;div class="toast-content">
+					&lt;div class="toast-title">${this.escapeHtml(title)}&lt;/div>
+					&lt;div class="toast-message">${this.escapeHtml(message)}&lt;/div>
+				&lt;/div>
+				&lt;div class="toast-close">×&lt;/div>
+			`;
+
+		document.body.appendChild(toast);
+
+		// Trigger animation
+		setTimeout(() => toast.classList.add("show"), 10);
+
+		// Close button handler
+		const closeBtn = toast.querySelector(".toast-close");
+		closeBtn.addEventListener("click", () => {
+			this.hideToast(toast);
+		});
+
+		// Auto-hide after duration
+		setTimeout(() => {
+			this.hideToast(toast);
+		}, duration);
+	}
+
+	/**
+	* Hide and remove a toast notification
+	*/
+	hideToast(toast) {
+		if (!toast || !toast.parentElement) return;
+
+		toast.classList.add("hide");
+		setTimeout(() => {
+			if (toast.parentElement) {
+				toast.remove();
+			}
+		}, 300);
+	}
+
+	updateZenModeDisplay() {
+		const _zen_ = this.wikishield.options.zen;
+		document.querySelectorAll("[data-zen-show]").forEach(elem => {
+			elem.style.display = _zen_.enabled &amp;&amp; !_zen_[elem.dataset.zenShow] ? "none" : "";
+		});
+	}
+
+	/**
+	* Show UAA reason selection dialog
+	* @param {String} username - Username to report
+	* @returns {Promise&lt;String|null>} Selected reason or null if cancelled
+	*/
+	showUAAReasonDialog(username) {
+		return new Promise((resolve) => {
+			// Create overlay
+			const overlay = document.createElement("div");
+			overlay.classList.add("confirmation-modal-overlay");
+
+			// Create modal
+			const modal = document.createElement("div");
+			modal.classList.add("confirmation-modal");
+			modal.innerHTML = `
+					&lt;div class="confirmation-modal-header">
+						&lt;div class="confirmation-modal-title">Report to UAA&lt;/div>
+					&lt;/div>
+					&lt;div class="confirmation-modal-body">
+						Select reason for reporting &lt;span class="confirmation-modal-username">${this.escapeHtml(username)}&lt;/span>:
+					&lt;/div>
+					&lt;div class="confirmation-modal-footer confirmation-modal-footer-vertical">
+						&lt;button class="confirmation-modal-button confirmation-modal-button-reason" data-reason="Disruptive username">Disruptive username&lt;/button>
+						&lt;button class="confirmation-modal-button confirmation-modal-button-reason" data-reason="Offensive username">Offensive username&lt;/button>
+						&lt;button class="confirmation-modal-button confirmation-modal-button-reason" data-reason="Promotional username">Promotional username&lt;/button>
+						&lt;button class="confirmation-modal-button confirmation-modal-button-reason" data-reason="Misleading username">Misleading username&lt;/button>
+						&lt;button class="confirmation-modal-button confirmation-modal-button-cancel">Cancel&lt;/button>
+					&lt;/div>
+				`;
+
+			overlay.appendChild(modal);
+			document.body.appendChild(overlay);
+
+			// Disable all keybinds while modal is open
+			const keyHandler = (e) => {
+				if (e.key === "Escape") {
+					e.preventDefault();
+					e.stopPropagation();
+					closeModal(null);
+					return false;
+				} else if (e.key !== "Tab") {
+					e.preventDefault();
+					e.stopPropagation();
+					return false;
+				}
+			};
+
+			document.addEventListener("keydown", keyHandler, true);
+
+			const closeModal = (result) => {
+				document.removeEventListener("keydown", keyHandler, true);
+				overlay.classList.add("closing");
+				modal.classList.add("closing");
+				setTimeout(() => {
+					overlay.remove();
+					resolve(result);
+				}, 200);
+			};
+
+			// Handle reason button clicks
+			modal.querySelectorAll(".confirmation-modal-button-reason").forEach(btn => {
+				btn.addEventListener("click", () => {
+					closeModal(btn.dataset.reason);
+				});
+			});
+
+			// Handle cancel button
+			modal.querySelector(".confirmation-modal-button-cancel").addEventListener("click", () => {
+				closeModal(null);
+			});
+
+			// Close on overlay click
+			overlay.addEventListener("click", (e) => {
+				if (e.target === overlay) {
+					closeModal(null);
+				}
+			});
+		});
+	}
+
+	/**
+	* Show a confirmation dialog and return a promise that resolves to true (Yes) or false (No)
+	* @param {String} title - Dialog title
+	* @param {String} message - Dialog message (can include HTML)
+	* @param {String} username - Optional username to enable UAA report button
+	*/
+	showConfirmationDialog(title, message, username = null) {
+		return new Promise((resolve) => {
+			// Create overlay
+			const overlay = document.createElement("div");
+			overlay.classList.add("confirmation-modal-overlay");
+
+			// Create modal
+			const modal = document.createElement("div");
+			modal.classList.add("confirmation-modal");
+
+			const uaaButton = username ? `&lt;button class="confirmation-modal-button confirmation-modal-button-uaa">Report to UAA&lt;/button>` : '';
+
+			modal.innerHTML = `
+					&lt;div class="confirmation-modal-header">
+						&lt;div class="confirmation-modal-title">${this.escapeHtml(title)}&lt;/div>
+					&lt;/div>
+					&lt;div class="confirmation-modal-body">${message}&lt;/div>
+					&lt;div class="confirmation-modal-footer">
+						${uaaButton}
+						&lt;div class="confirmation-modal-footer-right">
+							&lt;button class="confirmation-modal-button confirmation-modal-button-no">No&lt;/button>
+							&lt;button class="confirmation-modal-button confirmation-modal-button-yes">Yes&lt;/button>
+						&lt;/div>
+					&lt;/div>
+				`;
+
+			overlay.appendChild(modal);
+			document.body.appendChild(overlay);
+
+			// Disable all keybinds while modal is open
+			const keyHandler = (e) => {
+				// Only allow Tab, Enter, Escape
+				if (e.key === "Enter") {
+					e.preventDefault();
+					e.stopPropagation();
+					closeModal(true);
+					return false;
+				} else if (e.key === "Escape") {
+					e.preventDefault();
+					e.stopPropagation();
+					closeModal(false);
+					return false;
+				} else if (e.key !== "Tab") {
+					// Block all other keys
+					e.preventDefault();
+					e.stopPropagation();
+					return false;
+				}
+			};
+
+			document.addEventListener("keydown", keyHandler, true);
+
+			// Handle button clicks
+			const yesBtn = modal.querySelector(".confirmation-modal-button-yes");
+			const noBtn = modal.querySelector(".confirmation-modal-button-no");
+			const uaaBtn = modal.querySelector(".confirmation-modal-button-uaa");
+
+			const closeModal = (result) => {
+				// Remove key handler
+				document.removeEventListener("keydown", keyHandler, true);
+
+				overlay.classList.add("closing");
+				modal.classList.add("closing");
+				setTimeout(() => {
+					overlay.remove();
+					resolve(result);
+				}, 200);
+			};
+
+			yesBtn.addEventListener("click", () => closeModal(true));
+			noBtn.addEventListener("click", () => closeModal(false));
+
+			// UAA report button
+			if (uaaBtn &amp;&amp; username) {
+				uaaBtn.addEventListener("click", async () => {
+					// Close the current modal first
+					document.removeEventListener("keydown", keyHandler, true);
+					overlay.classList.add("closing");
+					modal.classList.add("closing");
+
+					setTimeout(async () => {
+						overlay.remove();
+
+						// Show UAA reason selection dialog
+						const reason = await this.showUAAReasonDialog(username);
+
+						if (reason) {
+							// User selected a reason, proceed with report
+							const progressBar = new WikiShieldProgressBar();
+							progressBar.set("Reporting to UAA...", 0.5, "var(--main-blue)");
+
+							try {
+								await this.wikishield.reportToUAA(username, reason);
+								progressBar.set(`Reported ${username} to UAA`, 1, "var(--main-green)");
+							} catch (err) {
+								progressBar.set("Report failed", 1, "var(--main-red)");
+								console.error("UAA report error:", err);
+							}
+
+							resolve(false);
+						} else {
+							// User cancelled, show the welcome dialog again
+							const confirmed = await this.showConfirmationDialog(title, message, username);
+							resolve(confirmed);
+						}
+					}, 200);
+				});
+			}
+
+			// Close on overlay click
+			overlay.addEventListener("click", (e) => {
+				if (e.target === overlay) {
+					closeModal(false);
+				}
+			});
+
+			// Focus the Yes button by default
+			setTimeout(() => yesBtn.focus(), 50);
+		});
+	}
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+    
+    
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.5</a> on Fri Dec 05 2025 01:29:23 GMT+0000 (Coordinated Universal Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/polyfill.js"></script>
+<script src="scripts/linenumber.js"></script>
+
+<script src="scripts/search.js" defer></script>
+
+
+
+</body>
+</html>
