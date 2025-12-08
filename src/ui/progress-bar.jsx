@@ -75,17 +75,13 @@ class ProgressBarComponent extends Component {
 		}
 
 		return (
-			<div 
-				className="progress-bar" 
-				style={{ opacity, transition: 'opacity 0.3s ease' }}
+			<div
+				className="progress-bar"
+				style={{ opacity }}
 			>
-				<div 
+				<div
 					className="progress-bar-overlay"
-					style={{ 
-						width: `${width}%`,
-						background: color,
-						transition: 'width 0.2s ease, background 0.2s ease'
-					}}
+					style={{ width: `${width}%` }}
 				/>
 				<div className="progress-bar-text">
 					{text}
@@ -118,7 +114,7 @@ export class WikiShieldProgressBar {
 
 		// Render the React component
 		render(
-			<ProgressBarComponent 
+			<ProgressBarComponent
 				onMount={(ref) => {
 					this.componentRef = ref;
 					this.processQueue();
@@ -161,7 +157,7 @@ export class WikiShieldProgressBar {
 	processQueue() {
 		while (this.updateQueue.length > 0 && this.componentRef) {
 			const update = this.updateQueue.shift();
-			
+
 			setTimeout(() => {
 				if (this.componentRef) {
 					this.componentRef.updateProgress(update.text, update.width, update.color);
@@ -197,16 +193,16 @@ export class WikiShieldProgressBar {
 /**
  * React Hook for using progress bars in functional components
  * Example usage:
- * 
+ *
  * const MyComponent = () => {
  *   const [progress, setProgress] = useProgressBar();
- *   
+ *
  *   const doWork = async () => {
  *     setProgress('Working...', 0.5, 'blue');
  *     await someAsyncWork();
  *     setProgress('Done!', 1.0, 'green');
  *   };
- *   
+ *
  *   return <button onClick={doWork}>Start</button>;
  * };
  */
@@ -226,15 +222,15 @@ export function useProgressBar() {
 /**
  * Functional component version for direct use in JSX
  * Example:
- * 
+ *
  * <ProgressBar text="Loading..." width={0.5} color="blue" />
  */
 export const ProgressBar = ({ text, width, color = 'var(--main-blue)', onComplete }) => {
 	return (
 		<div className="progress-bar">
-			<div 
+			<div
 				className="progress-bar-overlay"
-				style={{ 
+				style={{
 					width: `${Math.round(width * 100)}%`,
 					background: color,
 					transition: 'width 0.2s ease'
@@ -246,4 +242,3 @@ export const ProgressBar = ({ text, width, color = 'var(--main-blue)', onComplet
 		</div>
 	);
 };
-

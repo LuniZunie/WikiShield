@@ -32,7 +32,7 @@ Target project structure:
 
 /ai
 > /ai/prompts.js - BuildAIAnalysisPrompt function and prompt templates
-> /ai/ollama.js - WikiShieldOllamaAI class
+> /OllamaAI.js - AI.Ollama class
 
 /utils
 > /utils/formatting.js - fullTrim and text utility functions

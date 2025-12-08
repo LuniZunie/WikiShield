@@ -2,133 +2,125 @@
 
 export const wikishieldHTML = {
 	"changelog": `
-		<h1 style="
-			text-align:center;
-			margin:25px 0 30px;
-			font-size:32px;
-			font-weight:800;
-			color:var(--title-color, #fff);
-			letter-spacing:0.5px;
-		">
-			Changelog
-		</h1>
-
-		<div style="
-			max-width:1350px;
-			margin:0 auto;
-			display:grid;
-			grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));
-			gap:24px;
-			padding:0 10px;
-			font-family:system-ui, sans-serif;
-			color:var(--text-color, inherit);
-		">
-
-			<style>
-			:root {
-				--card-bg: rgba(255,255,255,0.04);
-				--card-border: rgba(255,255,255,0.10);
-				--card-shadow: 0 6px 20px rgba(0,0,0,0.25);
-				--text-color: #e5e5e5;
-				--title-color: #ffffff;
-				--accent-color: #76a8ff;
-				--code-bg: rgba(255,255,255,0.15);
-			}
-			</style>
-
-			<!-- CARD -->
-			<div style="
-			background:var(--card-bg);
-			border:1px solid var(--card-border);
-			border-radius:14px;
-			padding:22px 24px;
-			box-shadow:var(--card-shadow);
-			backdrop-filter:blur(8px);
-			">
-			<h2 style="margin:0 0 10px; font-size:20px; font-weight:700; color:var(--title-color);">Zen Mode</h2>
-			<p style="margin:0 0 14px; font-size:15px; font-weight:600; color:var(--accent-color);">
-				UI Improvements & Minimalism Tools
-			</p>
-			<ul style="margin:0; padding-left:20px; line-height:1.6; font-size:15px;">
-				<li>New <code style="background:var(--code-bg); padding:2px 5px; border-radius:4px;">Zen Mode</code> tab in the settings panel.</li>
-				<li>Toggle visibility of watchlist, notifications, edit count, and toasts.</li>
-			</ul>
+		<div class="changelog-header">
+			<h1><i class="fas fa-rocket"></i> What's New in WikiShield</h1>
+			<p class="changelog-subtitle">Discover the latest features and improvements</p>
+		</div>
+		<div class="changelog-grid">
+			<div class="card featured">
+				<div class="card-icon"><i class="fas fa-layer-group"></i></div>
+				<h2>New Queues!</h2>
+				<p>Introducing: pending changes, user creation, and watchlist queues.</p>
+				<ul>
+					<li>Queues can be toggled and rearranged in the new "Queue" appearance settings page</li>
+					<li>Badge icons indicate number of items in each queue</li>
+					<li><strong>Note:</strong> The pending changes tab requires the <code>review</code> user right</li>
+				</ul>
 			</div>
-
-			<div style="
-			background:var(--card-bg);
-			border:1px solid var(--card-border);
-			border-radius:14px;
-			padding:22px 24px;
-			box-shadow:var(--card-shadow);
-			backdrop-filter:blur(8px);
-			">
-			<h2 style="margin:0 0 10px; font-size:20px; font-weight:700; color:var(--title-color);">Highlighting & Whitelisting</h2>
-			<p style="margin:0 0 14px; font-size:15px; font-weight:600; color:var(--accent-color);">
-				More Control Over Categories
-			</p>
-			<ul style="margin:0; padding-left:20px; line-height:1.6; font-size:15px;">
-				<li>Pages and tags can now be whitelisted or highlighted.</li>
-				<li>Settings reorganized into clearer category groups.</li>
-			</ul>
+			<div class="card">
+				<div class="card-icon"><i class="fas fa-bell"></i></div>
+				<h2>Notices & Alerts</h2>
+				<p>Multiple improvements to notices and alerts</p>
+				<ul>
+					<li>All notifications have an updated style to align with Wikipedia</li>
+					<li>Notices and alerts have been separated into distinct panels</li>
+					<li>Notifications read on WikiShield are now read on Wikipedia</li>
+					<li>Added the ability to mark individual notifications as read or unread</li>
+					<li>Tab title now includes the number of unread notifications</li>
+				</ul>
 			</div>
-
-			<div style="
-			background:var(--card-bg);
-			border:1px solid var(--card-border);
-			border-radius:14px;
-			padding:22px 24px;
-			box-shadow:var(--card-shadow);
-			backdrop-filter:blur(8px);
-			">
-			<h2 style="margin:0 0 10px; font-size:20px; font-weight:700; color:var(--title-color);">Sound System Upgrade</h2>
-			<p style="margin:0 0 14px; font-size:15px; font-weight:600; color:var(--accent-color);">
-				Layered Audio Format
-			</p>
-			<ul style="margin:0; padding-left:20px; line-height:1.6; font-size:15px;">
-				<li>Sounds now support multiple layers for richer effects.</li>
-				<li>Updated every sound to use the new system.</li>
-				<li>Added <code style="background:var(--code-bg); padding:2px 5px; border-radius:4px;">success</code> and <code style="background:var(--code-bg); padding:2px 5px; border-radius:4px;">error</code> tones.</li>
-			</ul>
+			<div class="card">
+				<div class="card-icon"><i class="fas fa-music"></i></div>
+				<h2>New Audio</h2>
+				<p>Sounds have been updated and music (?!) has been added.</p>
+				<ul>
+					<li>Sound quality has been improved</li>
+					<li>Music has now been added to Zen Mode for some reason...</li>
+				</ul>
 			</div>
-
-			<div style="
-			background:var(--card-bg);
-			border:1px solid var(--card-border);
-			border-radius:14px;
-			padding:22px 24px;
-			box-shadow:var(--card-shadow);
-			backdrop-filter:blur(8px);
-			">
-			<h2 style="margin:0 0 10px; font-size:20px; font-weight:700; color:var(--title-color);">Save System Fixes</h2>
-			<p style="margin:0 0 14px; font-size:15px; font-weight:600; color:var(--accent-color);">
-				More Reliable Loading
-			</p>
-			<ul style="margin:0; padding-left:20px; line-height:1.6; font-size:15px;">
-				<li>Namespace preferences may have reset due to a bug.</li>
-				<li>Invalid or unsupported settings now auto-remove during load.</li>
-			</ul>
+			<div class="card">
+				<div class="card-icon"><i class="fas fa-at"></i></div>
+				<h2>Username Mentions</h2>
+				<p>Improved handling of username mentions</p>
+				<ul>
+					<li>A new option has been added for fuzzy matching usernames
+						<ul>
+							<li>Available in the "Gadgets" settings page</li>
+							<li>When enabled, WikiShield will match usernames that are <i>similar</i> to your own</li>
+						</ul>
+					</li>
+					<li>Edit summaries now include username mentions</li>
+					<li>In the user creation tab, usernames similar to yours are highlighted</li>
+					<li>Added an indicator to tab icons when there are edits mentioning your username</li>
+				</ul>
 			</div>
-
-			<div style="
-			background:var(--card-bg);
-			border:1px solid var(--card-border);
-			border-radius:14px;
-			padding:22px 24px;
-			box-shadow:var(--card-shadow);
-			backdrop-filter:blur(8px);
-			">
-			<h2 style="margin:0 0 10px; font-size:20px; font-weight:700; color:var(--title-color);">Miscellaneous Improvements</h2>
-			<p style="margin:0 0 14px; font-size:15px; font-weight:600; color:var(--accent-color);">
-				General Enhancements
-			</p>
-			<ul style="margin:0; padding-left:20px; line-height:1.6; font-size:15px;">
-				<li>Script now works across all Wikimedia Foundation wikis.</li>
-				<li>Rearranged and cleaned up the settings panel.</li>
-				<li>Fixed several minor bugs.</li>
-			</ul>
+			<div class="card">
+				<div class="card-icon"><i class="fas fa-ban"></i></div>
+				<h2>User Blocks</h2>
+				<p>More functionality related to user blocks</p>
+				<ul>
+					<li>Users who are currently blocked now have their name struck through</li>
+					<li>Improved block detection, you can now see all the blocks by hovering over the block indicator</li>
+				</ul>
 			</div>
-
+			<div class="card">
+				<div class="card-icon"><i class="fas fa-robot"></i></div>
+				<h2>AI Analysis</h2>
+				<p>AI analysis has been improved and expanded</p>
+				<ul>
+					<li>Fine tuning has been done to improve accuracy</li>
+					<li>AI analysis is now available in the user creation, pending changes, and watchlist queues</li>
+				</ul>
+			</div>
+			<div class="card">
+				<div class="card-icon"><i class="fas fa-list-check"></i></div>
+				<h2>Queue Items</h2>
+				<p>Various improvements to queue items</p>
+				<ul>
+					<li>Added ORES score to user contributions and page history items</li>
+					<li>Timestamps have been added to queue items</li>
+					<li>Cutoff text can now be hovered to see the full text</li>
+					<li>Items in the queue should no longer be repeated</li>
+					<li>Fixed navigation bugs</li>
+				</ul>
+			</div>
+			<div class="card">
+				<div class="card-icon"><i class="fas fa-chart-line"></i></div>
+				<h2>Statistics</h2>
+				<p>Statistics have been completely revamped</p>
+				<ul>
+					<li>More detailed statistics have been added</li>
+					<li>Fixed various bugs with statistics calculations</li>
+					<li>(Yes, this does mean your stats have been reset)</li>
+				</ul>
+			</div>
+			<div class="card">
+				<div class="card-icon"><i class="fas fa-palette"></i></div>
+				<h2>UI Improvements</h2>
+				<p>Various improvements to the user interface</p>
+				<ul>
+					<li>New welcome screen design</li>
+					<li>Multiple new settings options have been added</li>
+					<li>Styling has been improved throughout the interface</li>
+					<li>Various bug fixes and performance improvements</li>
+				</ul>
+			</div>
+			<div class="card">
+				<div class="card-icon"><i class="fas fa-ellipsis"></i></div>
+				<h2>Miscellaneous</h2>
+				<p>Other changes and improvements</p>
+				<ul>
+					<li>RfPP now has "Generic" and "Disruptive Edits" subcategories</li>
+					<li>Not English warning has been moved to the "Revert" menu</li>
+					<li>Removed personal edit count from the bottom tool bar</li>
+					<li>"Time ago" now updates dynamically without needing to refresh</li>
+					<li>Buttons that cannot be used for the current queue item are now hidden</li>
+					<li>Fixed bug related to Zen Mode on startup</li>
+					<li>Fixed bug where ORES scores would not load properly</li>
+					<li>Changed multiple edit summaries to be more standardized</li>
+					<li>Numerous other small bug fixes and improvements</li>
+				</ul>
+			</div>
 		</div>
 	`,
 	"head": `
@@ -138,7 +130,7 @@ export const wikishieldHTML = {
 	"initial": (version) => `
 		<div id="container">
 			<canvas id="dots-canvas"></canvas>
-			<div id="welcome-container">
+			<div id="welcome-container" class="shimmer shimmer-border">
 				<div class="shield-container">
 					<div class="glow-ring"></div>
 					<div class="glow-ring"></div>
@@ -147,7 +139,9 @@ export const wikishieldHTML = {
 					<div class="sparkle"></div>
 					<div class="sparkle"></div>
 					<div class="sparkle"></div>
-					<div class="shield-icon">🛡️</div>
+					<div class="shield-icon">
+						<img src="https://upload.wikimedia.org/wikipedia/commons/a/ae/WikiShield_Logo.png" alt="WikiShield Logo">
+					</div>
 				</div>
 				<h1>Welcome to WikiShield</h1>
 				<div class="about-links">
@@ -157,7 +151,7 @@ export const wikishieldHTML = {
 				</div>
 				<div id="rollback-needed" style="display: none;">
 					<p><span class="fa fa-exclamation-triangle"></span> You must have rollback or admin rights to use this script.</p>
-					<p>You can apply for rollback rights <a href="https://en.wikipedia.org/wiki/WP:PERM/R" target="_blank">here</a>.</p>
+					<p>You can apply for rollback rights <a href="/wiki/Wikipedia:PERM/R" target="_blank">here</a>.</p>
 				</div>
 				<button id="start-button">
 					<span class="fa fa-play"></span> Start WikiShield
@@ -170,36 +164,60 @@ export const wikishieldHTML = {
 			<div id="queue">
 				<div id="queue-top">
 					<div id="queue-top-left">
-						<span id="queue-top-title">Queue</span>
-						<span id="queue-top-items">0 items</span>
+						<span class="fa fa-gear" id="open-settings" data-tooltip="Open settings"></span>
+						<span class="fa fa-trash" id="delete-queue" data-tooltip="Clear queue"></span>
 					</div>
 					<div id="queue-top-right">
-						<span class="fa fa-book-bookmark" id="watchlist-icon" data-tooltip="Watchlist" style="position: relative;" data-zen-show="watchlist">
-							<span id="watchlist-count" style="display: none; position: absolute; top: -5px; right: -5px; background: dodgerblue; color: white; border-radius: 50%; width: 16px; height: 16px; font-size: 10px; text-align: center; line-height: 16px; font-family: sans-serif;"></span>
+						<span class="fa fa-inbox" id="notices-icon" data-tooltip="Notices" style="position: relative; display: none;" data-zen-show="notices">
+							<span id="notices-count" class="icon-count hidden blue" data-zen-show="badges"></span>
 						</span>
-						<span class="fa fa-bell" id="notifications-icon" data-tooltip="Notifications" style="position: relative;" data-zen-show="notifications">
-							<span id="notification-count" style="display: none; position: absolute; top: -5px; right: -5px; background: red; color: white; border-radius: 50%; width: 16px; height: 16px; font-size: 10px; text-align: center; line-height: 16px; font-family: sans-serif;"></span>
+						<span class="fa fa-bell" id="alerts-icon" data-tooltip="Alerts" style="position: relative;" data-zen-show="alerts">
+							<span id="alerts-count" class="icon-count hidden red" data-zen-show="badges"></span>
 						</span>
-						<span class="fa fa-trash" id="delete-queue" data-tooltip="Clear queue"></span>
-						<span class="fa fa-gear" id="open-settings" data-tooltip="Open settings"></span>
 					</div>
 				</div>
-				<div id="queue-items"></div>
+				<div id="queue-tabs">
+					<div id="queue-tab-recent" class="queue-tab selected" data-tooltip="Recent edits">
+						<span class="fas fa-stopwatch" style="position: relative;">
+							<span class="icon-count hidden red" data-zen-show="badges"></span>
+						</span>
+					</div>
+					<div id="queue-tab-flagged" class="queue-tab" data-tooltip="Pending edits">
+						<span class="fas fa-flag" style="position: relative;">
+							<span class="icon-count hidden orange" data-zen-show="badges"></span>
+						</span>
+					</div>
+					<div id="queue-tab-users" class="queue-tab" data-tooltip="User creation logs">
+						<span class="fas fa-user" style="position: relative;">
+							<span class="icon-count hidden grey" data-zen-show="badges"></span>
+						</span>
+					</div>
+					<div id="queue-tab-watchlist" class="queue-tab" data-tooltip="Watchlist edits">
+						<span class="fas fa-book-bookmark" style="position: relative;">
+							<span class="icon-count hidden blue" data-zen-show="badges"></span>
+						</span>
+					</div>
+				</div>
+				<div id="queue-items" class="queue-list">
+					<div class="queue-empty">
+						No edits in queue.
+					</div>
+				</div>
 				<div class="width-adjust" id="queue-width-adjust"></div>
 			</div>
-			<div id="notifications-panel">
-				<div id="notifications-header">
-					<span>Notifications</span>
-					<span id="mark-all-notifications-read" style="font-size: 0.85em; font-weight: normal; cursor: pointer; color: dodgerblue;">Mark all as read</span>
+			<div id="alerts-panel" class="notification-panel">
+				<div id="alerts-header" class="notification-header">
+					<span>Alerts</span>
+					<span id="mark-all-alerts-read" style="font-size: 0.85em; font-weight: normal; cursor: pointer; color: dodgerblue;">Mark all as read</span>
 				</div>
-				<div id="notifications-list"></div>
+				<div id="alerts-list" class="notification-list"></div>
 			</div>
-			<div id="watchlist-panel">
-				<div id="watchlist-header">
-					<span>Watchlist</span>
-					<span id="mark-all-watchlist-read" style="font-size: 0.85em; font-weight: normal; cursor: pointer; color: dodgerblue;">Mark all as read</span>
+			<div id="notices-panel" class="notification-panel">
+				<div id="notices-header" class="notification-header">
+					<span>Notices</span>
+					<span id="mark-all-notices-read" style="font-size: 0.85em; font-weight: normal; cursor: pointer; color: dodgerblue;">Mark all as read</span>
 				</div>
-				<div id="watchlist-list"></div>
+				<div id="notices-list" class="notification-list"></div>
 			</div>
 			<div id="right-container">
 				<div id="middle-top"></div>
@@ -213,90 +231,92 @@ export const wikishieldHTML = {
 						</div>
 					</div>
 
-					<div class="icons">
-						<i class="created-page hidden fas fa-file-circle-plus" data-tooltip="No other users have edited this page"></i>
-					</div>
+					<div class="icons"></div>
 				</div>
 				<div id="right-content">
 					<div id="main-container">
+						<div id="ai-analysis-container" class="hidden shimmer shimmer-border">
+							<div class="header">
+								<i class="fas fa-robot"></i>
+								<span class="title">AI Analysis</span>
+								<span class="assessment"></span>
+								<span class="confidence"></span>
+							</div>
+							<div class="explanation"></div>
+							<div class="issues"></div>
+						</div>
 						<div id="diff-container"></div>
+						<div id="pending-changes-container" class="hidden">
+							<div class="accept">Accept</div>
+							<div class="reject">Reject</div>
+						</div>
 						<div id="progress-bar-container"></div>
-						<div id="bottom-tools">
-							<div id="bottom-tools-left">
-								<div class="bottom-tool-item" data-menu="revert">
-									<div class="bottom-tool-trigger">
-										<i class="fas fa-undo"></i>
-										<span>Revert & Warn</span>
-										<i class="fas fa-chevron-up bottom-tool-chevron"></i>
-									</div>
-								</div>
-
-								<div class="bottom-tool-item" data-menu="warn">
-									<div class="bottom-tool-trigger">
-										<i class="fas fa-exclamation-triangle"></i>
-										<span>Warn</span>
-										<i class="fas fa-chevron-up bottom-tool-chevron"></i>
-									</div>
-								</div>
-
-								<div class="bottom-tool-item" data-menu="user">
-									<div class="bottom-tool-trigger">
-										<i class="fas fa-user"></i>
-										<span>User</span>
-										<i class="fas fa-chevron-up bottom-tool-chevron"></i>
-									</div>
-								</div>
-
-								<div class="bottom-tool-item" data-menu="page">
-									<div class="bottom-tool-trigger">
-										<i class="fas fa-file-lines"></i>
-										<span>Page</span>
-										<i class="fas fa-chevron-up bottom-tool-chevron"></i>
-									</div>
-								</div>
-
-								<div class="bottom-tool-item" data-menu="edit">
-									<div class="bottom-tool-trigger">
-										<i class="fas fa-pen-to-square"></i>
-										<span>Edit</span>
-										<i class="fas fa-chevron-up bottom-tool-chevron"></i>
-									</div>
+						<div id="bottom-tools" data-queue-type="edit,logevent">
+							<div class="bottom-tool-item" data-menu="revert" data-queue-type="edit">
+								<div class="bottom-tool-trigger">
+									<i class="fas fa-undo"></i>
+									<span>Revert & Warn</span>
+									<i class="fas fa-chevron-up bottom-tool-chevron"></i>
 								</div>
 							</div>
 
-							<div id="bottom-tools-stats" data-zen-show="editCount">
-								<div class="stat-item">
+							<div class="bottom-tool-item" data-menu="warn" data-queue-type="edit,logevent">
+								<div class="bottom-tool-trigger">
+									<i class="fas fa-exclamation-triangle"></i>
+									<span>Warn</span>
+									<i class="fas fa-chevron-up bottom-tool-chevron"></i>
+								</div>
+							</div>
+
+							<div class="bottom-tool-item" data-menu="user" data-queue-type="edit,logevent">
+								<div class="bottom-tool-trigger">
 									<i class="fas fa-user"></i>
-									<span class="bottom-stat-value" id="stat-total-contribs">-</span>
-									<span>edits</span>
+									<span>User</span>
+									<i class="fas fa-chevron-up bottom-tool-chevron"></i>
+								</div>
+							</div>
+
+							<div class="bottom-tool-item" data-menu="page" data-queue-type="edit">
+								<div class="bottom-tool-trigger">
+									<i class="fas fa-file-lines"></i>
+									<span>Page</span>
+									<i class="fas fa-chevron-up bottom-tool-chevron"></i>
+								</div>
+							</div>
+
+							<div class="bottom-tool-item" data-menu="edit" data-queue-type="edit">
+								<div class="bottom-tool-trigger">
+									<i class="fas fa-pen-to-square"></i>
+									<span>Edit</span>
+									<i class="fas fa-chevron-up bottom-tool-chevron"></i>
 								</div>
 							</div>
 						</div>
 					</div>
 					<div id="right-details">
-						<div class="width-adjust" id="details-width-adjust"></div>
-						<div id="user-contribs">
-							<div id="user-contribs-top">
-								<div id="user-contribs-left">
-										<div id="user-contribs-title">User Contributions</div>
+						<div id="user-contribs" class="right-detail" data-queue-type="edit,logevent">
+							<div id="user-contribs-top" class="right-detail-top">
+								<div class="right-detail-left">
+									<div id="user-contribs-title" class="right-detail-title">User Contributions</div>
 									<div id="user-contribs-count">_ edits</div>
 								</div>
-								<div id="block-count-indicator" style="display: none;"></div>
-								<div id="user-contribs-level" data-tooltip="Warning level">0</div>
+								<div id="user-block-count" style="display: none;"></div>
+								<div id="user-warn-level" data-tooltip="Warning level">0</div>
 							</div>
-							<div id="user-contribs-content"></div>
+							<div id="user-contribs-content" class="queue-list"></div>
 						</div>
-						<div class="height-adjust"></div>
-						<div id="page-history">
-							<div id="page-history-top">
-								<div>
-									<div id="page-history-title">Page History</div>
-									<div id="page-metadata" style="font-size: 0.75em; color: #666; margin-top: 3px;"></div>
+						<div id="right-height-adjust" class="height-adjust" data-queue-type="edit"></div>
+						<div id="page-history" class="right-detail" data-queue-type="edit">
+							<div id="page-history-top" class="right-detail-top">
+								<div class="right-detail-left">
+									<div id="page-history-title" class="right-detail-title">Page History</div>
+									<div id="page-metadata"></div>
 								</div>
 								<div id="protection-indicator"></div>
 							</div>
-							<div id="page-history-content"></div>
+							<div id="page-history-content" class="queue-list"></div>
 						</div>
+						<div class="width-adjust" id="details-width-adjust"></div>
 					</div>
 				</div>
 			</div>
@@ -462,6 +482,9 @@ export const wikishieldHTML = {
 					<div class="settings-left-menu-item" id="settings-general-button">
 						<span><i class="fas fa-gear"></i>General</span>
 					</div>
+					<div class="settings-left-menu-item" id="settings-performance-button">
+						<span><i class="fas fa-tachometer-alt"></i>Performance</span>
+					</div>
 					<div class="settings-left-menu-item" id="settings-audio-button">
 						<span><i class="fas fa-volume-high"></i>Audio</span>
 					</div>
@@ -474,8 +497,8 @@ export const wikishieldHTML = {
 					<div class="settings-category-header">
 						<span>APPEARANCE</span>
 					</div>
-					<div class="settings-left-menu-item" id="settings-palette-button">
-						<span><i class="fas fa-palette"></i>Palette</span>
+					<div class="settings-left-menu-item" id="settings-queue-button">
+						<span><i class="fas fa-list"></i>Queue</span>
 					</div>
 					<div class="settings-left-menu-item" id="settings-zen-mode-button">
 						<span><i class="fas fa-spa"></i>Zen Mode</span>
@@ -501,14 +524,16 @@ export const wikishieldHTML = {
 					<div class="settings-category-header">
 						<span>WHITELIST</span>
 					</div>
-					<div class="settings-left-menu-item" id="settings-whitelist-users-button">
-						<span><i class="fas fa-user"></i>Users</span>
-					</div>
-					<div class="settings-left-menu-item" id="settings-whitelist-pages-button">
-						<span><i class="fas fa-file"></i>Pages</span>
-					</div>
-					<div class="settings-left-menu-item" id="settings-whitelist-tags-button">
-						<span><i class="fas fa-tag"></i>Tags</span>
+					<div class="settings-left-menu-compact">
+						<div class="settings-left-menu-item" id="settings-whitelist-users-button">
+							<i class="fas fa-user" title="Users"></i>
+						</div>
+						<div class="settings-left-menu-item" id="settings-whitelist-pages-button">
+							<i class="fas fa-file" title="Pages"></i>
+						</div>
+						<div class="settings-left-menu-item" id="settings-whitelist-tags-button">
+							<i class="fas fa-tag" title="Tags"></i>
+						</div>
 					</div>
 				</div>
 
@@ -516,14 +541,16 @@ export const wikishieldHTML = {
 					<div class="settings-category-header">
 						<span>HIGHLIGHT</span>
 					</div>
-					<div class="settings-left-menu-item" id="settings-highlight-users-button">
-						<span><i class="fas fa-user"></i>Users</span>
-					</div>
-					<div class="settings-left-menu-item" id="settings-highlight-pages-button">
-						<span><i class="fas fa-file"></i>Pages</span>
-					</div>
-					<div class="settings-left-menu-item" id="settings-highlight-tags-button">
-						<span><i class="fas fa-tag"></i>Tags</span>
+					<div class="settings-left-menu-compact">
+						<div class="settings-left-menu-item" id="settings-highlight-users-button">
+							<i class="fas fa-user" title="Users"></i>
+						</div>
+						<div class="settings-left-menu-item" id="settings-highlight-pages-button">
+							<i class="fas fa-file" title="Pages"></i>
+						</div>
+						<div class="settings-left-menu-item" id="settings-highlight-tags-button">
+							<i class="fas fa-tag" title="Tags"></i>
+						</div>
 					</div>
 				</div>
 

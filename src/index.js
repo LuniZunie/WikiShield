@@ -1,32 +1,18 @@
 // <nowiki>
 
-import { subdomains } from './config/languages.js';
-import { fullTrim } from './utils/formatting.js';
-import { BuildAIAnalysisPrompt, BuildAIUsernamePrompt } from './ai/prompts.js';
-import { defaultSettings, colorPalettes } from './config/defaults.js';
-import { warnings, warningTemplateColors, warningsLookup, getWarningFromLookup } from './data/warnings.js';
-import { namespaces } from './data/namespaces.js';
-import { sounds } from './data/sounds.js';
 import { wikishieldHTML } from './ui/templates.js';
-import { wikishieldStyling } from './ui/styles.js';
-import { WikiShieldUtil } from './utils/helpers.js';
-import { WikiShieldLog } from './utils/logger.js';
 import { WikiShieldAPI } from './core/api.js';
-import { WikiShieldOllamaAI } from './ai/ollama.js';
 import { WikiShieldQueue } from './core/queue.js';
-import { createConditions, welcomeTemplates } from './data/events.js';
-import { WikiShieldEventManager } from './core/event-manager.js';
-import { WikiShieldSettingsInterface, wikishieldSettingsAllowedKeys } from './ui/settings.js';
-import { WikiShieldInterface } from './ui/interface.js';
-import { WikiShieldProgressBar } from './ui/progress-bar.jsx';
 import { WikiShield } from './core/wikishield.js';
 import { killswitch_status, checkKillswitch, startKillswitchPolling } from './core/killswitch.js';
+import { StorageManager } from './data/storage.js';
 
 export const __script__ = {
-	version: "1.0.0",
+	version: "1.1.0",
 
 	changelog: {
-		version: "2",
+		version: "3",
+		date: new Date(Date.UTC(2025, 11, 9, 0)),
 		HTML: wikishieldHTML.changelog
 	},
 
@@ -37,7 +23,12 @@ export const __script__ = {
 	},
 
 	config: {
-		refresh: 1000,
+		refresh: {
+			recent: 2000,
+			flagged: 2000,
+			watchlist: 2000,
+			users: 1000,
+		},
 		historyCount: 10,
 	},
 };
@@ -45,22 +36,45 @@ export const __script__ = {
 {
 	"use strict";
 
-	// Construct wikishieldData from imported modules
-	const wikishieldData = {
-		defaultSettings,
-		colorPalettes,
-		warningTemplateColors,
-		warnings,
-		warningsLookup,
-		namespaces,
-		sounds
-	};
-
-
 	let wikishield;
 	let wikishieldEventData;
 
-	if (mw.config.get("wgRelevantPageName") === "Wikipedia:WikiShield/run" && mw.config.get("wgAction") === "view") {
+	const link1 = mw.util.addPortletLink(
+		'p-personal',
+		mw.util.getUrl('Wikipedia:WikiShield/run'),
+		'🛡️ WikiShield',
+		'pt-wikishield',
+		'wikishield',
+		null,
+		'#pt-preferences'
+	);
+
+	// add link to sticky header for Vector2022
+	const link2 = mw.util.addPortletLink(
+		'p-personal-sticky-header',
+		mw.util.getUrl('Wikipedia:WikiShield/run'),
+		'🛡️ WikiShield',
+		'pt-wikishield',
+		'WikiShield',
+		null,
+		'#pt-preferences'
+	);
+
+	const load = () => {
+		const storageLogs = new StorageManager().load(StorageManager.versions.get(0).default).logs;
+		if (storageLogs.some(log => !log.expected)) {
+			StorageManager.outputLogs(storageLogs, "LoadTest");
+			mw.notify("An error has occurred with the WikiShield storage system that could lead to data loss. For that reason, WikiShield has been automatically disabled. Please check your browser console for more information and immediately report this to the development team.", { type: 'error' });
+			return;
+		}
+
+		window.onpopstate = (event) => {
+			if (event.state?.page !== "WikiShield") {
+				window.location.reload();
+				window.onpopstate = null;
+			}
+		};
+
 		// Create a temporary API instance to check killswitch before full initialization
 		const tempApi = new WikiShieldAPI(null, new mw.Api());
 
@@ -72,9 +86,9 @@ export const __script__ = {
 				return;
 			}
 
-			if (window.sessionStorage.getItem("WikiShield:SendHardReloadNotification"))  {
-				window.sessionStorage.removeItem("WikiShield:SendHardReloadNotification");
-				killswitch_status.notifications.push({
+			if (window.sessionStorage.getItem("WikiShield:SendHardReloadAlert"))  {
+				window.sessionStorage.removeItem("WikiShield:SendHardReloadAlert");
+				killswitch_status.alerts.push({
 					id: `app-${performance.now()}`,
 					type: "app",
 					subtype: "hard-reload",
@@ -87,62 +101,57 @@ export const __script__ = {
 			}
 
 			// Initialize WikiShield if not disabled
-			wikishield = new WikiShield(wikishieldData);
+			wikishield = new WikiShield();
 			// Initialize queue after wikishield is created (needs reference to wikishield)
 			wikishield.queue = new WikiShieldQueue(wikishield);
 
-			// Initialize event data after wikishield is created (avoids circular dependency)
-			wikishieldEventData = {
-				conditions: createConditions(wikishield),
-				welcomeTemplates: welcomeTemplates
-			};
-
-			// Set wikishieldEventData on the wikishield instance
-			wikishield.wikishieldEventData = wikishieldEventData;
-
-			// Initialize event manager's events with the event data
-			wikishield.interface.eventManager.initializeEvents(wikishieldEventData);
-
 			wikishield.init().then(() => {
-				let saveFired = false;
-				const safeSave = () => {
-					if (saveFired) {
-						return;
-					}
-					saveFired = true;
-					wikishield.save();
-				};
+				const isIOS = /iP(ad|hone|od)/.test(navigator.userAgent);
+				const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+				const isDesktop = !isIOS && !/android/i.test(navigator.userAgent);
 
-				// Safari-safe backgrounding
-				document.addEventListener("visibilitychange", () => {
-					if (document.visibilityState === "hidden") {
-						safeSave();
-					}
-				});
-
-				// iOS-specific fallback
-				window.addEventListener("pagehide", () => {
-					safeSave();
-				});
-
-				// Desktop fallback
-				window.addEventListener("beforeunload", () => {
-					safeSave();
-				});
-
-				for (const notification of killswitch_status.notifications) {
-					wikishield.notifications.unshift(notification);
+				// SAFARI (non-iOS) – visibilitychange works
+				if (isSafari && !isIOS) {
+					document.addEventListener("visibilitychange", () => {
+						if (document.visibilityState === "hidden") {
+							wikishield.save();
+						}
+					});
 				}
 
-				killswitch_status.notifications = [ ];
+				// iOS – pagehide is required because visibilitychange is unreliable
+				if (isIOS) {
+					window.addEventListener("pagehide", () => {
+						wikishield.save();
+					});
+				}
+
+				// Desktop – beforeunload is the only consistent option
+				if (isDesktop) {
+					window.addEventListener("beforeunload", () => {
+						wikishield.save();
+					});
+				}
+
+				for (const alert of killswitch_status.alerts) {
+					wikishield.alerts.unshift(alert);
+				}
+
+				killswitch_status.alerts = [ ];
 
 				// Start killswitch polling after successful initialization
 				startKillswitchPolling(wikishield.api, data => {
-					for (const notification of data.notifications) {
-						wikishield.notifications.unshift(notification);
+					if (data.disabled === true) {
+						history.replaceState({ page: "WikiShield-reload" }, "", window.location.href);
+                    	location.reload();
+						return;
 					}
 
-					data.notifications = [ ];
+					for (const alert of data.alerts) {
+						wikishield.alerts.unshift(alert);
+					}
+
+					data.alerts = [ ];
 				});
 			});
 
@@ -152,14 +161,9 @@ export const __script__ = {
 			mw.notify("WikiShield: Failed to check killswitch. Loading anyway...", { type: 'warn' });
 
 			// Initialize anyway if killswitch check fails (network issues shouldn't prevent loading)
-			wikishield = new WikiShield(wikishieldData);
+			wikishield = new WikiShield();
 			wikishield.queue = new WikiShieldQueue(wikishield);
-			wikishieldEventData = {
-				conditions: createConditions(wikishield),
-				welcomeTemplates: welcomeTemplates
-			};
-			wikishield.wikishieldEventData = wikishieldEventData;
-			wikishield.interface.eventManager.initializeEvents(wikishieldEventData);
+
 			wikishield.init().then(() => {
 				const isIOS = /iP(ad|hone|od)/.test(navigator.userAgent);
 				const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
@@ -192,27 +196,37 @@ export const __script__ = {
 			});
 			window.addEventListener("keydown", wikishield.keyPressed.bind(wikishield));
 		});
-	} else {
-		mw.util.addPortletLink(
-			'p-personal',
-			mw.util.getUrl('Wikipedia:WikiShield/run'),
-			'🛡️ WikiShield',
-			'pt-wikishield',
-			'wikishield',
-			null,
-			'#pt-preferences'
-		);
+	};
 
-		// add link to sticky header for Vector2022
-		mw.util.addPortletLink(
-			'p-personal-sticky-header',
-			mw.util.getUrl('Wikipedia:WikiShield/run'),
-			'🛡️ WikiShield',
-			'pt-wikishield',
-			'WikiShield',
-			null,
-			'#pt-preferences'
-		);
+	const onClick = (e) => {
+		e.preventDefault();
+		history.pushState({ page: "WikiShield" }, "", window.location.href);
+
+		load();
+	};
+	link1?.addEventListener('click', onClick);
+	link2?.addEventListener('click', onClick);
+
+	window.addEventListener("popstate", (event) => {
+		if (event.state?.page === "WikiShield") {
+			load();
+		}
+	});
+
+	// this switch statement handles incredibly unique edge cases that would be fucking annoying as shit for users to deal with
+	switch (history.state?.page) {
+		case "WikiShield": {
+			history.replaceState(null, "", window.location.href);
+		} break;
+		case "WikiShield-reload": {
+			history.replaceState({ page: "WikiShield" }, "", window.location.href);
+			load();
+		} break;
+	}
+
+	if (mw.config.get("wgRelevantPageName") === "Wikipedia:WikiShield/run" && mw.config.get("wgAction") === "view") {
+		history.pushState({ page: "WikiShield" }, "", window.location.href);
+		load();
 	}
 }
 

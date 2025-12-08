@@ -3,17 +3,295 @@
 * Provides methods for interacting with the Wikipedia/MediaWiki API
 */
 
+import { Memory } from "../utils/memory.js";
+
 const serversWithTags = new Set([ "en.wikipedia.org" ]);
 const __TAGS__ = serversWithTags.has(mw.config.get("wgServerName")) ? "WikiShield script" : "";
+
+export const __pendingChangesServer__ = new Set([ "en.wikipedia.org", "de.wikipedia.org" ]);
+
+const CACHE = {
+	diffs: new Memory(),
+	revSize: new Memory(),
+	revidToTitle: new Memory(),
+	categories: new Memory(),
+	ores: new Memory()
+};
 
 export class WikiShieldAPI {
 	constructor(wikishield, api, options = {}) {
 		this.wikishield = wikishield;
 		this.api = api;
-		this.testingMode = options.testingMode || false;
+		this.cache = new Map();
 		this.logger = options.logger;
 		this.util = options.util;
 		this.historyCount = options.historyCount || 10;
+	}
+
+	/**
+	* Split an array into chunks of a specified size
+	* @param {Array} array The array to chunk
+	* @param {Number} size The chunk size (default 50 for MediaWiki API limit)
+	* @returns {Array} Array of chunks
+	*/
+	_chunkArray(array, size = 50) {
+		const chunks = [];
+		for (let i = 0; i < array.length; i += size) {
+			chunks.push(array.slice(i, i + size));
+		}
+		return chunks;
+	}
+
+	/**
+	* Process chunks with a small delay between batches to avoid overwhelming the API
+	* @param {Array} chunks Array of chunks to process
+	* @param {Function} processFn Function to process each chunk (receives chunk, index)
+	* @param {Number} delay Delay in ms between chunks (default 100ms)
+	* @returns {Promise<Array>} Results from all chunks
+	*/
+	async _processBatches(chunks, processFn, delay = 100) {
+		const results = [];
+		for (let i = 0; i < chunks.length; i++) {
+			if (i > 0 && delay > 0) {
+				await new Promise(resolve => setTimeout(resolve, delay));
+			}
+			const result = await processFn(chunks[i], i);
+			results.push(result);
+		}
+		return results;
+	}
+
+	buildMessage(base, custom) {
+		const watermark = " ([[:en:WP:WikiShield|WS]])";
+
+		const message = `${base}${custom ? `: ${custom}` : ""}`;
+		return `${this.wikishield.util.maxStringLength(message, 500 - watermark.length)}${watermark}`; // limit to 500 chars, watermark should always be included hehe
+	}
+	buildUser(username) {
+		return `[[Special:Contribs/${username}|${username}]] ([[User talk:${username}|talk]])`;
+	}
+
+	async getMultipleRevisionsInfo(requests, simple = false) {
+		const username = mw.config.get("wgUserName");
+
+		const titles = [ ...new Set(requests.map(r => r.edit.title)) ];
+		const users = [ ...new Set(requests.map(r => r.edit.user)) ];
+		const revids = [ ...new Set(requests.map(r => r.edit.revid)) ];
+
+		const result = Array.from({ length: requests.length }, () => ({}));
+		const promises = [ ];
+
+		// Batch user queries with blocks
+		const userChunks = this._chunkArray(users);
+		promises.push((async () => {
+			const allUsersData = {};
+			const allBlocksData = {};
+
+			for (const chunk of userChunks) {
+				const joined = chunk.join("|");
+				const response = await this.api.get({
+					"action": "query",
+					"format": "json",
+					"formatversion": 2,
+					"list": "users|blocks",
+					"ususers": joined,
+					"usprop": "editcount",
+					"bkusers": joined,
+					"bkprop": "id|user|by|timestamp|expiry|reason",
+				});
+
+				response.query.users.forEach(u => allUsersData[u.name] = u);
+				response.query.blocks.forEach(b => allBlocksData[b.user] = b);
+			}
+
+			requests.forEach((request, index) => {
+				result[index].userEditCount = allUsersData[request.edit.user]?.editcount || 0;
+				result[index].userBlocked = Boolean(allBlocksData[request.edit.user]);
+			});
+		})());
+
+		// Batch title queries for categories and protection
+		const titleChunks = this._chunkArray(titles);
+		promises.push((async () => {
+			const allPages = {};
+
+			for (const chunk of titleChunks) {
+				const joined = chunk.join("|");
+				const response = await this.api.get({
+					"action": "query",
+					"format": "json",
+					"formatversion": 2,
+					"titles": joined,
+					"prop": "categories|info",
+					"cllimit": "max",
+					"inprop": "protection",
+				});
+
+				response.query.pages.forEach(page => {
+					let protection;
+					if (page.protection && page.protection.length > 0) {
+						const protections = page.protection;
+						let highestLevel = null;
+
+						for (const prot of protections) {
+							if (prot.type !== "edit") continue;
+
+							if (prot.level === "sysop") {
+								highestLevel = "full";
+							} else if (prot.level === "autoconfirmed" && highestLevel !== "full") {
+								highestLevel = "semi";
+							} else if (prot.level === "extendedconfirmed" && highestLevel !== "full") {
+								highestLevel = "extended";
+							}
+						}
+
+						protection = { protected: true, level: highestLevel };
+					} else {
+						protection = { protected: false };
+					}
+
+					allPages[page.title] = {
+						protection,
+						categories: page.categories ? page.categories.map(cat => cat.title) : []
+					};
+				});
+			}
+
+			requests.forEach((request, index) => {
+				const page = allPages[request.edit.title];
+				if (page) {
+					result[index].pageCategories = page.categories;
+					result[index].pageProtection = page.protection;
+				}
+			});
+		})());
+
+		// Batch user talk page checks
+		promises.push(this.pageExists(users.map(u => `User talk:${u}`).join("|")).then(data => {
+			requests.forEach((request, index) => {
+				result[index].userTalk = data[`User talk:${request.edit.user}`];
+			});
+		}));
+
+		// Batch ORES scores
+		promises.push(this.ores(revids.join("|")).then(data => {
+			requests.forEach((request, index) => {
+				result[index].editOres = data[request.edit.revid] || 0;
+			});
+		}));
+
+		if (!simple) {
+			// Batch title-specific data (reverts, metadata, history)
+			promises.push((async () => {
+				const allReverts = {};
+				const allMetadata = {};
+				const allHistory = {};
+
+				for (const title of titles) {
+					const [reverts, metadata, history] = await Promise.all([
+						this.countReverts(title, username),
+						this.getPageMetadata(title),
+						this.history(title)
+					]);
+					allReverts[title] = reverts;
+					allMetadata[title] = metadata;
+					allHistory[title] = history;
+				}
+
+				requests.forEach((request, index) => {
+					result[index].revertCount = allReverts[request.edit.title];
+					result[index].pageMetadata = allMetadata[request.edit.title];
+					result[index].pageHistory = allHistory[request.edit.title];
+				});
+			})());
+
+			// Batch user contribs and blocks
+			promises.push((async () => {
+				const allContribs = {};
+				const allBlocks = {};
+
+				for (const user of users) {
+					const [contribs, blocks] = await Promise.all([
+						this.contribs(user),
+						this.getBlocks(user)
+					]);
+					allContribs[user] = contribs;
+					allBlocks[user] = blocks;
+				}
+
+				requests.forEach((request, index) => {
+					result[index].userContribs = allContribs[request.edit.user];
+					result[index].userBlocks = allBlocks[request.edit.user];
+				});
+			})());
+
+			// Batch diffs
+			promises.push((async () => {
+				const diffPromises = requests.map(async (request, i) => {
+					const diff = await this.diff(request.edit.title, request.prevId, request.edit.revid);
+					result[i].editDiff = diff;
+				});
+				await Promise.all(diffPromises);
+			})());
+		}
+
+		await Promise.all(promises);
+
+		return result;
+	}
+
+	async getUserInfo(usernames) {
+		const username = mw.config.get("wgUserName");
+
+		const users = [ ...new Set(usernames) ];
+
+		const result = Array.from({ length: usernames.length }, () => ({}));
+		const promises = [ ];
+
+		// Batch edit counts
+		promises.push(this.editCount(users.join("|")).then(data => {
+			usernames.forEach((username, index) => {
+				result[index].userEditCount = data[username];
+			});
+		}));
+
+		// Batch user talk page checks
+		promises.push(this.pageExists(users.map(u => `User talk:${u}`).join("|")).then(data => {
+			usernames.forEach((username, index) => {
+				result[index].userTalk = data[`User talk:${username}`];
+			});
+		}));
+
+		// Batch blocked status
+		promises.push(this.isBlocked(users.join("|")).then(data => {
+			usernames.forEach((username, index) => {
+				result[index].userBlocked = Boolean(data[username]);
+			});
+		}));
+
+		// Batch user contribs and blocks
+		promises.push((async () => {
+			const allContribs = {};
+			const allBlocks = {};
+
+			for (const user of users) {
+				const [contribs, blocks] = await Promise.all([
+					this.contribs(user),
+					this.getBlocks(user)
+				]);
+				allContribs[user] = contribs;
+				allBlocks[user] = blocks;
+			}
+
+			usernames.forEach((username, index) => {
+				result[index].userContribs = allContribs[username];
+				result[index].userBlocks = allBlocks[username];
+			});
+		})());
+
+		await Promise.all(promises);
+
+		return result;
 	}
 
 	/**
@@ -25,11 +303,6 @@ export class WikiShieldAPI {
 	* @returns {Promise<Boolean>}
 	*/
 	async edit(title, content, summary, params = {}) {
-		if (this.testingMode) {
-			console.log("Edit", { title, content, summary });
-			return true;
-		}
-
 		try {
 			await this.api.postWithEditToken(Object.assign({}, {
 				"action": "edit",
@@ -42,7 +315,7 @@ export class WikiShieldAPI {
 
 			return true;
 		} catch (err) {
-			this.logger?.log(`Could not edit page ${title}: ${err}`);
+			console.log(`Could not edit page ${title}: ${err}`);
 			return false;
 		}
 	}
@@ -55,11 +328,6 @@ export class WikiShieldAPI {
 	* @returns {Promise<Boolean>}
 	*/
 	async appendText(title, content, summary) {
-		if (this.testingMode) {
-			console.log("Append text", { title, content, summary });
-			return true;
-		}
-
 		try {
 			await this.api.postWithEditToken({
 				"action": "edit",
@@ -77,6 +345,26 @@ export class WikiShieldAPI {
 		}
 	}
 
+	async newSection(title, sectionTitle, content, summary) {
+		try {
+			await this.api.postWithEditToken({
+				"action": "edit",
+				"title": title,
+				"section": "new",
+				"sectiontitle": sectionTitle,
+				"text": content,
+				"summary": summary,
+				"format": "json",
+				"tags": __TAGS__
+			});
+
+			return true;
+		} catch (err) {
+			console.log(`Could not create new section on page ${title}: ${err}`);
+			return false;
+		}
+	}
+
 	/**
 	* Get the content of the given pages
 	* @param {String} titles The titles of the pages to get, separated by "|"
@@ -88,24 +376,29 @@ export class WikiShieldAPI {
 		}
 
 		try {
-			const response = await this.api.get({
-				"action": "query",
-				"prop": "revisions",
-				"titles": titles,
-				"rvprop": "content",
-				"rvslots": "*",
-				"format": "json",
-				"formatversion": 2
-			});
+			const titleArray = titles.split("|").map(t => t.trim()).filter(Boolean);
+			const chunks = this._chunkArray(titleArray);
+			const allPages = {};
 
-			const pages = response.query.pages.map(page => {
-				return [page.title, page.missing ? "" : page.revisions[0].slots.main.content];
-			});
+			for (const chunk of chunks) {
+				const response = await this.api.get({
+					"action": "query",
+					"prop": "revisions",
+					"titles": chunk.join("|"),
+					"rvprop": "content",
+					"rvslots": "*",
+					"format": "json",
+					"formatversion": 2
+				});
 
-			return pages
-			.reduce((a, v) => ({ ...a, [v[0]]: v[1] }), {});
+				response.query.pages.forEach(page => {
+					allPages[page.title] = page.missing ? "" : page.revisions[0].slots.main.content;
+				});
+			}
+
+			return allPages;
 		} catch (err) {
-			this.logger?.log(`Could not fetch page ${titles}: ${err}`);
+			console.log(`Could not fetch page ${titles}: ${err}`);
 		}
 	}
 
@@ -125,21 +418,34 @@ export class WikiShieldAPI {
 
 	/**
 	* Check if a page exists
-	* @param {String} title The title of the page to check
+	* @param {String} titles The titles of the pages to check, separated by "|"
 	* @returns {Promise<Boolean>} Whether the page exists
 	*/
-	async pageExists(title) {
+	async pageExists(titles) {
 		try {
-			const response = await this.api.get({
-				"action": "query",
-				"titles": title,
-				"format": "json",
-				"formatversion": 2
-			});
+			const titleArray = titles.split("|").map(t => t.trim()).filter(Boolean);
+			const chunks = this._chunkArray(titleArray);
+			const allPages = {};
 
-			return response.query.pages[0].missing !== true;
+			for (const chunk of chunks) {
+				const response = await this.api.get({
+					"action": "query",
+					"prop": "revisions",
+					"titles": chunk.join("|"),
+					"rvprop": "content",
+					"rvslots": "*",
+					"format": "json",
+					"formatversion": 2
+				});
+
+				response.query.pages.forEach(page => {
+					allPages[page.title] = page.missing ? false : page.revisions[0].slots.main.content;
+				});
+			}
+
+			return allPages;
 		} catch (err) {
-			this.logger?.log(`Could not check if page ${title} exists: ${err}`);
+			console.log(`Could not check if page ${titles} exists: ${err}`);
 			return false;
 		}
 	}
@@ -150,7 +456,7 @@ export class WikiShieldAPI {
 	* @returns {Promise<String>} The content of the revision
 	*/
 	async getTextByRevid(revid) {
-		if (revids === "") {
+		if (revid === "") {
 			return;
 		}
 
@@ -168,7 +474,7 @@ export class WikiShieldAPI {
 			const page = response.query.pages[0];
 			return page.missing ? "" : page.revisions[0].slots.main.content;
 		} catch (err) {
-			this.logger?.log(`Could not fetch page with revid ${revid}: ${err}`);
+			console.log(`Could not fetch page with revid ${revid}: ${err}`);
 		}
 	}
 
@@ -183,7 +489,7 @@ export class WikiShieldAPI {
 				"action": "query",
 				"prop": "revisions",
 				"revids": revid,
-				"rvprop": "ids|user|comment|timestamp|size|tags",
+				"rvprop": "ids|user|comment|timestamp|size|tags|flags",
 				"format": "json",
 				"formatversion": 2
 			});
@@ -201,11 +507,65 @@ export class WikiShieldAPI {
 				comment: rev.comment || "",
 				timestamp: rev.timestamp,
 				size: rev.size,
-				oldlen: rev.parentid ? null : 0  // Will need to fetch parent for actual oldlen
+				oldlen: rev.parentid ? await this.getRevisionSize(rev.parentid) : 0,
+				tags: rev.tags || [],
+				minor: rev.minor || false
 			};
 		} catch (err) {
-			this.logger?.log(`Could not fetch revision data for revid ${revid}: ${err}`);
+			console.log(`Could not fetch revision data for revid ${revid}: ${err}`);
 			return null;
+		}
+	}
+
+	async getRevisionSize(revid) {
+		try {
+			if (CACHE.revSize.has(revid)) {
+				return CACHE.revSize.get(revid);
+			}
+
+			const response = await this.api.get({
+				"action": "query",
+				"prop": "revisions",
+				"revids": revid,
+				"rvprop": "size",
+				"format": "json",
+				"formatversion": 2
+			});
+
+			const page = response.query.pages[0];
+			if (page.missing || !page.revisions || page.revisions.length === 0) {
+				CACHE.revSize.set(revid, 0);
+				return 0;
+			}
+
+			const size = page.revisions[0].size;
+			CACHE.revSize.set(revid, size);
+			return size;
+		} catch (err) {
+			console.log(`Could not fetch revision size for revid ${revid}: ${err}`);
+			return 0;
+		}
+	}
+
+	async getPageTitleFromRevid(revid) {
+		try {
+			if (CACHE.revidToTitle.has(revid)) {
+				return CACHE.revidToTitle.get(revid);
+			}
+
+			const response = await this.api.get({
+				"action": "query",
+				"prop": "revisions",
+				"revids": revid,
+				"format": "json",
+				"formatversion": 2
+			});
+
+			const title = response.query.pages[0].title;
+			CACHE.revidToTitle.set(revid, title);
+			return title;
+		} catch (err) {
+			console.log(`Could not fetch page title for revid ${revid}: ${err}`);
 		}
 	}
 
@@ -216,20 +576,35 @@ export class WikiShieldAPI {
 	* @param {Number} revid The new revision ID
 	* @returns {Promise<String>} The difference between the two revisions, in HTML format
 	*/
-	async diff(title, old_revid, revid) {
+	async diff(title, old_revid, revid, difftype = "table") {
 		try {
-			const response = await this.api.get({
+			const cacheKey = `${old_revid}-${revid}`;
+			if (CACHE.diffs.has(cacheKey)) {
+				return CACHE.diffs.get(cacheKey);
+			}
+
+			const params = {
 				"action": "compare",
-				"fromrev": old_revid,
 				"torev": revid,
 				"prop": "diff",
 				"format": "json",
+				"difftype": difftype,
 				"formatversion": 2
-			});
+			};
+			if (old_revid) {
+				params.fromrev = old_revid;
+			} else {
+				params.fromslots = "main";
+				params["fromtext-main"] = "";
+			}
 
-			return response.compare.body;
+			const response = await this.api.get(params);
+
+			const rtn = response.compare.body;
+			CACHE.diffs.set(cacheKey, rtn);
+			return rtn;
 		} catch (err) {
-			this.logger?.log(`Could not fetch diff for page ${title}: ${err}`);
+			console.log(`Could not fetch diff for page ${title}: ${err}`);
 		}
 	}
 
@@ -260,29 +635,44 @@ export class WikiShieldAPI {
 
 			return revisions.filter(revision => revision.tags.some(tag => tag === "mw-undo" || tag === "mw-rollback" || tag === "mw-manual-revert")).length;
 		} catch (err) {
-			this.logger?.log(`Could not fetch revert count for page ${title}: ${err}`);
+			console.log(`Could not fetch revert count for page ${title}: ${err}`);
 		}
 	}
 
 	/**
-	* Get the categories of the revision
-	* @param {Number} revid The revision ID
+	* Get the categories of the title
+	* @param {String} titles The titles to get categories for, separated by "|"
 	* @returns {Promise<Object>} The categories object
 	*/
-	async categories(revid) {
+	async categories(titles) {
 		try {
-			const response = await this.api.get({
-				"action": "query",
-				"prop": "categories",
-				"revids": revid,
-				"cllimit": "max",
-				"format": "json",
-				"formatversion": 2
-			});
+			if (CACHE.categories.has(titles)) {
+				return CACHE.categories.get(titles);
+			}
 
-			return response.query.pages[0].categories;
+			const titleArray = titles.split("|").map(t => t.trim()).filter(Boolean);
+			const chunks = this._chunkArray(titleArray);
+			const allCategories = {};
+
+			for (const chunk of chunks) {
+				const response = await this.api.get({
+					"action": "query",
+					"prop": "categories",
+					"titles": chunk.join("|"),
+					"cllimit": "max",
+					"format": "json",
+					"formatversion": 2
+				});
+
+				response.query.pages.forEach(page => {
+					allCategories[page.title] = page.categories ? page.categories.map(cat => cat.title) : [];
+				});
+			}
+
+			CACHE.categories.set(titles, allCategories);
+			return allCategories;
 		} catch (err) {
-			this.logger?.log(`Could not fetch categories for revision ${revid}: ${err}`);
+			console.log(`Could not fetch categories for revision ${titles}: ${err}`);
 		}
 	}
 
@@ -310,7 +700,7 @@ export class WikiShieldAPI {
 				prop: "revisions",
 				titles: page,
 				rvprop: "ids|timestamp|user|size",
-				rvlimit: 10,
+				rvlimit: "max",
 				format: "json",
 				formatversion: 2,
 				...continueObj
@@ -349,7 +739,7 @@ export class WikiShieldAPI {
 			if (!foundEnd && response.continue) {
 				continueObj = response.continue;
 			} else if (!foundEnd) {
-				priorRevision = "created";
+				priorRevision = 0; // Created
 				foundEnd = true;
 			}
 		}
@@ -389,7 +779,7 @@ export class WikiShieldAPI {
 
 			return response.query.usercontribs;
 		} catch (err) {
-			this.logger?.log(`Could not fetch contributions for user ${user}: ${err}`);
+			console.log(`Could not fetch contributions for user ${user}: ${err}`);
 		}
 	}
 
@@ -400,18 +790,28 @@ export class WikiShieldAPI {
 	*/
 	async editCount(users) {
 		try {
-			const response = await this.api.get({
-				"action": "query",
-				"list": "users",
-				"ususers": users,
-				"usprop": "editcount",
-				"format": "json",
-				"formatversion": 2
-			});
+			const userArray = users.split("|").map(u => u.trim()).filter(Boolean);
+			const chunks = this._chunkArray(userArray);
+			const allEditCounts = {};
 
-			return response.query.users;
+			for (const chunk of chunks) {
+				const response = await this.api.get({
+					"action": "query",
+					"list": "users",
+					"ususers": chunk.join("|"),
+					"usprop": "editcount",
+					"format": "json",
+					"formatversion": 2
+				});
+
+				response.query.users.forEach(user => {
+					allEditCounts[user.name] = user.editcount;
+				});
+			}
+
+			return allEditCounts;
 		} catch (err) {
-			this.logger?.log(`Could not fetch edit count for users ${users}: ${err}`);
+			console.log(`Could not fetch edit count for users ${users}: ${err}`);
 		}
 	}
 
@@ -434,32 +834,7 @@ export class WikiShieldAPI {
 
 			return response.query.logevents;
 		} catch (err) {
-			this.logger?.log(`Could not fetch filter log for user ${user}: ${err}`);
-		}
-	}
-
-	/**
-	* Get the number of times a user has been blocked
-	* @param {String} user The username to check
-	* @returns {Promise<Number>} The number of blocks
-	*/
-	async getBlockCount(user) {
-		try {
-			const response = await this.api.get({
-				"action": "query",
-				"list": "logevents",
-				"letype": "block",
-				"letitle": `User:${user}`,
-				"leaction": "block/block",
-				"lelimit": "max",
-				"format": "json",
-				"formatversion": 2
-			});
-
-			return response.query.logevents ? response.query.logevents.length : 0;
-		} catch (err) {
-			console.log(`Could not fetch block count for user ${user}:`, err);
-			return 0;
+			console.log(`Could not fetch filter log for user ${user}: ${err}`);
 		}
 	}
 
@@ -468,7 +843,7 @@ export class WikiShieldAPI {
 	* @param {String} user The username
 	* @returns {Promise<Array>} Array of block log entries
 	*/
-	async getBlockHistory(user) {
+	async getBlocks(user) {
 		try {
 			const response = await this.api.get({
 				"action": "query",
@@ -476,7 +851,7 @@ export class WikiShieldAPI {
 				"letype": "block",
 				"letitle": `User:${user}`,
 				"leaction": "block/block",
-				"lelimit": 10,
+				"lelimit": "max",
 				"leprop": "user|timestamp|comment|details",
 				"format": "json",
 				"formatversion": 2
@@ -500,16 +875,21 @@ export class WikiShieldAPI {
 				"action": "query",
 				"prop": "revisions",
 				"titles": page,
-				"rvprop": "title|ids|timestamp|comment|flags|sizediff|user|tags|size",
+				"rvprop": "title|ids|timestamp|comment|flags|user|tags|size",
 				"rvlimit": 11,
 				"format": "json",
 				"formatversion": 2
 			});
 
-			const revisions = response.query.pages[0].revisions;
+			const pageData = response.query.pages[0];
+			const revisions = pageData.revisions;
 
 			const count = Math.min(this.historyCount, revisions.length);
 			for (let i = 0; i < count; i++) {
+				revisions[i].ns = pageData.ns;
+				revisions[i].pageid = pageData.pageid;
+				revisions[i].title = pageData.title;
+
 				if (i + 1 < revisions.length) {
 					revisions[i].sizediff = revisions[i].size - revisions[i + 1].size;
 				} else {
@@ -519,57 +899,62 @@ export class WikiShieldAPI {
 
 			return revisions.splice(0, this.historyCount);
 		} catch (err) {
-			this.logger?.log(`Could not fetch history for page ${page}: ${err}`);
+			console.log(`Could not fetch history for page ${page}: ${err}`);
 		}
 	}
 
 	/**
 	* Get page protection information
-	* @param {String} page The page title
+	* @param {String} titles The page titles
 	* @returns {Promise<Object>} Protection info with level and type
 	*/
-	async getPageProtection(page) {
+	async getPageProtection(titles) {
 		try {
-			const response = await this.api.get({
-				"action": "query",
-				"titles": page,
-				"prop": "info",
-				"inprop": "protection",
-				"format": "json",
-				"formatversion": 2
-			});
+			const titleArray = titles.split("|").map(t => t.trim()).filter(Boolean);
+			const chunks = this._chunkArray(titleArray);
+			const allProtection = {};
 
-			const pageData = response.query.pages[0];
-			if (pageData && pageData.protection && pageData.protection.length > 0) {
-				// Get the highest protection level
-				const protections = pageData.protection;
-				let highestLevel = null;
-				let types = [];
+			for (const chunk of chunks) {
+				const response = await this.api.get({
+					"action": "query",
+					"titles": chunk.join("|"),
+					"prop": "info",
+					"inprop": "protection",
+					"format": "json",
+					"formatversion": 2
+				});
 
-				for (const prot of protections) {
-					if (prot.type !== "edit") {
-						continue;
+				response.query.pages.forEach(page => {
+					if (page.protection && page.protection.length > 0) {
+						// Get the highest protection level
+						const protections = page.protection;
+						let highestLevel = null;
+
+						for (const prot of protections) {
+							if (prot.type !== "edit") {
+								continue;
+							}
+
+							if (prot.level === "sysop") {
+								highestLevel = "full";
+							} else if (prot.level === "autoconfirmed" && highestLevel !== "full") {
+								highestLevel = "semi";
+							} else if (prot.level === "extendedconfirmed" && highestLevel !== "full") {
+								highestLevel = "extended";
+							}
+						}
+
+						allProtection[page.title] = { protected: true, level: highestLevel };
+					} else {
+						allProtection[page.title] = { protected: false };
 					}
-
-					if (prot.level === "sysop") {
-						highestLevel = "full";
-					} else if (prot.level === "autoconfirmed" && highestLevel !== "full") {
-						highestLevel = "semi";
-					} else if (prot.level === "extendedconfirmed" && highestLevel !== "full") {
-						highestLevel = "extended";
-					}
-				}
-
-				return {
-					protected: true,
-					level: highestLevel
-				};
+				});
 			}
 
-			return { protected: false };
+			return allProtection;
 		} catch (err) {
-			console.log(`Could not fetch protection info for ${page}:`, err);
-			return { protected: false };
+			console.log(`Could not fetch protection info for ${titles}:`, err);
+			return {};
 		}
 	}
 
@@ -624,7 +1009,7 @@ export class WikiShieldAPI {
 
 			return result;
 		} catch (err) {
-			this.logger?.log(`Could not fetch latest revisions: ${err}`);
+			console.log(`Could not fetch latest revisions: ${err}`);
 			return {};
 		}
 	}
@@ -716,8 +1101,24 @@ export class WikiShieldAPI {
 
 			return result;
 		} catch (err) {
-			this.logger?.log(`Could not fetch metadata for page ${page}: ${err}`);
+			console.log(`Could not fetch metadata for page ${page}: ${err}`);
 			return { dateFormat: "Unknown", englishVariant: "Unknown" };
+		}
+	}
+
+	async parseWikitext(wikitext) {
+		try {
+			const response = await this.api.get({
+				"action": "parse",
+				"text": wikitext,
+				"prop": "text",
+				"format": "json",
+				"formatversion": 2
+			});
+			return response.parse?.text || "";
+		} catch (err) {
+			console.log(`Could not parse wikitext: ${err}`);
+			return "";
 		}
 	}
 
@@ -727,51 +1128,203 @@ export class WikiShieldAPI {
 	* @param {String} since The timestamp to start from
 	* @returns {Promise<Array>} The recent changes
 	*/
-	async recentChanges(namespaces, since) {
-		try {
-			const response = await this.api.get({
-				"action": "query",
-				"list": "recentchanges",
-				"rcnamespace": namespaces,
-				"rclimit": 50,
-				"rcprop": "title|ids|sizes|flags|user|tags|comment|timestamp",
-				"rctype": "edit",
-				"rctoponly": true,
-				"format": "json",
-				"rcstart": since || "",
-				"rcdir": since ? "newer" : "older"
-			});
+	async queueList(listType, namespaces, since, full = false) {
+		const options = {
+			get recent() {
+				return {
+					"action": "query",
+					"list": "recentchanges",
+					"rcnamespace": namespaces,
+					"rclimit": "max",
+					"rcprop": "title|ids|sizes|flags|user|tags|comment|timestamp",
+					"rctype": "edit",
+					"rctoponly": true,
+					"format": "json",
+					"rcstart": since || "",
+					"rcdir": since ? "newer" : "older"
+				};
+			},
+			get flagged() {
+				return {
+					"action": "query",
+					"list": "oldreviewedpages",
+					"ornamespace": namespaces,
+					"orlimit": "max",
+					"format": "json",
+					"orstart": since,
+					"ordir": since ? "newer" : "older"
+				};
+			},
+			get users() {
+				return {
+					"action": "query",
+					"list": "logevents",
+					"letype": "newusers",
+					"lelimit": "max",
+					"lestart": since || "",
+					"ledir": since ? "newer" : "older",
+					"formatversion": 2,
+					"format": "json"
+				};
+			},
+			get watchlist() {
+				return {
+					"action": "query",
+					"list": "watchlist",
+					"wlnamespace": namespaces,
+					"wllimit": "max",
+					"wlprop": "title|ids|sizes|flags|user|tags|comment|timestamp",
+					"wltype": "edit",
+					"format": "json",
+					"wlstart": since || "",
+					"wldir": since ? "newer" : "older",
+					"wlexcludeuser": mw.config.get("wgUserName") || ""
+				};
+			},
+		};
 
-			return response.query.recentchanges;
+		if (listType === "flagged" && !__pendingChangesServer__.has(mw.config.get("wgServerName"))) {
+			return [];
+		}
+
+		try {
+			const response = await this.api.get(options[listType]);
+
+			switch (listType) {
+				case "recent": {
+					return response.query.recentchanges;
+				} break;
+				case "flagged": {
+					const promise = await Promise.allSettled(response.query.oldreviewedpages.map(async obj => {
+						let revision;
+						if (this.cache.has(`flaggedRev:${obj.revid}`)) {
+							revision = this.cache.get(`flaggedRev:${obj.revid}`);
+						} else {
+							revision = await this.api.get({
+								"action": "query",
+								"prop": "revisions",
+								"titles": obj.title,
+								"rvstartid": obj.revid,
+								"rvlimit": 1,
+								"rvprop": "title|ids|size|flags|user|tags|comment|timestamp",
+								"format": "json",
+								"formatversion": 2
+							});
+							this.cache.set(`flaggedRev:${obj.revid}`, revision);
+						}
+
+						obj.stabilityDetails = await this.getStableDetails(obj.title);
+
+						const page = revision.query.pages[0];
+						return {
+							title: obj.title,
+							sizediff: obj.diff_size,
+							...page.revisions[0],
+							__FLAGGED__: obj
+						};
+					}));
+
+					const list = promise.filter(p => p.status === "fulfilled").map(p => p.value);
+					if (full === false) {
+						return list;
+					}
+
+					const cache = { };
+					await Promise.allSettled(list.map(async item => {
+						const between = await this.getRevisionsBetween(item.title, item.__FLAGGED__.stable_revid, item.revid); // newest first
+						if (between.length < 2) {
+							return;
+						}
+
+						const stable = between.pop(); // Remove the stable revision itself
+						cache[item.title] = {
+							count: between.length,
+							users: between.reduce((acc, rev) => {
+								if (rev.user in acc) {
+									acc[rev.user]++;
+								} else {
+									acc[rev.user] = 1;
+								}
+								return acc;
+							}, { }),
+
+							newRevid: item.revid,
+							priorRevid: stable.revid,
+
+							diff_size: item.size - stable.size,
+
+							newTimestamp: item.timestamp,
+							oldTimestamp: between[between.length - 1].timestamp,
+						};
+					}));
+
+					return cache;
+				} break;
+				case "users": {
+					return response.query.logevents;
+				} break;
+				case "watchlist": {
+					return response.query.watchlist;
+				} break;
+			}
 		} catch (err) {
-			this.logger?.log(`Could not fetch recent changes: ${err}`);
+			console.log(`Could not fetch recent changes: ${err}`);
 		}
 	}
 
-	/**
-	* Get your watchlist from Wikipedia
-	* @param {String} since The timestamp to start from
-	* @returns {Promise<Array>} The watchlist
-	*/
-	async watchlist(since) {
+	async acceptFlaggedEdit(edit, summary) {
+		try {
+			const res = await this.api.postWithToken("csrf", {
+				"action": "review",
+				"revid": edit.revid,
+				"comment": summary,
+				"tags": __TAGS__
+			});
+
+			return true;
+		} catch (err) {
+			console.error(err);
+			return false;
+		}
+	}
+
+	async rejectFlaggedEdit(edit, summary, stableId) {
+		try {
+			const stableText = await this.getTextByRevid(stableId);
+			const res = await this.api.postWithToken("csrf", {
+				"action": "edit",
+				"title": edit.page.title,
+				"text": stableText,
+				"summary": summary,
+				"starttimestamp": edit.__FLAGGED__.oldTimestamp,
+				"tags": __TAGS__
+			});
+
+			return true;
+		} catch (err) {
+			console.error(err);
+			return false;
+		}
+	}
+
+	async getRevisionsBetween(page, startRevid, endRevid) {
 		try {
 			const response = await this.api.get({
 				"action": "query",
-				"list": "watchlist",
-				"wlnamespace": "*",
-				"allrev": true,
-				"wllimit": 25,
-				"wlprop": "title|ids|sizes|flags|user|tags|comment|timestamp",
-				"wltype": "edit",
+				"prop": "revisions",
+				"titles": page,
+				"rvstartid": endRevid,
+				"rvendid": startRevid,
+				"rvprop": "title|ids|size|flags|user|tags|comment|timestamp",
+				"rvlimit": "max",
 				"format": "json",
-				"wlstart": since || "",
-				"wldir": since ? "newer" : "older",
-				"wlexcludeuser": this.wikishield.username
+				"formatversion": 2
 			});
-
-			return response.query.watchlist;
+			const revisions = response.query.pages[0].revisions;
+			return revisions;
 		} catch (err) {
-			this.logger?.log(`Could not fetch watchlist: ${err}`);
+			console.log(`Could not fetch revisions between ${startRevid} and ${endRevid} for page ${page}: ${err}`);
+			return [];
 		}
 	}
 
@@ -786,52 +1339,92 @@ export class WikiShieldAPI {
 		}
 
 		try {
-			const response = await this.api.get({
-				"action": "query",
-				"format": "json",
-				"formatversion": 2,
-				"prop": "revisions",
-				"revids": revids,
-				"rvprop": "oresscores|ids",
-				"rvslots": "*"
-			});
+			const revidArray = revids.split("|").map(id => id.trim()).filter(Boolean);
+			const chunks = this._chunkArray(revidArray);
+			const avg = (arr) => arr.reduce((a, b) => a + b, 0) / arr.length;
+			const allScores = {};
 
-			const scores = response.query.pages.map(page => {
-				return "goodfaith" in page.revisions[0].oresscores ? [
-					page.revisions[0].revid,
-					page.revisions[0].oresscores.goodfaith.false
-				] : [page.revisions[0].revid, 0];
-			});
+			for (const chunk of chunks) {
+				const response = await this.api.get({
+					"action": "query",
+					"format": "json",
+					"formatversion": 2,
+					"prop": "revisions",
+					"revids": chunk.join("|"),
+					"rvprop": "oresscores|ids",
+					"rvslots": "*"
+				});
 
-			return scores
-			.reduce((a, v) => ({ ...a, [v[0]]: v[1] }), {});
+				const revidsSet = new Set(chunk.map(id => parseInt(id, 10)));
+				const oresObjects = {};
+
+				for (const page of response.query.pages) {
+					for (const rev of page.revisions) {
+						if (revidsSet.has(rev.revid)) {
+							oresObjects[rev.revid] = rev.oresscores || {};
+						}
+					}
+				}
+
+				revidsSet.forEach(revid => {
+					const oresData = oresObjects[revid];
+
+					const scoresArr = [];
+					if (oresData && "damaging" in oresData) {
+						scoresArr.push(oresData.damaging.true);
+					}
+					if (oresData && "goodfaith" in oresData) {
+						scoresArr.push(oresData.goodfaith.false);
+					}
+
+					let score = scoresArr.length > 0 ? avg(scoresArr) : NaN;
+					if (CACHE.ores.has(revid)) {
+						score = CACHE.ores.get(revid);
+					}
+
+					if (isNaN(score)) {
+						CACHE.ores.set(revid, score);
+					}
+
+					allScores[revid] = score;
+				});
+			}
+
+			return allScores;
 		} catch (err) {
-			this.logger?.log(`Could not fetch ORES scores for revision ${revids}: ${err}`);
+			console.log(`Could not fetch ORES scores for revision ${revids}: ${err}`);
 		}
 	}
 
 	/**
-	* Check if the given users are blocked
-	* @param {String} users The users to get blocks for, separated by "|"
+	* Check if the given user is blocked
+	* @param {String} users The users to check
 	* @returns {Promise<Object>} The blocks
 	*/
-	async usersBlocked(users) {
+	async isBlocked(users) {
 		try {
-			const response = await this.api.get({
-				"action": "query",
-				"list": "blocks",
-				"bkusers": users,
-				"bkprop": "id|user|by|timestamp|expiry|reason",
-				"format": "json",
-				"formatversion": 2
-			});
+			const userArray = users.split("|").map(u => u.trim()).filter(Boolean);
+			const chunks = this._chunkArray(userArray);
+			const allBlocks = {};
 
-			const blocks = {};
-			users.split("|").forEach(user => blocks[user] = false);
-			response.query.blocks.forEach(block => blocks[block.user] = !block.partial);
-			return blocks;
+			for (const chunk of chunks) {
+				const response = await this.api.get({
+					"action": "query",
+					"list": "blocks",
+					"bkusers": chunk.join("|"),
+					"bkprop": "id|user|by|timestamp|expiry|reason",
+					"format": "json",
+					"formatversion": 2
+				});
+
+				response.query.blocks.forEach(block => {
+					allBlocks[block.user] = block;
+				});
+			}
+
+			return allBlocks;
 		} catch (err) {
-			this.logger?.log(`Could not fetch blocks for users ${users}: ${err}`);
+			console.log(`Could not fetch blocks for users ${users}: ${err}`);
 		}
 	}
 
@@ -843,11 +1436,6 @@ export class WikiShieldAPI {
 	* @returns {Promise<Boolean>} Whether the rollback was successful
 	*/
 	async rollback(title, user, summary) {
-		if (this.testingMode) {
-			console.log("Rollback", { title, user, summary });
-			return true;
-		}
-
 		try {
 			const res = await this.api.rollback(title, user, {
 				"summary": summary,
@@ -877,11 +1465,6 @@ export class WikiShieldAPI {
 	* @returns {Promise<Boolean>} Whether the undo was successful
 	*/
 	async undoEdit(edit, reason) {
-		if (this.testingMode) {
-			console.log("Undo", { edit, reason });
-			return true;
-		}
-
 		try {
 			// Get the revision ID to undo and the previous revision
 			const revid = edit.revid;
@@ -924,11 +1507,6 @@ export class WikiShieldAPI {
 	* @returns {Promise<Boolean>} Whether the block was successful
 	*/
 	async block(user, summary, duration, blockCreation = false, blockEmail = false, blockTalk = false, anonOnly = true) {
-		if (this.testingMode) {
-			console.log("Block", { user, summary, duration });
-			return true;
-		}
-
 		try {
 			await this.api.postWithToken("csrf", Object.assign(
 				{
@@ -957,11 +1535,6 @@ export class WikiShieldAPI {
 	* @returns {Promise<Boolean>} Whether the action was successful
 	*/
 	async thank(revid) {
-		if (this.testingMode) {
-			console.log("Thank", { revid });
-			return true;
-		}
-
 		try {
 			await this.api.postWithToken("csrf", {
 				"action": "thank",
@@ -1015,6 +1588,21 @@ export class WikiShieldAPI {
 		}
 	}
 
+	async getStableDetails(page) {
+		try {
+			const response = await this.api.get({
+				"action": "query",
+				"list": "logevents",
+				"letype": "stable",
+				"letitle": page,
+				"lelimit": 1
+			});
+			return response.query.logevents[0];
+		} catch (err) {
+			console.log(`Could not fetch stable details for page ${page}: ${err}`);
+		}
+	}
+
 	/**
 	* Protect a page with the given details
 	* @param {String} page Page to protect
@@ -1023,11 +1611,6 @@ export class WikiShieldAPI {
 	* @returns {Promise<Boolean>} Whether the protection was successful
 	*/
 	async protect(page, summary, details) {
-		if (this.testingMode) {
-			console.log("Protect", { page, summary, details });
-			return true;
-		}
-
 		try {
 			await this.api.postWithToken("csrf", {
 				"action": "protect",

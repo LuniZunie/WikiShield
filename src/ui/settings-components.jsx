@@ -30,6 +30,33 @@ export class Toggle extends Component {
 	}
 }
 
+export class Radio extends Component {
+	render() {
+		const { value, options = [], onChange, name, id } = this.props;
+
+		return (
+			<div
+				id={id || ''}
+				class="settings-radio-group"
+			>
+				{options.map((option) => (
+					<div
+						data-key={option.value}
+						class={`settings-radio-option ${value === option.value ? 'selected' : ''}`}
+						onClick={e => {
+							e.target.closest('.settings-radio-group').querySelectorAll('.settings-radio-option.selected').forEach(el => el.classList.remove('selected'));
+							e.target.classList.add('selected');
+							onChange(option.value);
+						}}
+					>
+						{option.label}
+					</div>
+				))}
+			</div>
+		);
+	}
+}
+
 /**
  * Numeric Input Component
  */
@@ -96,12 +123,13 @@ export class NumericInput extends Component {
 					onClick={this.handleMinus}
 				></span>
 				<input
-					type="text"
+					type="name"
 					class="numeric-input"
 					value={inputValue}
 					onInput={(e) => this.setState({ inputValue: e.target.value })}
 					onBlur={this.handleInputChange}
 					onKeyUp={this.handleKeyUp}
+					autoComplete="off"
 				/>
 				<span
 					class="fa fa-plus numeric-input-button"
@@ -170,6 +198,7 @@ export class VolumeControl extends Component {
 							step="0.01"
 							value={value}
 							onInput={(e) => onVolumeChange(parseFloat(e.target.value))}
+							autoComplete="off"
 						/>
 						<span class="fa fa-volume-up"></span>
 						<span class="volume-control-value">{Math.round(value * 100)}%</span>
@@ -237,6 +266,133 @@ export class SettingsCompactGrid extends Component {
 	}
 }
 
+export class DraggableOrderList extends Component {
+	constructor(props) {
+		super(props);
+		this.state = {
+			items: [],
+			draggedIndex: null,
+			placeholderIndex: null
+		};
+		this.listRef = null;
+	}
+
+	componentDidMount() {
+		this.syncItemsFromChildren();
+	}
+
+	componentDidUpdate(prevProps) {
+		if (prevProps.children !== this.props.children && this.state.draggedIndex === null) {
+			this.syncItemsFromChildren();
+		}
+	}
+
+	syncItemsFromChildren = () => {
+		const { children } = this.props;
+		if (Array.isArray(children)) {
+			this.setState({ items: children.map((child, i) => ({ child, key: child.key || i })) });
+		}
+	}
+
+	handleDragStart = (index, e) => {
+		this.setState({ draggedIndex: index, placeholderIndex: index });
+		e.dataTransfer.effectAllowed = 'move';
+		e.dataTransfer.setData('text/plain', index);
+
+		// Add a slight delay to allow the drag image to be captured
+		requestAnimationFrame(() => {
+			this.setState(state => ({ ...state }));
+		});
+	}
+
+	handleDragOver = (index, e) => {
+		e.preventDefault();
+		const { draggedIndex, placeholderIndex } = this.state;
+
+		if (draggedIndex === null || index === placeholderIndex) return;
+
+		// Reorder items in real-time
+		this.setState(state => {
+			const newItems = [...state.items];
+			const draggedItem = newItems[state.draggedIndex];
+
+			// Remove from old position
+			newItems.splice(state.draggedIndex, 1);
+			// Insert at new position
+			newItems.splice(index, 0, draggedItem);
+
+			return {
+				items: newItems,
+				draggedIndex: index,
+				placeholderIndex: index
+			};
+		});
+	}
+
+	handleDragEnd = () => {
+		const { onReorder } = this.props;
+		const { items } = this.state;
+
+		// Notify parent of the final order
+		if (onReorder) {
+			onReorder(items.map(item => item.key));
+		}
+
+		this.setState({ draggedIndex: null, placeholderIndex: null });
+	}
+
+	render() {
+		const { items, draggedIndex } = this.state;
+		const isDragging = draggedIndex !== null;
+
+		return (
+			<div class={`draggable-order-list ${isDragging ? 'is-dragging' : ''}`} ref={el => this.listRef = el}>
+				{items.map((item, index) => {
+					const isThisDragging = draggedIndex === index;
+
+					return (
+						<div
+							key={item.key}
+							class={`draggable-order-item-wrapper ${isThisDragging ? 'dragging' : ''}`}
+							draggable
+							onDragStart={(e) => this.handleDragStart(index, e)}
+							onDragOver={(e) => this.handleDragOver(index, e)}
+							onDragEnd={this.handleDragEnd}
+						>
+							{item.child}
+						</div>
+					);
+				})}
+			</div>
+		);
+	}
+}
+
+export class DraggableOrderItem extends Component {
+	handleToggle = (e) => {
+		e.stopPropagation();
+		const { onToggle, enabled } = this.props;
+		if (onToggle) {
+			onToggle(!enabled);
+		}
+	}
+
+	render() {
+		const { name, enabled = true } = this.props;
+
+		return (
+			<div class={`draggable-order-item ${enabled ? '' : 'disabled'}`}>
+				<span class="draggable-order-item-name">{name}</span>
+				<div
+					class="draggable-order-item-toggle"
+					onClick={this.handleToggle}
+					title={enabled ? 'Click to disable' : 'Click to enable'}
+				/>
+			</div>
+		);
+	}
+}
+
 /**
  * General Settings Panel Component
  */
@@ -268,8 +424,8 @@ export class GeneralSettings extends Component {
 						<NumericInput
 							value={maxEditCount}
 							min={0}
-							max={100000}
-							step={100}
+							max={1000000}
+							step={50}
 							onChange={onMaxEditCountChange}
 						/>
 					</SettingsSection>
@@ -293,20 +449,17 @@ export class GeneralSettings extends Component {
 						compact
 						id="minimum-ores-score"
 						title="Minimum ORES score"
-						description={
-							<span>
-								Edits with an <a href="https://www.mediawiki.org/wiki/ORES" target="_blank">ORES score</a> below this threshold will not be shown
-							</span>
-						}
+						description="The minimum ORES score required to show an edit in the recent changes queue"
 					>
 						<NumericInput
 							value={minOresScore}
 							min={0}
 							max={1}
-							step={0.01}
+							step={0.05}
 							onChange={onMinOresScoreChange}
 						/>
 					</SettingsSection>
+
 					<SettingsSection
 							compact
 							id="watchlist-expiry"
@@ -340,7 +493,10 @@ export class GeneralSettings extends Component {
 									<input
 										type="checkbox"
 										checked={selectedNamespaces.includes(namespace.id)}
-										onChange={(e) => onNamespaceToggle(namespace.id, e.target.checked)}
+										onChange={(e) => {
+											onNamespaceToggle(namespace.id, e.target.checked);
+										}}
+										autoComplete="off"
 									/>
 									<div class="checkmark"></div>
 								</label>
@@ -348,6 +504,31 @@ export class GeneralSettings extends Component {
 							</div>
 						))}
 					</div>
+				</SettingsSection>
+			</div>
+		);
+	}
+}
+
+export class PerformanceSettings extends Component { // ts don't do shit
+	render() {
+		return (
+			<div>
+				<SettingsSection
+					title="Startup Animation"
+					description="Enable or disable the startup animation when launching WikiShield"
+				>
+					<Radio
+						id="performance-mode"
+						name="performance-mode"
+						value={this.props.startup}
+						options={[
+							{ value: 'always_off', label: 'Always Off' },
+							{ value: 'adaptive', label: 'Adaptive' },
+							{ value: 'always_on', label: 'Always On' }
+						]}
+						onChange={this.props.onStartupChange}
+					/>
 				</SettingsSection>
 			</div>
 		);
@@ -376,13 +557,13 @@ export class AudioSettings extends Component {
 			soundsByCategory[category].push({ key, sound });
 		});
 
-		const categoryOrder = ['ui', 'alert', 'warning', 'action', 'notification', 'positive', 'negative', 'other'];
+		const categoryOrder = ['ui', 'alert', 'warning', 'action', 'alert', 'positive', 'negative', 'other'];
 		const categoryNames = {
 			ui: 'UI Sounds',
 			alert: 'Alerts',
 			warning: 'Warnings',
 			action: 'Actions',
-			notification: 'Notifications',
+			alert: 'Alerts',
 			positive: 'Positive',
 			negative: 'Negative',
 			other: 'Other'
@@ -417,7 +598,7 @@ export class AudioSettings extends Component {
 			{ key: 'alert', title: 'Alert Sound', description: 'Played for important alerts' },
 			{ key: 'sparkle', title: 'Sparkle Sound', description: 'Played for positive actions' },
 			{ key: 'error', title: 'Error Sound', description: 'Played when an error occurs' },
-			{ key: 'notification', title: 'Notification Sound', description: 'Played for new notifications' },
+			{ key: 'alert', title: 'Alert Sound', description: 'Played for new alerts' },
 			{ key: 'warning', title: 'Warning Sound', description: 'Played when issuing warnings' },
 			{ key: 'rollback', title: 'Rollback Sound', description: 'Played when rolling back edits' },
 			{ key: 'queue', title: 'Queue Update Sound', description: 'Played when the queue updates' }
@@ -453,11 +634,12 @@ export class AudioSettings extends Component {
 /**
  * Appearance Settings Panel Component
  */
-export class PaletteSettings extends Component {
+export class QueueSettings extends Component {
 	constructor(props) {
 		super(props);
 		this.state = {
-			selectedPalette: props.selectedPalette
+			selectedPalette: props.selectedPalette,
+			queues: [...props.queues]
 		};
 	}
 
@@ -466,12 +648,54 @@ export class PaletteSettings extends Component {
 		this.props.onPaletteChange(index);
 	}
 
+	handleReorder = (orderedKeys) => {
+		const { queues } = this.state;
+		const { onQueueReorder } = this.props;
+
+		const queueMap = new Map(queues);
+		const newQueues = orderedKeys.map(key => [ key, queueMap.get(key) ]);
+
+		this.setState({ queues: newQueues });
+		if (onQueueReorder) {
+			onQueueReorder(newQueues);
+		}
+	}
+
+	handleToggle = (id, enabled) => {
+		const { queues } = this.state;
+		const { onQueueToggle } = this.props;
+
+		const newQueues = queues.map(([ queueId, data ]) =>
+			queueId === id ? [ queueId, { ...data, enabled } ] : [ queueId, data ]
+		);
+
+		this.setState({ queues: newQueues });
+		if (onQueueToggle) {
+			onQueueToggle(id, enabled);
+		}
+	}
+
 	render() {
 		const { colorPalettes } = this.props;
-		const { selectedPalette } = this.state;
+		const { selectedPalette, queues } = this.state;
 
 		return (
 			<div>
+				<SettingsSection
+					title="Queues"
+					description="Enable or disable different edit queues, and customize their order"
+				>
+					<DraggableOrderList onReorder={this.handleReorder}>
+						{queues.map(([ id, queue ]) => (
+							<DraggableOrderItem
+								key={queue.key}
+								name={queue.name}
+								enabled={queue.enabled}
+								onToggle={(enabled) => this.handleToggle(queue.key, enabled)}
+							/>
+						))}
+					</DraggableOrderList>
+				</SettingsSection>
 				<SettingsSection
 					title="Color Palette"
 					description="Choose how ORES scores are displayed visually"
@@ -483,6 +707,7 @@ export class PaletteSettings extends Component {
 								class={`palette-option ${selectedPalette === index ? 'selected' : ''}`}
 								onClick={() => this.handlePaletteChange(index)}
 							>
+								<div class="palette-name">Palette {index + 1}</div>
 								<div class="palette-preview">
 									{colors.map((color, i) => (
 										<div
@@ -492,7 +717,6 @@ export class PaletteSettings extends Component {
 										/>
 									))}
 								</div>
-								<div class="palette-name">Palette {index + 1}</div>
 							</div>
 						))}
 					</div>
@@ -509,11 +733,14 @@ export class ZenSettings extends Component {
 	render() {
 		const {
 			enabled,
-			sounds,
 
-			watchlist,
-			notifications,
-			editCount,
+			sound,
+			music,
+
+			notices,
+			alerts,
+
+			badges,
 			toasts,
 		} = this.props;
 
@@ -534,60 +761,68 @@ export class ZenSettings extends Component {
 							onChange={this.props.onEnableChange}
 						/>
 					</SettingsSection>
-					<SettingsSection compact inline>
-						<SettingsSectionContent
-							title="Enable Sounds"
-							description="Play sounds in Zen mode"
-						/>
-						<Toggle
-							value={sounds}
-							onChange={this.props.onSoundsChange}
-						/>
-					</SettingsSection>
 				</SettingsTogglesSection>
 				<SettingsCompactGrid>
 					<SettingsSection
-						compact
-						id="zen-watchlist"
-						title="Watchlist Updates"
-						description="Show watchlist update notifications in Zen mode"
+							compact
+							title="Enable Sounds"
+							description="Play sounds in Zen mode"
 					>
 						<Toggle
-							value={watchlist}
-							onChange={this.props.onWatchlistChange}
+							value={sound.enabled}
+							onChange={this.props.onSoundChange}
+						/>
+					</SettingsSection>
+					<SettingsSection
+							compact
+							title="Enable Music"
+							description="Play background music in Zen mode"
+					>
+						<Toggle
+							value={music.enabled}
+							onChange={this.props.onMusicChange}
+						/>
+					</SettingsSection>
+
+					<SettingsSection
+						compact
+						title="Alerts"
+						description="Show alerts in Zen mode"
+					>
+						<Toggle
+							value={alerts.enabled}
+							onChange={this.props.onAlertsChange}
 						/>
 					</SettingsSection>
 					<SettingsSection
 						compact
-						id="zen-notifications"
-						title="Notifications"
-						description="Show notifications in Zen mode"
+						title="Notices"
+						description="Show notices in Zen mode"
 					>
 						<Toggle
-							value={notifications}
-							onChange={this.props.onNotificationsChange}
+							value={notices.enabled}
+							onChange={this.props.onNoticesChange}
 						/>
 					</SettingsSection>
 					<SettingsSection
 						compact
-						id="zen-edit-count"
-						title="Edit Count"
-						description="Show edit count in Zen mode"
-					>
-						<Toggle
-							value={editCount}
-							onChange={this.props.onEditCountChange}
-						/>
-					</SettingsSection>
-					<SettingsSection
-						compact
-						id="zen-toasts"
 						title="Toasts"
 						description="Show toast messages in Zen mode"
 					>
 						<Toggle
-							value={toasts}
+							value={toasts.enabled}
 							onChange={this.props.onToastsChange}
+						/>
+					</SettingsSection>
+
+					<SettingsSection
+						compact
+						title="Notification Badges"
+						description="Show all notification badges in Zen mode."
+					>
+						<Toggle
+							value={badges.enabled}
+							onChange={this.props.onBadgesChange}
 						/>
 					</SettingsSection>
 				</SettingsCompactGrid>
@@ -597,7 +832,7 @@ export class ZenSettings extends Component {
 }
 
 /**
- * User List Component (for whitelist/highlighted users)
+ * User List Component (for whitelist/highlight users)
  */
 export class UserList extends Component {
 	render() {
@@ -668,6 +903,7 @@ export class WhitelistSettings extends Component {
 							onKeyDown={(e) => {
 								if (e.key === 'Enter') this.handleAdd();
 							}}
+							autoComplete="off"
 						/>
 						<button
 							class="user-list-add-button"
@@ -688,9 +924,9 @@ export class WhitelistSettings extends Component {
 }
 
 /**
- * Highlighted Users Panel Component
+ * highlight Users Panel Component
  */
-export class HighlightedSettings extends Component {
+export class highlightSettings extends Component {
 	constructor(props) {
 		super(props);
 		this.state = {
@@ -713,8 +949,8 @@ export class HighlightedSettings extends Component {
 		return (
 			<div>
 				<SettingsSection
-					title="Highlighted Users"
-					description="Edits from highlighted users will be shown with a yellow indicator"
+					title="highlight Users"
+					description="Edits from highlight users will be shown with a yellow indicator"
 				>
 					<div class="user-list-controls">
 						<input
@@ -726,6 +962,7 @@ export class HighlightedSettings extends Component {
 							onKeyDown={(e) => {
 								if (e.key === 'Enter') this.handleAdd();
 							}}
+							autoComplete="off"
 						/>
 						<button
 							class="user-list-add-button"
@@ -867,6 +1104,7 @@ export class AISettings extends Component {
 							onInput={(e) => onServerUrlChange(e.target.value)}
 							placeholder="http://localhost:11434"
 							style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; margin-bottom: 8px;"
+							autoComplete="off"
 						/>
 						<button
 							id="test-connection-btn"
@@ -992,8 +1230,11 @@ export class AutoReportingSettings extends Component {
 								<label class="checkbox-box">
 									<input
 										type="checkbox"
-										checked={selectedAutoReportReasons[warning] === true}
-										onChange={(e) => this.props.onWarningToggle(warning, e.target.checked)}
+										checked={selectedAutoReportReasons.has(warning)}
+										onChange={(e) => {
+											this.props.onWarningToggle(warning, e.target.checked);
+										}}
+										autoComplete="off"
 									/>
 									<div class="checkmark"></div>
 								</label>
@@ -1069,12 +1310,11 @@ export class SaveSettings extends Component {
 
 			let warningsHtml = '';
 			if (result.warnings && result.warnings.length > 0) {
-				warningsHtml = `<div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(40, 167, 69, 0.3);">
-					<strong>Warnings:</strong>
-					<ul style="margin: 4px 0 0 20px; font-size: 0.9em;">
-						${result.warnings.map(w => `<li>${w}</li>`).join('')}
-					</ul>
-				</div>`;
+				warningsHtml = '<br/><br/><strong>Warnings:</strong><ul>';
+				result.warnings.forEach(warning => {
+					warningsHtml += `<li>${warning}</li>`;
+				});
+				warningsHtml += '</ul>';
 			}
 
 			this.setState({
@@ -1126,36 +1366,32 @@ export class SaveSettings extends Component {
 				>
 					<Toggle
 						value={enableCloudStorage}
-						onChange={this.props.onCloudStorageToggle}
+						onChange={onCloudStorageToggle}
 					/>
 				</SettingsSection>
 				<SettingsSection
-					title="Import / Export Settings"
+					title="Import / Export / Reset Settings"
 					description="Import, export, or reset your WikiShield settings. Settings are encoded as a base64 string for easy sharing."
 				>
-					<div style="display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap;">
+					<div class="buttons">
 						<button
 							id="export-settings-btn"
-							class="add-action-button"
 							onClick={this.handleExport}
-							style="flex: 1; min-width: 120px;"
 						>
 							<span class="fa fa-download"></span> Export Settings
 						</button>
 						<button
 							id="import-settings-btn"
-							class="add-action-button"
 							onClick={this.handleImportToggle}
-							style={`flex: 1; min-width: 120px; ${showImportInput ? 'background: #28a745;' : ''}`}
+							style={`${showImportInput ? '--background: 40, 167, 69, 1;' : ''}`}
 						>
 							<span class={`fa ${showImportInput ? 'fa-check' : 'fa-upload'}`}></span>
 							{showImportInput ? ' Apply Import' : ' Import Settings'}
 						</button>
 						<button
 							id="reset-settings-btn"
-							class="add-action-button"
 							onClick={this.handleReset}
-							style="flex: 1; min-width: 120px; background: #dc3545;"
+							style="--background: 211, 51, 51;"
 						>
 							<span class="fa fa-undo"></span> Reset to Default
 						</button>
@@ -1164,20 +1400,13 @@ export class SaveSettings extends Component {
 					{statusMessage && (
 						<div
 							id="import-export-status"
-							style={`
-								margin-top: 12px;
-								padding: 12px;
-								border-radius: 6px;
-								background: ${statusMessage.type === 'success' ? 'rgba(40, 167, 69, 0.2)' : 'rgba(220, 53, 69, 0.2)'};
-								border: 2px solid ${statusMessage.type === 'success' ? '#28a745' : '#dc3545'};
-								color: ${statusMessage.type === 'success' ? '#28a745' : '#dc3545'};
-							`}
+							class={statusMessage.type === 'success' ? 'status-success' : 'status-error'}
 						>
-							<div style="display: flex; align-items: start; gap: 8px;">
-								<span class={`fa ${statusMessage.type === 'success' ? 'fa-check-circle' : 'fa-times-circle'}`} style="margin-top: 2px;"></span>
-								<div style="flex: 1;">
+							<div>
+								<span class={`fa ${statusMessage.type === 'success' ? 'fa-check-circle' : 'fa-times-circle'}`}></span>
+								<div>
 									<strong>{statusMessage.title}</strong>
-									<div style="font-size: 0.9em; margin-top: 4px;">{statusMessage.message}</div>
+									<div>{statusMessage.message}</div>
 									{statusMessage.extra && (
 										<div dangerouslySetInnerHTML={{ __html: statusMessage.extra }} />
 									)}
@@ -1192,18 +1421,7 @@ export class SaveSettings extends Component {
 							placeholder="Paste base64 settings string here..."
 							value={importValue}
 							onInput={(e) => this.setState({ importValue: e.target.value })}
-							style="
-								width: 100%;
-								min-height: 100px;
-								margin-top: 12px;
-								padding: 12px;
-								border: 2px solid rgba(128, 128, 128, 0.3);
-								border-radius: 6px;
-								font-family: 'Courier New', monospace;
-								font-size: 0.85em;
-								background: rgba(0, 0, 0, 0.2);
-								color: inherit;
-							"
+							resize="vertical"
 						/>
 					)}
 				</SettingsSection>
@@ -1217,7 +1435,14 @@ export class SaveSettings extends Component {
  */
 export class AboutSettings extends Component {
 	render() {
-		const { version, changelog } = this.props;
+		const { version, changelog, date } = this.props;
+
+		const day = date.getUTCDate().toString();
+		const month = [ "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" ][date.getUTCMonth()];
+		const year = date.getUTCFullYear();
+		const hour = date.getUTCHours().toString().padStart(2, '0');
+
+		const dateString = `${day} ${month} ${year}, ${hour}:00 UTC`;
 
 		return (
 			<div>
@@ -1247,6 +1472,8 @@ export class AboutSettings extends Component {
 
 				{changelog && (
 					<SettingsSection>
+						<div class="settings-section-title">Changelog</div>
+						<div class="settings-section-desc">{dateString}</div>
 						<div class="changelog-content" dangerouslySetInnerHTML={{ __html: changelog }} />
 					</SettingsSection>
 				)}

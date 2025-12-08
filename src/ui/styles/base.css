@@ -1,3 +1,51 @@
+@keyframes shimmer {
+    to {
+        background-position: 200% center;
+    }
+}
+
+.shimmer {
+	position: relative;
+
+    &::before {
+        content: '';
+
+		pointer-events: none;
+
+        position: absolute;
+		inset: 0;
+
+		padding: var(--shimmer-size, 2px);
+
+        animation: shimmer 2.5s infinite linear;
+
+        /* Theme dependent */
+        background: var(--shimmer-gradient, linear-gradient(90deg,
+            rgba(102, 126, 234, 1),
+            rgba(118, 75, 162, 1),
+            rgba(102, 126, 234, 1)
+        ));
+
+        /* Theme independent */
+        background-size: 200% 200%;
+    }
+
+    &.shimmer-shadow::before {
+        filter: blur(8px);
+    }
+
+    &.shimmer-border::before {
+        -webkit-mask:
+            linear-gradient(#fff 0 0) content-box,
+            linear-gradient(#fff 0 0);
+                mask:
+            linear-gradient(#fff 0 0) content-box,
+            linear-gradient(#fff 0 0);
+        -webkit-mask-composite: destination-out;
+                mask-composite: exclude;
+    }
+}
+
 /* Base theme configuration */
 :root {
 	/* Light theme colors */
@@ -84,18 +132,15 @@
 	margin: 0;
 	padding: 0;
 	box-sizing: border-box;
-	transition: background-color var(--transition-normal),
-				border-color var(--transition-normal),
-				color var(--transition-normal),
-				box-shadow var(--transition-normal),
-				transform var(--transition-fast);
 }
 
 body {
-	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-	line-height: 1.5;
+	font-family: sans-serif;
+    line-height: 1.5;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
+
+	background: var(--dark-bg-primary);
 }
 
 /* Interactive elements */
@@ -124,15 +169,8 @@ button:focus-visible,
 a:focus-visible,
 input:focus-visible,
 select:focus-visible {
-	outline: 2px solid var(--light-primary);
-	outline-offset: 2px;
-}
-
-[data-theme="dark"] button:focus-visible,
-[data-theme="dark"] a:focus-visible,
-[data-theme="dark"] input:focus-visible,
-[data-theme="dark"] select:focus-visible {
-	outline-color: var(--dark-primary);
+	/* box-shadow: 0 0 20px var(--dark-primary) !important; */
+	outline: none !important;
 }
 
 /* Scrollbars */
@@ -146,24 +184,16 @@ select:focus-visible {
 }
 
 ::-webkit-scrollbar-thumb {
-	background: var(--light-border);
+	background: var(--dark-border);
 	border-radius: var(--radius-lg);
 	border: 2px solid transparent;
 	background-clip: content-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-	background: var(--light-text-secondary);
+	background: var(--dark-text-secondary);
 	border: 2px solid transparent;
 	background-clip: content-box;
-}
-
-[data-theme="dark"] ::-webkit-scrollbar-thumb {
-	background: var(--dark-border);
-}
-
-[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
-	background: var(--dark-text-secondary);
 }
 
 /* Floating iframe modal */

@@ -4,22 +4,20 @@
 */
 
 import { h, render } from 'preact';
-import { defaultSettings, colorPalettes } from '../config/defaults.js';
+import { colorPalettes } from '../config/defaults.js';
 import { namespaces } from '../data/namespaces.js';
-import { sounds } from '../data/sounds.js';
 import { wikishieldHTML } from './templates.js';
 import { warningsLookup, getWarningFromLookup } from '../data/warnings.js';
-import { WikiShieldOllamaAI } from '../ai/ollama.js';
-// import { wikishieldEventData } from '../core/event-manager.js';
 import {
 	GeneralSettings,
+	PerformanceSettings,
 	AudioSettings,
 
-	PaletteSettings,
+	QueueSettings,
 	ZenSettings,
 
 	WhitelistSettings,
-	HighlightedSettings,
+	highlightSettings,
 	StatisticsSettings,
 	AISettings,
 	AutoReportingSettings,
@@ -27,17 +25,8 @@ import {
 	AboutSettings
 } from './settings-components.jsx';
 
-// Allowed keys for keyboard shortcuts
-export const wikishieldSettingsAllowedKeys = [
-	"!", "@", "#", "$", "%", "^", "&", "*", "(", ")",
-	"1", "2", "3", "4", "5", "6", "7", "8", "9", "0",
-	"q", "w", "e", "r", "t", "y", "u", "i", "o", "p",
-	"a", "s", "d", "f", "g", "h", "j", "k", "l",
-	"z", "x", "c", "v", "b", "n", "m",
-	"-", "=", "[", "]", "\\", ";", "'", ",", ".", "/", "enter",
-	"_", "+", "{", "}", "|", ":", "\"", "<", ">", "?", " ",
-	"arrowleft", "arrowup", "arrowdown", "arrowright"
-];
+import { AI } from '../ai/class.js';
+import { validControlKeys } from '../config/control-keys.js';
 
 export class WikiShieldSettingsInterface {
 	constructor(wikishield) {
@@ -86,6 +75,105 @@ export class WikiShieldSettingsInterface {
 		}
 	}
 
+	createCollapsibleSection(container, callback, collapsed = true) {
+		const content = container.querySelector(".collapsible-content");
+		const header = container.querySelector(".collapse-title");
+
+		// Dummy class for styling hooks
+		content.classList.add("collapsible");
+
+		// Set initial state instantly
+		if (collapsed) {
+			content.style.height = "0px";
+			content.style.opacity = 0;
+			content.style.overflow = "hidden";
+			container.classList.add("collapsed");
+		} else {
+			content.style.height = "auto";
+			content.style.opacity = 1;
+			content.style.overflow = "visible";
+			container.classList.remove("collapsed");
+		}
+
+		let animationFrame = null;
+		let startTime = null;
+		let startHeight = null;
+		let targetHeight = null;
+		let startOpacity = null;
+		let targetOpacity = null;
+		let isAnimating = false;
+
+		const duration = 300; // ms
+		const ease = t => t<.5 ? 2*t*t : -1+(4-2*t)*t; // easeInOut
+
+		const animate = (timestamp) => {
+			if (!startTime) startTime = timestamp;
+			const elapsed = timestamp - startTime;
+			const progress = Math.min(elapsed / duration, 1);
+			const eased = ease(progress);
+
+			const currentHeight = startHeight + (targetHeight - startHeight) * eased;
+			const currentOpacity = startOpacity + (targetOpacity - startOpacity) * eased;
+
+			content.style.height = currentHeight + "px";
+			content.style.opacity = currentOpacity;
+
+			if (progress < 1) {
+				animationFrame = requestAnimationFrame(animate);
+			} else {
+				// Finish animation
+				if (!collapsed) {
+					content.style.height = "auto"; // dynamic content can grow
+					content.style.overflow = "visible";
+				} else {
+					content.style.overflow = "hidden";
+				}
+				isAnimating = false;
+				animationFrame = null;
+				startTime = null;
+			}
+		};
+
+		const toggleDisplay = () => {
+			if (isAnimating) {
+				cancelAnimationFrame(animationFrame);
+				// Compute current state for smooth reverse
+				const computedHeight = content.getBoundingClientRect().height;
+				startHeight = computedHeight;
+				startOpacity = parseFloat(getComputedStyle(content).opacity);
+			} else {
+				startHeight = collapsed ? 0 : content.scrollHeight;
+				startOpacity = collapsed ? 0 : 1;
+			}
+
+			collapsed = !collapsed;
+			header.innerHTML = callback(collapsed);
+			container.classList.toggle("collapsed", collapsed);
+
+			if (collapsed) {
+				targetHeight = 0;
+				targetOpacity = 0;
+				content.style.overflow = "hidden";
+			} else {
+				targetHeight = content.scrollHeight;
+				targetOpacity = 1;
+				content.style.overflow = "hidden";
+			}
+
+			isAnimating = true;
+			startTime = null;
+			animationFrame = requestAnimationFrame(animate);
+		};
+
+		// Initial render
+		header.innerHTML = callback(collapsed);
+
+		header.addEventListener("click", () => {
+			toggleDisplay();
+		});
+	}
+
+
 	/**
 	* Create a toggle switch
 	* @param {HTMLElement} container The container to add the toggle to
@@ -105,64 +193,64 @@ export class WikiShieldSettingsInterface {
 		`;
 
 		toggle.addEventListener("click", () => {
-			this.wikishield.queue.playClickSound();
 			value = !value;
 			if (value) {
+				this.wikishield.audioManager.playSound([ "ui", "click" ]);
 				toggle.classList.add("active");
 			} else {
+				this.wikishield.audioManager.playSound([ "ui", "click" ]);
 				toggle.classList.remove("active");
 			}
 			onChange(value);
 		});
 	}
 
-	/**
-	* Create a volume slider control with preview button and sound selector
-	* @param {Element} container The container element
-	* @param {String} triggerKey The trigger key (e.g., 'click', 'alert', etc.)
-	* @param {String} title The title of the control
-	* @param {String} description The description of what the sound is for
-	* @param {Function} playFunction The function to play the sound
-	*/
-	createVolumeControl(container, triggerKey, title, description, playFunction) {
+	createVolumeSlider(container, path, volume) {
+		const key = [ "master", ...(path || []) ].join(".");
+
 		const wrapper = document.createElement("div");
 		wrapper.classList.add("audio-volume-control");
 		container.appendChild(wrapper);
 
-		const value = this.wikishield.options.volumes?.[triggerKey] ?? 0.5;
-		const currentSound = this.wikishield.options.soundMappings?.[triggerKey] || triggerKey;
+		const value = this.wikishield.storage.data.settings.audio.volume[key] ?? volume;
 
-		// Build sound selector options grouped by category
-		const soundsByCategory = {};
-		Object.entries(sounds).forEach(([key, sound]) => {
-			const category = sound.category || 'other';
-			if (!soundsByCategory[category]) soundsByCategory[category] = [];
-			soundsByCategory[category].push({ key, sound });
-		});
+		wrapper.innerHTML = `
+			<div class="audio-control-slider-container">
+				<input type="range" class="audio-volume-slider" min="0" max="1" step="0.01" value="${value}" autoComplete="off">
+				<input type="number" class="audio-volume-input" min="0" max="1" step="0.01" value="${value}" autoComplete="off">
+			</div>
+		`;
 
-		const categoryOrder = ['ui', 'alert', 'warning', 'action', 'notification', 'positive', 'negative', 'other'];
-		const categoryNames = {
-			ui: 'UI Sounds',
-			alert: 'Alerts',
-			warning: 'Warnings',
-			action: 'Actions',
-			notification: 'Notifications',
-			positive: 'Positive',
-			negative: 'Negative',
-			other: 'Other'
+		const slider = wrapper.querySelector(".audio-volume-slider");
+		const input = wrapper.querySelector(".audio-volume-input");
+
+		const updateVolume = (newValue) => {
+			const val = Math.max(0, Math.min(1, Number(newValue)));
+			slider.value = val;
+			input.value = val.toFixed(2);
+
+			const currentVolume = this.wikishield.storage.data.settings.audio.volume[key];
+			this.wikishield.storage.data.settings.audio.volume[key] = val;
+
+			if (currentVolume !== val) {
+				this.wikishield.audioManager.onvolumechanged();
+			}
 		};
 
-		let soundOptions = '';
-		categoryOrder.forEach(category => {
-			if (soundsByCategory[category]) {
-				soundOptions += `<optgroup label="${categoryNames[category] || category}">`;
-				soundsByCategory[category].forEach(({ key, sound }) => {
-					const selected = key === currentSound ? 'selected' : '';
-					soundOptions += `<option value="${key}" ${selected}>${sound.name}</option>`;
-				});
-				soundOptions += '</optgroup>';
-			}
-		});
+		slider.addEventListener("input", () => updateVolume(slider.value));
+		input.addEventListener("change", () => updateVolume(input.value));
+
+		return wrapper;
+	}
+
+	createVolumeControl(container, path, title, description, volume) {
+		const key = path ? path.join(".") : "master";
+
+		const wrapper = document.createElement("div");
+		wrapper.classList.add("audio-volume-control");
+		container.appendChild(wrapper);
+
+		const value = this.wikishield.storage.data.settings.audio.volume[key] ?? volume;
 
 		wrapper.innerHTML = `
 			<div class="audio-control-header">
@@ -175,12 +263,9 @@ export class WikiShieldSettingsInterface {
 					Preview
 				</button>
 			</div>
-			<select class="audio-sound-selector">
-				${soundOptions}
-			</select>
 			<div class="audio-control-slider-container">
-				<input type="range" class="audio-volume-slider" min="0" max="1" step="0.01" value="${value}">
-				<input type="number" class="audio-volume-input" min="0" max="1" step="0.01" value="${value}">
+				<input type="range" class="audio-volume-slider" min="0" max="1" step="0.01" value="${value}" autoComplete="off">
+				<input type="number" class="audio-volume-input" min="0" max="1" step="0.01" value="${value}" autoComplete="off">
 			</div>
 		`;
 
@@ -194,22 +279,45 @@ export class WikiShieldSettingsInterface {
 			slider.value = val;
 			input.value = val.toFixed(2);
 
-			if (!this.wikishield.options.volumes) this.wikishield.options.volumes = {};
-			this.wikishield.options.volumes[triggerKey] = val;
+			this.wikishield.storage.data.settings.audio.volume ??= {};
+
+			const currentVolume = this.wikishield.storage.data.settings.audio.volume[key];
+			this.wikishield.storage.data.settings.audio.volume[key] = val;
+
+			if (currentVolume !== val) {
+				this.wikishield.audioManager.onvolumechanged();
+			}
 		};
 
 		slider.addEventListener("input", () => updateVolume(slider.value));
 		input.addEventListener("change", () => updateVolume(input.value));
 
-		// Sound selector
-		soundSelector.addEventListener("change", () => {
-			if (!this.wikishield.options.soundMappings) this.wikishield.options.soundMappings = {};
-			this.wikishield.options.soundMappings[triggerKey] = soundSelector.value;
-		});
-
 		// Preview button - do NOT play click sound
 		previewBtn.addEventListener("click", () => {
-			if (playFunction) playFunction.call(this.wikishield.queue);
+			if (previewBtn.classList.contains("playing")) return;
+			previewBtn.classList.add("playing");
+
+			const icon = previewBtn.querySelector(".fa");
+			if (icon) {
+				icon.classList.remove("fa-play");
+				icon.classList.add("fa-stop");
+			}
+
+			const controller = new AbortController();
+			previewBtn.onclick = () => {
+				controller.abort();
+			};
+
+			this.wikishield.audioManager.stopPreviews();
+			this.wikishield.audioManager.playSound(path, controller, true)
+				.finally(() => {
+					previewBtn.onclick = null;
+					previewBtn.classList.remove("playing");
+					if (icon) {
+						icon.classList.remove("fa-stop");
+						icon.classList.add("fa-play");
+					}
+				});
 		});
 	}
 
@@ -229,21 +337,21 @@ export class WikiShieldSettingsInterface {
 
 		input.innerHTML = `
 			<span class="fa fa-minus numeric-input-button"></span>
-			<input type="text" class="numeric-input" value=${value}>
+			<input type="text" class="numeric-input" value=${value} autoComplete="off">
 			<span class="fa fa-plus numeric-input-button"></span>
 		`;
 
 		const inputElem = input.querySelector("input");
 
 		input.querySelector(".fa-minus").addEventListener("click", () => {
-			this.wikishield.queue.playClickSound();
+			this.wikishield.audioManager.playSound([ "ui", "click" ]);
 			value = Math.round(Math.max(value - step, min) * 100) / 100;
 			inputElem.value = value;
 			onChange(value);
 		});
 
 		input.querySelector(".fa-plus").addEventListener("click", () => {
-			this.wikishield.queue.playClickSound();
+			this.wikishield.audioManager.playSound([ "ui", "click" ]);
 			value = Math.round(Math.min(value + step, max) * 100) / 100;
 			inputElem.value = value;
 			onChange(value);
@@ -269,31 +377,41 @@ export class WikiShieldSettingsInterface {
 		});
 	}
 
+	scrollToSelector(selector) {
+		const element = this.contentContainer.querySelector(selector);
+		if (element) {
+			element.scrollIntoView({ behavior: "smooth", block: "start" });
+			element.classList.add("highlight");
+		}
+	}
+
 	/**
 	* Open settings container and go to general settings
 	*/
-	openSettings() {
+	openSettings(tab = "general", scrollSelector = null) {
 		this.closeSettings();
 		this.isOpen = true;
 
 		const container = document.createElement("div");
 		container.classList.add("settings-container");
 		document.body.appendChild(container);
-		document.body.classList.add("settings-open"); // Add class to blur bottom bar
 		container.innerHTML = wikishieldHTML.settings;
 
 		container.addEventListener("click", this.closeSettings.bind(this));
 		container.querySelector(".settings").addEventListener("click", (event) => event.stopPropagation());
-		container.querySelector("#settings-general-button").classList.add("selected");
+
+		const $tab = container.querySelector(`#settings-${tab}-button`) ?? container.querySelector("#settings-general-button");
+		$tab.classList.add("selected");
 
 		this.contentContainer = container.querySelector(".settings-right");
 
 		[
 			["#settings-general-button", this.openGeneral.bind(this)],
+			["#settings-performance-button", this.openPerformance.bind(this)],
 			["#settings-audio-button", this.openAudio.bind(this)],
 			["#settings-controls-button", this.openControls.bind(this)],
 
-			["#settings-palette-button", this.openPalette.bind(this)],
+			["#settings-queue-button", this.openQueue.bind(this)],
 			["#settings-zen-mode-button", this.openZen.bind(this)],
 
 			["#settings-ai-button", this.openAI.bind(this)],
@@ -304,15 +422,20 @@ export class WikiShieldSettingsInterface {
 			["#settings-whitelist-pages-button", this.openWhitelist.bind(this, "pages")],
 			["#settings-whitelist-tags-button", this.openWhitelist.bind(this, "tags")],
 
-			["#settings-highlight-users-button", this.openHighlighted.bind(this, "users")],
-			["#settings-highlight-pages-button", this.openHighlighted.bind(this, "pages")],
-			["#settings-highlight-tags-button", this.openHighlighted.bind(this, "tags")],
+			["#settings-highlight-users-button", this.openHighlight.bind(this, "users")],
+			["#settings-highlight-pages-button", this.openHighlight.bind(this, "pages")],
+			["#settings-highlight-tags-button", this.openHighlight.bind(this, "tags")],
 
 			["#settings-statistics-button", this.openStatistics.bind(this)],
 			["#settings-about-button", this.openAbout.bind(this)],
+
 			["#settings-save-button", this.openSaveSettings.bind(this)],
 		].forEach(([sel, func]) => container.querySelector(sel).addEventListener("click", () => {
-			this.wikishield.queue.playClickSound();
+			if (sel !== "#settings-audio-button") {
+				this.wikishield.audioManager.stopPreviews();
+			}
+
+			this.wikishield.audioManager.playSound([ "ui", "click" ]);
 
 			// Clear/unmount any previous content before switching tabs
 			this.clearContent();
@@ -323,42 +446,69 @@ export class WikiShieldSettingsInterface {
 
 			func();
 		}));
-		this.openGeneral();
+
+		$tab.click();
+		if (scrollSelector) {
+			container.querySelector(".settings").addEventListener("animationend", () => {
+				this.scrollToSelector(scrollSelector);
+			}, { once: true });
+		}
 	}
 
 	/**
 	* Open general settings section
 	*/
 	openGeneral() {
+		const settings = this.wikishield.storage.data.settings;
 		this.renderComponent(
 			h(GeneralSettings, {
-				maxEditCount: this.wikishield.options.maxEditCount,
-				maxQueueSize: this.wikishield.options.maxQueueSize,
-				minOresScore: this.wikishield.options.minimumORESScore,
-				watchlistExpiry: this.wikishield.options.watchlistExpiry,
-				namespaces,
-				selectedNamespaces: this.wikishield.options.namespacesShown,
+				wikishield: this.wikishield,
+
+				maxEditCount: settings.queue.max_edits,
 				onMaxEditCountChange: (value) => {
-					this.wikishield.options.maxEditCount = value;
+					settings.queue.max_edits = value;
 				},
+
+				maxQueueSize: settings.queue.max_size,
 				onMaxQueueSizeChange: (value) => {
-					this.wikishield.options.maxQueueSize = value;
+					settings.queue.max_size = value;
 				},
+
+				minOresScore: settings.queue.min_ores,
 				onMinOresScoreChange: (value) => {
-					this.wikishield.options.minimumORESScore = value;
+					settings.queue.min_ores = value;
 				},
+
+				watchlistExpiry: settings.expiry.watchlist,
 				onWatchlistExpiryChange: (value) => {
-					this.wikishield.options.watchlistExpiry = value;
+					settings.expiry.watchlist = value;
 				},
+
+				namespaces,
+				selectedNamespaces: settings.namespaces,
 				onNamespaceToggle: (nsid, checked) => {
 					if (checked) {
-						const set = new Set(this.wikishield.options.namespacesShown);
+						const set = new Set(settings.namespaces);
 						set.add(nsid);
-						this.wikishield.options.namespacesShown = [...set];
+						settings.namespaces = [...set];
 					} else {
-						this.wikishield.options.namespacesShown = this.wikishield.options.namespacesShown.filter(n => n !== nsid);
+						settings.namespaces = settings.namespaces.filter(n => n !== nsid);
 					}
 				},
+			})
+		);
+	}
+
+	openPerformance() {
+		const settings = this.wikishield.storage.data.settings;
+		this.renderComponent(
+			h(PerformanceSettings, {
+				wikishield: this.wikishield,
+
+				startup: settings.performance.startup,
+				onStartupChange: (value) => {
+					settings.performance.startup = value;
+				}
 			})
 		);
 	}
@@ -369,12 +519,6 @@ export class WikiShieldSettingsInterface {
 	openAudio() {
 		this.clearContent();
 		this.contentContainer.innerHTML = `
-			<div class="settings-section">
-				<div class="settings-section-title">Master Volume</div>
-				<div class="settings-section-desc">Controls the overall volume of all sounds</div>
-				<div id="master-volume-control"></div>
-			</div>
-
 			<div class="settings-toggles-section">
 				<div class="settings-section-header">
 					<span class="settings-section-header-icon">ORES</span>
@@ -395,9 +539,13 @@ export class WikiShieldSettingsInterface {
 			</div>
 
 			<div class="settings-section">
-				<div class="settings-section-title">Individual Sound Volumes</div>
-				<div class="settings-section-desc">Adjust the volume for each sound effect and preview them</div>
-				<div id="sound-volumes-container"></div>
+				<div class="settings-section-title">Master Volume</div>
+				<div class="settings-section-desc">Controls the overall volume of all sounds</div>
+				<div id="master-volume-control"></div>
+			</div>
+
+			<div id="sound-volumes-container" class="settings-section">
+
 			</div>
 		`;
 
@@ -417,12 +565,12 @@ export class WikiShieldSettingsInterface {
 		wrapper.classList.add("audio-volume-control");
 		masterContainer.appendChild(wrapper);
 
-		const masterValue = this.wikishield.options.masterVolume ?? 0.5;
+		const masterValue = this.wikishield.storage.data.settings.audio.volume.master ?? 1;
 
 		wrapper.innerHTML = `
 			<div class="audio-control-slider-container">
-				<input type="range" class="audio-volume-slider" min="0" max="1" step="0.01" value="${masterValue}">
-				<input type="number" class="audio-volume-input" min="0" max="1" step="0.01" value="${masterValue}">
+				<input type="range" class="audio-volume-slider" min="0" max="1" step="0.01" value="${masterValue}" autoComplete="off">
+				<input type="number" class="audio-volume-input" min="0" max="1" step="0.01" value="${masterValue}" autoComplete="off">
 			</div>
 		`;
 
@@ -433,7 +581,13 @@ export class WikiShieldSettingsInterface {
 			const val = Math.max(0, Math.min(1, Number(newValue)));
 			masterSlider.value = val;
 			masterInput.value = val.toFixed(2);
-			this.wikishield.options.masterVolume = val;
+
+			const currentVolume = this.wikishield.storage.data.settings.audio.volume.master;
+			this.wikishield.storage.data.settings.audio.volume.master = val;
+
+			if (currentVolume !== val) {
+				this.wikishield.audioManager.onvolumechanged();
+			}
 		};
 
 		masterSlider.addEventListener("input", () => updateMasterVolume(masterSlider.value));
@@ -442,72 +596,241 @@ export class WikiShieldSettingsInterface {
 		// ORES alert toggle
 		this.createToggle(
 			this.contentContainer.querySelector("#sound-alert-toggle"),
-			this.wikishield.options.enableSoundAlerts,
+			this.wikishield.storage.data.settings.audio.ores_alert.enabled,
 			(newValue) => {
-				this.wikishield.options.enableSoundAlerts = newValue;
+				this.wikishield.storage.data.settings.audio.ores_alert.enabled = newValue;
 			}
 		);
 
 		// ORES alert threshold
 		this.createNumericInput(
 			this.contentContainer.querySelector("#sound-alert-ores-score"),
-			this.wikishield.options.soundAlertORESScore, 0, 1, 0.05,
+			this.wikishield.storage.data.settings.audio.ores_alert.threshold, 0, 1, .05,
 			(newValue) => {
-				this.wikishield.options.soundAlertORESScore = newValue;
+				this.wikishield.storage.data.settings.audio.ores_alert.threshold = newValue;
 			}
 		);
 
-		// Individual sound controls
-		const soundsContainer = this.contentContainer.querySelector("#sound-volumes-container");
+		const formatTime = seconds => {
+			const hours = Math.floor(seconds / 3600);
+			const mins = Math.floor(seconds / 60);
+			const secs = seconds % 60;
 
-		const _queue_ = this.wikishield.queue;
-		const sounds = [
-			{ key: "click", title: "Click Sound", desc: "Played when clicking buttons and UI elements", fn: _queue_.playClickSound.bind(_queue_, true) },
-			{ key: "notification", title: "Notification Sound", desc: "Played when you receive an alert or notice", fn: _queue_.playNotificationSound.bind(_queue_, true) },
-			{ key: "watchlist", title: "Watchlist Sound", desc: "Played when you your watchlist is updated", fn: _queue_.playWatchlistSound.bind(_queue_, true) },
-			{ key: "alert", title: "Alert Sound", desc: "Played when a high ORES score edit is added to the queue", fn: _queue_.playAlertSound.bind(_queue_, true) },
-			{ key: "whoosh", title: "Whoosh Sound", desc: "Played when items are removed or cleared", fn: _queue_.playWhooshSound.bind(_queue_, true) },
-			{ key: "warn", title: "Warn Sound", desc: "Played when issuing a warning to a user", fn: _queue_.playWarnSound.bind(_queue_, true) },
-			{ key: "rollback", title: "Rollback Sound", desc: "Played when performing a rollback action", fn: _queue_.playRollbackSound.bind(_queue_, true) },
-			{ key: "report", title: "Report Sound", desc: "Played when reporting a user or page", fn: _queue_.playReportSound.bind(_queue_, true) },
-			{ key: "thank", title: "Thank Sound", desc: "Played when thanking a user for their edit", fn: _queue_.playThankSound.bind(_queue_, true) },
-			{ key: "protection", title: "Protection Sound", desc: "Played when requesting page protection", fn: _queue_.playProtectionSound.bind(_queue_, true) },
-			{ key: "block", title: "Block Sound", desc: "Played when blocking a user", fn: _queue_.playBlockSound.bind(_queue_, true) },
-			{ key: "sparkle", title: "Sparkle Sound", desc: "Played when highlighting or whitelisting users", fn: _queue_.playSparkleSound.bind(_queue_, true) },
-			{ key: "success", title: "Success Sound", desc: "Played when an action is successfully completed", fn: _queue_.playSuccessSound.bind(_queue_, true) },
-			{ key: "error", title: "Error Sound", desc: "Played when an action fails or encounters an error", fn: _queue_.playErrorSound.bind(_queue_, true) },
-		];
+			let str = "";
+			if (hours > 0) str += `${hours}h `;
+			if (mins > 0) str += `${mins}m `;
+			str += `${secs}s`;
 
-		sounds.forEach(sound => {
-			this.createVolumeControl(
-				soundsContainer,
-				sound.key,
-				sound.title,
-				sound.desc,
-				sound.fn
+			return str.trim();
+		};
+
+		const buildCategory = (container, path, title, description, volume) => {
+			const categoryContainer = document.createElement("div");
+			categoryContainer.classList.add("settings-section", "collapsible");
+			container.appendChild(categoryContainer);
+
+			categoryContainer.innerHTML = `
+				<div class="settings-section-header collapse-title"></div>
+				<div class="collapsible-content">
+					<div class="settings-section-desc">${description}</div>
+				</div>
+			`;
+
+			this.createCollapsibleSection(categoryContainer, () => title, true);
+
+			const content = categoryContainer.querySelector(".collapsible-content");
+			this.createVolumeSlider(
+				content,
+				path,
+				title,
+				description,
+				volume
 			);
-		});
+
+			const settingsContent = document.createElement("div");
+			settingsContent.classList.add("settings-content");
+			content.appendChild(settingsContent);
+
+			return settingsContent;
+		};
+
+		const buildSound = (container, path, title, description, volume) => {
+			if (!title || !description) return;
+
+			return this.createVolumeControl(
+				container,
+				path,
+				title,
+				description,
+				volume
+			);
+		};
+
+		const buildPlaylist = (container, path, title, description, volume, tracks) => {
+			if (!title || !description) return;
+
+			const categoryContainer = document.createElement("div");
+			categoryContainer.classList.add("settings-section", "collapsible");
+			container.appendChild(categoryContainer);
+
+			categoryContainer.innerHTML = `
+				<div class="settings-section-header collapse-title"></div>
+				<div class="collapsible-content">
+					<div class="settings-section-desc">${description}</div>
+				</div>
+			`;
+
+			this.createCollapsibleSection(categoryContainer, collapsed => {
+				if (collapsed) {
+					return title;
+				} else {
+					return `${title} (${tracks.length} tracks, total ${formatTime(tracks.reduce((a, b) => a + b.length, 0))})`;
+				}
+			}, true);
+
+			const content = categoryContainer.querySelector(".collapsible-content");
+			this.createVolumeSlider(
+				content,
+				path,
+				title,
+				description,
+				volume
+			);
+
+			const trackContent = document.createElement("div");
+			trackContent.classList.add("settings-content", "playlist-track-grid");
+			content.appendChild(trackContent);
+
+			tracks.forEach((track, index) => {
+				const trackElem = document.createElement("div");
+				trackElem.classList.add("playlist-track-item");
+				trackContent.appendChild(trackElem);
+
+				trackElem.innerHTML = `
+					<div class="playlist-track-thumbnail">
+						<img src="${track.thumbnail}" alt="Track thumbnail">
+					</div>
+					<div class="playlist-track-info">
+						<div class="playlist-track-title">${track.title}</div>
+						<div class="playlist-track-artist">${track.artist ?? ''}</div>
+						<div class="playlist-track-length">Length: ${formatTime(track.length)}</div>
+					</div>
+					<button class="audio-preview-button">
+						<span class="fa fa-play"></span>
+					</button>
+				`;
+				const previewBtn = trackElem.querySelector(".audio-preview-button");
+
+				// Preview button - do NOT play click sound
+				previewBtn.addEventListener("click", () => {
+					if (previewBtn.classList.contains("playing")) return;
+					previewBtn.classList.add("playing");
+
+					const icon = previewBtn.querySelector(".fa");
+					if (icon) {
+						icon.classList.remove("fa-play");
+						icon.classList.add("fa-stop");
+					}
+
+					const controller = new AbortController();
+					previewBtn.onclick = () => {
+						controller.abort();
+					};
+
+					this.wikishield.audioManager.stopPreviews();
+					this.wikishield.audioManager.playSound([ ...path, index ], controller, true)
+						.finally(() => {
+							previewBtn.onclick = null;
+							previewBtn.classList.remove("playing");
+							if (icon) {
+								icon.classList.remove("fa-stop");
+								icon.classList.add("fa-play");
+							}
+						});
+				});
+			});
+
+			return trackContent;
+		};
+
+		function loopThrough(obj, currentPath = [], container) {
+			for (const [ key, value ] of Object.entries(obj)) {
+				switch (value.type) {
+					case "sound": {
+						buildSound(
+							container,
+							[ ...currentPath, key ],
+							value.title,
+							value.description,
+							value.volume
+						);
+					} break;
+					case "playlist": {
+						buildPlaylist(
+							container,
+							[ ...currentPath, key ],
+							value.title,
+							value.description,
+							value.volume,
+							value.tracks
+						);
+					} break;
+					case "category": {
+						const newContainer = buildCategory(
+							container,
+							[ ...currentPath, key ],
+							value.title,
+							value.description,
+							value.volume
+						);
+
+						loopThrough(value.properties, [ ...currentPath, key ], newContainer);
+					} break;
+				}
+			}
+		}
+
+		loopThrough(this.wikishield.audioManager.audio, [], this.contentContainer.querySelector("#sound-volumes-container"));
 	}
 
 	/**
 	* Open appearance settings section (Dark mode only)
 	*/
-	openPalette() {
+	openQueue() {
+		const queueNames = { recent: "Recent changes", flagged: "Pending changes", users: "User creation logs", watchlist: "Watchlist" };
+		const queues = Object.entries(queueNames).map(([ key, name ]) => [ key, { key, name, ...this.wikishield.storage.data.settings.queue[key] } ]);
+		queues.sort((a, b) => a[1].order - b[1].order);
+
 		this.renderComponent(
-			h(PaletteSettings, {
-				selectedPalette: this.wikishield.options.selectedPalette,
+			h(QueueSettings, {
+				wikishield: this.wikishield,
+
+				queues,
+				onQueueToggle: (queueKey, enabled) => {
+					this.wikishield.storage.data.settings.queue[queueKey].enabled = enabled;
+					this.wikishield.interface.updateQueueTabs();
+				},
+				onQueueReorder: (newOrder) => {
+					newOrder.forEach(([ queueKey ], index) => {
+						this.wikishield.storage.data.settings.queue[queueKey].order = index;
+					});
+
+					this.wikishield.interface.updateQueueTabs();
+				},
+
+				selectedPalette: this.wikishield.storage.data.UI.theme.palette,
 				colorPalettes,
 				onPaletteChange: (paletteIndex) => {
-					this.wikishield.queue.playClickSound();
-					this.wikishield.options.selectedPalette = paletteIndex;
+					this.wikishield.audioManager.playSound([ "ui", "click" ]);
+					this.wikishield.storage.data.UI.theme.palette = paletteIndex;
 					document.querySelectorAll(".queue-edit-color").forEach(el => {
 						el.style.background = this.wikishield.interface.getORESColor(+el.dataset.rawOresScore);
 					});
 					// Re-render queue to show new colors
 					if (this.wikishield.interface) {
 						this.wikishield.interface.renderQueue(
-							this.wikishield.queue.queue,
-							this.wikishield.queue.currentEdit
+							this.wikishield.queue.queue[this.wikishield.queue.currentQueueTab],
+							this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab]
 						);
 					}
 				}
@@ -518,31 +841,38 @@ export class WikiShieldSettingsInterface {
 	openZen() {
 		this.renderComponent(
 			h(ZenSettings, {
-				...this.wikishield.options.zen,
+				wikishield: this.wikishield,
+				...this.wikishield.storage.data.settings.zen_mode,
 
 				onEnableChange: value => {
-					this.wikishield.options.zen.enabled = value;
-					this.wikishield.interface.updateZenModeDisplay();
-				},
-				onSoundsChange: value => {
-					this.wikishield.options.zen.sounds = value;
-					this.wikishield.interface.updateZenModeDisplay();
+					this.wikishield.storage.data.settings.zen_mode.enabled = value;
+					this.wikishield.interface.updateZenModeDisplay(true);
 				},
 
-				onWatchlistChange: value => {
-					this.wikishield.options.zen.watchlist = value;
+				onSoundChange: value => {
+					this.wikishield.storage.data.settings.zen_mode.sound.enabled = value;
 					this.wikishield.interface.updateZenModeDisplay();
 				},
-				onNotificationsChange: value => {
-					this.wikishield.options.zen.notifications = value;
+				onMusicChange: value => {
+					this.wikishield.storage.data.settings.zen_mode.music.enabled = value;
+					this.wikishield.interface.updateZenModeDisplay(true);
+				},
+
+				onAlertsChange: value => {
+					this.wikishield.storage.data.settings.zen_mode.alerts.enabled = value;
 					this.wikishield.interface.updateZenModeDisplay();
 				},
-				onEditCountChange: value => {
-					this.wikishield.options.zen.editCount = value;
+				onNoticesChange: value => {
+					this.wikishield.storage.data.settings.zen_mode.notices.enabled = value;
 					this.wikishield.interface.updateZenModeDisplay();
 				},
 				onToastsChange: value => {
-					this.wikishield.options.zen.toasts = value;
+					this.wikishield.storage.data.settings.zen_mode.toasts.enabled = value;
+					this.wikishield.interface.updateZenModeDisplay();
+				},
+
+				onBadgesChange: value => {
+					this.wikishield.storage.data.settings.zen_mode.badges.enabled = value;
 					this.wikishield.interface.updateZenModeDisplay();
 				},
 			})
@@ -558,14 +888,14 @@ export class WikiShieldSettingsInterface {
 				<div class="settings-section">
 					<div class="settings-section-title">Control scripts</div>
 					<div class="settings-section-desc">Below you can change what actions are completed when a key is pressed.</div>
-					<div class="add-action-button new-control-script">
+					<button class="add-action-button new-control-script">
 						<span class="fa fa-plus"></span>
 						New control script
-					</div>
+					</button>
 				</div>
 			`;
 
-		for (const control of this.wikishield.options.controlScripts) {
+		for (const control of this.wikishield.storage.data.control_scripts) {
 			const container = document.createElement("div");
 			container.classList.add("settings-section");
 			this.contentContainer.appendChild(container);
@@ -578,7 +908,7 @@ export class WikiShieldSettingsInterface {
 		const addButton = this.contentContainer.querySelector(".new-control-script");
 
 		addButton.addEventListener("click", () => {
-			this.wikishield.options.controlScripts.unshift({
+			this.wikishield.storage.data.control_scripts.unshift({
 				keys: [],
 				actions: []
 			});
@@ -593,13 +923,10 @@ export class WikiShieldSettingsInterface {
 	findDuplicateControls() {
 		const keys = {};
 
-		for (const control of this.wikishield.options.controlScripts) {
+		for (const control of this.wikishield.storage.data.control_scripts) {
 			for (const key of control.keys) {
-				if (!keys[key]) {
-					keys[key] = 0;
-				}
-
-				keys[key] += 1;
+				keys[key] ??= 0;
+				keys[key]++;
 			}
 		}
 
@@ -618,11 +945,7 @@ export class WikiShieldSettingsInterface {
 	updateDuplicateControls() {
 		const duplicateControls = this.findDuplicateControls();
 		[...document.querySelectorAll(".control-keys > div[data-key]")].forEach(elem => {
-			if (duplicateControls.includes(elem.dataset.key)) {
-				elem.classList.add("key-duplicate");
-			} else {
-				elem.classList.remove("key-duplicate");
-			}
+			elem.classList.toggle("key-duplicate", duplicateControls.includes(elem.dataset.key));
 		});
 	}
 
@@ -702,28 +1025,28 @@ export class WikiShieldSettingsInterface {
 		bottomContainer.innerHTML = `
 				<div class="add-action-container"></div>
 				<div>
-					<div class="add-action-button control-delete">Delete</div>
+					<button class="add-action-button control-delete" style="--background: 211, 51, 51;">Delete</button>
 				</div>
 			`;
 		actionContainer.appendChild(bottomContainer);
 
 		bottomContainer.querySelector(".control-delete").addEventListener("click", () => {
-			this.wikishield.queue.playClickSound();
-			this.wikishield.options.controlScripts.splice(this.wikishield.options.controlScripts.indexOf(control), 1);
+			this.wikishield.audioManager.playSound([ "ui", "click" ]);
+			this.wikishield.storage.data.control_scripts.splice(this.wikishield.storage.data.control_scripts.indexOf(control), 1);
 			this.openControls();
 		});
 
 		const addContainer = bottomContainer.querySelector(".add-action-container");
 
 		const resetAddContainer = () => {
-			addContainer.innerHTML = `<div class="add-action-button new-button">Add new action</div>`;
+			addContainer.innerHTML = `<button class="add-action-button new-button">Add new action</button>`;
 
 			addContainer.querySelector(".new-button").addEventListener("click", () => {
-				this.wikishield.queue.playClickSound();
+				this.wikishield.audioManager.playSound([ "ui", "click" ]);
 				addContainer.innerHTML = `
 						<select style="height: 35px;"></select>
-						<div class="add-action-button cancel-button">Cancel</div>
-						<div class="add-action-button create-button">Create</div>
+						<button class="add-action-button cancel-button" style="margin-left: 10px;">Cancel</button>
+						<button class="add-action-button create-button" style="margin-left: 10px;">Create</button>
 					`;
 
 				const select = addContainer.querySelector("select");
@@ -737,11 +1060,11 @@ export class WikiShieldSettingsInterface {
 				select.innerHTML += `<option value="if">If condition</option>`;
 
 				addContainer.querySelector(".cancel-button").addEventListener("click", () => {
-					this.wikishield.queue.playClickSound();
+					this.wikishield.audioManager.playSound([ "ui", "click" ]);
 					resetAddContainer();
 				});
 				addContainer.querySelector(".create-button").addEventListener("click", () => {
-					this.wikishield.queue.playClickSound();
+					this.wikishield.audioManager.playSound([ "ui", "click" ]);
 					const action = {
 						name: select.value,
 						params: {}
@@ -806,8 +1129,8 @@ export class WikiShieldSettingsInterface {
 
 			const select = itemContainer.querySelector("select");
 
-			for (const key in this.wikishield.interface.eventManager.events.conditions) {
-				const condition = this.wikishield.interface.eventManager.events.conditions[key];
+			for (const key in this.wikishield.interface.eventManager.conditions) {
+				const condition = this.wikishield.interface.eventManager.conditions[key];
 				if ("desc" in condition) {
 					select.innerHTML += `<option value=${key}>${condition.desc}</option>`;
 				}
@@ -926,7 +1249,12 @@ export class WikiShieldSettingsInterface {
 			parameterElem.innerHTML += `<select></select>`;
 			const select = parameterElem.querySelector("select");
 
-			for (const choice of parameter.options) {
+			let options = parameter.options ?? [ ];
+			if (typeof parameter.showOption === "function") {
+				options = options.filter(opt => parameter.showOption(this.wikishield, opt));
+			}
+
+			for (const choice of options) {
 				select.innerHTML += `<option>${choice}</option>`;
 			}
 
@@ -939,7 +1267,7 @@ export class WikiShieldSettingsInterface {
 
 			select.addEventListener("change", () => onChange(select.value));
 		} else if (parameter.type === "text") {
-			parameterElem.innerHTML += `<input type="text">`;
+			parameterElem.innerHTML += `<input type="text" autoComplete="off">`;
 			const input = parameterElem.querySelector("input");
 			input.value = value;
 
@@ -956,309 +1284,20 @@ export class WikiShieldSettingsInterface {
 	/**
 	* Open AI Analysis settings section
 	*/
-	openAI() {
+	openAI() { // TODO: Refactor into component, also allow for other AI providers
+		const settings = this.wikishield.storage.data.settings.AI;
+		const defaults = this.wikishield.defaultStorage.data.settings.AI;
+
 		this.clearContent();
 		this.contentContainer.innerHTML = `
 				<div class="settings-section" id="enable-ollama-ai">
-					<div class="settings-section-title">Enable Ollama AI Analysis</div>
+					<div class="settings-section-title">Enable Ollama AI Analysis (<a href="https://ollama.com" target="_blank">ollama.com</a>)</div>
 					<div class="settings-section-desc">Use local AI models with complete privacy. Free & fast.</div>
 				</div>
 
-				<div class="settings-section" id="ollama-server-url">
-					<div class="settings-section-title">Server URL</div>
-					<div class="settings-section-desc">
-						<input type="text" id="ollama-url-input" value="${this.wikishield.options.ollamaServerUrl}"
-							style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; margin-bottom: 8px;"
-							placeholder="http://localhost:11434">
-						<button id="test-connection-btn" style="padding: 6px 12px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em;">
-							Test Connection
-						</button>
-						<span id="connection-status" style="margin-left: 8px; font-size: 0.9em;"></span>
-					</div>
-				</div>
-
-				<div class="settings-section" id="ollama-model-select">
-					<div class="settings-section-title">Model Selection</div>
-					<div class="settings-section-desc">
-						<button id="refresh-models-btn" style="padding: 6px 12px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em;">
-							<span class="fa fa-sync"></span> Refresh Models
-						</button>
-						<span id="models-status" style="margin-left: 8px; font-size: 0.9em;"></span>
-						<div style="margin-top: 12px;" id="models-container">
-							<div style="color: #666; font-style: italic; font-size: 0.9em;">Click "Refresh Models" to load available models</div>
-						</div>
-					</div>
-				</div>
-
-				<div class="settings-section">
-					<div class="settings-section-title" style="color: #dc3545;">CORS Setup Required</div>
-					<div class="settings-section-desc" style="background: #fff3cd20; padding: 10px; border-radius: 6px; border-left: 4px solid #ffc107; font-size: 0.9em; color: #333;">
-						<strong>Set environment variable:</strong> <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 3px; color: #333;">OLLAMA_ORIGINS</code>
-						<br><strong>Value:</strong> <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 3px; color: #333;">https://en.wikipedia.org,https://*.wikipedia.org</code>
-						<br><br>
-						<details style="cursor: pointer;">
-							<summary style="font-weight: 600; margin-bottom: 6px;">Windows (Permanent)</summary>
-							<ol style="margin: 6px 0; padding-left: 20px; font-size: 0.85em;">
-								<li>System Properties → Environment Variables</li>
-								<li>New Variable: <code style="color: #333;">OLLAMA_ORIGINS</code></li>
-								<li>Value: <code style="color: #333;">https://en.wikipedia.org,https://*.wikipedia.org</code></li>
-								<li>Restart Ollama</li>
-							</ol>
-						</details>
-						<details style="cursor: pointer;">
-							<summary style="font-weight: 600; margin-bottom: 6px;">Windows (Temporary)</summary>
-							<pre style="background: #2d2d2d; color: #f8f8f2; padding: 8px; border-radius: 4px; font-size: 0.8em; margin: 6px 0;">$env:OLLAMA_ORIGINS="https://en.wikipedia.org,https://*.wikipedia.org" ollama serve</pre>
-						</details>
-						<details style="cursor: pointer;">
-							<summary style="font-weight: 600; margin-bottom: 6px;">macOS/Linux</summary>
-							Add to <code>~/.bashrc</code> or <code>~/.zshrc</code>:
-							<pre style="background: #2d2d2d; color: #f8f8f2; padding: 8px; border-radius: 4px; font-size: 0.8em; margin: 6px 0;">export OLLAMA_ORIGINS="https://en.wikipedia.org,https://*.wikipedia.org"</pre>
-							Then: <code>source ~/.bashrc && ollama serve</code>
-						</details>
-					</div>
-				</div>
-
-				<div class="settings-section">
-					<div class="settings-section-title">Quick Info</div>
-					<div class="settings-section-desc" style="font-size: 0.9em;">
-						<strong>Get Ollama:</strong> <a href="https://ollama.com" target="_blank" style="color: #667eea; font-weight: bold;">ollama.com</a>
-						<br><strong>Popular models:</strong> llama3.2, mistral, gemma2, qwen2.5
-						<br><strong>Detects:</strong> Vandalism, spam, POV, attacks, copyright issues, policy violations
-					</div>
-				</div>
-			`;
-
-		// Enable/disable toggle
-		this.createToggle(
-			this.contentContainer.querySelector("#enable-ollama-ai"),
-			this.wikishield.options.enableOllamaAI,
-			(newValue) => {
-				this.wikishield.options.enableOllamaAI = newValue;
-
-				// Initialize or destroy Ollama AI instance
-				if (newValue) {
-					this.wikishield.ollamaAI = new WikiShieldOllamaAI(
-						this.wikishield.options.ollamaServerUrl,
-						this.wikishield.options.ollamaModel,
-						{
-							enableOllamaAI: this.wikishield.options.enableOllamaAI,
-							enableEditAnalysis: this.wikishield.options.enableEditAnalysis
-						}
-					);
-					this.wikishield.logger.log("Ollama AI integration enabled");
-				} else {
-					this.wikishield.ollamaAI = null;
-					this.wikishield.logger.log("Ollama AI integration disabled");
-				}
-			}
-		);
-
-		// Server URL input handler
-		const urlInput = this.contentContainer.querySelector("#ollama-url-input");
-		urlInput.addEventListener('change', () => {
-			this.wikishield.options.ollamaServerUrl = urlInput.value.trim();
-			if (this.wikishield.ollamaAI) {
-				this.wikishield.ollamaAI.serverUrl = this.wikishield.options.ollamaServerUrl;
-			}
-			this.wikishield.logger.log(`Ollama server URL updated: ${this.wikishield.options.ollamaServerUrl}`);
-		});
-
-		// Test connection button
-		const testBtn = this.contentContainer.querySelector("#test-connection-btn");
-		const statusSpan = this.contentContainer.querySelector("#connection-status");
-		testBtn.addEventListener('click', async () => {
-			// Cancel all active AI requests
-			if (this.wikishield.ollamaAI) {
-				this.wikishield.ollamaAI.cancelAllAnalyses();
-			}
-
-			statusSpan.innerHTML = '<span style="color: #ffc107;">Testing...</span>';
-			testBtn.disabled = true;
-
-			const tempAI = new WikiShieldOllamaAI(this.wikishield.options.ollamaServerUrl, "", {});
-			const connected = await tempAI.testConnection();
-
-			if (connected) {
-				statusSpan.innerHTML = '<span style="color: #28a745;"><span class="fa fa-check-circle"></span> Connected!</span>';
-			} else {
-				statusSpan.innerHTML = `
-						<span style="color: #dc3545;">
-							<span class="fa fa-times-circle"></span> Failed to connect
-							<br><small style="font-size: 0.85em;">Make sure Ollama is running with CORS enabled (see instructions above)</small>
-						</span>
-					`;
-			}
-			testBtn.disabled = false;
-		});
-
-		// Refresh models button
-		const refreshBtn = this.contentContainer.querySelector("#refresh-models-btn");
-		const modelsStatus = this.contentContainer.querySelector("#models-status");
-		const modelsContainer = this.contentContainer.querySelector("#models-container");
-
-		refreshBtn.addEventListener('click', async () => {
-			// Cancel all active AI requests
-			if (this.wikishield.ollamaAI) {
-				this.wikishield.ollamaAI.cancelAllAnalyses();
-			}
-
-			modelsStatus.innerHTML = '<span style="color: #ffc107;">Loading...</span>';
-			refreshBtn.disabled = true;
-
-			try {
-				const tempAI = new WikiShieldOllamaAI(this.wikishield.options.ollamaServerUrl, "", {});
-				const models = await tempAI.fetchModels();
-
-				if (models.length === 0) {
-					modelsContainer.innerHTML = '<div style="color: #dc3545;">No models found. Please install models using: <code>ollama pull [model-name]</code></div>';
-					modelsStatus.innerHTML = '<span style="color: #dc3545;">No models found</span>';
-				} else {
-					modelsStatus.innerHTML = `<span style="color: #28a745;"><span class="fa fa-check-circle"></span> Found ${models.length} model(s)</span>`;
-
-					let modelsHTML = '<div style="display: grid; gap: 8px; margin-top: 8px;">';
-					models.forEach(model => {
-						const isSelected = model.name === this.wikishield.options.ollamaModel;
-						const sizeGB = (model.size / 1024 / 1024 / 1024).toFixed(1);
-						modelsHTML += `
-								<div class="ollama-model-item" data-model="${model.name}" style="
-									padding: 12px;
-									border: 2px solid ${isSelected ? '#667eea' : 'rgba(128, 128, 128, 0.3)'};
-									border-radius: 6px;
-									cursor: pointer;
-									background: ${isSelected ? 'rgba(102, 126, 234, 0.15)' : 'transparent'};
-									transition: all 0.2s;
-								">
-									<div style="display: flex; align-items: center; gap: 8px;">
-										<span class="fa ${isSelected ? 'fa-check-circle' : 'fa-circle'}" style="color: ${isSelected ? '#667eea' : 'rgba(128, 128, 128, 0.5)'};"></span>
-										<strong style="flex: 1;">${model.name}</strong>
-										<span style="font-size: 0.85em; opacity: 0.7;">${sizeGB} GB</span>
-									</div>
-									<div style="font-size: 0.85em; opacity: 0.6; margin-top: 4px;">
-										Modified: ${new Date(model.modified_at).toLocaleDateString()}
-									</div>
-								</div>
-							`;
-					});
-					modelsHTML += '</div>';
-					modelsContainer.innerHTML = modelsHTML;
-
-					// Add click handlers for model selection
-					modelsContainer.querySelectorAll('.ollama-model-item').forEach(item => {
-						item.addEventListener('click', () => {
-							// Cancel all active AI requests when switching models
-							if (this.wikishield.ollamaAI) {
-								this.wikishield.ollamaAI.cancelAllAnalyses();
-							}
-
-							const modelName = item.dataset.model;
-							this.wikishield.options.ollamaModel = modelName;
-							if (this.wikishield.ollamaAI) {
-								this.wikishield.ollamaAI.model = modelName;
-							}
-							this.wikishield.logger.log(`Ollama model selected: ${modelName}`);
-
-							// Update UI
-							modelsContainer.querySelectorAll('.ollama-model-item').forEach(i => {
-								i.style.border = '2px solid rgba(128, 128, 128, 0.3)';
-								i.style.background = 'transparent';
-								i.querySelector('.fa').classList.remove('fa-check-circle');
-								i.querySelector('.fa').classList.add('fa-circle');
-								i.querySelector('.fa').style.color = 'rgba(128, 128, 128, 0.5)';
-							});
-							item.style.border = '2px solid #667eea';
-							item.style.background = 'rgba(102, 126, 234, 0.15)';
-							item.querySelector('.fa').classList.remove('fa-circle');
-							item.querySelector('.fa').classList.add('fa-check-circle');
-							item.querySelector('.fa').style.color = '#667eea';
-						});
-
-						// Hover effects
-						item.addEventListener('mouseenter', () => {
-							if (item.dataset.model !== this.wikishield.options.ollamaModel) {
-								item.style.borderColor = '#667eea';
-							}
-						});
-						item.addEventListener('mouseleave', () => {
-							if (item.dataset.model !== this.wikishield.options.ollamaModel) {
-								item.style.borderColor = 'rgba(128, 128, 128, 0.3)';
-							}
-						});
-					});
-				}
-			} catch (err) {
-				modelsContainer.innerHTML = `
-						<div class="error-box" style="color: #721c24; padding: 12px; background: #fff3cd20; border-radius: 6px; border-left: 4px solid #dc3545;">
-							<strong>Error:</strong> ${err.message}
-							<br><br>
-							<strong>Troubleshooting:</strong>
-							<ul style="margin: 8px 0; padding-left: 20px;">
-								<li>Make sure Ollama is running</li>
-								<li>Check that CORS is enabled (see instructions above)</li>
-								<li>Verify the server URL is correct</li>
-								<li>Try the "Test Connection" button first</li>
-							</ul>
-						</div>
-					`;
-				modelsStatus.innerHTML = '<span style="color: #dc3545;"><span class="fa fa-times-circle"></span> Error loading models</span>';
-			}
-
-			refreshBtn.disabled = false;
-		});
-	}
-
-	openAutoReporting() {
-		this.wikishield.options.selectedAutoReportReasons ??= { };
-		this.renderComponent(
-			h(AutoReportingSettings, {
-				enableAutoReporting: this.wikishield.options.enableAutoReporting,
-				autoReportReasons: Object.keys(warningsLookup).filter(title => !getWarningFromLookup(title).onlyWarn),
-				selectedAutoReportReasons: this.wikishield.options.selectedAutoReportReasons,
-
-				onEnableChange: (newValue) => {
-					this.wikishield.options.enableAutoReporting = newValue;
-				},
-				onWarningToggle: (key, isEnabled) => {
-					this.wikishield.options.selectedAutoReportReasons[key] = isEnabled;
-				}
-			})
-		);
-	}
-
-	/**
-	* Open gadgets settings seciton
-	*/
-	openGadgets() {
-		this.clearContent();
-		this.contentContainer.innerHTML = `
 				<div class="settings-toggles-section">
 					<div class="settings-section-header">
-						<span class="settings-section-header-icon">Simple</span>
-						<span></span>
-					</div>
-                    <div class="settings-section compact inline" id="username-highlighting-toggle">
-						<div class="settings-section-content">
-							<div class="settings-section-title">Highlight username</div>
-							<div class="settings-section-desc">If your username appears in a diff, the edit is highlighted in the queue and outlined in the diff.</div>
-						</div>
-					</div>
-                    <div class="settings-section compact inline" id="welcome-latin-toggle">
-						<div class="settings-section-content">
-							<div class="settings-section-title">Latin welcome</div>
-							<div class="settings-section-desc">When a Latin character is detected in a username, the Latin welcome template will be used instead of the default.</div>
-						</div>
-					</div>
-					<div class="settings-section compact inline" id="auto-welcome-toggle">
-						<div class="settings-section-content">
-							<div class="settings-section-title">Automatic welcoming of new users</div>
-							<div class="settings-section-desc">Automatically welcome new users with empty talk pages when moving past their constructive edits</div>
-						</div>
-					</div>
-				</div>
-
-				<div class="settings-toggles-section">
-					<div class="settings-section-header">
-						<span class="settings-section-header-icon">AI</span>
-						<span>Requires AI Analysis to be enabled</span>
+						<span class="settings-section-header-icon">Tools</span>
 					</div>
 					<div class="settings-section compact inline" id="edit-analysis-toggle">
 						<div class="settings-section-content">
@@ -1273,43 +1312,361 @@ export class WikiShieldSettingsInterface {
 						</div>
 					</div>
 				</div>
+
+				<div class="settings-section" id="ollama-server-url">
+					<div class="settings-section-title">Server URL</div>
+					<div class="settings-section-desc">The URL of your local Ollama server (default: <code>${defaults.Ollama.server}</code>)</div>
+					<div class="text-input-container">
+						<input type="text" id="ollama-url-input" value="${settings.Ollama.server}" placeholder="${defaults.Ollama.server}" autoComplete="off">
+						<button id="test-connection-btn">Test Connection</button>
+					</div>
+					<div class="settings-section compact connection-status-container">
+						<p id="connection-status"></p>
+					</div>
+				</div>
+
+				<div class="settings-section" id="ollama-model-select">
+					<div class="settings-section-title">
+						Model Selection
+						<button id="refresh-models-btn" style="float: right; font-size: 1rem;">
+							<span class="fa fa-sync"></span> Refresh Models
+						</button>
+					</div>
+					<div class="settings-section-desc">Select which Ollama model to use for edit analysis</div>
+					<div class="settings-section compact models-container">
+						<p id="models-status">Click "Refresh Models" to load available models</p>
+						<div id="models"></div>
+					</div>
+				</div>
+
+				<div class="settings-section" id="ollama-cors-setup">
+					<div class="settings-section-title">CORS Setup Required</div>
+					<div class="settings-section-desc">
+						<strong>Environment Variable:</strong> <code>OLLAMA_ORIGINS</code><br>
+						<strong>Value:</strong> <code>https://*.wikipedia.org</code>
+
+						<br><br>
+
+						<details>
+							<summary><strong>Windows (Permanent)</strong></summary>
+							<ol style="margin: 8px 0; padding-left: 20px; font-size: 0.85em;">
+								<li>Open <em>System Properties → Environment Variables</em></li>
+								<li>Create a new variable named <code>OLLAMA_ORIGINS</code></li>
+								<li>Set the value to <code>https://*.wikipedia.org</code></li>
+								<li>Restart Ollama</li>
+							</ol>
+						</details>
+
+						<details>
+							<summary><strong>Windows (Temporary)</strong></summary>
+<pre>
+$env:OLLAMA_ORIGINS="https://*.wikipedia.org"
+ollama serve
+</pre>
+						</details>
+
+						<details>
+							<summary><strong>macOS / Linux</strong></summary>
+							Add the following to <code>~/.bashrc</code> or <code>~/.zshrc</code>:
+							<pre>export OLLAMA_ORIGINS="https://*.wikipedia.org"</pre>
+							Then run:
+							<pre>source ~/.bashrc && ollama serve</pre>
+						</details>
+					</div>
+				</div>
 			`;
 
 		this.createToggle(
-			this.contentContainer.querySelector("#username-highlighting-toggle"),
-			this.wikishield.options.enableUsernameHighlighting,
-			(newValue) => {
-				this.wikishield.options.enableUsernameHighlighting = newValue;
-			}
-		);
-
-		this.createToggle(
-			this.contentContainer.querySelector("#welcome-latin-toggle"),
-			this.wikishield.options.enableWelcomeLatin,
-			(newValue) => {
-				this.wikishield.options.enableWelcomeLatin = newValue;
-			}
-		);
-		this.createToggle(
-			this.contentContainer.querySelector("#auto-welcome-toggle"),
-			this.wikishield.options.enableAutoWelcome,
-			(newValue) => {
-				this.wikishield.options.enableAutoWelcome = newValue;
-			}
-		);
-
-		this.createToggle(
 			this.contentContainer.querySelector("#edit-analysis-toggle"),
-			this.wikishield.options.enableEditAnalysis,
+			settings.edit_analysis.enabled,
 			(newValue) => {
-				this.wikishield.options.enableEditAnalysis = newValue;
+				settings.edit_analysis.enabled = newValue;
 			}
 		);
 		this.createToggle(
 			this.contentContainer.querySelector("#username-analysis-toggle"),
-			this.wikishield.options.enableUsernameAnalysis,
+			settings.username_analysis.enabled,
 			(newValue) => {
-				this.wikishield.options.enableUsernameAnalysis = newValue;
+				settings.username_analysis.enabled = newValue;
+			}
+		);
+
+		// Enable/disable toggle
+		this.createToggle(
+			this.contentContainer.querySelector("#enable-ollama-ai"),
+			settings.enabled,
+			(newValue) => {
+				settings.enabled = newValue;
+
+				if (newValue) {
+					switch (settings.provider) {
+						case "Ollama": {
+							this.wikishield.AI = new AI.providers.Ollama(
+								this.wikishield,
+								settings.Ollama,
+							);
+						} break;
+						default: {
+							this.wikishield.AI?.cancel.all(true);
+							this.wikishield.AI = null;
+						} break;
+					}
+				} else {
+					this.wikishield.AI?.cancel.all(true);
+					this.wikishield.AI = null;
+				}
+			}
+		);
+
+		// Server URL input handler
+		const urlInput = this.contentContainer.querySelector("#ollama-url-input");
+		urlInput.addEventListener('change', () => {
+			settings.Ollama.server = urlInput.value.trim();
+			if (settings.provider === "Ollama" && this.wikishield.AI) {
+				this.wikishield.AI.cancel.all(true);
+			}
+		});
+
+		// Test connection button
+		const testBtn = this.contentContainer.querySelector("#test-connection-btn");
+		const statusSpan = this.contentContainer.querySelector("#connection-status");
+		const statusContainer = statusSpan.parentElement;
+
+		testBtn.addEventListener('click', async () => {
+			// Cancel all active AI requests
+			this.wikishield.AI?.cancel.all(true);
+
+			statusContainer.classList.add("testing");
+			statusContainer.classList.remove("connected", "failed");
+
+			statusSpan.innerHTML = 'Testing...';
+			testBtn.disabled = true;
+
+			let tempAI;
+			switch (settings.provider) {
+				case "Ollama": {
+					tempAI = new AI.providers.Ollama(this.wikishield, settings.Ollama);
+				} break;
+			}
+
+			const connected = tempAI instanceof AI && await tempAI.test();
+			if (connected) {
+				statusContainer.classList.add("connected");
+				statusContainer.classList.remove("testing", "failed");
+
+				statusSpan.innerHTML = '<span class="fa fa-check-circle"></span> Connected!';
+			} else {
+				statusContainer.classList.add("failed");
+				statusContainer.classList.remove("testing", "connected");
+
+				statusSpan.innerHTML = `
+						<span class="fa fa-times-circle"></span> Failed to connect
+						<br><small>Make sure Ollama is running with CORS enabled (see instructions below)</small>
+					`;
+			}
+
+			testBtn.disabled = false;
+		});
+
+		// Refresh models button
+		const refreshBtn = this.contentContainer.querySelector("#refresh-models-btn");
+		const modelsStatus = this.contentContainer.querySelector("#models-status");
+
+		const $models = this.contentContainer.querySelector("#models");
+		const $modelsContainer = $models.parentElement;
+
+		refreshBtn.addEventListener('click', async () => {
+			// Cancel all active AI requests
+			this.wikishield.AI?.cancel.all(true);
+
+			$modelsContainer.classList.add("searching");
+			$modelsContainer.classList.remove("none", "error");
+
+			modelsStatus.innerHTML = 'Searching...';
+
+			refreshBtn.disabled = true;
+
+			try {
+				let tempAI;
+				switch (settings.provider) {
+					case "Ollama": {
+						tempAI = new AI.providers.Ollama(this.wikishield, settings.Ollama);
+					} break;
+				}
+
+				const models = (tempAI instanceof AI && await tempAI.models()) || [ ];
+				if (models.length === 0) {
+					$modelsContainer.classList.add("none");
+					$modelsContainer.classList.remove("searching", "error");
+
+					modelsStatus.innerHTML = 'No models found';
+				} else {
+					$modelsContainer.classList.remove("searching", "none", "error");
+
+					modelsStatus.innerHTML = `<span class="fa fa-check-circle"></span> Found ${models.length} model${models.length > 1 ? 's' : ''}`;
+
+					$models.innerHTML = "";
+					models.forEach(model => {
+						const isSelected = model.name === this.wikishield.storage.data.settings.AI.Ollama.model;
+						const size = this.wikishield.util.formatBytes(model.size);
+
+						const $model = document.createElement("div");
+						$model.classList.add("model");
+						$model.classList.toggle("selected", isSelected);
+						$model.dataset.model = model.name;
+
+						const $top = document.createElement("div");
+						$top.classList.add("model-top");
+						$model.appendChild($top);
+
+						const $button = document.createElement("span");
+						$button.classList.add("indicator", "fa", isSelected ? "fa-check-circle" : "fa-circle");
+						$top.appendChild($button);
+
+						const $name = document.createElement("span");
+						$name.classList.add("model-name");
+						$name.textContent = model.name;
+						$top.appendChild($name);
+
+						// i don't feel like figuring out the css to truly center the model name, so just add an invisible element to take up space
+						const $pseudoButton = document.createElement("span");
+						$pseudoButton.classList.add("pseudo-indicator", "fa", "fa-circle");
+						$top.appendChild($pseudoButton);
+
+						const $bottom = document.createElement("div");
+						$bottom.classList.add("model-bottom");
+						$model.appendChild($bottom);
+
+						const $size = document.createElement("span");
+						$size.classList.add("model-size");
+						$size.textContent = size;
+						$bottom.appendChild($size);
+
+						const $modified = document.createElement("div");
+						$modified.classList.add("model-modified");
+						$modified.textContent = new Date(model.modified_at).toLocaleDateString();
+						$bottom.appendChild($modified);
+
+						$models.appendChild($model);
+
+						$model.addEventListener('click', () => {
+							this.wikishield.AI?.cancel.all(true);
+
+							const modelName = model.name;
+							switch (settings.provider) {
+								case "Ollama": {
+									settings.Ollama.model = modelName;
+								} break;
+							}
+
+							$models.querySelectorAll(".model.selected").forEach(elem => {
+								elem.classList.remove("selected");
+
+								const $indicator = elem.querySelector(".indicator");
+								$indicator.classList.remove("fa-check-circle");
+								$indicator.classList.add("fa-circle");
+							});
+
+							$model.classList.add("selected");
+
+							const $indicator = $model.querySelector(".indicator");
+							$indicator.classList.remove("fa-circle");
+							$indicator.classList.add("fa-check-circle");
+						});
+					});
+				}
+			} catch (err) {
+				$modelsContainer.classList.add("error");
+				$modelsContainer.classList.remove("searching", "none");
+
+				modelsStatus.innerHTML = '<span class="fa fa-times-circle"></span> Error loading models';
+			}
+
+			refreshBtn.disabled = false;
+		});
+	}
+
+	openAutoReporting() {
+		this.renderComponent(
+			h(AutoReportingSettings, {
+				wikishield: this.wikishield,
+				enableAutoReporting: this.wikishield.storage.data.settings.auto_report.enabled,
+				autoReportReasons: Object.keys(warningsLookup).filter(title => !getWarningFromLookup(title).onlyWarn),
+				selectedAutoReportReasons: this.wikishield.storage.data.settings.auto_report.for,
+
+				onEnableChange: (newValue) => {
+					this.wikishield.storage.data.settings.auto_report.enabled = newValue;
+				},
+				onWarningToggle: (key, isEnabled) => {
+					if (isEnabled) {
+						this.wikishield.storage.data.settings.auto_report.for.add(key);
+					} else {
+						this.wikishield.storage.data.settings.auto_report.for.delete(key);
+					}
+				}
+			})
+		);
+	}
+
+	/**
+	* Open gadgets settings seciton
+	*/
+	openGadgets() {
+		const settings = this.wikishield.storage.data.settings;
+
+		this.clearContent();
+		this.contentContainer.innerHTML = `
+				<div class="settings-toggles-section">
+					<div class="settings-section-title">Gadgets</div>
+					<div class="settings-section-desc">Toggle various Wikishield features.</div>
+					<div class="settings-section compact inline" id="auto-welcome-toggle">
+						<div class="settings-section-content">
+							<div class="settings-section-title">Automatic welcoming of new users</div>
+							<div class="settings-section-desc">Automatically welcome new users with empty talk pages when moving past their constructive edits</div>
+						</div>
+					</div>
+				</div>
+				<div class="settings-toggles-section">
+					<div class="settings-section-title">Username Highlighting</div>
+					<div class="settings-section compact inline" id="username-highlighting-toggle">
+						<div class="settings-section-content">
+							<div class="settings-section-title">Enable username highlighting</div>
+							<div class="settings-section-desc">Highlights usernames in edit summaries, edit diffs, and user creation logs.</div>
+						</div>
+					</div>
+					<div class="settings-section compact inline" id="username-highlighting-mode-toggle">
+						<div class="settings-section-content">
+							<div class="settings-section-title">Toggle fuzzy matching mode</div>
+							<div class="settings-section-desc">
+								When enabled, highlights similar usernames. Not recommended for users with short usernames.<br/>
+								<strong>NOTE:</strong> This may cause performance issues for those with long usernames, or users on weaker devices.
+							</div>
+						</div>
+					</div>
+				</div>
+			`;
+
+		this.createToggle(
+			this.contentContainer.querySelector("#auto-welcome-toggle"),
+			settings.auto_welcome.enabled,
+			(newValue) => {
+				settings.auto_welcome.enabled = newValue;
+			}
+		);
+
+		this.createToggle(
+			this.contentContainer.querySelector("#username-highlighting-toggle"),
+			settings.username_highlighting.enabled,
+			(newValue) => {
+				settings.username_highlighting.enabled = newValue;
+				this.wikishield.interface.renderQueue();
+			}
+		);
+		this.createToggle(
+			this.contentContainer.querySelector("#username-highlighting-mode-toggle"),
+			settings.username_highlighting.fuzzy,
+			(newValue) => {
+				settings.username_highlighting.fuzzy = newValue;
 			}
 		);
 	}
@@ -1336,13 +1693,13 @@ export class WikiShieldSettingsInterface {
 			}
 		};
 
-		const expiryString = this.wikishield.options.whitelistExpiry[key];
+		const expiryString = this.wikishield.storage.data.settings.expiry.whitelist[key];
 		this.clearContent();
 		this.contentContainer.innerHTML = `
 				<div class="settings-section">
 					<div class="settings-section-title">
 						Whitelisted ${key}
-						<div title="Whitelist expiry ${key}" description="${descriptionMap[key].short}" style="float: right; font-size: 0.8em; font-weight: normal; opacity: 0.7;">
+						<div title="Whitelist expiry for ${key}" description="${descriptionMap[key].short}" style="float: right; font-size: 0.8em; font-weight: normal; opacity: 0.7;">
 							<select id="whitelist-expiry">
 								<option value="none">None</option>
 								<option value="1 hour">1 hour</option>
@@ -1356,8 +1713,8 @@ export class WikiShieldSettingsInterface {
 						</div>
 					</div>
 					<div class="settings-section-desc">${descriptionMap[key].long} (currently: ${expiryString}).</div>
-					<div class="user-input-container">
-						<input type="text" id="whitelist-input" placeholder="Enter ${descriptionMap[key].input} to whitelist..." class="username-input">
+					<div class="text-input-container">
+						<input type="text" id="whitelist-input" placeholder="Enter ${descriptionMap[key].input} to whitelist..." class="username-input" autoComplete="off">
 						<button id="add-whitelist" class="add-user-button">
 							${descriptionMap[key].button}
 						</button>
@@ -1373,16 +1730,16 @@ export class WikiShieldSettingsInterface {
 		const add = () => {
 			const value = input.value.trim();
 			if (value) {
-				const expiryMs = this.wikishield.util.expiryToMilliseconds(this.wikishield.options.whitelistExpiry[key]);
+				const expiryMs = this.wikishield.util.expiryToMilliseconds(this.wikishield.storage.data.settings.expiry.whitelist[key]);
 
 				const now = Date.now();
-				this.wikishield.whitelist[key].set(value, [ now, now + expiryMs ]);
+				this.wikishield.storage.data.whitelist[key].set(value, [ now, now + expiryMs ]);
 
-				wikishield.statistics.whitelist++;
+				this.wikishield.storage.data.items_whitelisted.total++;
+				this.wikishield.storage.data.items_whitelisted[key]++;
 
 				input.value = "";
 				this.openWhitelist(key); // Refresh the list
-				this.wikishield.queue.playSuccessSound();
 			}
 		};
 
@@ -1392,9 +1749,9 @@ export class WikiShieldSettingsInterface {
 		});
 
 		const whitelistExpiry = this.contentContainer.querySelector("#whitelist-expiry");
-		whitelistExpiry.value = this.wikishield.options.whitelistExpiry[key];
+		whitelistExpiry.value = this.wikishield.storage.data.settings.expiry.whitelist[key];
 		whitelistExpiry.addEventListener("change", () => {
-			this.wikishield.options.whitelistExpiry[key] = whitelistExpiry.value;
+			this.wikishield.storage.data.settings.expiry.whitelist[key] = whitelistExpiry.value;
 		});
 
 		this.createWhitelistList(container, key);
@@ -1408,7 +1765,7 @@ export class WikiShieldSettingsInterface {
 		container.innerHTML = "";
 
 		// Sort by most recent first
-		const sortedEntries = [ ...this.wikishield.whitelist[key].entries() ].sort((a, b) => b[1][1] - a[1][1]);
+		const sortedEntries = [ ...this.wikishield.storage.data.whitelist[key].entries() ].sort((a, b) => b[1][1] - a[1][1]);
 
 		const createHref = value => {
 			switch (key) {
@@ -1423,14 +1780,6 @@ export class WikiShieldSettingsInterface {
 
 		for (const [ whitelist, time ] of sortedEntries) {
 			const item = document.createElement("div");
-			item.style.display = "flex";
-			item.style.justifyContent = "space-between";
-			item.style.alignItems = "center";
-			item.style.padding = "8px 12px";
-			item.style.marginBottom = "6px";
-			item.style.background = "rgba(255, 255, 255, 0.05)";
-			item.style.borderRadius = "8px";
-			item.style.border = "1px solid rgba(255, 255, 255, 0.1)";
 
 			const date = new Date(time[0]);
 			const dateStr = date.toLocaleDateString() + " " + date.toLocaleTimeString();
@@ -1441,17 +1790,17 @@ export class WikiShieldSettingsInterface {
 
 			container.appendChild(item);
 			item.innerHTML = `
-					<div style="display: flex; flex-direction: column; gap: 4px;">
-						<a target="_blank" href="${createHref(whitelist)}" style="font-weight: 600;">${whitelist}</a>
+					<div>
+						<a target="_blank" href="${createHref(whitelist)}">${whitelist}</a>
 						<span style="font-size: 0.85em; opacity: 0.7;">Added: ${dateStr}</span>
 						<span style="font-size: 0.85em; opacity: 0.7; color: ${isExpired ? '#ff6b6b' : '#51cf66'};">
 							${isExpired ? 'Expired' : 'Expires'}: ${expiresStr}
 						</span>
 					</div>
-					<div class="add-action-button remove-button">Remove</div>
+					<button class="add-action-button remove-button">Remove</button>
 				`;
 			item.querySelector(".remove-button").addEventListener("click", () => {
-				this.wikishield.whitelist[key].delete(whitelist);
+				this.wikishield.storage.data.whitelist[key].delete(whitelist);
 				item.remove();
 
 				this.createWhitelistList(container, key); // Refresh the list
@@ -1464,38 +1813,38 @@ export class WikiShieldSettingsInterface {
 	}
 
 	/**
-	* Open highlighted settings section
+	* Open highlight settings section
 	*/
-	openHighlighted(key) {
+	openHighlight(key) {
 		const descriptionMap = {
 			users: {
 				button: "Add User",
 				input: "username",
 				short: "How long to highlight a user after issuing a warning",
-				long: "This is a list of users you have highlighted. Edits by these users will appear before other edits in your queue. Highlights expire based on your configured expiry time."
+				long: "This is a list of users you have highlight. Edits by these users will appear before other edits in your queue. Highlights expire based on your configured expiry time."
 			},
 			pages: {
 				button: "Add Page",
 				input: "page title",
 				short: "How long to highlight a page",
-				long: "This is a list of pages you have highlighted. Edits on these pages will appear before other edits in your queue. Highlights expire based on your configured expiry time."
+				long: "This is a list of pages you have highlight. Edits on these pages will appear before other edits in your queue. Highlights expire based on your configured expiry time."
 			},
 			tags: {
 				button: "Add Tag",
 				input: "tag id",
 				short: "How long to highlight a tag",
-				long: "This is a list of tags you have highlighted. Edits with these tags will appear before other edits in your queue. Highlights expire based on your configured expiry time."
+				long: "This is a list of tags you have highlight. Edits with these tags will appear before other edits in your queue. Highlights expire based on your configured expiry time."
 			}
 		};
 
-		const expiryString = this.wikishield.options.highlightedExpiry[key];
+		const expiryString = this.wikishield.storage.data.settings.expiry.highlight[key];
 		this.clearContent();
 		this.contentContainer.innerHTML = `
 				<div class="settings-section">
 					<div class="settings-section-title">
 						Highlighted ${key}
 						<div title="Highlight expiry for warned ${key}" description="${descriptionMap[key].short}" style="float: right; font-size: 0.8em; font-weight: normal; opacity: 0.7;">
-							<select id="highlighted-expiry">
+							<select id="highlight-expiry">
 								<option value="none">None</option>
 								<option value="1 hour">1 hour</option>
 								<option value="1 day">1 day</option>
@@ -1508,9 +1857,9 @@ export class WikiShieldSettingsInterface {
 						</div>
 					</div>
 					<div class="settings-section-desc">${descriptionMap[key].long} (currently: ${expiryString}).</div>
-					<div class="user-input-container">
-						<input type="text" id="highlighted-input" placeholder="Enter ${descriptionMap[key].input} to highlight..." class="username-input">
-						<button id="add-highlighted" class="add-user-button">
+					<div class="text-input-container">
+						<input type="text" id="highlight-input" placeholder="Enter ${descriptionMap[key].input} to highlight..." class="username-input" autoComplete="off">
+						<button id="add-highlight" class="add-user-button">
 							${descriptionMap[key].button}
 						</button>
 					</div>
@@ -1519,22 +1868,22 @@ export class WikiShieldSettingsInterface {
 			`;
 
 		const container = this.contentContainer.querySelector(".user-container");
-		const input = this.contentContainer.querySelector("#highlighted-input");
-		const button = this.contentContainer.querySelector("#add-highlighted");
+		const input = this.contentContainer.querySelector("#highlight-input");
+		const button = this.contentContainer.querySelector("#add-highlight");
 
 		const add = () => {
 			const value = input.value.trim();
 			if (value) {
-				const expiryMs = this.wikishield.util.expiryToMilliseconds(this.wikishield.options.highlightedExpiry[key]);
+				const expiryMs = this.wikishield.util.expiryToMilliseconds(this.wikishield.storage.data.settings.expiry.highlight[key]);
 
 				const now = Date.now();
-				this.wikishield.highlighted[key].set(value, [ now, now + expiryMs ]);
+				this.wikishield.storage.data.highlight[key].set(value, [ now, now + expiryMs ]);
 
-				wikishield.statistics.highlighted++;
+				this.wikishield.storage.data.items_highlighted.total++;
+				this.wikishield.storage.data.items_highlighted[key]++;
 
 				input.value = "";
-				this.openHighlighted(key); // Refresh the list
-				this.wikishield.queue.playSuccessSound();
+				this.openHighlight(key); // Refresh the list
 			}
 		};
 
@@ -1543,24 +1892,24 @@ export class WikiShieldSettingsInterface {
 			if (e.key === "Enter") add();
 		});
 
-		const highlightedExpiry = this.contentContainer.querySelector("#highlighted-expiry");
-		highlightedExpiry.value = this.wikishield.options.highlightedExpiry[key];
-		highlightedExpiry.addEventListener("change", () => {
-			this.wikishield.options.highlightedExpiry[key] = highlightedExpiry.value;
+		const highlightExpiry = this.contentContainer.querySelector("#highlight-expiry");
+		highlightExpiry.value = this.wikishield.storage.data.settings.expiry.highlight[key];
+		highlightExpiry.addEventListener("change", () => {
+			this.wikishield.storage.data.settings.expiry.highlight[key] = highlightExpiry.value;
 		});
 
-		this.createHighlightedList(container, key);
+		this.createHighlightList(container, key);
 	}
 
 	/**
 	* Create a list of highlights with expiration times
 	* @param {HTMLElement} container
 	*/
-	createHighlightedList(container, key) {
+	createHighlightList(container, key) {
 		container.innerHTML = "";
 
 		// Sort by most recent first
-		const sortedEntries = [ ...this.wikishield.highlighted[key].entries() ].sort((a, b) => b[1][1] - a[1][1]);
+		const sortedEntries = [ ...this.wikishield.storage.data.highlight[key].entries() ].sort((a, b) => b[1][1] - a[1][1]);
 
 		const createHref = value => {
 			switch (key) {
@@ -1575,14 +1924,6 @@ export class WikiShieldSettingsInterface {
 
 		for (const [ highlight, time ] of sortedEntries) {
 			const item = document.createElement("div");
-			item.style.display = "flex";
-			item.style.justifyContent = "space-between";
-			item.style.alignItems = "center";
-			item.style.padding = "8px 12px";
-			item.style.marginBottom = "6px";
-			item.style.background = "rgba(255, 255, 255, 0.05)";
-			item.style.borderRadius = "8px";
-			item.style.border = "1px solid rgba(255, 255, 255, 0.1)";
 
 			const date = new Date(time[0]);
 			const dateStr = date.toLocaleDateString() + " " + date.toLocaleTimeString();
@@ -1593,25 +1934,25 @@ export class WikiShieldSettingsInterface {
 
 			container.appendChild(item);
 			item.innerHTML = `
-					<div style="display: flex; flex-direction: column; gap: 4px;">
-						<a target="_blank" href="${createHref(highlight)}" style="font-weight: 600;">${highlight}</a>
+					<div>
+						<a target="_blank" href="${createHref(highlight)}">${highlight}</a>
 						<span style="font-size: 0.85em; opacity: 0.7;">Added: ${dateStr}</span>
 						<span style="font-size: 0.85em; opacity: 0.7; color: ${isExpired ? '#ff6b6b' : '#51cf66'};">
 							${isExpired ? 'Expired' : 'Expires'}: ${expiresStr}
 						</span>
 					</div>
-					<div class="add-action-button remove-button">Remove</div>
+					<button class="add-action-button remove-button">Remove</button>
 				`;
 			item.querySelector(".remove-button").addEventListener("click", () => {
-				this.wikishield.highlighted[key].delete(highlight);
+				this.wikishield.storage.data.highlight[key].delete(highlight);
 				item.remove();
 
-				this.createHighlightedList(container, key); // Refresh the list
+				this.createHighlightList(container, key); // Refresh the list
 			});
 		}
 
 		if (sortedEntries.length === 0) {
-			container.innerHTML = `<div style="opacity: 0.6; text-align: center; padding: 20px;">No ${key} highlighted</div>`;
+			container.innerHTML = `<div style="opacity: 0.6; text-align: center; padding: 20px;">No ${key} highlight</div>`;
 		}
 	}
 
@@ -1619,78 +1960,336 @@ export class WikiShieldSettingsInterface {
 	* Open statistics settings section
 	*/
 	openStatistics() {
-		const stats = this.wikishield.statistics;
-		const revertRate = stats.reviewed > 0 ? Math.round(stats.reverts / stats.reviewed * 1000) / 10 : 0;
-		const sessionTime = Date.now() - (stats.sessionStart || Date.now());
-		const hours = Math.floor(sessionTime / (1000 * 60 * 60));
-		const minutes = Math.floor((sessionTime % (1000 * 60 * 60)) / (1000 * 60));
-		const editsPerHour = hours > 0 ? Math.round(stats.reviewed / hours * 10) / 10 : 0;
+		const stats = this.wikishield.storage.data.statistics;
+
+		const formatTime = ms => {
+			const seconds = Math.floor(ms / 1000);
+
+			const days = Math.floor(seconds / 86400);
+			const hours = Math.floor(seconds / 3600);
+			const mins = Math.floor(seconds / 60);
+			const secs = seconds % 60;
+
+			let str = "";
+			if (days > 0) str += `${days}d `;
+			if (hours > 0) str += `${hours}h `;
+			if (mins > 0) str += `${mins}m `;
+			str += `${secs}s`;
+
+			return str.trim();
+		};
+
+		const sessionTime = this.wikishield.storage.data.statistics.session_time + (performance.now() - this.wikishield.loadTime);
 
 		this.clearContent();
 		this.contentContainer.innerHTML = `
 				<div class="settings-section">
-					<div class="settings-section-title">Statistics Overview</div>
+					<div class="settings-section-title">
+						Statistics Overview
+						<button id="reset-stats-button" style="float: right; font-size: 1rem; --background: 211, 51, 51;">Reset Statistics</button>
+					</div>
 					<div class="stats-grid">
 						<div class="stat-card">
-							<div class="stat-value">${stats.reviewed}</div>
-							<div class="stat-label">Edits Reviewed</div>
+							<div class="inside shimmer shimmer-border">
+								<div class="front">
+									<div class="stat-value">${stats.edits_reviewed.total}</div>
+									<div class="stat-label">Edits Reviewed</div>
+								</div>
+								<div class="back">
+									<div class="stat-sublabel">
+										You have thanked ${
+											((stats.edits_reviewed.thanked / stats.edits_reviewed.total * 100) || 0).toFixed(1)
+										}% of the edits you reviewed
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<div class="stat-card">
+							<div class="inside shimmer shimmer-border">
+								<div class="front">
+									<div class="stat-value">${stats.recent_changes_reviewed.total}</div>
+									<div class="stat-label">Recent Changes Reviewed</div>
+								</div>
+								<div class="back">
+									<div class="stat-sublabel">
+										Recent changes make up ${
+											((stats.recent_changes_reviewed.total / stats.edits_reviewed.total * 100) || 0).toFixed(1)
+										}% of your reviewed edits
+									</div>
+								</div>
+							</div>
 						</div>
 						<div class="stat-card">
-							<div class="stat-value">${stats.reverts}</div>
-							<div class="stat-label">Reverts Made</div>
-							<div class="stat-sublabel">${revertRate}% revert rate</div>
+							<div class="inside shimmer shimmer-border">
+								<div class="front">
+									<div class="stat-value">${stats.pending_changes_reviewed.total}</div>
+									<div class="stat-label">Pending Changes Reviewed</div>
+								</div>
+								<div class="back">
+									<div class="stat-sublabel">
+										You have accepted ${
+											stats.pending_changes_reviewed.accepted
+										} (${
+											((stats.pending_changes_reviewed.accepted / stats.pending_changes_reviewed.total * 100) || 0).toFixed(1)
+										}%) pending changes
+									</div>
+									<div class="stat-sublabel">
+										You stopped ${
+											stats.pending_changes_reviewed.rejected
+										} (${
+											((stats.pending_changes_reviewed.rejected / stats.pending_changes_reviewed.total * 100) || 0).toFixed(1)
+										}%) pending changes from entering the public eye
+									</div>
+									<div class="stat-sublabel">
+										Out of all the edits you've reviewed, ${
+											((stats.pending_changes_reviewed.total / stats.edits_reviewed.total * 100) || 0).toFixed(1)
+										}% of them were pending
+									</div>
+								</div>
+							</div>
 						</div>
 						<div class="stat-card">
-							<div class="stat-value">${stats.warnings}</div>
-							<div class="stat-label">Warnings Issued</div>
+							<div class="inside shimmer shimmer-border">
+								<div class="front">
+									<div class="stat-value">${stats.watchlist_changes_reviewed.total}</div>
+									<div class="stat-label">Watchlist Changes Reviewed</div>
+								</div>
+								<div class="back">
+									<div class="stat-sublabel">
+										${
+											((stats.watchlist_changes_reviewed.total / stats.edits_reviewed.total * 100) || 0).toFixed(1)
+										}% of your reviews came from your watchlist
+									</div>
+								</div>
+							</div>
 						</div>
 						<div class="stat-card">
-							<div class="stat-value">${stats.reports}</div>
-							<div class="stat-label">Reports Filed</div>
+							<div class="inside shimmer shimmer-border">
+								<div class="front">
+									<div class="stat-value">${stats.users_reviewed.total}</div>
+									<div class="stat-label">Users Reviewed</div>
+								</div>
+								<div class="back">
+									<div class="stat-sublabel">
+										${
+											((stats.users_reviewed.total / stats.edits_reviewed.total * 100) || 0).toFixed(1)
+										}% of your reviews were from the user creation log
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<div class="stat-card">
+							<div class="inside shimmer shimmer-border">
+								<div class="front">
+									<div class="stat-value">${stats.reverts_made.total}</div>
+									<div class="stat-label">Reverts Made</div>
+								</div>
+								<div class="back">
+									<div class="stat-sublabel">
+										${
+											((stats.reverts_made.total / stats.edits_reviewed.total * 100) || 0).toFixed(1)
+										}% of edits that cross your path are reverted
+									</div>
+									<div class="stat-sublabel">
+										You assumed good faith ${
+											((stats.reverts_made.good_faith / stats.reverts_made.total * 100) || 0).toFixed(1)
+										}% of the time
+									</div>
+									<div class="stat-sublabel">
+										${
+											((stats.reverts_made.from_recent_changes / stats.reverts_made.total * 100) || 0).toFixed(1)
+										}% of your reverts are from recent changes
+									</div>
+									<div class="stat-sublabel">
+										${
+											((stats.reverts_made.from_pending_changes / stats.reverts_made.total * 100) || 0).toFixed(1)
+										}% of your reverts were pending
+									</div>
+									<div class="stat-sublabel">
+										${
+											((stats.reverts_made.from_watchlist / stats.reverts_made.total * 100) || 0).toFixed(1)
+										}% of your reverts were from your watchlist
+									</div>
+									<div class="stat-sublabel">
+										and the last ${
+											((stats.reverts_made.from_loaded_edits / stats.reverts_made.total * 100) || 0).toFixed(1)
+										}% weren't even in your queue!
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<div class="stat-card">
+							<div class="inside shimmer shimmer-border">
+								<div class="front">
+									<div class="stat-value">${stats.users_welcomed.total}</div>
+									<div class="stat-label">Users Welcomed</div>
+								</div>
+								<div class="back">
+									<div class="stat-sublabel">
+										${stats.edits_reviewed.total === stats.users_welcomed.total ?
+											`You welcome every user whose edit you review! (${stats.users_welcomed.total})` :
+											`For every ${
+												((stats.edits_reviewed.total / stats.users_welcomed.total) || 0).toFixed(3)
+											} edits you review, you ${stats.users_welcomed.total === 0 ? "still won't " : ""}welcome a new user`
+										}
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<div class="stat-card">
+							<div class="inside shimmer shimmer-border">
+								<div class="front">
+									<div class="stat-value">${stats.warnings_issued.total}</div>
+									<div class="stat-label">Warnings Issued</div>
+								</div>
+								<div class="back">
+									<div class="stat-sublabel">
+										${
+											((stats.warnings_issued.level_1 / stats.warnings_issued.total * 100) || 0).toFixed(1)
+										}% were level 1
+									</div>
+									<div class="stat-sublabel">
+										${
+											((stats.warnings_issued.level_2 / stats.warnings_issued.total * 100) || 0).toFixed(1)
+										}% were level 2
+									</div>
+									<div class="stat-sublabel">
+										${
+											((stats.warnings_issued.level_3 / stats.warnings_issued.total * 100) || 0).toFixed(1)
+										}% were level 3
+									</div>
+									<div class="stat-sublabel">
+										${
+											((stats.warnings_issued.level_4 / stats.warnings_issued.total * 100) || 0).toFixed(1)
+										}% were level 4
+									</div>
+									<div class="stat-sublabel">
+										${
+											((stats.warnings_issued.level_4im / stats.warnings_issued.total * 100) || 0).toFixed(1)
+										}% were level 4im
+									</div>
+									<div class="stat-sublabel">
+										...and the rest we were too lazy to track =)
+									</div>
+								</div>
+							</div>
 						</div>
 						<div class="stat-card">
-							<div class="stat-value">${stats.welcomes}</div>
-							<div class="stat-label">Users Welcomed</div>
+							<div class="inside shimmer shimmer-border">
+								<div class="front">
+									<div class="stat-value">${stats.reports_filed.total}</div>
+									<div class="stat-label">Reports Filed</div>
+								</div>
+								<div class="back">
+									<div class="stat-sublabel">
+										AIV accounted for ${
+											((stats.reports_filed.AIV / stats.reports_filed.total * 100) || 0).toFixed(1)
+										}% of your reports
+									</div>
+									<div class="stat-sublabel">
+										another ${
+											((stats.reports_filed.UAA / stats.reports_filed.total * 100) || 0).toFixed(1)
+										}% were for UAA
+									</div>
+									<div class="stat-sublabel">
+										and the last ${
+											((stats.reports_filed.RFPP / stats.reports_filed.total * 100) || 0).toFixed(1)
+										}% were posted at RFPP (yes, we count that as a report)
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<div class="stat-card">
+							<div class="inside shimmer shimmer-border">
+								<div class="front">
+									<div class="stat-value">${stats.items_whitelisted.total}</div>
+									<div class="stat-label">Items Whitelisted</div>
+								</div>
+								<div class="back">
+									<div class="stat-sublabel">
+										${stats.items_whitelisted.users} (${
+											((stats.items_whitelisted.users / stats.items_whitelisted.total * 100) || 0).toFixed(1)
+										}%) users whitelisted
+									</div>
+									<div class="stat-sublabel">
+										${stats.items_whitelisted.pages} (${
+											((stats.items_whitelisted.pages / stats.items_whitelisted.total * 100) || 0).toFixed(1)
+										}%) pages whitelisted
+									</div>
+									<div class="stat-sublabel">
+										${stats.items_whitelisted.tags} (${
+											((stats.items_whitelisted.tags / stats.items_whitelisted.total * 100) || 0).toFixed(1)
+										}%) tags whitelisted
+									</div>
+								</div>
+							</div>
 						</div>
 						<div class="stat-card">
-							<div class="stat-value">${stats.blocks}</div>
-							<div class="stat-label">Blocks Issued</div>
+							<div class="inside shimmer shimmer-border">
+								<div class="front">
+									<div class="stat-value">${stats.items_highlighted.total}</div>
+									<div class="stat-label">Items Highlighted</div>
+								</div>
+								<div class="back">
+									<div class="stat-sublabel">
+										${stats.items_highlighted.users} (${
+											((stats.items_highlighted.users / stats.items_highlighted.total * 100) || 0).toFixed(1)
+										}%) users highlighted
+									</div>
+									<div class="stat-sublabel">
+										${stats.items_highlighted.pages} (${
+											((stats.items_highlighted.pages / stats.items_highlighted.total * 100) || 0).toFixed(1)
+										}%) pages highlighted
+									</div>
+									<div class="stat-sublabel">
+										${stats.items_highlighted.tags} (${
+											((stats.items_highlighted.tags / stats.items_highlighted.total * 100) || 0).toFixed(1)
+										}%) tags highlighted
+									</div>
+								</div>
+							</div>
 						</div>
 						<div class="stat-card">
-							<div class="stat-value">${stats.whitelisted}</div>
-							<div class="stat-label">Items Whitelisted</div>
-						</div>
-						<div class="stat-card">
-							<div class="stat-value">${stats.highlighted}</div>
-							<div class="stat-label">Items Highlighted</div>
-						</div>
-						<div class="stat-card">
-							<div class="stat-value">${hours}h ${minutes}m</div>
-							<div class="stat-label">Session Time</div>
-							<div class="stat-sublabel">${editsPerHour} edits/hour</div>
+							<div class="inside shimmer shimmer-border">
+								<div class="front">
+									<div class="stat-value">${formatTime(sessionTime)}</div>
+									<div class="stat-label">Session Time</div>
+								</div>
+								<div class="back">
+									<div class="stat-sublabel">
+										${
+											(stats.reports_filed.total / (sessionTime / 8.64e+7 || 1) || 0).toFixed(2)
+										} reports per day
+									</div>
+									<div class="stat-sublabel">
+										${
+											(stats.reverts_made.total / (sessionTime / 3.6e+6 || 1) || 0).toFixed(2)
+										} reverts per hour
+									</div>
+									<div class="stat-sublabel">
+										${
+											(stats.edits_reviewed.total / (sessionTime / 6e+4 || 1) || 0).toFixed(2)
+										} reviews per minute
+									</div>
+								</div>
+							</div>
 						</div>
 					</div>
-				</div>
-				<div class="settings-section">
-					<button id="reset-stats-button" class="danger-button">Reset Statistics</button>
 				</div>
 			`;
 
 		this.contentContainer.querySelector("#reset-stats-button").addEventListener("click", () => {
 			if (confirm("Are you sure you want to reset all statistics? This cannot be undone.")) {
-				this.wikishield.statistics = {
-					reviewed: 0,
-					reverts: 0,
-					reports: 0,
-					warnings: 0,
-					welcomes: 0,
-					whitelisted: 0,
-					highlighted: 0,
-					blocks: 0,
-					sessionStart: Date.now()
-				};
+				this.wikishield.loadTime = performance.now();
+				this.wikishield.storage.data.statistics = { };
+				this.wikishield.storage.load(this.wikishield.storage.data);
+
 				this.openStatistics();
-				this.wikishield.queue.playSuccessSound();
 			}
 		});
 	}
@@ -1701,362 +2300,12 @@ export class WikiShieldSettingsInterface {
 	openAbout() {
 		this.renderComponent(
 			h(AboutSettings, {
+				wikishield: this.wikishield,
 				version: this.wikishield.__script__.version,
-				changelog: this.wikishield.__script__.changelog.HTML
+				changelog: this.wikishield.__script__.changelog.HTML,
+				date: this.wikishield.__script__.changelog.date
 			})
 		);
-	}
-
-	validateAndMergeSave(importedString) {
-		const result = {
-			success: false,
-			data: null,
-			warnings: [],
-			appliedCount: 0,
-			error: null
-		};
-
-		let parsed;
-		try {
-			parsed = typeof importedString === "string" ? JSON.parse(atob(importedString)) : importedString;
-			if (typeof parsed !== "object" || parsed === null) throw new Error("Parsed data is not an object");
-		} catch (err) {
-			result.error = "Invalid save string: " + err.message;
-			return result;
-		}
-
-		// Start with current save structure
-		const validated = {
-			changelog: this.wikishield.loadedChangelog ?? 0,
-			options: JSON.parse(JSON.stringify(this.wikishield.options)),
-			statistics: JSON.parse(JSON.stringify(this.wikishield.statistics)),
-			queueWidth: this.wikishield.queueWidth ?? "15vw",
-			detailsWidth: this.wikishield.detailsWidth ?? "15vw",
-			whitelist: Object.fromEntries(Object.entries(this.wikishield.whitelist).map(([ key, value ]) => [ key, [ ...value.entries() ] ])),
-			highlighted: Object.fromEntries(Object.entries(this.wikishield.highlighted).map(([ key, value ]) => [ key, [ ...value.entries() ] ])),
-		};
-
-		// --- Validate changelog ---
-		if ("changelog" in parsed) {
-			const version = parsed.changelog;
-			if (typeof version === "string" || typeof version === "number") {
-				validated.changelog = version;
-				result.appliedCount++;
-			} else {
-				result.warnings.push("changelog: Invalid type, must be string or number");
-			}
-		}
-
-		// --- Validate queueWidth and detailsWidth ---
-		const vwValidator = v => typeof v === "string" && /^\d+(\.\d+)?vw$/.test(v);
-		if ("queueWidth" in parsed) {
-			if (vwValidator(parsed.queueWidth)) {
-				validated.queueWidth = parsed.queueWidth;
-				result.appliedCount++;
-			} else {
-				result.warnings.push("queueWidth: Invalid format, must be like '15vw'");
-			}
-		}
-		if ("detailsWidth" in parsed) {
-			if (vwValidator(parsed.detailsWidth)) {
-				validated.detailsWidth = parsed.detailsWidth;
-				result.appliedCount++;
-			} else {
-				result.warnings.push("detailsWidth: Invalid format, must be like '15vw'");
-			}
-		}
-
-		// --- Validate statistics ---
-		if ("statistics" in parsed && typeof parsed.statistics === "object" && parsed.statistics !== null) {
-			validated.statistics = { ...validated.statistics };
-			for (const key of Object.keys(validated.statistics)) {
-				const val = parsed.statistics[key];
-				if (typeof val === "number" && !isNaN(val)) {
-					validated.statistics[key] = val;
-				} else if (val !== undefined) {
-					result.warnings.push(`statistics.${key}: Invalid, must be a number`);
-				}
-			}
-			result.appliedCount++;
-		}
-
-		// --- Validate options ---
-		if ("options" in parsed && typeof parsed.options === "object" && parsed.options !== null) {
-			const optResult = this.validateAndMergeSettings(parsed.options);
-			validated.options = optResult.settings;
-			result.appliedCount += optResult.appliedCount;
-			result.warnings.push(...optResult.warnings);
-		}
-
-		// --- Validate whitelist ---
-		if ("whitelist" in parsed) {
-			if (!Array.isArray(parsed.whitelist) && typeof parsed.whitelist === "object" && parsed.whitelist !== null) {
-				for (const key of ["users", "pages", "tags"]) {
-					if (Array.isArray(parsed.whitelist[key]) && parsed.whitelist[key].every(
-						entry => Array.isArray(entry) && typeof entry[0] === "string" && Array.isArray(entry[1])
-							&& entry[1].length === 2 && typeof entry[1][0] === "number" && typeof entry[1][1] === "number"
-					)) {
-						validated.whitelist[key] = parsed.whitelist[key];
-						result.appliedCount++;
-					} else if (parsed.whitelist[key] !== undefined) {
-						result.warnings.push(`whitelist.${key}: Must be array of [username, [timestamp, timestamp]]`);
-					}
-				}
-			} else {
-				parsed.whitelist = {
-					users: [],
-					pages: [],
-					tags: []
-				}
-			}
-		}
-
-		// --- Validate highlighted ---
-		if ("highlighted" in parsed) {
-			if (!Array.isArray(parsed.highlighted) && typeof parsed.highlighted === "object" && parsed.highlighted !== null) {
-				for (const key of ["users", "pages", "tags"]) {
-					if (Array.isArray(parsed.highlighted[key]) && parsed.highlighted[key].every(
-						entry => Array.isArray(entry) && typeof entry[0] === "string" && Array.isArray(entry[1])
-							&& entry[1].length === 2 && typeof entry[1][0] === "number" && typeof entry[1][1] === "number"
-					)) {
-						validated.highlighted[key] = parsed.highlighted[key];
-						result.appliedCount++;
-					} else if (parsed.highlighted[key] !== undefined) {
-						result.warnings.push(`highlighted.${key}: Must be array of [username, [timestamp, timestamp]]`);
-					}
-				}
-			} else {
-				parsed.highlighted = {
-					users: [],
-					pages: [],
-					tags: []
-				}
-			}
-		}
-
-		result.success = result.appliedCount > 0;
-		if (!result.success && !result.warnings.length) result.error = "No valid data found in import";
-		result.data = validated;
-		return result;
-	}
-
-	/**
-	* Validate and merge imported settings with current settings
-	* @param {Object} importedSettings The imported settings object
-	* @returns {Object} Result object with success status, merged settings, warnings, and applied count
-	*/
-	validateAndMergeSettings(importedSettings) {
-		const result = {
-			success: false,
-			settings: JSON.parse(JSON.stringify(this.wikishield.options)), // Start with current settings
-			warnings: [],
-			appliedCount: 0,
-			error: null
-		};
-
-		if (!importedSettings || typeof importedSettings !== 'object') {
-			result.error = 'Invalid settings format';
-			return result;
-		}
-
-		const defaults = defaultSettings;
-		const soundKeys = Object.keys(defaults.soundMappings); // Valid sound triggers
-		const expiryOptions = ["none", "1 hour", "1 day", "1 week", "1 month", "3 months", "6 months", "indefinite"];
-		const validThemes = ["theme-light", "theme-dark"];
-		const colorCount = colorPalettes.length;
-		const namespaceIds = defaults.namespacesShown;
-
-		const applyValue = (key, value, validator, errorMsg) => {
-			if (validator(value)) {
-				if (Array.isArray(key)) {
-					let obj = result.settings;
-					for (let i = 0; i < key.length - 1; i++) {
-						obj = obj[key[i]];
-					}
-					obj[key[key.length - 1]] = value;
-				} else {
-					result.settings[key] = value;
-				}
-
-				result.appliedCount++;
-			} else {
-				result.warnings.push(`${Array.isArray(key) ? key.join(".") : key}: ${errorMsg} (${value})`);
-			}
-		};
-
-		for (const [key, value] of Object.entries(importedSettings)) {
-			if (!(key in defaults)) {
-				result.warnings.push(`${key}: Unknown setting, ignored`);
-				delete result.settings[key];
-				continue;
-			}
-
-			try {
-				switch (key) {
-					case 'maxQueueSize':
-					case 'maxEditCount':
-						applyValue(key, Math.floor(value), v => Number.isInteger(v) && v >= 1 && v <= 500, "must be an integer 1-500");
-						break;
-
-					case 'minimumORESScore':
-					case 'soundAlertORESScore':
-					case 'masterVolume':
-						applyValue(key, value, v => typeof v === 'number' && v >= 0 && v <= 1, "must be a number 0-1");
-						break;
-
-					case 'enableUsernameHighlighting':
-					case 'enableWelcomeLatin':
-					case 'enableAutoWelcome':
-					case 'enableEditAnalysis':
-					case 'enableUsernameAnalysis':
-					case 'showTemps':
-					case 'showUsers':
-					case 'sortQueueItems':
-					case 'enableOllamaAI':
-					case 'enableAutoReporting':
-						applyValue(key, Boolean(value), v => typeof v === 'boolean', "must be a boolean");
-						break;
-
-					case 'selectedAutoReportReasons':
-						if (typeof value === 'object' && value !== null) {
-							result.settings.selectedAutoReportReasons = {};
-							for (const [reason, val] of Object.entries(value)) {
-								result.settings.selectedAutoReportReasons[reason] = Boolean(val);
-							}
-							result.appliedCount++;
-						} else {
-							result.warnings.push("selectedAutoReportReasons: Invalid format, must be an object");
-						}
-						break;
-
-					case 'volumes':
-						if (typeof value === 'object' && value !== null) {
-							result.settings.volumes = { ...result.settings.volumes };
-							let applied = 0;
-							for (const [volKey, volVal] of Object.entries(value)) {
-								if (typeof volVal === 'number' && volVal >= 0 && volVal <= 1) {
-									result.settings.volumes[volKey] = volVal;
-									applied++;
-								} else {
-									result.warnings.push(`volumes.${volKey}: Invalid value, must be 0-1`);
-								}
-							}
-							if (applied) result.appliedCount++;
-						} else {
-							result.warnings.push("volumes: Invalid format, must be an object");
-						}
-						break;
-
-					case 'soundMappings':
-						if (typeof value === 'object' && value !== null) {
-							const allowedSounds = Object.values(defaults.soundMappings); // use values, not keys
-							result.settings.soundMappings = { ...result.settings.soundMappings };
-							let applied = 0;
-							for (const [trigger, sound] of Object.entries(value)) {
-								if (allowedSounds.includes(sound)) {
-									result.settings.soundMappings[trigger] = sound;
-									applied++;
-								} else {
-									result.warnings.push(`soundMappings.${trigger}: Invalid sound`);
-								}
-							}
-							if (applied) result.appliedCount++;
-						} else {
-							result.warnings.push("soundMappings: Invalid format, must be an object");
-						}
-						break;
-
-
-					case 'watchlistExpiry':
-						if (typeof value === 'object' && value !== null) {
-							result.settings.watchlistExpiry = { ...result.settings.watchlistExpiry };
-							for (const subKey of Object.keys(defaults.watchlistExpiry)) {
-								if (subKey in value) {
-									applyValue([ 'watchlistExpiry', subKey ], value[subKey], v => typeof v === 'string' && expiryOptions.includes(v), `must be one of: ${expiryOptions.join(', ')}`);
-								}
-							}
-						}
-						break;
-					case 'highlightedExpiry':
-						if (typeof value === 'object' && value !== null) {
-							result.settings.highlightedExpiry = { ...result.settings.highlightedExpiry };
-							for (const subKey of Object.keys(defaults.highlightedExpiry)) {
-								if (subKey in value) {
-									applyValue([ 'highlightedExpiry', subKey ], value[subKey], v => typeof v === 'string' && expiryOptions.includes(v), `must be one of: ${expiryOptions.join(', ')}`);
-								}
-							}
-						}
-						break;
-
-					case 'wiki':
-						applyValue(key, value, v => typeof v === 'string' && v.length >= 2 && v.length <= 20, "must be a string 2-20 chars");
-						break;
-
-					case 'namespacesShown':
-						if (Array.isArray(value)) {
-							const filtered = value.filter(v => namespaceIds.includes(v));
-							if (filtered.length) {
-								result.settings.namespacesShown = filtered;
-								result.appliedCount++;
-								if (filtered.length < value.length) result.warnings.push("namespacesShown: Some invalid IDs were excluded");
-							} else {
-								result.warnings.push("namespacesShown: No valid IDs found");
-							}
-						} else {
-							result.warnings.push("namespacesShown: Must be an array");
-						}
-						break;
-
-					case 'ollamaServerUrl':
-						applyValue(key, value, v => typeof v === 'string' && /^(https?:\/\/)/.test(v), "must be a valid URL starting with http:// or https://");
-						break;
-
-					case 'ollamaModel':
-						applyValue(key, value, v => typeof v === 'string', "must be a string");
-						break;
-
-					case 'controlScripts':
-						if (Array.isArray(value)) {
-							const valid = value.filter(s => Array.isArray(s.keys) && s.keys.length && Array.isArray(s.actions));
-							if (valid.length) {
-								result.settings.controlScripts = valid;
-								result.appliedCount++;
-								if (valid.length < value.length) result.warnings.push("controlScripts: Some invalid scripts were excluded");
-							} else {
-								result.warnings.push("controlScripts: No valid scripts found");
-							}
-						} else {
-							result.warnings.push("controlScripts: Must be an array");
-						}
-						break;
-
-					case 'selectedPalette':
-						applyValue(key, Math.floor(value), v => Number.isInteger(v) && v >= 0 && v < colorCount, `must be an integer 0-${colorCount - 1}`);
-						break;
-
-					case 'theme':
-						applyValue(key, value, v => typeof v === 'string' && validThemes.includes(v), `must be one of: ${validThemes.join(', ')}`);
-						break;
-
-					default:
-						if (typeof value === typeof defaults[key]) {
-							result.settings[key] = value;
-							result.appliedCount++;
-						} else {
-							result.warnings.push(`${key}: Type mismatch, expected ${typeof defaults[key]}`);
-						}
-				}
-			} catch (err) {
-				result.warnings.push(`${key}: Error applying value - ${err.message}`);
-			}
-		}
-
-		result.success = result.appliedCount > 0;
-		if (!result.success && !result.warnings.length) {
-			result.error = 'No valid settings found in import';
-		}
-
-		return result;
 	}
 
 	/**
@@ -2065,58 +2314,89 @@ export class WikiShieldSettingsInterface {
 	openSaveSettings() {
 		this.clearContent();
 		this.contentContainer.innerHTML = `
-				<div class="settings-section">
+			<div id="save-settings" class="settings-section">
+				<div class="save-settings-header">
 					<div class="settings-section-title">Save Settings</div>
 					<div class="settings-section-desc">Manage how and where your WikiShield settings are stored.</div>
-					<div class="settings-toggles-section">
-						<div class="settings-section compact inline" id="enable-cloud-storage">
-							<div class="settings-section-content">
-								<div class="settings-section-title">Cloud Storage</div>
-								<div class="settings-section-desc">Store your settings in the cloud for access across multiple browsers and devices.</div>
+				</div>
+
+				<div class="save-settings-content">
+					<div class="save-settings-card cloud-storage-card">
+						<div class="card-header">
+							<div class="card-icon">
+								<i class="fa fa-cloud"></i>
+							</div>
+							<div class="card-header-content">
+								<div class="card-title">Cloud Storage</div>
+								<div class="card-desc">Store your settings in the cloud for access across multiple browsers and devices.</div>
+							</div>
+							<div class="card-toggle" id="enable-cloud-storage"></div>
+						</div>
+					</div>
+
+					<div class="save-settings-card data-management-card">
+						<div class="card-header">
+							<div class="card-icon">
+								<i class="fa fa-database"></i>
+							</div>
+							<div class="card-header-content">
+								<div class="card-title">Data Management</div>
+								<div class="card-desc">Import, export, or reset your WikiShield settings. Settings are encoded as base64 for easy sharing.</div>
 							</div>
 						</div>
-					</div>
-					<div class="settings-section">
-						<div class="settings-section-title">Import / Export Settings</div>
-						<div class="settings-section-desc">
-							Import, export, or reset your WikiShield settings. Settings are encoded as a base64 string for easy sharing.
+
+						<div class="card-body">
+							<div class="action-buttons-grid">
+								<button id="export-settings-btn" class="action-card export-card">
+									<div class="action-card-icon">
+										<i class="fa fa-download"></i>
+									</div>
+									<div class="action-card-content">
+										<div class="action-card-title">Export Settings</div>
+										<div class="action-card-desc">Save your configuration</div>
+									</div>
+								</button>
+
+								<button id="import-settings-btn" class="action-card import-card">
+									<div class="action-card-icon">
+										<i class="fa fa-upload"></i>
+									</div>
+									<div class="action-card-content">
+										<div class="action-card-title">Import Settings</div>
+										<div class="action-card-desc">Load saved configuration</div>
+									</div>
+								</button>
+
+								<button id="reset-settings-btn" class="action-card reset-card">
+									<div class="action-card-icon">
+										<i class="fa fa-undo"></i>
+									</div>
+									<div class="action-card-content">
+										<div class="action-card-title">Reset Settings</div>
+										<div class="action-card-desc">Restore to defaults</div>
+									</div>
+								</button>
+							</div>
+
+							<div id="import-export-status" class="status-message hidden"></div>
+
+							<textarea
+								id="import-settings-input"
+								class="import-textarea hidden"
+								placeholder="Paste your base64 settings string here..."
+								rows="8"
+							></textarea>
 						</div>
-						<div style="display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap;">
-							<button id="export-settings-btn" class="add-action-button" style="flex: 1; min-width: 120px;">
-								<span class="fa fa-download"></span> Export Settings
-							</button>
-							<button id="import-settings-btn" class="add-action-button" style="flex: 1; min-width: 120px;">
-								<span class="fa fa-upload"></span> Import Settings
-							</button>
-							<button id="reset-settings-btn" class="add-action-button" style="flex: 1; min-width: 120px; background: #dc3545;">
-								<span class="fa fa-undo"></span> Reset to Default
-							</button>
-						</div>
-						<div id="import-export-status" style="margin-top: 12px; padding: 12px; border-radius: 6px; display: none;"></div>
-						<textarea id="import-settings-input"
-							placeholder="Paste base64 settings string here..."
-							style="
-								width: 100%;
-								min-height: 100px;
-								margin-top: 12px;
-								padding: 12px;
-								border: 2px solid rgba(128, 128, 128, 0.3);
-								border-radius: 6px;
-								font-family: 'Courier New', monospace;
-								font-size: 0.85em;
-								background: rgba(0, 0, 0, 0.2);
-								color: inherit;
-								display: none;
-							"></textarea>
 					</div>
 				</div>
-			`;
+			</div>
+		`;
 
 		this.createToggle(
 			this.contentContainer.querySelector("#enable-cloud-storage"),
-			this.wikishield.options.enableCloudStorage,
+			this.wikishield.storage.data.settings.cloud_storage.enabled,
 			(newValue) => {
-				this.wikishield.options.enableCloudStorage = newValue;
+				this.wikishield.storage.data.settings.cloud_storage.enabled = newValue;
 				mw.storage.store.setItem("WikiShield:CloudStorage", newValue);
 			}
 		);
@@ -2132,7 +2412,6 @@ export class WikiShieldSettingsInterface {
 			try {
 				const base64String = await this.wikishield.save(true); // Export current settings as base64
 
-				// Create a temporary textarea to copy to clipboard
 				const tempTextarea = document.createElement('textarea');
 				tempTextarea.value = base64String;
 				document.body.appendChild(tempTextarea);
@@ -2140,144 +2419,117 @@ export class WikiShieldSettingsInterface {
 				document.execCommand('copy');
 				document.body.removeChild(tempTextarea);
 
-				statusDiv.style.display = 'block';
-				statusDiv.style.background = 'rgba(40, 167, 69, 0.2)';
-				statusDiv.style.border = '2px solid #28a745';
-				statusDiv.style.color = '#28a745';
+				statusDiv.classList.remove("hidden", "error");
+				statusDiv.classList.add("success");
 				statusDiv.innerHTML = `
-						<div style="display: flex; align-items: center; gap: 8px;">
-							<span class="fa fa-check-circle"></span>
-							<div>
-								<strong>Settings exported successfully!</strong>
-								<div style="font-size: 0.9em; margin-top: 4px;">The base64 string has been copied to your clipboard.</div>
-							</div>
+					<div class="status-content">
+						<i class="fa fa-check-circle status-icon"></i>
+						<div class="status-text">
+							<div class="status-title">Settings exported successfully!</div>
+							<div class="status-desc">The base64 string has been copied to your clipboard.</div>
 						</div>
-					`;
-
-				setTimeout(() => {
-					statusDiv.style.display = 'none';
-				}, 5000);
+					</div>
+				`;
 			} catch (error) {
-				statusDiv.style.display = 'block';
-				statusDiv.style.background = 'rgba(220, 53, 69, 0.2)';
-				statusDiv.style.border = '2px solid #dc3545';
-				statusDiv.style.color = '#dc3545';
+				statusDiv.classList.remove("hidden", "success");
+				statusDiv.classList.add("error");
 				statusDiv.innerHTML = `
-						<div style="display: flex; align-items: center; gap: 8px;">
-							<span class="fa fa-times-circle"></span>
-							<div>
-								<strong>Export failed!</strong>
-								<div style="font-size: 0.9em; margin-top: 4px;">${error.message}</div>
-							</div>
+					<div class="status-content">
+						<i class="fa fa-times-circle status-icon"></i>
+						<div class="status-text">
+							<div class="status-title">Export failed!</div>
+							<div class="status-desc">${error.message}</div>
 						</div>
-					`;
+					</div>
+				`;
 			}
 		});
 
-		importBtn.addEventListener('click', () => {
-			if (importInput.style.display === 'none') {
-				importInput.style.display = 'block';
-				importBtn.innerHTML = '<span class="fa fa-check"></span> Apply Import';
-				importBtn.style.background = '#28a745';
-				statusDiv.style.display = 'none';
+		importBtn.addEventListener('click', async () => {
+			if (importInput.classList.contains("hidden")) {
+				statusDiv.classList.add("hidden");
+				importInput.value = "";
+				importInput.classList.remove("hidden");
+				importBtn.querySelector('.action-card-title').textContent = 'Apply Import';
+				importBtn.querySelector('.action-card-icon i').className = 'fa fa-check';
+				importBtn.classList.add('active');
 			} else {
-				const base64String = importInput.value.trim();
-				if (!base64String) {
-					statusDiv.style.display = 'block';
-					statusDiv.style.background = 'rgba(220, 53, 69, 0.2)';
-					statusDiv.style.border = '2px solid #dc3545';
-					statusDiv.style.color = '#dc3545';
+				const base64 = importInput.value.trim();
+				if (!base64) {
+					statusDiv.classList.remove("hidden", "success");
+					statusDiv.classList.add("error");
 					statusDiv.innerHTML = `
-							<div style="display: flex; align-items: center; gap: 8px;">
-								<span class="fa fa-exclamation-circle"></span>
-								<div>
-									<strong>No input!</strong>
-									<div style="font-size: 0.9em; margin-top: 4px;">Please paste a base64 settings string.</div>
-								</div>
+						<div class="status-content">
+							<i class="fa fa-exclamation-circle status-icon"></i>
+							<div class="status-text">
+								<div class="status-title">No input provided!</div>
+								<div class="status-desc">Please paste a base64 settings string.</div>
 							</div>
-						`;
+						</div>
+					`;
 					return;
 				}
 
 				try {
-					// Validate and merge settings
-					const validationResult = this.validateAndMergeSave(base64String);
+					const logs = await this.wikishield.init(base64, true); // Try to import settings
 
-					if (validationResult.success) {
-						this.wikishield.init(validationResult.data, true); // Re-initialize with imported data
-
-						statusDiv.style.display = 'block';
-						statusDiv.style.background = 'rgba(40, 167, 69, 0.2)';
-						statusDiv.style.border = '2px solid #28a745';
-						statusDiv.style.color = '#28a745';
-
-						let warningsHtml = '';
-						if (validationResult.warnings.length > 0) {
-							warningsHtml = `
-									<div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(40, 167, 69, 0.3);">
-										<strong>Warnings:</strong>
-										<ul style="margin: 4px 0 0 20px; font-size: 0.9em;">
-											${validationResult.warnings.map(w => `<li>${w}</li>`).join('')}
-										</ul>
-									</div>
-								`;
+					const [ expected, unexpected ] = logs.reduce((acc, log) => {
+						if (log.expected) {
+							acc[0].push(log);
+						} else {
+							acc[1].push(log);
 						}
 
-						statusDiv.innerHTML = `
-								<div style="display: flex; align-items: start; gap: 8px;">
-									<span class="fa fa-check-circle" style="margin-top: 2px;"></span>
-									<div style="flex: 1;">
-										<strong>Settings imported successfully!</strong>
-										<div style="font-size: 0.9em; margin-top: 4px;">
-											${validationResult.appliedCount} setting(s) applied.
-										</div>
-										${warningsHtml}
-									</div>
-								</div>
-							`;
-					} else {
-						throw new Error(validationResult.error);
-					}
-				} catch (error) {
-					statusDiv.style.display = 'block';
-					statusDiv.style.background = 'rgba(220, 53, 69, 0.2)';
-					statusDiv.style.border = '2px solid #dc3545';
-					statusDiv.style.color = '#dc3545';
+						return acc;
+					}, [ [ ], [ ] ]);
+
+					statusDiv.classList.remove("hidden", "error");
+					statusDiv.classList.add("success");
 					statusDiv.innerHTML = `
-							<div style="display: flex; align-items: center; gap: 8px;">
-								<span class="fa fa-times-circle"></span>
-								<div>
-									<strong>Import failed!</strong>
-									<div style="font-size: 0.9em; margin-top: 4px;">${error.message}</div>
-								</div>
+						<div class="status-content">
+							<i class="fa fa-check-circle status-icon"></i>
+							<div class="status-text">
+								<div class="status-title">Settings imported successfully!</div>
+								<div class="status-desc">${unexpected.length} issue${unexpected.length === 1 ? '' : 's'} encountered during import.</div>
 							</div>
-						`;
+						</div>
+					`;
+				} catch (error) {
+					statusDiv.classList.remove("hidden", "success");
+					statusDiv.classList.add("error");
+					statusDiv.innerHTML = `
+						<div class="status-content">
+							<i class="fa fa-times-circle status-icon"></i>
+							<div class="status-text">
+								<div class="status-title">Import failed!</div>
+								<div class="status-desc">${error.message}</div>
+							</div>
+						</div>
+					`;
 				}
 
-				importInput.style.display = 'none';
-				importInput.value = '';
-				importBtn.innerHTML = '<span class="fa fa-upload"></span> Import Settings';
-				importBtn.style.background = '';
+				importInput.classList.add("hidden");
+				importBtn.querySelector('.action-card-title').textContent = 'Import Settings';
+				importBtn.querySelector('.action-card-icon i').className = 'fa fa-upload';
+				importBtn.classList.remove('active');
 			}
 		});
 
 		resetBtn.addEventListener('click', async () => {
 			if (confirm('Are you sure you want to reset all settings to default? This cannot be undone.')) {
-				await this.wikishield.init({}, true);
+				await this.wikishield.init("e30=", true);
 
-				statusDiv.style.display = 'block';
-				statusDiv.style.background = 'rgba(255, 193, 7, 0.2)';
-				statusDiv.style.border = '2px solid #ffc107';
-				statusDiv.style.color = '#ffc107';
+				statusDiv.classList.remove("hidden", "success");
+				statusDiv.classList.add("info");
 				statusDiv.innerHTML = `
-						<div style="display: flex; align-items: center; gap: 8px;">
-							<span class="fa fa-info-circle"></span>
-							<div>
-								<strong>Settings reset to default!</strong>
-								<div style="font-size: 0.9em; margin-top: 4px;">Settings have been reset.</div>
-							</div>
+					<div class="status-content">
+						<i class="fa fa-info-circle status-icon"></i>
+						<div class="status-text">
+							<div class="status-title">Settings reset successfully!</div>
+							<div class="status-desc">All settings have been restored to their default values.</div>
 						</div>
-					`;
+					</div>
+				`;
 			}
 		});
 	}
@@ -2286,9 +2538,15 @@ export class WikiShieldSettingsInterface {
 	* Remove all existing settings containers
 	*/
 	closeSettings() {
+		this.wikishield.audioManager.stopPreviews();
 		this.isOpen = false;
 		document.body.classList.remove("settings-open"); // Remove blur class
 		[...document.querySelectorAll(".settings-container")].forEach(elem => elem.remove());
+
+		// Trigger dialog queue processing now that settings are closed
+		if (this.wikishield.interface) {
+			this.wikishield.interface._processDialogQueue();
+		}
 	}
 
 	/**
@@ -2301,7 +2559,7 @@ export class WikiShieldSettingsInterface {
 			return;
 		}
 
-		if (this.keypressCallback && wikishieldSettingsAllowedKeys.includes(event.key.toLowerCase())) {
+		if (this.keypressCallback && validControlKeys.has(event.key.toLowerCase())) {
 			this.keypressCallback(event.key.toLowerCase());
 			event.preventDefault();
 		}
