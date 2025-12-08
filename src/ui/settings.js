@@ -17,7 +17,7 @@ import {
 	ZenSettings,
 
 	WhitelistSettings,
-	highlightSettings,
+	HighlightSettings,
 	StatisticsSettings,
 	AISettings,
 	AutoReportingSettings,

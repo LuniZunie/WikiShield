@@ -1821,7 +1821,6 @@ export class WikiShieldInterface {
 
 		switch (queueType) {
 			case "edit": {
-				const summaryTruncated = edit.comment ? this.wikishield.util.escapeHtml(this.wikishield.util.maxStringLength(edit.comment, 150)) : "";
 				const summaryFull = edit.comment ? this.wikishield.util.escapeHtml(edit.comment) : "";
 
 				this.elem("#middle-top").innerHTML = `

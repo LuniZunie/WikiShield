@@ -222,9 +222,9 @@ export class WikiShieldUtil {
 
 	usernameMatch(needle, haystack) {
 		if (this.wikishield.storage.data.settings.username_highlighting.fuzzy) {
-			return haystack.toLowerCase().includes(needle.toLowerCase());
-		} else {
 			return hasApproxSubstring(needle, haystack, 2);
+		} else {
+			return haystack.toLowerCase().includes(needle.toLowerCase());
 		}
 	}
 }
