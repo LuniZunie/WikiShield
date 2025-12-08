@@ -13,7 +13,7 @@ const isURL = str => {
     }
 };
 
-class Logger {
+export class Logger {
     constructor() {
         this.logs = [];
     }
@@ -409,12 +409,8 @@ class Version1 extends Version {
             changelog: "3",
 
             settings: {
-                theme: {
-                    palette: 0,
-                },
-
                 performance: {
-                    startup: "auto",
+                    startup: "adaptive",
                 },
 
                 namespaces: [ 0 ],
@@ -432,12 +428,12 @@ class Version1 extends Version {
                         enabled: true,
                         order: 1,
                     },
-                    watchlist: {
+                    users: {
                         enabled: true,
                         order: 2,
                     },
-                    new_users: {
-                        enabled: false,
+                    watchlist: {
+                        enabled: true,
                         order: 3,
                     },
                 },
@@ -448,6 +444,7 @@ class Version1 extends Version {
 
                 username_highlighting: {
                     enabled: true,
+                    fuzzy: true,
                 },
 
                 auto_welcome: {
@@ -476,7 +473,7 @@ class Version1 extends Version {
                         "Vandalism", "Subtle vandalism", "Image vandalism", "Sandbox",
 
                         "Unsourced", "Unsourced (BLP)", "Unsourced genre", /* "POV", */ "Commentary",
-                        "AI-generated", "AI-generated (talk)", /* "MOS violation", */ "Censoring",
+                        "AI-generated", "AI-generated (talk)", /* "MOS violation", */ "Censoring", /* "Not English" */,
 
                         "Disruption", "Deleting", "Errors", "Editing tests", /* "Chatting", */
                         "Jokes", /* "Owning", */
@@ -518,32 +515,23 @@ class Version1 extends Version {
                         "master.music.zen_mode": 1,
 
                         "master.ui": 1,
-                        "master.ui.click": 1,
-                        "master.ui.select": 1,
-                        "master.ui.on": 1,
-                        "master.ui.off": 1,
+                        "master.ui.click": 0.3,
 
                         "master.queue": 1,
                         "master.queue.ores": 1,
                         "master.queue.mention": 1,
-                        "master.queue.recent": 0,
-                        "master.queue.flagged": 0,
-                        "master.queue.watchlist": 0,
 
                         "master.notification": 1,
-                        "master.notification.alert": 1,
-                        "master.notification.notice": 1,
+                        "master.notification.alert": 0.7,
+                        "master.notification.notice": 0.5,
+                        "master.notification.toast": 0.5,
 
                         "master.action": 1,
-                        "master.action.default": 1,
-                        "master.action.failed": 1,
+                        "master.action.default": 0.6,
+                        "master.action.failed": 0.85,
                         "master.action.report": 1,
                         "master.action.block": 1,
                         "master.action.protect": 1,
-
-                        "master.other": 1,
-                        "master.other.success": 1,
-                        "master.other.error": 1
                     }
                 },
 
@@ -563,16 +551,19 @@ class Version1 extends Version {
                     notices: {
                         enabled: false,
                     },
-
-                    edit_counter: {
+                    toasts: {
                         enabled: false,
                     },
-                    toasts: {
+
+                    badges: {
                         enabled: false,
                     },
                 }
             },
-            layout: {
+            UI: {
+                theme: {
+                    palette: 0,
+                },
                 queue: {
                     width: "15vw",
                 },
@@ -708,6 +699,9 @@ class Version1 extends Version {
                 watchlist_changes_reviewed: {
                     total: 0,
                 },
+                users_reviewed: {
+                    total: 0,
+                },
 
                 reverts_made: {
                     total: 0,
@@ -796,6 +790,9 @@ class Version1 extends Version {
         this.deprecated("options", "volumes", "rollback");
         this.deprecated("options", "volumes", "thank");
         this.deprecated("options", "volumes", "sparkle");
+        this.deprecated("options", "volumes", "watchlist");
+        this.deprecated("options", "volumes", "success");
+        this.deprecated("options", "volumes", "error");
 
         this.deprecated("options", "soundMappings");
 
@@ -808,6 +805,7 @@ class Version1 extends Version {
 
         this.deprecated("options", "theme");
 
+        this.deprecated("options", "zen", "editCount");
         this.deprecated("options", "zen", "watchlist");
 
         const defaults = this.default;
@@ -815,10 +813,6 @@ class Version1 extends Version {
             changelog: this.sanitize([ "changelog" ], defaults.changelog),
 
             settings: {
-                theme: {
-                    palette: this.sanitize([ "options", "selectedPalette" ], defaults.settings.theme.palette),
-                },
-
                 performance: {
                     startup: defaults.settings.performance.startup, // did not exist in v0
                 },
@@ -838,13 +832,13 @@ class Version1 extends Version {
                         enabled: defaults.settings.queue.flagged.enabled, // did not exist in v0
                         order: defaults.settings.queue.flagged.order, // did not exist in v0
                     },
+                    users: {
+                        enabled: defaults.settings.queue.users.enabled, // did not exist in v0
+                        order: defaults.settings.queue.users.order, // did not exist in v0
+                    },
                     watchlist: {
                         enabled: defaults.settings.queue.watchlist.enabled, // did not exist in v0
                         order: defaults.settings.queue.watchlist.order, // did not exist in v0
-                    },
-                    new_users: {
-                        enabled: defaults.settings.queue.new_users.enabled, // did not exist in v0
-                        order: defaults.settings.queue.new_users.order, // did not exist in v0
                     },
                 },
 
@@ -854,6 +848,7 @@ class Version1 extends Version {
 
                 username_highlighting: {
                     enabled: this.sanitize([ "options", "enableUsernameHighlighting" ], defaults.settings.username_highlighting.enabled),
+                    fuzzy: defaults.settings.username_highlighting.fuzzy, // did not exist in v0
                 },
 
                 auto_welcome: {
@@ -925,20 +920,15 @@ class Version1 extends Version {
 
                         "master.ui": defaults.settings.audio.volume["master.ui"], // did not exist in v0
                         "master.ui.click": this.sanitize([ "options", "volumes", "click" ], defaults.settings.audio.volume["master.ui.click"]),
-                        "master.ui.select": defaults.settings.audio.volume["master.ui.select"], // did not exist in v0
-                        "master.ui.on": defaults.settings.audio.volume["master.ui.on"], // did not exist in v0
-                        "master.ui.off": defaults.settings.audio.volume["master.ui.off"], // did not exist in v0
 
                         "master.queue": defaults.settings.audio.volume["master.queue"], // did not exist in v0
                         "master.queue.ores": this.sanitize([ "options", "volumes", "alert" ], defaults.settings.audio.volume["master.queue.ores"]),
                         "master.queue.mention": defaults.settings.audio.volume["master.queue.mention"], // did not exist in v0
-                        "master.queue.recent": defaults.settings.audio.volume["master.queue.recent"], // did not exist in v0
-                        "master.queue.flagged": defaults.settings.audio.volume["master.queue.flagged"], // did not exist in v0
-                        "master.queue.watchlist": this.sanitize([ "options", "volumes", "watchlist" ], defaults.settings.audio.volume["master.queue.watchlist"]),
 
                         "master.notification": defaults.settings.audio.volume["master.notification"], // did not exist in v0
                         "master.notification.alert": this.sanitize([ "options", "volumes", "notification" ], defaults.settings.audio.volume["master.notification.alert"]),
                         "master.notification.notice": this.sanitize([ "options", "volumes", "notification" ], defaults.settings.audio.volume["master.notification.notice"]),
+                        "master.notification.toast": this.sanitize([ "options", "volumes", "notification" ], defaults.settings.audio.volume["master.notification.toast"]),
 
                         "master.action": defaults.settings.audio.volume["master.action"], // did not exist in v0
                         "master.action.default": defaults.settings.audio.volume["master.action.default"], // did not exist in v0
@@ -946,10 +936,6 @@ class Version1 extends Version {
                         "master.action.report": this.sanitize([ "options", "volumes", "report" ], defaults.settings.audio.volume["master.action.report"]),
                         "master.action.block": this.sanitize([ "options", "volumes", "block" ], defaults.settings.audio.volume["master.action.block"]),
                         "master.action.protect": this.sanitize([ "options", "volumes", "protection" ], defaults.settings.audio.volume["master.action.protect"]),
-
-                        "master.other": defaults.settings.audio.volume["master.other"], // did not exist in v0
-                        "master.other.success": this.sanitize([ "options", "volumes", "success" ], defaults.settings.audio.volume["master.other.success"]),
-                        "master.other.error": this.sanitize([ "options", "volumes", "error" ], defaults.settings.audio.volume["master.other.error"])
                     },
                 },
 
@@ -969,21 +955,24 @@ class Version1 extends Version {
                     notices: {
                         enabled: this.sanitize([ "options", "zen", "notifications" ], defaults.settings.zen_mode.notices.enabled),
                     },
-
-                    edit_counter: {
-                        enabled: this.sanitize([ "options", "zen", "editCount" ], defaults.settings.zen_mode.edit_counter.enabled),
-                    },
                     toasts: {
                         enabled: this.sanitize([ "options", "zen", "toasts" ], defaults.settings.zen_mode.toasts.enabled),
                     },
+
+                    badges: {
+                        enabled: defaults.settings.zen_mode.badges.enabled, // did not exist in v0
+                    },
                 }
             },
-            layout: {
+            UI: {
+                theme: {
+                    palette: this.sanitize([ "options", "selectedPalette" ], defaults.UI.theme.palette),
+                },
                 queue: {
-                    width: this.sanitize([ "queueWidth" ], defaults.layout.queue.width),
+                    width: this.sanitize([ "queueWidth" ], defaults.UI.queue.width),
                 },
                 details: {
-                    width: this.sanitize([ "detailsWidth" ], defaults.layout.details.width),
+                    width: this.sanitize([ "detailsWidth" ], defaults.UI.details.width),
                 }
             },
             control_scripts: this.sanitize([ "options", "controlScripts" ], defaults.control_scripts, (value) => {
@@ -1087,6 +1076,9 @@ class Version1 extends Version {
                 watchlist_changes_reviewed: {
                     total: defaults.statistics.watchlist_changes_reviewed.total,
                 },
+                users_reviewed: {
+                    total: defaults.statistics.users_reviewed.total,
+                },
                 reverts_made: {
                     total: defaults.statistics.reverts_made.total,
                     good_faith: defaults.statistics.reverts_made.good_faith,
@@ -1175,24 +1167,12 @@ class Version1 extends Version {
             const scope = root.settings;
             this.restrictObject(scope, "settings");
 
-            { // root.settings.theme
-                const scope = root.settings.theme;
-                this.restrictObject(scope, "settings", "theme");
-
-                { // root.settings.theme.palette
-                    const value = root.settings.theme.palette;
-                    if (!(typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 3)) {
-                        this.reset("settings", "theme", "palette");
-                    }
-                }
-            }
-
             { // root.settings.performance
                 const scope = root.settings.performance;
                 this.restrictObject(scope, "settings", "performance");
 
                 { // root.settings.performance.startup
-                    const validValues = new Set([ "always_off", "auto", "always_on" ]);
+                    const validValues = new Set([ "always_off", "adaptive", "always_on" ]);
                     const value = root.settings.performance.startup;
 
                     if (!validValues.has(value)) {
@@ -1242,7 +1222,7 @@ class Version1 extends Version {
                     }
                 }
 
-                [ "recent", "flagged", "watchlist", "new_users" ].forEach((section, _, queues) => {
+                [ "recent", "flagged", "users", "watchlist" ].forEach((section, _, queues) => {
                     { // root.settings.queue[section]
                         const scope = root.settings.queue[section];
                         this.restrictObject(scope, "settings", "queue", section);
@@ -1284,6 +1264,13 @@ class Version1 extends Version {
                     const value = root.settings.username_highlighting.enabled;
                     if (typeof value !== "boolean") {
                         this.reset("settings", "username_highlighting", "enabled");
+                    }
+                }
+
+                { // root.settings.username_highlighting.fuzzy
+                    const value = root.settings.username_highlighting.fuzzy;
+                    if (typeof value !== "boolean") {
+                        this.reset("settings", "username_highlighting", "fuzzy");
                     }
                 }
             }
@@ -1491,20 +1478,15 @@ class Version1 extends Version {
 
                         "master.ui",
                         "master.ui.click",
-                        "master.ui.select",
-                        "master.ui.on",
-                        "master.ui.off",
 
                         "master.queue",
                         "master.queue.ores",
                         "master.queue.mention",
-                        "master.queue.recent",
-                        "master.queue.flagged",
-                        "master.queue.watchlist",
 
                         "master.notification",
                         "master.notification.alert",
                         "master.notification.notice",
+                        "master.notification.toast",
 
                         "master.action",
                         "master.action.default",
@@ -1512,10 +1494,6 @@ class Version1 extends Version {
                         "master.action.report",
                         "master.action.block",
                         "master.action.protect",
-
-                        "master.other",
-                        "master.other.success",
-                        "master.other.error"
                     ];
 
                     for (const key of volumeKeys) {
@@ -1549,7 +1527,6 @@ class Version1 extends Version {
                         }
                     }
                 }
-
                 { // root.settings.zen_mode.music
                     const scope = root.settings.zen_mode.music;
                     this.restrictObject(scope, "settings", "zen_mode", "music");
@@ -1573,7 +1550,6 @@ class Version1 extends Version {
                         }
                     }
                 }
-
                 { // root.settings.zen_mode.notices
                     const scope = root.settings.zen_mode.notices;
                     this.restrictObject(scope, "settings", "zen_mode", "notices");
@@ -1585,18 +1561,6 @@ class Version1 extends Version {
                         }
                     }
                 }
-
-                { // root.settings.zen_mode.edit_counter
-                    const scope = root.settings.zen_mode.edit_counter;
-                    this.restrictObject(scope, "settings", "zen_mode", "edit_counter");
-                    { // root.settings.zen_mode.edit_counter.enabled
-                        const value = root.settings.zen_mode.edit_counter.enabled;
-                        if (typeof value !== "boolean") {
-                            this.reset("settings", "zen_mode", "edit_counter", "enabled");
-                        }
-                    }
-                }
-
                 { // root.settings.zen_mode.toasts
                     const scope = root.settings.zen_mode.toasts;
                     this.restrictObject(scope, "settings", "zen_mode", "toasts");
@@ -1607,43 +1571,66 @@ class Version1 extends Version {
                         }
                     }
                 }
+
+                { // root.settings.zen_mode.badges
+                    const scope = root.settings.zen_mode.badges;
+                    this.restrictObject(scope, "settings", "zen_mode", "badges");
+                    { // root.settings.zen_mode.badges.enabled
+                        const value = root.settings.zen_mode.badges.enabled;
+                        if (typeof value !== "boolean") {
+                            this.reset("settings", "zen_mode", "badges", "enabled");
+                        }
+                    }
+                }
             }
         }
 
-        { // root.layout
-            const scope = root.layout;
-            this.restrictObject(scope, "layout");
+        { // root.UI
+            const scope = root.UI;
+            this.restrictObject(scope, "UI");
 
-            { // root.layout.queue
-                const scope = root.layout.queue;
-                this.restrictObject(scope, "layout", "queue");
+            { // root.UI.theme
+                const scope = root.UI.theme;
+                this.restrictObject(scope, "UI", "theme");
 
-                { // root.layout.queue.width
-                    const value = root.layout.queue.width;
-                    if (!(typeof value === "string" && value.endsWith("vw"))) {
-                        this.reset("layout", "queue", "width");
-                    }
-
-                    const numericPart = parseFloat(value.slice(0, -2));
-                    if (!(typeof numericPart === "number" && !isNaN(numericPart) && numericPart >= 10 && numericPart <= 30)) {
-                        this.reset("layout", "queue", "width");
+                { // root.UI.theme.palette
+                    const value = root.UI.theme.palette;
+                    if (!(typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 3)) {
+                        this.reset("UI", "theme", "palette");
                     }
                 }
             }
 
-            { // root.layout.details
-                const scope = root.layout.details;
-                this.restrictObject(scope, "layout", "details");
+            { // root.UI.queue
+                const scope = root.UI.queue;
+                this.restrictObject(scope, "UI", "queue");
 
-                { // root.layout.details.width
-                    const value = root.layout.details.width;
+                { // root.UI.queue.width
+                    const value = root.UI.queue.width;
                     if (!(typeof value === "string" && value.endsWith("vw"))) {
-                        this.reset("layout", "details", "width");
+                        this.reset("UI", "queue", "width");
                     }
 
                     const numericPart = parseFloat(value.slice(0, -2));
                     if (!(typeof numericPart === "number" && !isNaN(numericPart) && numericPart >= 10 && numericPart <= 30)) {
-                        this.reset("layout", "details", "width");
+                        this.reset("UI", "queue", "width");
+                    }
+                }
+            }
+
+            { // root.UI.details
+                const scope = root.UI.details;
+                this.restrictObject(scope, "UI", "details");
+
+                { // root.UI.details.width
+                    const value = root.UI.details.width;
+                    if (!(typeof value === "string" && value.endsWith("vw"))) {
+                        this.reset("UI", "details", "width");
+                    }
+
+                    const numericPart = parseFloat(value.slice(0, -2));
+                    if (!(typeof numericPart === "number" && !isNaN(numericPart) && numericPart >= 10 && numericPart <= 30)) {
+                        this.reset("UI", "details", "width");
                     }
                 }
             }
@@ -1808,6 +1795,17 @@ class Version1 extends Version {
                     const value = root.statistics.watchlist_changes_reviewed.total;
                     if (!isValidStatistic(value)) {
                         this.reset("statistics", "watchlist_changes_reviewed", "total");
+                    }
+                }
+            }
+            { // root.statistics.users_reviewed
+                const scope = root.statistics.users_reviewed;
+                this.restrictObject(scope, "statistics", "users_reviewed");
+
+                { // root.statistics.users_reviewed.total
+                    const value = root.statistics.users_reviewed.total;
+                    if (!isValidStatistic(value)) {
+                        this.reset("statistics", "users_reviewed", "total");
                     }
                 }
             }

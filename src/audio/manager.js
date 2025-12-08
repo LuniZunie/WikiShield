@@ -1,7 +1,6 @@
 import { h, render } from 'preact';
 import { MusicToast } from "./toast.jsx";
 
-import { type } from 'jquery';
 import { generateRandomUUID } from '../utils/UUID.js';
 
 const audio = {
@@ -65,27 +64,6 @@ const audio = {
                 volume: 1,
                 data: "https://media.luni.me/audio/sound/click"
             },
-            select: {
-                type: "sound",
-                title: "Select Sound",
-                description: "Sound played when selecting options.",
-                volume: 1,
-                data: "https://media.luni.me/audio/sound/select"
-            },
-            on: {
-                type: "sound",
-                title: "Toggle On Sound",
-                description: "Sound played when toggling something on.",
-                volume: 1,
-                data: null
-            },
-            off: {
-                type: "sound",
-                title: "Toggle Off Sound",
-                description: "Sound played when toggling something off.",
-                volume: 1,
-                data: null
-            }
         }
     },
     queue: {
@@ -104,31 +82,10 @@ const audio = {
             mention: {
                 type: "sound",
                 title: "Mention Alert",
-                description: "Sound played when your username is mentioned in an edit.", // TODO add mention check to edit summary
+                description: "Sound played when your username is mentioned in an edit.",
                 volume: 1,
                 data: "https://media.luni.me/audio/sound/mention"
             },
-            recent: {
-                type: "sound",
-                title: "Recent Changes Alert",
-                description: "Sound played when there are new edits in the recent changes queue.",
-                volume: 0,
-                data: null
-            },
-            flagged: {
-                type: "sound",
-                title: "Flagged Revisions Alert",
-                description: "Sound played when there are new edits in the flagged revisions queue.",
-                volume: 0,
-                data: null
-            },
-            watchlist: {
-                type: "sound",
-                title: "Watchlist Alert",
-                description: "Sound played when there are new edits in the watchlist queue.",
-                volume: 0,
-                data: null
-            }
         }
     },
     notification: {
@@ -150,7 +107,14 @@ const audio = {
                 description: "Sound played for notices.",
                 volume: 1,
                 data: "https://media.luni.me/audio/sound/notice"
-            }
+            },
+            toast: {
+                type: "sound",
+                title: "Toast Sound",
+                description: "Sound played for toast notifications.",
+                volume: 1,
+                data: "https://media.luni.me/audio/sound/toast"
+            },
         },
     },
     action: {
@@ -171,7 +135,7 @@ const audio = {
                 title: "Failed Action Sound",
                 description: "Sound played when an action fails.",
                 volume: 1,
-                data: null
+                data: "https://media.luni.me/audio/sound/failed"
             },
             report: {
                 type: "sound",
@@ -196,28 +160,6 @@ const audio = {
             }
         }
     },
-    other: {
-        type: "category",
-        title: "Other Sounds",
-        description: "Miscellaneous sounds.",
-        volume: 1,
-        properties: {
-            success: {
-                type: "sound",
-                title: "Success Sound",
-                description: "Sound played for success notifications.",
-                volume: 1,
-                data: null
-            },
-            warn: {
-                type: "sound",
-                title: "Warning Sound",
-                description: "Sound played for warning notifications.",
-                volume: 1,
-                data: null
-            }
-        }
-    }
 };
 
 /**
@@ -417,9 +359,9 @@ export class AudioManager {
         this.audio = audio;
 
         // Simple tracking maps
-        this.activePlaylists = new Map(); // playlistKey -> PlaylistController
-        this.soundEffects = new Set(); // Set of active audio elements
-        this.previews = new Set(); // Set of preview audio elements
+        this.activePlaylists = new Map();
+        this.soundEffects = new Map();
+        this.previews = new Map();
 
         this.previewing = false;
     }
@@ -469,10 +411,10 @@ export class AudioManager {
             this.stopPreviews();
             this._muteAll();
 
-            this.previews.add(audio);
+            this.previews.set(audio, soundPath);
         }
 
-        this.soundEffects.add(audio);
+        this.soundEffects.set(audio, soundPath);
 
         const promise = new Promise((resolve, reject) => {
             audio.resolve = resolve;
@@ -563,7 +505,7 @@ export class AudioManager {
 
         const audio = new Audio(sound.data);
         audio.volume = this.getVolume(soundPath);
-        this.previews.add(audio);
+        this.previews.set(audio, soundPath);
 
         const cleanup = () => {
             this.previews.delete(audio);
@@ -579,7 +521,7 @@ export class AudioManager {
     }
 
     stopPreviews() {
-        for (const audio of this.previews) {
+        for (const audio of this.previews.keys()) {
             audio.pause();
             audio.src = "";
         }
@@ -587,12 +529,24 @@ export class AudioManager {
         this._unmuteAll();
     }
 
-    onvolumechanged() { // FIX
-        // Update all active playlist volumes
-        for (const controller of this.activePlaylists.values()) {
-            if (controller.currentAudio) {
-                const soundPath = [...controller.playlistKey.split('.'), String(controller.currentTrackIndex)];
-                controller.currentAudio.volume = this.getVolume(soundPath);
+    onvolumechanged() {
+        // Update all active playlist volumes (unless previewing)
+        if (this.previewing) {
+            for (const [audio, soundPath] of this.previews.entries()) {
+                const newVolume = this.getVolume(soundPath);
+                audio.volume = newVolume;
+            }
+        } else {
+            for (const controller of this.activePlaylists.values()) {
+                if (controller.currentAudio) {
+                    const newVolume = this.getVolume(controller.playlistKey.split('.'));
+                    controller.currentAudio.volume = newVolume;
+                }
+            }
+
+            for (const [audio, soundPath] of this.soundEffects.entries()) {
+                const newVolume = this.getVolume(soundPath);
+                audio.volume = newVolume;
             }
         }
     }
@@ -615,7 +569,7 @@ export class AudioManager {
             }
         }
 
-        for (const audio of this.soundEffects) {
+        for (const audio of this.soundEffects.keys()) {
             audio.volume = 0;
         }
     }
@@ -628,7 +582,10 @@ export class AudioManager {
             }
         }
 
-        // Sound effects will get proper volume on next play
+        // Restore sound effect volumes
+        for (const [audio, soundPath] of this.soundEffects.entries()) {
+            audio.volume = this.getVolume(soundPath);
+        }
     }
 
     _createToast(track, audio, controller) {
@@ -697,9 +654,9 @@ export class AudioManager {
     }
 
     getVolume(path) {
-        path = [ "master", ...path ];
+        const volumes = this.wikishield.storage.data.settings.audio.volume;
 
-        let volume = 1;
+        let volume = volumes.master;
         let current = { type: "category", properties: this.audio };
         const pathParts = [];
         for (const segment of path) {
@@ -715,7 +672,7 @@ export class AudioManager {
 
             if (!current) break;
 
-            const specificVolume = this.wikishield.storage.data.settings.audio.volume[pathParts.join(".")];
+            const specificVolume = volumes[pathParts.join(".")];
             if (specificVolume !== undefined) {
                 volume *= specificVolume;
             }

@@ -48,6 +48,10 @@ function hasApproxSubstring(needle, haystack, k) {
 }
 
 export class WikiShieldUtil {
+	constructor(wikishield) {
+		this.wikishield = wikishield;
+	}
+
 	/**
 	* Given a Date object, return a string in the format YYYY-MM-DDTHH:MM:SS
 	* @param {Date} date The date to convert
@@ -144,7 +148,6 @@ export class WikiShieldUtil {
 	* @param {Number} len The length to truncate to
 	* @returns {String} The truncated string
 	*/
-	// FIX will cutoff html tags awkwardly; consider a more robust solution if needed
 	maxStringLength(str, len) {
 		return str.length > len ? `${str.substring(0, len - 3).trimEnd()}...` : str;
 	}
@@ -198,13 +201,13 @@ export class WikiShieldUtil {
 		const seconds = Math.floor(difference / 1000);
 
 		// Handle future timestamps (clock skew)
-		if (seconds < 0) {
+		if (seconds <= 0) {
 			return "just now";
 		}
 
-		if (seconds > 60) {
-			if (seconds > 60 * 60) {
-				if (seconds > 60 * 60 * 24) {
+		if (seconds >= 60) {
+			if (seconds >= 60 * 60) {
+				if (seconds >= 60 * 60 * 24) {
 					const val = Math.floor(seconds / 60 / 60 / 24);
 					return val + " day" + (val !== 1 ? "s" : "") + " ago";
 				}
@@ -218,6 +221,10 @@ export class WikiShieldUtil {
 	}
 
 	usernameMatch(needle, haystack) {
-		return hasApproxSubstring(needle, haystack, 2);
+		if (this.wikishield.storage.data.settings.username_highlighting.fuzzy) {
+			return haystack.toLowerCase().includes(needle.toLowerCase());
+		} else {
+			return hasApproxSubstring(needle, haystack, 2);
+		}
 	}
 }

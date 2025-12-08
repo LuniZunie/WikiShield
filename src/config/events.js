@@ -33,8 +33,6 @@ export const validEvents = {
                 return false;
             }
 
-            wikishield.storage.data.statistics.pending_changes_reviewed.accepted++;
-
             const count = __FLAGGED__.count;
             const countSection = `${count ? `${count} ` : ""} pending edit${count === 1 ? "" : "s"}`;
 
@@ -70,7 +68,19 @@ export const validEvents = {
             }
 
             const message = `Accepted ${countSection} by ${userText}`;
-            return await wikishield.api.acceptFlaggedEdit(currentEdit, wikishield.api.buildMessage(message, event.reason));
+            const result = await wikishield.api.acceptFlaggedEdit(currentEdit, wikishield.api.buildMessage(message, event.reason));
+            if (result) {
+                wikishield.storage.data.statistics.pending_changes_reviewed.accepted++;
+            } else {
+                wikishield.interface.showToast(
+                    "Failed to accept flagged edit.",
+                    `Could not accept the flagged edit by ${userText}.`,
+                    5000,
+                    "error"
+                );
+            }
+
+            return result;
         }
     },
     rejectFlaggedEdit: {
@@ -91,8 +101,6 @@ export const validEvents = {
             if (!__FLAGGED__) {
                 return false;
             }
-
-            wikishield.storage.data.statistics.pending_changes_reviewed.rejected++;
 
             const count = __FLAGGED__.count;
             const countSection = `${count ? `${count} ` : ""} pending edit${count === 1 ? "" : "s"}`;
@@ -129,7 +137,19 @@ export const validEvents = {
             }
 
             const message = `Rejected ${countSection} by ${userText} to [[Special:Diff/${__FLAGGED__.priorRevid}|last stable revision]]`;
-            return await wikishield.api.rejectFlaggedEdit(currentEdit, wikishield.api.buildMessage(message, event.reason), __FLAGGED__.priorRevid);
+            const result = await wikishield.api.rejectFlaggedEdit(currentEdit, wikishield.api.buildMessage(message, event.reason), __FLAGGED__.priorRevid);
+            if (result) {
+                wikishield.storage.data.statistics.pending_changes_reviewed.rejected++;
+            } else {
+                wikishield.interface.showToast(
+                    "Failed to reject flagged edit.",
+                    `Could not reject the flagged edit by ${userText}.`,
+                    5000,
+                    "error"
+                );
+            }
+
+            return result;
         }
     },
 
@@ -330,9 +350,18 @@ export const validEvents = {
             return true;
         }
     },
+    switchToUsersQueue: {
+        description: "Switch to users queue",
+        icon: "fas fa-user",
+        runWithoutEdit: true,
+        func: (wikishield) => {
+            wikishield.queue.switchQueueTab("users");
+            return true;
+        }
+    },
     switchToWatchlistQueue: {
         description: "Switch to watchlist queue",
-        icon: "fas fa-eye",
+        icon: "fas fa-book-bookmark",
         runWithoutEdit: true,
         func: (wikishield) => {
             wikishield.queue.switchQueueTab("watchlist");
@@ -569,7 +598,7 @@ export const validEvents = {
                 await wikishield.api.thank(currentEdit.revid);
 
                 const talkPageName = `User talk:${currentEdit.user.name}`;
-                if (await wikishield.api.pageExists(talkPageName) === false) { // if talk page doesn't exist, we can use the welcome, thanks template =)
+                if ((await wikishield.api.pageExists(talkPageName))[talkPageName] === false) { // if talk page doesn't exist, we can use the welcome, thanks template =)
                     await wikishield.api.newSection(talkPageName, "Thank you!", `{{subst:Thanks-autosign}}`, wikishield.api.buildMessage(message));
                 }
             } else if (mw.util.isIPAddress(currentEdit.user.name)) {
@@ -684,7 +713,8 @@ export const validEvents = {
                 options: [
                     "Vandalism past final warning",
                     "Vandalism-only account",
-                    "Long-term abuse"
+                    "Long-term abuse",
+                    "Spambot or compromised account"
                 ],
             },
             {
@@ -731,14 +761,12 @@ export const validEvents = {
         progressDesc: "Reporting...",
         func: async (wikishield, params, currentEdit) => {
             if (mw.util.isTemporaryUser(currentEdit.user.name) || mw.util.isIPAddress(currentEdit.user.name)) {
-                if (wikishield.interface.showToast(
+                wikishield.interface.showToast(
                     "Report Failed",
                     `Can not file a report for a temporary account or an IP address (${currentEdit.user.name})`,
                     5000,
                     "error"
-                )) {
-                    wikishield.audioManager.playSound([ "other", "error" ]);
-                }
+                );
 
                 return false;
             }
@@ -761,9 +789,9 @@ export const validEvents = {
                 id: "level",
                 type: "choice",
                 options: [
-                    "Semi-protection",
-                    "Extended-confirmed protection",
                     "Full protection",
+                    "Extended-confirmed protection",
+                    "Semi-protection",
                     "Pending changes protection"
                 ],
             },
@@ -772,7 +800,9 @@ export const validEvents = {
                 id: "reason",
                 type: "choice",
                 options: [
+                    "Generic",
                     "Persistent vandalism",
+                    "Disruptive editing",
                     "Edit warring",
                     "BLP violations",
                     "Sockpuppetry",
@@ -788,7 +818,13 @@ export const validEvents = {
         includeInProgress: true,
         progressDesc: "Requesting protection...",
         func: async (wikishield, params, currentEdit) => {
-            const reason = params.comment ? `${params.reason}: ${params.comment}` : params.reason;
+            let reason = "";
+            if (params.reason === "Generic") {
+                reason = params.comment;
+            } else {
+                reason = params.comment ? `${params.reason}: ${params.comment}` : params.reason;
+            }
+
             await wikishield.requestProtection(
                 currentEdit.page.title,
                 params.level,
@@ -879,12 +915,10 @@ export const validEvents = {
         includeInProgress: true,
         progressDesc: "Welcoming...",
         func: async (wikishield, params, currentEdit) => {
-            await wikishield.welcomeUser(
+            return await wikishield.welcomeUser(
                 currentEdit.user,
                 params.template
             );
-
-            return true;
         }
     },
     toggleConsecutive: {

@@ -68,27 +68,32 @@ export const wikishieldHTML = {
 					</div>
 					<div id="queue-top-right">
 						<span class="fa fa-inbox" id="notices-icon" data-tooltip="Notices" style="position: relative; display: none;" data-zen-show="notices">
-							<span id="notices-count" class="icon-count blue" style="display: none;"></span>
+							<span id="notices-count" class="icon-count hidden blue" data-zen-show="badges"></span>
 						</span>
 						<span class="fa fa-bell" id="alerts-icon" data-tooltip="Alerts" style="position: relative;" data-zen-show="alerts">
-							<span id="alerts-count" class="icon-count red" style="display: none;"></span>
+							<span id="alerts-count" class="icon-count hidden red" data-zen-show="badges"></span>
 						</span>
 					</div>
 				</div>
 				<div id="queue-tabs">
 					<div id="queue-tab-recent" class="queue-tab selected" data-tooltip="Recent edits">
 						<span class="fas fa-stopwatch" style="position: relative;">
-							<span class="icon-count hidden red"></span>
+							<span class="icon-count hidden red" data-zen-show="badges"></span>
 						</span>
 					</div>
 					<div id="queue-tab-flagged" class="queue-tab" data-tooltip="Pending edits">
 						<span class="fas fa-flag" style="position: relative;">
-							<span class="icon-count hidden orange"></span>
+							<span class="icon-count hidden orange" data-zen-show="badges"></span>
 						</span>
 					</div>
-					<div id="queue-tab-watchlist" class="queue-tab" data-tooltip="Watchlist edits" data-zen-show="watchlist">
+					<div id="queue-tab-users" class="queue-tab" data-tooltip="User creation logs">
+						<span class="fas fa-user" style="position: relative;">
+							<span class="icon-count hidden grey" data-zen-show="badges"></span>
+						</span>
+					</div>
+					<div id="queue-tab-watchlist" class="queue-tab" data-tooltip="Watchlist edits">
 						<span class="fas fa-book-bookmark" style="position: relative;">
-							<span class="icon-count hidden blue"></span>
+							<span class="icon-count hidden blue" data-zen-show="badges"></span>
 						</span>
 					</div>
 				</div>
@@ -125,9 +130,7 @@ export const wikishieldHTML = {
 						</div>
 					</div>
 
-					<div class="icons">
-						<i class="created-page hidden fas fa-file-circle-plus" data-tooltip="No other users have edited this page"></i>
-					</div>
+					<div class="icons"></div>
 				</div>
 				<div id="right-content">
 					<div id="main-container">
@@ -147,60 +150,50 @@ export const wikishieldHTML = {
 							<div class="reject">Reject</div>
 						</div>
 						<div id="progress-bar-container"></div>
-						<div id="bottom-tools">
-							<div id="bottom-tools-left">
-								<div class="bottom-tool-item" data-menu="revert">
-									<div class="bottom-tool-trigger">
-										<i class="fas fa-undo"></i>
-										<span>Revert & Warn</span>
-										<i class="fas fa-chevron-up bottom-tool-chevron"></i>
-									</div>
-								</div>
-
-								<div class="bottom-tool-item" data-menu="warn">
-									<div class="bottom-tool-trigger">
-										<i class="fas fa-exclamation-triangle"></i>
-										<span>Warn</span>
-										<i class="fas fa-chevron-up bottom-tool-chevron"></i>
-									</div>
-								</div>
-
-								<div class="bottom-tool-item" data-menu="user">
-									<div class="bottom-tool-trigger">
-										<i class="fas fa-user"></i>
-										<span>User</span>
-										<i class="fas fa-chevron-up bottom-tool-chevron"></i>
-									</div>
-								</div>
-
-								<div class="bottom-tool-item" data-menu="page">
-									<div class="bottom-tool-trigger">
-										<i class="fas fa-file-lines"></i>
-										<span>Page</span>
-										<i class="fas fa-chevron-up bottom-tool-chevron"></i>
-									</div>
-								</div>
-
-								<div class="bottom-tool-item" data-menu="edit">
-									<div class="bottom-tool-trigger">
-										<i class="fas fa-pen-to-square"></i>
-										<span>Edit</span>
-										<i class="fas fa-chevron-up bottom-tool-chevron"></i>
-									</div>
+						<div id="bottom-tools" data-queue-type="edit,logevent">
+							<div class="bottom-tool-item" data-menu="revert" data-queue-type="edit">
+								<div class="bottom-tool-trigger">
+									<i class="fas fa-undo"></i>
+									<span>Revert & Warn</span>
+									<i class="fas fa-chevron-up bottom-tool-chevron"></i>
 								</div>
 							</div>
 
-							<div id="bottom-tools-stats" data-zen-show="editCount">
-								<div class="stat-item">
+							<div class="bottom-tool-item" data-menu="warn" data-queue-type="edit,logevent">
+								<div class="bottom-tool-trigger">
+									<i class="fas fa-exclamation-triangle"></i>
+									<span>Warn</span>
+									<i class="fas fa-chevron-up bottom-tool-chevron"></i>
+								</div>
+							</div>
+
+							<div class="bottom-tool-item" data-menu="user" data-queue-type="edit,logevent">
+								<div class="bottom-tool-trigger">
 									<i class="fas fa-user"></i>
-									<span class="bottom-stat-value" id="stat-total-contribs">-</span>
-									<span>edits</span>
+									<span>User</span>
+									<i class="fas fa-chevron-up bottom-tool-chevron"></i>
+								</div>
+							</div>
+
+							<div class="bottom-tool-item" data-menu="page" data-queue-type="edit">
+								<div class="bottom-tool-trigger">
+									<i class="fas fa-file-lines"></i>
+									<span>Page</span>
+									<i class="fas fa-chevron-up bottom-tool-chevron"></i>
+								</div>
+							</div>
+
+							<div class="bottom-tool-item" data-menu="edit" data-queue-type="edit">
+								<div class="bottom-tool-trigger">
+									<i class="fas fa-pen-to-square"></i>
+									<span>Edit</span>
+									<i class="fas fa-chevron-up bottom-tool-chevron"></i>
 								</div>
 							</div>
 						</div>
 					</div>
 					<div id="right-details">
-						<div id="user-contribs" class="right-detail">
+						<div id="user-contribs" class="right-detail" data-queue-type="edit,logevent">
 							<div id="user-contribs-top" class="right-detail-top">
 								<div class="right-detail-left">
 									<div id="user-contribs-title" class="right-detail-title">User Contributions</div>
@@ -211,8 +204,8 @@ export const wikishieldHTML = {
 							</div>
 							<div id="user-contribs-content" class="queue-list"></div>
 						</div>
-						<div class="height-adjust"></div>
-						<div id="page-history" class="right-detail">
+						<div id="right-height-adjust" class="height-adjust" data-queue-type="edit"></div>
+						<div id="page-history" class="right-detail" data-queue-type="edit">
 							<div id="page-history-top" class="right-detail-top">
 								<div class="right-detail-left">
 									<div id="page-history-title" class="right-detail-title">Page History</div>

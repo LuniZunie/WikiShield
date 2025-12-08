@@ -5,10 +5,17 @@
 }
 
 .shimmer {
+	position: relative;
+
     &::before {
         content: '';
 
+		pointer-events: none;
+
         position: absolute;
+		inset: 0;
+
+		padding: var(--shimmer-size, 2px);
 
         animation: shimmer 2.5s infinite linear;
 
@@ -132,6 +139,8 @@ body {
     line-height: 1.5;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
+
+	background: var(--dark-bg-primary);
 }
 
 /* Interactive elements */

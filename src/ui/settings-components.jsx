@@ -123,7 +123,7 @@ export class NumericInput extends Component {
 					onClick={this.handleMinus}
 				></span>
 				<input
-					type="text"
+					type="name"
 					class="numeric-input"
 					value={inputValue}
 					onInput={(e) => this.setState({ inputValue: e.target.value })}
@@ -266,6 +266,133 @@ export class SettingsCompactGrid extends Component {
 	}
 }
 
+export class DraggableOrderList extends Component {
+	constructor(props) {
+		super(props);
+		this.state = {
+			items: [],
+			draggedIndex: null,
+			placeholderIndex: null
+		};
+		this.listRef = null;
+	}
+
+	componentDidMount() {
+		this.syncItemsFromChildren();
+	}
+
+	componentDidUpdate(prevProps) {
+		if (prevProps.children !== this.props.children && this.state.draggedIndex === null) {
+			this.syncItemsFromChildren();
+		}
+	}
+
+	syncItemsFromChildren = () => {
+		const { children } = this.props;
+		if (Array.isArray(children)) {
+			this.setState({ items: children.map((child, i) => ({ child, key: child.key || i })) });
+		}
+	}
+
+	handleDragStart = (index, e) => {
+		this.setState({ draggedIndex: index, placeholderIndex: index });
+		e.dataTransfer.effectAllowed = 'move';
+		e.dataTransfer.setData('text/plain', index);
+
+		// Add a slight delay to allow the drag image to be captured
+		requestAnimationFrame(() => {
+			this.setState(state => ({ ...state }));
+		});
+	}
+
+	handleDragOver = (index, e) => {
+		e.preventDefault();
+		const { draggedIndex, placeholderIndex } = this.state;
+
+		if (draggedIndex === null || index === placeholderIndex) return;
+
+		// Reorder items in real-time
+		this.setState(state => {
+			const newItems = [...state.items];
+			const draggedItem = newItems[state.draggedIndex];
+
+			// Remove from old position
+			newItems.splice(state.draggedIndex, 1);
+			// Insert at new position
+			newItems.splice(index, 0, draggedItem);
+
+			return {
+				items: newItems,
+				draggedIndex: index,
+				placeholderIndex: index
+			};
+		});
+	}
+
+	handleDragEnd = () => {
+		const { onReorder } = this.props;
+		const { items } = this.state;
+
+		// Notify parent of the final order
+		if (onReorder) {
+			onReorder(items.map(item => item.key));
+		}
+
+		this.setState({ draggedIndex: null, placeholderIndex: null });
+	}
+
+	render() {
+		const { items, draggedIndex } = this.state;
+		const isDragging = draggedIndex !== null;
+
+		return (
+			<div class={`draggable-order-list ${isDragging ? 'is-dragging' : ''}`} ref={el => this.listRef = el}>
+				{items.map((item, index) => {
+					const isThisDragging = draggedIndex === index;
+
+					return (
+						<div
+							key={item.key}
+							class={`draggable-order-item-wrapper ${isThisDragging ? 'dragging' : ''}`}
+							draggable
+							onDragStart={(e) => this.handleDragStart(index, e)}
+							onDragOver={(e) => this.handleDragOver(index, e)}
+							onDragEnd={this.handleDragEnd}
+						>
+							{item.child}
+						</div>
+					);
+				})}
+			</div>
+		);
+	}
+}
+
+export class DraggableOrderItem extends Component {
+	handleToggle = (e) => {
+		e.stopPropagation();
+		const { onToggle, enabled } = this.props;
+		if (onToggle) {
+			onToggle(!enabled);
+		}
+	}
+
+	render() {
+		const { name, enabled = true } = this.props;
+
+		return (
+			<div class={`draggable-order-item ${enabled ? '' : 'disabled'}`}>
+				<span class="draggable-order-item-name">{name}</span>
+				<div
+					class="draggable-order-item-toggle"
+					onClick={this.handleToggle}
+					title={enabled ? 'Click to disable' : 'Click to enable'}
+				/>
+			</div>
+		);
+	}
+}
+
 /**
  * General Settings Panel Component
  */
@@ -274,11 +401,13 @@ export class GeneralSettings extends Component {
 		const {
 			maxEditCount,
 			maxQueueSize,
+			minOresScore,
 			watchlistExpiry,
 			namespaces,
 			selectedNamespaces,
 			onMaxEditCountChange,
 			onMaxQueueSizeChange,
+			onMinOresScoreChange,
 			onWatchlistExpiryChange,
 			onNamespaceToggle,
 		} = this.props;
@@ -295,8 +424,8 @@ export class GeneralSettings extends Component {
 						<NumericInput
 							value={maxEditCount}
 							min={0}
-							max={100000}
-							step={100}
+							max={1000000}
+							step={50}
 							onChange={onMaxEditCountChange}
 						/>
 					</SettingsSection>
@@ -313,6 +442,21 @@ export class GeneralSettings extends Component {
 							max={500}
 							step={1}
 							onChange={onMaxQueueSizeChange}
+						/>
+					</SettingsSection>
+
+					<SettingsSection
+						compact
+						id="minimum-ores-score"
+						title="Minimum ORES score"
+						description="The minimum ORES score required to show an edit in the recent changes queue"
+					>
+						<NumericInput
+							value={minOresScore}
+							min={0}
+							max={1}
+							step={0.05}
+							onChange={onMinOresScoreChange}
 						/>
 					</SettingsSection>
 
@@ -350,7 +494,6 @@ export class GeneralSettings extends Component {
 										type="checkbox"
 										checked={selectedNamespaces.includes(namespace.id)}
 										onChange={(e) => {
-											this.props.wikishield.audioManager.playSound([ "ui", "select" ]);
 											onNamespaceToggle(namespace.id, e.target.checked);
 										}}
 										autoComplete="off"
@@ -381,7 +524,7 @@ export class PerformanceSettings extends Component { // ts don't do shit
 						value={this.props.startup}
 						options={[
 							{ value: 'always_off', label: 'Always Off' },
-							{ value: 'auto', label: 'Auto' },
+							{ value: 'adaptive', label: 'Adaptive' },
 							{ value: 'always_on', label: 'Always On' }
 						]}
 						onChange={this.props.onStartupChange}
@@ -495,7 +638,8 @@ export class QueueSettings extends Component {
 	constructor(props) {
 		super(props);
 		this.state = {
-			selectedPalette: props.selectedPalette
+			selectedPalette: props.selectedPalette,
+			queues: [...props.queues]
 		};
 	}
 
@@ -504,12 +648,54 @@ export class QueueSettings extends Component {
 		this.props.onPaletteChange(index);
 	}
 
+	handleReorder = (orderedKeys) => {
+		const { queues } = this.state;
+		const { onQueueReorder } = this.props;
+
+		const queueMap = new Map(queues);
+		const newQueues = orderedKeys.map(key => [ key, queueMap.get(key) ]);
+
+		this.setState({ queues: newQueues });
+		if (onQueueReorder) {
+			onQueueReorder(newQueues);
+		}
+	}
+
+	handleToggle = (id, enabled) => {
+		const { queues } = this.state;
+		const { onQueueToggle } = this.props;
+
+		const newQueues = queues.map(([ queueId, data ]) =>
+			queueId === id ? [ queueId, { ...data, enabled } ] : [ queueId, data ]
+		);
+
+		this.setState({ queues: newQueues });
+		if (onQueueToggle) {
+			onQueueToggle(id, enabled);
+		}
+	}
+
 	render() {
 		const { colorPalettes } = this.props;
-		const { selectedPalette } = this.state;
+		const { selectedPalette, queues } = this.state;
 
 		return (
 			<div>
+				<SettingsSection
+					title="Queues"
+					description="Enable or disable different edit queues, and customize their order"
+				>
+					<DraggableOrderList onReorder={this.handleReorder}>
+						{queues.map(([ id, queue ]) => (
+							<DraggableOrderItem
+								key={queue.key}
+								name={queue.name}
+								enabled={queue.enabled}
+								onToggle={(enabled) => this.handleToggle(queue.key, enabled)}
+							/>
+						))}
+					</DraggableOrderList>
+				</SettingsSection>
 				<SettingsSection
 					title="Color Palette"
 					description="Choose how ORES scores are displayed visually"
@@ -521,6 +707,7 @@ export class QueueSettings extends Component {
 								class={`palette-option ${selectedPalette === index ? 'selected' : ''}`}
 								onClick={() => this.handlePaletteChange(index)}
 							>
+								<div class="palette-name">Palette {index + 1}</div>
 								<div class="palette-preview">
 									{colors.map((color, i) => (
 										<div
@@ -530,7 +717,6 @@ export class QueueSettings extends Component {
 										/>
 									))}
 								</div>
-								<div class="palette-name">Palette {index + 1}</div>
 							</div>
 						))}
 					</div>
@@ -554,7 +740,7 @@ export class ZenSettings extends Component {
 			notices,
 			alerts,
 
-			edit_counter,
+			badges,
 			toasts,
 		} = this.props;
 
@@ -597,6 +783,7 @@ export class ZenSettings extends Component {
 							onChange={this.props.onMusicChange}
 						/>
 					</SettingsSection>
+
 					<SettingsSection
 						compact
 						title="Alerts"
@@ -617,17 +804,6 @@ export class ZenSettings extends Component {
 							onChange={this.props.onNoticesChange}
 						/>
 					</SettingsSection>
-
-					<SettingsSection
-						compact
-						title="Edit Count"
-						description="Show edit count in Zen mode"
-					>
-						<Toggle
-							value={edit_counter.enabled}
-							onChange={this.props.onEditCounterChange}
-						/>
-					</SettingsSection>
 					<SettingsSection
 						compact
 						title="Toasts"
@@ -636,6 +812,17 @@ export class ZenSettings extends Component {
 						<Toggle
 							value={toasts.enabled}
 							onChange={this.props.onToastsChange}
+						/>
+					</SettingsSection>
+
+					<SettingsSection
+						compact
+						title="Notification Badges"
+						description="Show all notification badges in Zen mode."
+					>
+						<Toggle
+							value={badges.enabled}
+							onChange={this.props.onBadgesChange}
 						/>
 					</SettingsSection>
 				</SettingsCompactGrid>
@@ -1045,7 +1232,6 @@ export class AutoReportingSettings extends Component {
 										type="checkbox"
 										checked={selectedAutoReportReasons.has(warning)}
 										onChange={(e) => {
-											this.props.wikishield.audioManager.playSound([ "ui", "select" ]);
 											this.props.onWarningToggle(warning, e.target.checked);
 										}}
 										autoComplete="off"
@@ -1124,12 +1310,11 @@ export class SaveSettings extends Component {
 
 			let warningsHtml = '';
 			if (result.warnings && result.warnings.length > 0) {
-				warningsHtml = `<div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(40, 167, 69, 0.3);">
-					<strong>Warnings:</strong>
-					<ul style="margin: 4px 0 0 20px; font-size: 0.9em;">
-						${result.warnings.map(w => `<li>${w}</li>`).join('')}
-					</ul>
-				</div>`;
+				warningsHtml = '<br/><br/><strong>Warnings:</strong><ul>';
+				result.warnings.forEach(warning => {
+					warningsHtml += `<li>${warning}</li>`;
+				});
+				warningsHtml += '</ul>';
 			}
 
 			this.setState({
@@ -1181,36 +1366,32 @@ export class SaveSettings extends Component {
 				>
 					<Toggle
 						value={enableCloudStorage}
-						onChange={this.props.onCloudStorageToggle}
+						onChange={onCloudStorageToggle}
 					/>
 				</SettingsSection>
 				<SettingsSection
-					title="Import / Export Settings"
+					title="Import / Export / Reset Settings"
 					description="Import, export, or reset your WikiShield settings. Settings are encoded as a base64 string for easy sharing."
 				>
-					<div style="display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap;">
+					<div class="buttons">
 						<button
 							id="export-settings-btn"
-							class="add-action-button"
 							onClick={this.handleExport}
-							style="flex: 1; min-width: 120px;"
 						>
 							<span class="fa fa-download"></span> Export Settings
 						</button>
 						<button
 							id="import-settings-btn"
-							class="add-action-button"
 							onClick={this.handleImportToggle}
-							style={`flex: 1; min-width: 120px; ${showImportInput ? 'background: #28a745;' : ''}`}
+							style={`${showImportInput ? '--background: 40, 167, 69, 1;' : ''}`}
 						>
 							<span class={`fa ${showImportInput ? 'fa-check' : 'fa-upload'}`}></span>
 							{showImportInput ? ' Apply Import' : ' Import Settings'}
 						</button>
 						<button
 							id="reset-settings-btn"
-							class="add-action-button"
 							onClick={this.handleReset}
-							style="flex: 1; min-width: 120px; background: #dc3545;"
+							style="--background: 211, 51, 51;"
 						>
 							<span class="fa fa-undo"></span> Reset to Default
 						</button>
@@ -1219,20 +1400,13 @@ export class SaveSettings extends Component {
 					{statusMessage && (
 						<div
 							id="import-export-status"
-							style={`
-								margin-top: 12px;
-								padding: 12px;
-								border-radius: 6px;
-								background: ${statusMessage.type === 'success' ? 'rgba(40, 167, 69, 0.2)' : 'rgba(220, 53, 69, 0.2)'};
-								border: 2px solid ${statusMessage.type === 'success' ? '#28a745' : '#dc3545'};
-								color: ${statusMessage.type === 'success' ? '#28a745' : '#dc3545'};
-							`}
+							class={statusMessage.type === 'success' ? 'status-success' : 'status-error'}
 						>
-							<div style="display: flex; align-items: start; gap: 8px;">
-								<span class={`fa ${statusMessage.type === 'success' ? 'fa-check-circle' : 'fa-times-circle'}`} style="margin-top: 2px;"></span>
-								<div style="flex: 1;">
+							<div>
+								<span class={`fa ${statusMessage.type === 'success' ? 'fa-check-circle' : 'fa-times-circle'}`}></span>
+								<div>
 									<strong>{statusMessage.title}</strong>
-									<div style="font-size: 0.9em; margin-top: 4px;">{statusMessage.message}</div>
+									<div>{statusMessage.message}</div>
 									{statusMessage.extra && (
 										<div dangerouslySetInnerHTML={{ __html: statusMessage.extra }} />
 									)}
@@ -1247,18 +1421,7 @@ export class SaveSettings extends Component {
 							placeholder="Paste base64 settings string here..."
 							value={importValue}
 							onInput={(e) => this.setState({ importValue: e.target.value })}
-							style="
-								width: 100%;
-								min-height: 100px;
-								margin-top: 12px;
-								padding: 12px;
-								border: 2px solid rgba(128, 128, 128, 0.3);
-								border-radius: 6px;
-								font-family: 'Courier New', monospace;
-								font-size: 0.85em;
-								background: rgba(0, 0, 0, 0.2);
-								color: inherit;
-							"
+							resize="vertical"
 						/>
 					)}
 				</SettingsSection>

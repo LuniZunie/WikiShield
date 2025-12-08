@@ -195,10 +195,10 @@ export class WikiShieldSettingsInterface {
 		toggle.addEventListener("click", () => {
 			value = !value;
 			if (value) {
-				this.wikishield.audioManager.playSound([ "ui", "on" ]);
+				this.wikishield.audioManager.playSound([ "ui", "click" ]);
 				toggle.classList.add("active");
 			} else {
-				this.wikishield.audioManager.playSound([ "ui", "off" ]);
+				this.wikishield.audioManager.playSound([ "ui", "click" ]);
 				toggle.classList.remove("active");
 			}
 			onChange(value);
@@ -206,7 +206,7 @@ export class WikiShieldSettingsInterface {
 	}
 
 	createVolumeSlider(container, path, volume) {
-		const key = path ? path.join(".") : "master";
+		const key = [ "master", ...(path || []) ].join(".");
 
 		const wrapper = document.createElement("div");
 		wrapper.classList.add("audio-volume-control");
@@ -463,20 +463,29 @@ export class WikiShieldSettingsInterface {
 		this.renderComponent(
 			h(GeneralSettings, {
 				wikishield: this.wikishield,
+
 				maxEditCount: settings.queue.max_edits,
-				maxQueueSize: settings.queue.max_size,
-				watchlistExpiry: settings.expiry.watchlist,
-				namespaces,
-				selectedNamespaces: settings.namespaces,
 				onMaxEditCountChange: (value) => {
 					settings.queue.max_edits = value;
 				},
+
+				maxQueueSize: settings.queue.max_size,
 				onMaxQueueSizeChange: (value) => {
 					settings.queue.max_size = value;
 				},
+
+				minOresScore: settings.queue.min_ores,
+				onMinOresScoreChange: (value) => {
+					settings.queue.min_ores = value;
+				},
+
+				watchlistExpiry: settings.expiry.watchlist,
 				onWatchlistExpiryChange: (value) => {
 					settings.expiry.watchlist = value;
 				},
+
+				namespaces,
+				selectedNamespaces: settings.namespaces,
 				onNamespaceToggle: (nsid, checked) => {
 					if (checked) {
 						const set = new Set(settings.namespaces);
@@ -788,14 +797,32 @@ export class WikiShieldSettingsInterface {
 	* Open appearance settings section (Dark mode only)
 	*/
 	openQueue() {
+		const queueNames = { recent: "Recent changes", flagged: "Pending changes", users: "User creation logs", watchlist: "Watchlist" };
+		const queues = Object.entries(queueNames).map(([ key, name ]) => [ key, { key, name, ...this.wikishield.storage.data.settings.queue[key] } ]);
+		queues.sort((a, b) => a[1].order - b[1].order);
+
 		this.renderComponent(
 			h(QueueSettings, {
 				wikishield: this.wikishield,
-				selectedPalette: this.wikishield.storage.data.settings.theme.palette,
+
+				queues,
+				onQueueToggle: (queueKey, enabled) => {
+					this.wikishield.storage.data.settings.queue[queueKey].enabled = enabled;
+					this.wikishield.interface.updateQueueTabs();
+				},
+				onQueueReorder: (newOrder) => {
+					newOrder.forEach(([ queueKey ], index) => {
+						this.wikishield.storage.data.settings.queue[queueKey].order = index;
+					});
+
+					this.wikishield.interface.updateQueueTabs();
+				},
+
+				selectedPalette: this.wikishield.storage.data.UI.theme.palette,
 				colorPalettes,
 				onPaletteChange: (paletteIndex) => {
 					this.wikishield.audioManager.playSound([ "ui", "click" ]);
-					this.wikishield.storage.data.settings.theme.palette = paletteIndex;
+					this.wikishield.storage.data.UI.theme.palette = paletteIndex;
 					document.querySelectorAll(".queue-edit-color").forEach(el => {
 						el.style.background = this.wikishield.interface.getORESColor(+el.dataset.rawOresScore);
 					});
@@ -827,25 +854,25 @@ export class WikiShieldSettingsInterface {
 					this.wikishield.interface.updateZenModeDisplay();
 				},
 				onMusicChange: value => {
-					this.wikishield.storage.data.settings.zen_mode.music = value;
+					this.wikishield.storage.data.settings.zen_mode.music.enabled = value;
 					this.wikishield.interface.updateZenModeDisplay(true);
 				},
 
 				onAlertsChange: value => {
-					this.wikishield.storage.data.settings.zen_mode.alerts = value;
+					this.wikishield.storage.data.settings.zen_mode.alerts.enabled = value;
 					this.wikishield.interface.updateZenModeDisplay();
 				},
 				onNoticesChange: value => {
-					this.wikishield.storage.data.settings.zen_mode.notices = value;
-					this.wikishield.interface.updateZenModeDisplay();
-				},
-
-				onEditCounterChange: value => {
-					this.wikishield.storage.data.settings.zen_mode.edit_counter = value;
+					this.wikishield.storage.data.settings.zen_mode.notices.enabled = value;
 					this.wikishield.interface.updateZenModeDisplay();
 				},
 				onToastsChange: value => {
-					this.wikishield.storage.data.settings.zen_mode.toasts = value;
+					this.wikishield.storage.data.settings.zen_mode.toasts.enabled = value;
+					this.wikishield.interface.updateZenModeDisplay();
+				},
+
+				onBadgesChange: value => {
+					this.wikishield.storage.data.settings.zen_mode.badges.enabled = value;
 					this.wikishield.interface.updateZenModeDisplay();
 				},
 			})
@@ -1275,7 +1302,7 @@ export class WikiShieldSettingsInterface {
 					<div class="settings-section compact inline" id="edit-analysis-toggle">
 						<div class="settings-section-content">
 							<div class="settings-section-title">Edit Analysis</div>
-							<div class="settings-section-desc">Suggests actions to take on edits, such as "welcome", "thank", "rollback", "rever-and-warn"</div>
+							<div class="settings-section-desc">Suggests actions to take on edits, such as "welcome", "thank", "rollback", "revert-and-warn"</div>
 						</div>
 					</div>
 					<div class="settings-section compact inline" id="username-analysis-toggle">
@@ -1592,12 +1619,6 @@ ollama serve
 				<div class="settings-toggles-section">
 					<div class="settings-section-title">Gadgets</div>
 					<div class="settings-section-desc">Toggle various Wikishield features.</div>
-                    <div class="settings-section compact inline" id="username-highlighting-toggle">
-						<div class="settings-section-content">
-							<div class="settings-section-title">Highlight username</div>
-							<div class="settings-section-desc">If your username appears in a diff, the edit is highlight in the queue and outlined in the diff.</div>
-						</div>
-					</div>
 					<div class="settings-section compact inline" id="auto-welcome-toggle">
 						<div class="settings-section-content">
 							<div class="settings-section-title">Automatic welcoming of new users</div>
@@ -1605,21 +1626,47 @@ ollama serve
 						</div>
 					</div>
 				</div>
+				<div class="settings-toggles-section">
+					<div class="settings-section-title">Username Highlighting</div>
+					<div class="settings-section compact inline" id="username-highlighting-toggle">
+						<div class="settings-section-content">
+							<div class="settings-section-title">Enable username highlighting</div>
+							<div class="settings-section-desc">Highlights usernames in edit summaries, edit diffs, and user creation logs.</div>
+						</div>
+					</div>
+					<div class="settings-section compact inline" id="username-highlighting-mode-toggle">
+						<div class="settings-section-content">
+							<div class="settings-section-title">Toggle fuzzy matching mode</div>
+							<div class="settings-section-desc">
+								When enabled, highlights similar usernames. Not recommended for users with short usernames.<br/>
+								<strong>NOTE:</strong> This may cause performance issues for those with long usernames, or users on weaker devices.
+							</div>
+						</div>
+					</div>
+				</div>
 			`;
-
-		this.createToggle(
-			this.contentContainer.querySelector("#username-highlighting-toggle"),
-			settings.username_highlighting.enabled,
-			(newValue) => {
-				settings.username_highlighting.enabled = newValue;
-			}
-		);
 
 		this.createToggle(
 			this.contentContainer.querySelector("#auto-welcome-toggle"),
 			settings.auto_welcome.enabled,
 			(newValue) => {
 				settings.auto_welcome.enabled = newValue;
+			}
+		);
+
+		this.createToggle(
+			this.contentContainer.querySelector("#username-highlighting-toggle"),
+			settings.username_highlighting.enabled,
+			(newValue) => {
+				settings.username_highlighting.enabled = newValue;
+				this.wikishield.interface.renderQueue();
+			}
+		);
+		this.createToggle(
+			this.contentContainer.querySelector("#username-highlighting-mode-toggle"),
+			settings.username_highlighting.fuzzy,
+			(newValue) => {
+				settings.username_highlighting.fuzzy = newValue;
 			}
 		);
 	}
@@ -2010,7 +2057,22 @@ ollama serve
 									<div class="stat-sublabel">
 										${
 											((stats.watchlist_changes_reviewed.total / stats.edits_reviewed.total * 100) || 0).toFixed(1)
-										}% of your edit reviews came from your watchlist
+										}% of your reviews came from your watchlist
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="stat-card">
+							<div class="inside shimmer shimmer-border">
+								<div class="front">
+									<div class="stat-value">${stats.users_reviewed.total}</div>
+									<div class="stat-label">Users Reviewed</div>
+								</div>
+								<div class="back">
+									<div class="stat-sublabel">
+										${
+											((stats.users_reviewed.total / stats.edits_reviewed.total * 100) || 0).toFixed(1)
+										}% of your reviews were from the user creation log
 									</div>
 								</div>
 							</div>
@@ -2222,9 +2284,8 @@ ollama serve
 		this.contentContainer.querySelector("#reset-stats-button").addEventListener("click", () => {
 			if (confirm("Are you sure you want to reset all statistics? This cannot be undone.")) {
 				this.wikishield.storage.data.statistics = { };
-				this.wikishield.storage.load(this.wikishield.storage.data); // This will recreate the default stats structure
+				this.wikishield.storage.load(this.wikishield.storage.data);
 
-				this.wikishield.audioManager.playSound([ "other", "success" ]);
 				this.openStatistics();
 			}
 		});
@@ -2250,58 +2311,90 @@ ollama serve
 	openSaveSettings() {
 		this.clearContent();
 		this.contentContainer.innerHTML = `
-				<div class="settings-section">
+			<div id="save-settings" class="settings-section">
+				<div class="save-settings-header">
 					<div class="settings-section-title">Save Settings</div>
 					<div class="settings-section-desc">Manage how and where your WikiShield settings are stored.</div>
-					<div class="settings-toggles-section">
-						<div class="settings-section compact inline" id="enable-cloud-storage">
-							<div class="settings-section-content">
-								<div class="settings-section-title">Cloud Storage</div>
-								<div class="settings-section-desc">Store your settings in the cloud for access across multiple browsers and devices.</div>
+				</div>
+
+				<div class="save-settings-content">
+					<div class="save-settings-card cloud-storage-card">
+						<div class="card-header">
+							<div class="card-icon">
+								<i class="fa fa-cloud"></i>
+							</div>
+							<div class="card-header-content">
+								<div class="card-title">Cloud Storage</div>
+								<div class="card-desc">Store your settings in the cloud for access across multiple browsers and devices.</div>
+							</div>
+							<div class="card-toggle" id="enable-cloud-storage"></div>
+						</div>
+					</div>
+
+					<div class="save-settings-card data-management-card">
+						<div class="card-header">
+							<div class="card-icon">
+								<i class="fa fa-database"></i>
+							</div>
+							<div class="card-header-content">
+								<div class="card-title">Data Management</div>
+								<div class="card-desc">Import, export, or reset your WikiShield settings. Settings are encoded as base64 for easy sharing.</div>
 							</div>
 						</div>
-					</div>
-					<div class="settings-section">
-						<div class="settings-section-title">Import / Export Settings</div>
-						<div class="settings-section-desc">
-							Import, export, or reset your WikiShield settings. Settings are encoded as a base64 string for easy sharing.
+
+						<div class="card-body">
+							<div class="action-buttons-grid">
+								<button id="export-settings-btn" class="action-card export-card">
+									<div class="action-card-icon">
+										<i class="fa fa-download"></i>
+									</div>
+									<div class="action-card-content">
+										<div class="action-card-title">Export Settings</div>
+										<div class="action-card-desc">Save your configuration</div>
+									</div>
+								</button>
+
+								<button id="import-settings-btn" class="action-card import-card">
+									<div class="action-card-icon">
+										<i class="fa fa-upload"></i>
+									</div>
+									<div class="action-card-content">
+										<div class="action-card-title">Import Settings</div>
+										<div class="action-card-desc">Load saved configuration</div>
+									</div>
+								</button>
+
+								<button id="reset-settings-btn" class="action-card reset-card">
+									<div class="action-card-icon">
+										<i class="fa fa-undo"></i>
+									</div>
+									<div class="action-card-content">
+										<div class="action-card-title">Reset Settings</div>
+										<div class="action-card-desc">Restore to defaults</div>
+									</div>
+								</button>
+							</div>
+
+							<div id="import-export-status" class="status-message hidden"></div>
+
+							<textarea
+								id="import-settings-input"
+								class="import-textarea hidden"
+								placeholder="Paste your base64 settings string here..."
+								rows="8"
+							></textarea>
 						</div>
-						<div style="display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap;">
-							<button id="export-settings-btn" class="add-action-button" style="flex: 1; min-width: 120px;">
-								<span class="fa fa-download"></span> Export Settings
-							</button>
-							<button id="import-settings-btn" class="add-action-button" style="flex: 1; min-width: 120px;">
-								<span class="fa fa-upload"></span> Import Settings
-							</button>
-							<button id="reset-settings-btn" class="add-action-button" style="flex: 1; min-width: 120px; background: #dc3545;">
-								<span class="fa fa-undo"></span> Reset to Default
-							</button>
-						</div>
-						<div id="import-export-status" style="margin-top: 12px; padding: 12px; border-radius: 6px; display: none;"></div>
-						<textarea id="import-settings-input"
-							placeholder="Paste base64 settings string here..."
-							style="
-								width: 100%;
-								min-height: 100px;
-								margin-top: 12px;
-								padding: 12px;
-								border: 2px solid rgba(128, 128, 128, 0.3);
-								border-radius: 6px;
-								font-family: 'Courier New', monospace;
-								font-size: 0.85em;
-								background: rgba(0, 0, 0, 0.2);
-								color: inherit;
-								display: none;
-							"></textarea>
 					</div>
 				</div>
-			`;
+			</div>
+		`;
 
 		this.createToggle(
 			this.contentContainer.querySelector("#enable-cloud-storage"),
 			this.wikishield.storage.data.settings.cloud_storage.enabled,
 			(newValue) => {
 				this.wikishield.storage.data.settings.cloud_storage.enabled = newValue;
+				mw.storage.store.setItem("WikiShield:CloudStorage", newValue);
 			}
 		);
 
@@ -2316,7 +2409,6 @@ ollama serve
 			try {
 				const base64String = await this.wikishield.save(true); // Export current settings as base64
 
-				// Create a temporary textarea to copy to clipboard
 				const tempTextarea = document.createElement('textarea');
 				tempTextarea.value = base64String;
 				document.body.appendChild(tempTextarea);
@@ -2324,67 +2416,59 @@ ollama serve
 				document.execCommand('copy');
 				document.body.removeChild(tempTextarea);
 
-				statusDiv.style.display = 'block';
-				statusDiv.style.background = 'rgba(40, 167, 69, 0.2)';
-				statusDiv.style.border = '2px solid #28a745';
-				statusDiv.style.color = '#28a745';
+				statusDiv.classList.remove("hidden", "error");
+				statusDiv.classList.add("success");
 				statusDiv.innerHTML = `
-						<div style="display: flex; align-items: center; gap: 8px;">
-							<span class="fa fa-check-circle"></span>
-							<div>
-								<strong>Settings exported successfully!</strong>
-								<div style="font-size: 0.9em; margin-top: 4px;">The base64 string has been copied to your clipboard.</div>
-							</div>
+					<div class="status-content">
+						<i class="fa fa-check-circle status-icon"></i>
+						<div class="status-text">
+							<div class="status-title">Settings exported successfully!</div>
+							<div class="status-desc">The base64 string has been copied to your clipboard.</div>
 						</div>
-					`;
-
-				setTimeout(() => {
-					statusDiv.style.display = 'none';
-				}, 5000);
+					</div>
+				`;
 			} catch (error) {
-				statusDiv.style.display = 'block';
-				statusDiv.style.background = 'rgba(220, 53, 69, 0.2)';
-				statusDiv.style.border = '2px solid #dc3545';
-				statusDiv.style.color = '#dc3545';
+				statusDiv.classList.remove("hidden", "success");
+				statusDiv.classList.add("error");
 				statusDiv.innerHTML = `
-						<div style="display: flex; align-items: center; gap: 8px;">
-							<span class="fa fa-times-circle"></span>
-							<div>
-								<strong>Export failed!</strong>
-								<div style="font-size: 0.9em; margin-top: 4px;">${error.message}</div>
-							</div>
+					<div class="status-content">
+						<i class="fa fa-times-circle status-icon"></i>
+						<div class="status-text">
+							<div class="status-title">Export failed!</div>
+							<div class="status-desc">${error.message}</div>
 						</div>
-					`;
+					</div>
+				`;
 			}
 		});
 
 		importBtn.addEventListener('click', async () => {
-			if (importInput.style.display === 'none') {
-				importInput.style.display = 'block';
-				importBtn.innerHTML = '<span class="fa fa-check"></span> Apply Import';
-				importBtn.style.background = '#28a745';
-				statusDiv.style.display = 'none';
+			if (importInput.classList.contains("hidden")) {
+				statusDiv.classList.add("hidden");
+				importInput.value = "";
+				importInput.classList.remove("hidden");
+				importBtn.querySelector('.action-card-title').textContent = 'Apply Import';
+				importBtn.querySelector('.action-card-icon i').className = 'fa fa-check';
+				importBtn.classList.add('active');
 			} else {
-				const base64String = importInput.value.trim();
-				if (!base64String) {
-					statusDiv.style.display = 'block';
-					statusDiv.style.background = 'rgba(220, 53, 69, 0.2)';
-					statusDiv.style.border = '2px solid #dc3545';
-					statusDiv.style.color = '#dc3545';
+				const base64 = importInput.value.trim();
+				if (!base64) {
+					statusDiv.classList.remove("hidden", "success");
+					statusDiv.classList.add("error");
 					statusDiv.innerHTML = `
-							<div style="display: flex; align-items: center; gap: 8px;">
-								<span class="fa fa-exclamation-circle"></span>
-								<div>
-									<strong>No input!</strong>
-									<div style="font-size: 0.9em; margin-top: 4px;">Please paste a base64 settings string.</div>
-								</div>
+						<div class="status-content">
+							<i class="fa fa-exclamation-circle status-icon"></i>
+							<div class="status-text">
+								<div class="status-title">No input provided!</div>
+								<div class="status-desc">Please paste a base64 settings string.</div>
 							</div>
-						`;
+						</div>
+					`;
 					return;
 				}
 
 				try {
-					const logs = await this.wikishield.init(base64String, true); // Try to import settings
+					const logs = await this.wikishield.init(base64, true); // Try to import settings
 
 					const [ expected, unexpected ] = logs.reduce((acc, log) => {
 						if (log.expected) {
@@ -2396,75 +2480,53 @@ ollama serve
 						return acc;
 					}, [ [ ], [ ] ]);
 
-					statusDiv.style.display = 'block';
-					statusDiv.style.background = 'rgba(40, 167, 69, 0.2)';
-					statusDiv.style.border = '2px solid #28a745';
-					statusDiv.style.color = '#28a745';
-
-					let warningsHtml = '';
-					if (unexpected.length > 0) {
-						warningsHtml = `
-								<div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(40, 167, 69, 0.3);">
-									<strong>Warnings:</strong>
-									<ul style="margin: 4px 0 0 20px; font-size: 0.9em;">
-										${unexpected.map(w => `<li>${w.message}</li>`).join('')}
-									</ul>
-								</div>
-							`;
-					}
-
+					statusDiv.classList.remove("hidden", "error");
+					statusDiv.classList.add("success");
 					statusDiv.innerHTML = `
-							<div style="display: flex; align-items: start; gap: 8px;">
-								<span class="fa fa-check-circle" style="margin-top: 2px;"></span>
-								<div style="flex: 1;">
-									<strong>Settings imported successfully!</strong>
-									<div style="font-size: 0.9em; margin-top: 4px;">
-										${unexpected.length} issue${unexpected.length === 1 ? '' : 's'} encountered.
-									</div>
-									${warningsHtml}
-								</div>
+						<div class="status-content">
+							<i class="fa fa-check-circle status-icon"></i>
+							<div class="status-text">
+								<div class="status-title">Settings imported successfully!</div>
+								<div class="status-desc">${unexpected.length} issue${unexpected.length === 1 ? '' : 's'} encountered during import.</div>
 							</div>
-						`;
+						</div>
+					`;
 				} catch (error) {
-					statusDiv.style.display = 'block';
-					statusDiv.style.background = 'rgba(220, 53, 69, 0.2)';
-					statusDiv.style.border = '2px solid #dc3545';
-					statusDiv.style.color = '#dc3545';
+					statusDiv.classList.remove("hidden", "success");
+					statusDiv.classList.add("error");
 					statusDiv.innerHTML = `
-							<div style="display: flex; align-items: center; gap: 8px;">
-								<span class="fa fa-times-circle"></span>
-								<div>
-									<strong>Import failed!</strong>
-									<div style="font-size: 0.9em; margin-top: 4px;">${error.message}</div>
-								</div>
+						<div class="status-content">
+							<i class="fa fa-times-circle status-icon"></i>
+							<div class="status-text">
+								<div class="status-title">Import failed!</div>
+								<div class="status-desc">${error.message}</div>
 							</div>
-						`;
+						</div>
+					`;
 				}
 
-				importInput.style.display = 'none';
-				importInput.value = '';
-				importBtn.innerHTML = '<span class="fa fa-upload"></span> Import Settings';
-				importBtn.style.background = '';
+				importInput.classList.add("hidden");
+				importBtn.querySelector('.action-card-title').textContent = 'Import Settings';
+				importBtn.querySelector('.action-card-icon i').className = 'fa fa-upload';
+				importBtn.classList.remove('active');
 			}
 		});
 
 		resetBtn.addEventListener('click', async () => {
 			if (confirm('Are you sure you want to reset all settings to default? This cannot be undone.')) {
-				await this.wikishield.init({}, true);
+				await this.wikishield.init("e30=", true);
 
-				statusDiv.style.display = 'block';
-				statusDiv.style.background = 'rgba(255, 193, 7, 0.2)';
-				statusDiv.style.border = '2px solid #ffc107';
-				statusDiv.style.color = '#ffc107';
+				statusDiv.classList.remove("hidden", "success");
+				statusDiv.classList.add("info");
 				statusDiv.innerHTML = `
-						<div style="display: flex; align-items: center; gap: 8px;">
-							<span class="fa fa-info-circle"></span>
-							<div>
-								<strong>Settings reset to default!</strong>
-								<div style="font-size: 0.9em; margin-top: 4px;">Settings have been reset.</div>
-							</div>
+					<div class="status-content">
+						<i class="fa fa-info-circle status-icon"></i>
+						<div class="status-text">
+							<div class="status-title">Settings reset successfully!</div>
+							<div class="status-desc">All settings have been restored to their default values.</div>
 						</div>
-					`;
+					</div>
+				`;
 			}
 		});
 	}
@@ -2477,6 +2539,11 @@ ollama serve
 		this.isOpen = false;
 		document.body.classList.remove("settings-open"); // Remove blur class
 		[...document.querySelectorAll(".settings-container")].forEach(elem => elem.remove());
+
+		// Trigger dialog queue processing now that settings are closed
+		if (this.wikishield.interface) {
+			this.wikishield.interface._processDialogQueue();
+		}
 	}
 
 	/**

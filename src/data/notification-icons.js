@@ -1,0 +1,23 @@
+export const notificationIcons = {
+    alert: "fas fa-exclamation-triangle",
+    "watchlist-progressive": "fas fa-eye",
+    placeholder: "fas fa-bell",
+    chat: "fas fa-comments",
+    edit: "fas fa-edit",
+    "edit-user-page": "fas fa-user",
+    "edit-user-talk": "fas fa-user-tie",
+    linked: "fas fa-link",
+    mention: "fas fa-at",
+    "mention-failure": "fas fa-at",
+    "mention-success": "fas fa-at",
+    "mention-status-bundle": "fas fa-at",
+    "reviewed": "fas fa-check",
+    "revert": "fas fa-undo",
+    "user-rights": "fas fa-user-shield",
+    "emailuser": "fas fa-envelope",
+    "help": "fas fa-hands-helping",
+    "global": "fas fa-globe",
+    "site": "fas fa-cogs",
+    "article-reminder": "fas fa-newspaper",
+    "robot": "fas fa-robot"
+};

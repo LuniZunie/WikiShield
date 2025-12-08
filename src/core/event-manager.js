@@ -2,7 +2,6 @@
 * WikiShieldEventManager - Manages user interface events and actions
 * Handles all user-triggered events like reverting, warning, reporting, etc.
 */
-import { warnings, getWarningFromLookup, warningsLookup } from '../data/warnings.js';
 import { validEvents, validConditions } from '../config/events.js';
 
 export class WikiShieldEventManager {

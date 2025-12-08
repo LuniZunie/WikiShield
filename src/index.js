@@ -1,22 +1,8 @@
 // <nowiki>
 
-import { fullTrim } from './utils/formatting.js';
-import { BuildAIAnalysisPrompt, BuildAIUsernamePrompt } from './ai/prompts.js';
-import { colorPalettes } from './config/defaults.js';
-import { warnings, warningTemplateColors, warningsLookup, getWarningFromLookup } from './data/warnings.js';
-import { namespaces } from './data/namespaces.js';
 import { wikishieldHTML } from './ui/templates.js';
-import { wikishieldStyling } from './ui/styles.js';
-import { WikiShieldUtil } from './utils/helpers.js';
-import { WikiShieldLog } from './utils/logger.js';
 import { WikiShieldAPI } from './core/api.js';
-import { AI } from './ai/class.js';
 import { WikiShieldQueue } from './core/queue.js';
-import { createConditions, welcomeTemplates } from './data/events.js';
-import { WikiShieldEventManager } from './core/event-manager.js';
-import { WikiShieldSettingsInterface, wikishieldSettingsAllowedKeys } from './ui/settings.js';
-import { WikiShieldInterface } from './ui/interface.js';
-import { WikiShieldProgressBar } from './ui/progress-bar.jsx';
 import { WikiShield } from './core/wikishield.js';
 import { killswitch_status, checkKillswitch, startKillswitchPolling } from './core/killswitch.js';
 import { StorageManager } from './data/storage.js';
@@ -37,11 +23,11 @@ export const __script__ = {
 	},
 
 	config: {
-		refresh: { // TODO figure out best interval times
+		refresh: {
 			recent: 2000,
 			flagged: 2000,
 			watchlist: 2000,
-			new_users: 5000,
+			users: 1000,
 		},
 		historyCount: 10,
 	},
@@ -49,16 +35,6 @@ export const __script__ = {
 
 {
 	"use strict";
-
-	// Construct wikishieldData from imported modules
-	const wikishieldData = {
-		colorPalettes,
-		warningTemplateColors,
-		warnings,
-		warningsLookup,
-		namespaces,
-	};
-
 
 	let wikishield;
 	let wikishieldEventData;
@@ -125,7 +101,7 @@ export const __script__ = {
 			}
 
 			// Initialize WikiShield if not disabled
-			wikishield = new WikiShield(wikishieldData);
+			wikishield = new WikiShield();
 			// Initialize queue after wikishield is created (needs reference to wikishield)
 			wikishield.queue = new WikiShieldQueue(wikishield);
 
@@ -185,7 +161,7 @@ export const __script__ = {
 			mw.notify("WikiShield: Failed to check killswitch. Loading anyway...", { type: 'warn' });
 
 			// Initialize anyway if killswitch check fails (network issues shouldn't prevent loading)
-			wikishield = new WikiShield(wikishieldData);
+			wikishield = new WikiShield();
 			wikishield.queue = new WikiShieldQueue(wikishield);
 
 			wikishield.init().then(() => {

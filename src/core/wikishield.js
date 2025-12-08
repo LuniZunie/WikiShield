@@ -4,6 +4,7 @@ import { WikiShieldLog } from '../utils/logger.js';
 import { WikiShieldUtil } from '../utils/helpers.js';
 import { WikiShieldAPI } from './api.js';
 import { WikiShieldProgressBar } from '../ui/progress-bar.jsx';
+import { notificationIcons } from '../data/notification-icons.js';
 import { AudioManager } from '../audio/manager.js';
 import { warnings } from '../data/warnings.js';
 import { welcomes } from '../data/welcomes.js';
@@ -12,7 +13,7 @@ import { AI } from '../ai/class.js';
 import { StorageManager } from '../data/storage.js';
 
 export class WikiShield {
-	constructor(wikishieldData) {
+	constructor() {
 		this.__script__ = __script__;
 
 		this.storage = new StorageManager();
@@ -22,7 +23,7 @@ export class WikiShield {
 
 		this.interface = new WikiShieldInterface(this);
 		this.logger = new WikiShieldLog();
-		this.util = new WikiShieldUtil();
+		this.util = new WikiShieldUtil(this);
 		this.audioManager = new AudioManager(this);
 
 		// Initialize API with dependencies
@@ -62,7 +63,6 @@ export class WikiShield {
 
 		this.lastSeenRevision = null;
 
-		this.wikishieldData = wikishieldData;
 		this.WikiShieldProgressBar = WikiShieldProgressBar;
 	}
 
@@ -72,7 +72,16 @@ export class WikiShield {
 				const length = categoryWarnings.length;
 				for (let i = 0; i < length; i++) {
 					const warning = categoryWarnings[i];
-					const load = key => warning.templates[key] === null ? true : this.api.pageExists(warning.templates[key].template.replace(/^subst:/, "Template:"));
+					const load = key => {
+						if (warning.templates[key] === null) {
+							return Promise.resolve(true);
+						}
+
+						const title = warning.templates[key]?.template.replace(/^subst:/, "Template:");
+						return this.api.pageExists(title).then(exists => {
+							return exists[title];
+						});
+					}
 
 					{ // template lookup
 						// check if ANY templates are missing
@@ -98,9 +107,10 @@ export class WikiShield {
 	checkWelcomeTemplates() {
 		for (const welcome of Object.values(welcomes)) {
 			if (typeof welcome.template === "string") {
-				this.api.pageExists(welcome.template.replace(/^subst:/, "Template:"))
+				const title = welcome.template.replace(/^subst:/, "Template:");
+				this.api.pageExists(title)
 					.then(exists => {
-						if (exists === false) {
+						if (exists[title] === false) {
 							welcome.hide = true;
 						}
 					});
@@ -130,11 +140,11 @@ export class WikiShield {
 		}
 
 		if (noInit) {
-			const queueWidth = this.storage.data.layout.queue.width;
+			const queueWidth = this.storage.data.UI.queue.width;
 			document.body.querySelector("#queue").style.width = queueWidth;
 			document.body.querySelector("#right-container").style.width = `calc(100% - ${queueWidth})`;
 
-			const detailsWidth = this.storage.data.layout.details.width;
+			const detailsWidth = this.storage.data.UI.details.width;
 			document.body.querySelector("#right-details").style.width = detailsWidth;
 			document.body.querySelector("#main-container").style.width = `calc(100% - ${detailsWidth})`;
 			document.body.querySelector("#middle-top").style.width = `calc(100% - ${detailsWidth})`;
@@ -166,42 +176,6 @@ export class WikiShield {
 		this.rights.block = rights.includes("block");
 
 		this.interface.build();
-
-		this.handleUpdatingContributions();
-	}
-
-	/**
-	 * Update user's total contribution count in the UI
-	 */
-	async updateMyContributions() {
-		try {
-			const response = await this.api.api.get({
-				action: "query",
-				list: "users",
-				ususers: this.username,
-				usprop: "editcount"
-			});
-
-			if (response.query && response.query.users && response.query.users[0]) {
-				const editcount = response.query.users[0].editcount || 0;
-				const statElem = document.querySelector("#stat-total-contribs");
-				if (statElem) {
-					statElem.textContent = editcount.toLocaleString();
-				}
-			}
-		} catch (err) {
-			console.log("Failed to fetch user contribution count:", err);
-		}
-	}
-
-	/**
-	 * Periodically update user contribution count (every 10 seconds)
-	 */
-	handleUpdatingContributions() {
-		this.updateMyContributions();
-		window.setTimeout(() => {
-			this.handleUpdatingContributions();
-		}, 10000);
 	}
 
 	/**
@@ -246,8 +220,8 @@ export class WikiShield {
 		this.interface.start();
 		this.queue.fetchRecentChanges("recent");
 		this.queue.fetchRecentChanges("flagged");
+		this.queue.fetchRecentChanges("users");
 		this.queue.fetchRecentChanges("watchlist");
-		this.queue.fetchRecentChanges("new_users");
 
 		this.handleLoadingAlerts();
 		this.handleLoadingNotices();
@@ -273,14 +247,12 @@ export class WikiShield {
 		const success = await this.api.rollback(edit.page.title, edit.user.name, this.api.buildMessage(message, summary));
 
 		if (!success) {
-			if (this.interface.showToast(
+			this.interface.showToast(
 				"Revert Failed",
 				`Could not revert edits on "${edit.page.title}" - a newer edit may have been made`,
 				5000,
 				"error"
-			)) {
-				this.audioManager.playSound([ "other", "error" ]);
-			}
+			);
 
 			return false;
 		}
@@ -298,15 +270,13 @@ export class WikiShield {
 			case "flagged": {
 				this.storage.data.statistics.reverts_made.from_flagged++;
 			} break;
-			case "watchlist": {
-				this.storage.data.statistics.reverts_made.from_watchlist++;
-			} break;
 			case "loaded": {
 				this.storage.data.statistics.reverts_made.from_loaded_edits++;
 			} break;
+			case "watchlist": {
+				this.storage.data.statistics.reverts_made.from_watchlist++;
+			} break;
 		}
-
-		this.updateMyContributions();
 
 		return true;
 	}
@@ -339,14 +309,12 @@ export class WikiShield {
 		const templateToUse = warning.templates[warningLevel];
 		if (!templateToUse) {
 			if (level !== "auto") {
-				if (this.interface.showToast(
+				this.interface.showToast(
 					"Warning Failed",
 					`Could not find ${level} template for warning type "${warning.title}"`,
 					5000,
 					"error"
-				)) {
-					this.audioManager.playSound([ "other", "error" ]);
-				}
+				);
 			}
 
 			return;
@@ -364,10 +332,9 @@ export class WikiShield {
 		const newContent = sections.join("").replace(/(\n){3,}/g, "\n\n");
 
 		const levelName = templateToUse.level ?? `level ${warningLevel}`;
-		const summary = templateToUse.summary ?? warning.summary
 
 		const message = `Message about ${articleName ? `[[Special:Diff/${revid}|your edit]] on [[${articleName}]]` : `[[Special:Contributions/${user}|your contributions]]`}`;
-		await this.api.edit(`User talk:${user}`, newContent, this.api.buildMessage(message, `${summary} (${levelName})`));
+		await this.api.edit(`User talk:${user}`, newContent, this.api.buildMessage(message, levelName));
 
 		// Increment warning statistic
 		this.storage.data.statistics.warnings_issued.total++;
@@ -575,10 +542,10 @@ export class WikiShield {
 		}
 
 		if (unreadCount > 0) {
-			countElem.textContent = unreadCount > 9 ? "9+" : unreadCount;
-			countElem.style.display = "";
+			countElem.textContent = unreadCount;
+			countElem.classList.remove("hidden");
 		} else {
-			countElem.style.display = "none";
+			countElem.classList.add("hidden");
 		}
 
 		// Update list
@@ -640,7 +607,6 @@ export class WikiShield {
 									const $link = document.createElement("a");
 									$link.href = link.url;
 									$link.target = "_blank";
-									// TODO icon
 									$link.textContent = link.label;
 									$links.appendChild($link);
 								});
@@ -671,6 +637,8 @@ export class WikiShield {
 							{ // time
 								const $time = document.createElement("div");
 								$time.classList.add("notification-timestamp");
+								$time.dataset.time = alert.timestamp.utciso8601;
+								$time.dataset.timeFormat = "notification";
 								$time.textContent = timeStr;
 								$right.appendChild($time);
 							}
@@ -798,10 +766,10 @@ export class WikiShield {
 		}
 
 		if (unreadCount > 0) {
-			countElem.textContent = unreadCount > 9 ? "9+" : unreadCount;
-			countElem.style.display = "";
+			countElem.textContent = unreadCount;
+			countElem.classList.remove("hidden");
 		} else {
-			countElem.style.display = "none";
+			countElem.classList.add("hidden");
 		}
 
 		// Update list
@@ -863,7 +831,6 @@ export class WikiShield {
 									const $link = document.createElement("a");
 									$link.href = link.url;
 									$link.target = "_blank";
-									// TODO icon
 									$link.textContent = link.label;
 									$links.appendChild($link);
 								});
@@ -894,6 +861,8 @@ export class WikiShield {
 							{ // time
 								const $time = document.createElement("div");
 								$time.classList.add("notification-timestamp");
+								$time.dataset.time = notice.timestamp.utciso8601;
+								$time.dataset.timeFormat = "notification";
 								$time.textContent = timeStr;
 								$right.appendChild($time);
 							}
@@ -975,32 +944,30 @@ export class WikiShield {
 	async welcomeUser(user, templateName) {
 		try {
 			const talkPageName = `User talk:${user.name}`;
-			if (await this.api.pageExists(talkPageName)) {
-				return;
+			if ((await this.api.pageExists(talkPageName))[talkPageName]) {
+				return false;
 			}
 
 			let template = welcomes[templateName];
 			if (!template || template.hide) {
-				return;
+				return false;
 			}
 
 			const checkForLoop = new Set([ template ]);
 			while (typeof template?.template === "function") {
 				template = welcomes[template.template(user)];
 				if (checkForLoop.has(template)) {
-					if (this.interface.showToast(
+					this.interface.showToast(
 						"REPORT TO DEVELOPER",
 						`Uh oh! Something has gone catastrophically wrong. Please report this to a developer, and include the error code below:<br><br><code>WELCOME_TEMPLATE_LOOP</code>`,
 						-1,
 						"developer"
-					)) {
-						this.audioManager.playSound([ "other", "error" ]);
-					}
-					return;
+					);
+					return false;
 				}
 
 				if (!template || template.hide) {
-					return;
+					return false;
 				} else {
 					checkForLoop.add(template);
 				}
@@ -1031,10 +998,13 @@ export class WikiShield {
 
 			// Re-render the queue to update the display
 			this.interface.renderQueue(this.queue.queue[this.queue.currentQueueTab], this.queue.currentEdit[this.queue.currentQueueTab]);
-			// TODO force update to update middle top
+
+			return true;
 		} catch (err) {
 			console.log("Error while welcoming user", err);
 		}
+
+		return false;
 	}
 
 	/**
@@ -1063,10 +1033,8 @@ export class WikiShield {
 		await this.api.appendText(__script__.pages.RFPP, `
 			=== [[${title}]] ===
 			* {{pagelinks|${title}}}
-			'''${level}''': ${reason} ~~~~
+			'''${level}'''${reason ? `: ${reason}` : "."} ~~~~
 		`.replaceAll("\t", ""), this.api.buildMessage(`Requesting protection for [[${title}]]`));
-
-		this.audioManager.playSound([ "action", "protect" ]);
 
 		this.storage.data.statistics.reports_filed.total++;
 		this.storage.data.statistics.reports_filed.RFPP++;
@@ -1080,7 +1048,7 @@ export class WikiShield {
 	 * @param {String} message The message to use in the report
 	 */
 	async reportToAIV(user, message) {
-		const blocked = await this.api.usersBlocked(user);
+		const blocked = await this.api.getBlocks(user);
 
 		if (blocked[user]) {
 			return false;
@@ -1112,7 +1080,7 @@ export class WikiShield {
 	 * @param {String} message The message to use in the report
 	 */
 	async reportToUAA(user, message) {
-		const blocked = await this.api.usersBlocked(user);
+		const blocked = await this.api.getBlocks(user);
 
 		if (blocked[user]) {
 			// already blocked
@@ -1176,7 +1144,7 @@ export class WikiShield {
 	 * Execute a control script
 	 * @param {Object} script
 	 */
-	async executeScript(script, hasContinuity = true, updateProgress = null, currentEdit) {
+	async executeScript(script, hasContinuity = true, updateProgress = null, currentEdit = null) {
 		const base = updateProgress === null;
 
 		if (base) {
@@ -1213,7 +1181,7 @@ export class WikiShield {
 				updateProgress = (_) => { };
 			}
 
-			currentEdit = this.queue.currentEdit[this.queue.currentQueueTab] || 1;
+			currentEdit ??= this.queue.currentEdit[this.queue.currentQueueTab] || 1;
 		}
 
 		const ifAndTrue = script.name && script.name === "if" && this.interface.eventManager.conditions[script.condition].check(this, currentEdit);
@@ -1229,17 +1197,18 @@ export class WikiShield {
 						if (currentEdit !== 1 || event.runWithoutEdit) {
 							updateProgress(event.progressDesc);
 
+							if (event.includeInProgress) {
+								this.audioManager.playSound([ "action", "default" ]);
+							}
+
 							const result = await event.func(this, action.params, currentEdit);
 
 							this.storage.data.statistics.actions_executed.total++;
 							if (result === false) {
 								hasContinuity = false;
+								this.audioManager.playSound([ "action", "failed" ]);
 							} else {
 								this.storage.data.statistics.actions_executed.successful++;
-
-								if (event.includeInProgress) {
-									this.audioManager.playSound([ "actions", "default" ]);
-								}
 							}
 						}
 					}
@@ -1263,15 +1232,24 @@ export class WikiShield {
 			return string;
 		}
 
-		return await this.api.edit(
-			`User:${mw.config.values.wgUserName}/ws-save.js`,
-			string,
-			this.api.buildMessage("Updating WikiShield save"),
-			{ minor: true }
-		);
+		if (mw.storage.store.getItem("WikiShield:CloudStorage") === "false") {
+			mw.storage.store.setItem("WikiShield:Storage", string);
+			return true;
+		} else {
+			return await this.api.edit(
+				`User:${mw.config.values.wgUserName}/ws-save.js`,
+				string,
+				this.api.buildMessage("Updating WikiShield save"),
+				{ minor: true }
+			);
+		}
 	}
 
 	async load() {
-		return await this.api.getSinglePageContent(`User:${mw.config.values.wgUserName}/ws-save.js`) ?? "e30=";
+		if (mw.storage.store.getItem("WikiShield:CloudStorage") === "false") {
+			return mw.storage.store.getItem("WikiShield:Storage") ?? "e30=";
+		} else {
+			return await this.api.getSinglePageContent(`User:${mw.config.values.wgUserName}/ws-save.js`) ?? "e30=";
+		}
 	}
 }

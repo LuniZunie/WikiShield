@@ -3,63 +3,19 @@
 * Provides methods for interacting with the Wikipedia/MediaWiki API
 */
 
+import { Memory } from "../utils/memory.js";
+
 const serversWithTags = new Set([ "en.wikipedia.org" ]);
 const __TAGS__ = serversWithTags.has(mw.config.get("wgServerName")) ? "WikiShield script" : "";
 
 export const __pendingChangesServer__ = new Set([ "en.wikipedia.org", "de.wikipedia.org" ]);
-
-class Memory {
-	constructor(options = {}) {
-		this.order = [ ];
-		this.store = new Map();
-		this.timeouts = new Map();
-
-		this.timeout = options.timeout || 5 * 60 * 1000; // Default 5 minutes
-		this.maxSize = options.size || 1000; // Default max 1000 items
-	}
-
-	clear() {
-		this.store.clear();
-		this.timeouts.clear();
-	}
-
-	has(key) {
-		return this.store.has(key);
-	}
-
-	get(key) {
-		return this.store.get(key);
-	}
-
-	set(key, value) {
-		this.order.push(key);
-		this.store.set(key, value);
-
-		this.timeouts.set(key, setTimeout(() => { this.delete(key); }, this.timeout));
-
-		if (this.store.size > this.maxSize) {
-			const oldestKey = this.order.shift();
-			this.delete(oldestKey);
-		}
-	}
-
-	delete(key) {
-		this.store.delete(key);
-
-		clearTimeout(this.timeouts.get(key));
-		this.timeouts.delete(key);
-	}
-
-	size() {
-		return this.store.size;
-	}
-}
 
 const CACHE = {
 	diffs: new Memory(),
 	revSize: new Memory(),
 	revidToTitle: new Memory(),
 	categories: new Memory(),
+	ores: new Memory()
 };
 
 export class WikiShieldAPI {
@@ -72,6 +28,39 @@ export class WikiShieldAPI {
 		this.historyCount = options.historyCount || 10;
 	}
 
+	/**
+	* Split an array into chunks of a specified size
+	* @param {Array} array The array to chunk
+	* @param {Number} size The chunk size (default 50 for MediaWiki API limit)
+	* @returns {Array} Array of chunks
+	*/
+	_chunkArray(array, size = 50) {
+		const chunks = [];
+		for (let i = 0; i < array.length; i += size) {
+			chunks.push(array.slice(i, i + size));
+		}
+		return chunks;
+	}
+
+	/**
+	* Process chunks with a small delay between batches to avoid overwhelming the API
+	* @param {Array} chunks Array of chunks to process
+	* @param {Function} processFn Function to process each chunk (receives chunk, index)
+	* @param {Number} delay Delay in ms between chunks (default 100ms)
+	* @returns {Promise<Array>} Results from all chunks
+	*/
+	async _processBatches(chunks, processFn, delay = 100) {
+		const results = [];
+		for (let i = 0; i < chunks.length; i++) {
+			if (i > 0 && delay > 0) {
+				await new Promise(resolve => setTimeout(resolve, delay));
+			}
+			const result = await processFn(chunks[i], i);
+			results.push(result);
+		}
+		return results;
+	}
+
 	buildMessage(base, custom) {
 		const watermark = " ([[:en:WP:WikiShield|WS]])";
 
@@ -82,7 +71,7 @@ export class WikiShieldAPI {
 		return `[[Special:Contribs/${username}|${username}]] ([[User talk:${username}|talk]])`;
 	}
 
-	async getMultipleRevisionsInfo(requests) {
+	async getMultipleRevisionsInfo(requests, simple = false) {
 		const username = mw.config.get("wgUserName");
 
 		const titles = [ ...new Set(requests.map(r => r.edit.title)) ];
@@ -92,88 +81,213 @@ export class WikiShieldAPI {
 		const result = Array.from({ length: requests.length }, () => ({}));
 		const promises = [ ];
 
-		promises.push(this.editCount(users.join("|")).then(data => {
+		// Batch user queries with blocks
+		const userChunks = this._chunkArray(users);
+		promises.push((async () => {
+			const allUsersData = {};
+			const allBlocksData = {};
+
+			for (const chunk of userChunks) {
+				const joined = chunk.join("|");
+				const response = await this.api.get({
+					"action": "query",
+					"format": "json",
+					"formatversion": 2,
+					"list": "users|blocks",
+					"ususers": joined,
+					"usprop": "editcount",
+					"bkusers": joined,
+					"bkprop": "id|user|by|timestamp|expiry|reason",
+				});
+
+				response.query.users.forEach(u => allUsersData[u.name] = u);
+				response.query.blocks.forEach(b => allBlocksData[b.user] = b);
+			}
+
 			requests.forEach((request, index) => {
-				result[index].userEditCount = data[request.edit.user];
+				result[index].userEditCount = allUsersData[request.edit.user]?.editcount || 0;
+				result[index].userBlocked = Boolean(allBlocksData[request.edit.user]);
 			});
-		}));
+		})());
+
+		// Batch title queries for categories and protection
+		const titleChunks = this._chunkArray(titles);
+		promises.push((async () => {
+			const allPages = {};
+
+			for (const chunk of titleChunks) {
+				const joined = chunk.join("|");
+				const response = await this.api.get({
+					"action": "query",
+					"format": "json",
+					"formatversion": 2,
+					"titles": joined,
+					"prop": "categories|info",
+					"cllimit": "max",
+					"inprop": "protection",
+				});
+
+				response.query.pages.forEach(page => {
+					let protection;
+					if (page.protection && page.protection.length > 0) {
+						const protections = page.protection;
+						let highestLevel = null;
+
+						for (const prot of protections) {
+							if (prot.type !== "edit") continue;
+
+							if (prot.level === "sysop") {
+								highestLevel = "full";
+							} else if (prot.level === "autoconfirmed" && highestLevel !== "full") {
+								highestLevel = "semi";
+							} else if (prot.level === "extendedconfirmed" && highestLevel !== "full") {
+								highestLevel = "extended";
+							}
+						}
+
+						protection = { protected: true, level: highestLevel };
+					} else {
+						protection = { protected: false };
+					}
+
+					allPages[page.title] = {
+						protection,
+						categories: page.categories ? page.categories.map(cat => cat.title) : []
+					};
+				});
+			}
+
+			requests.forEach((request, index) => {
+				const page = allPages[request.edit.title];
+				if (page) {
+					result[index].pageCategories = page.categories;
+					result[index].pageProtection = page.protection;
+				}
+			});
+		})());
+
+		// Batch user talk page checks
 		promises.push(this.pageExists(users.map(u => `User talk:${u}`).join("|")).then(data => {
 			requests.forEach((request, index) => {
 				result[index].userTalk = data[`User talk:${request.edit.user}`];
 			});
 		}));
-		promises.push(this.isBlocked(users.join("|")).then(data => {
-			requests.forEach((request, index) => {
-				result[index].userBlocked = Boolean(data[request.edit.user]);
-			});
-		}));
 
-		promises.push(this.categories(titles.join("|")).then(data => {
-			requests.forEach((request, index) => {
-				result[index].pageCategories = data[request.edit.title];
-			});
-		}));
-		promises.push(this.getPageProtection(titles.join("|")).then(data => {
-			requests.forEach((request, index) => {
-				result[index].pageProtection = data[request.edit.title];
-			});
-		}));
-
+		// Batch ORES scores
 		promises.push(this.ores(revids.join("|")).then(data => {
 			requests.forEach((request, index) => {
 				result[index].editOres = data[request.edit.revid] || 0;
 			});
 		}));
 
-		for (const user of users) {
-			promises.push(this.contribs(user).then(data => {
+		if (!simple) {
+			// Batch title-specific data (reverts, metadata, history)
+			promises.push((async () => {
+				const allReverts = {};
+				const allMetadata = {};
+				const allHistory = {};
+
+				for (const title of titles) {
+					const [reverts, metadata, history] = await Promise.all([
+						this.countReverts(title, username),
+						this.getPageMetadata(title),
+						this.history(title)
+					]);
+					allReverts[title] = reverts;
+					allMetadata[title] = metadata;
+					allHistory[title] = history;
+				}
+
 				requests.forEach((request, index) => {
-					if (request.edit.user === user) {
-						result[index].userContribs = data;
-					}
+					result[index].revertCount = allReverts[request.edit.title];
+					result[index].pageMetadata = allMetadata[request.edit.title];
+					result[index].pageHistory = allHistory[request.edit.title];
 				});
-			}));
-			promises.push(this.getBlocks(user).then(data => {
+			})());
+
+			// Batch user contribs and blocks
+			promises.push((async () => {
+				const allContribs = {};
+				const allBlocks = {};
+
+				for (const user of users) {
+					const [contribs, blocks] = await Promise.all([
+						this.contribs(user),
+						this.getBlocks(user)
+					]);
+					allContribs[user] = contribs;
+					allBlocks[user] = blocks;
+				}
+
 				requests.forEach((request, index) => {
-					if (request.edit.user === user) {
-						result[index].userBlocks = data;
-					}
+					result[index].userContribs = allContribs[request.edit.user];
+					result[index].userBlocks = allBlocks[request.edit.user];
 				});
-			}));
+			})());
+
+			// Batch diffs
+			promises.push((async () => {
+				const diffPromises = requests.map(async (request, i) => {
+					const diff = await this.diff(request.edit.title, request.prevId, request.edit.revid);
+					result[i].editDiff = diff;
+				});
+				await Promise.all(diffPromises);
+			})());
 		}
 
-		for (const title of titles) {
-			promises.push(this.countReverts(title, username).then(data => {
-				requests.forEach((request, index) => {
-					if (request.edit.title === title) {
-						result[index].revertCount = data;
-					}
-				});
-			}));
+		await Promise.all(promises);
 
-			promises.push(this.getPageMetadata(title).then(data => {
-				requests.forEach((request, index) => {
-					if (request.edit.title === title) {
-						result[index].pageMetadata = data;
-					}
-				});
-			}));
-			promises.push(this.history(title).then(data => {
-				requests.forEach((request, index) => {
-					if (request.edit.title === title) {
-						result[index].pageHistory = data;
-					}
-				});
-			}));
-		}
+		return result;
+	}
 
-		const length = requests.length;
-		for (let i = 0; i < length; i++) {
-			const request = requests[i];
-			promises.push(this.diff(request.edit.title, request.prevId, request.edit.revid).then(data => {
-				result[i].editDiff = data;
-			}));
-		}
+	async getUserInfo(usernames) {
+		const username = mw.config.get("wgUserName");
+
+		const users = [ ...new Set(usernames) ];
+
+		const result = Array.from({ length: usernames.length }, () => ({}));
+		const promises = [ ];
+
+		// Batch edit counts
+		promises.push(this.editCount(users.join("|")).then(data => {
+			usernames.forEach((username, index) => {
+				result[index].userEditCount = data[username];
+			});
+		}));
+
+		// Batch user talk page checks
+		promises.push(this.pageExists(users.map(u => `User talk:${u}`).join("|")).then(data => {
+			usernames.forEach((username, index) => {
+				result[index].userTalk = data[`User talk:${username}`];
+			});
+		}));
+
+		// Batch blocked status
+		promises.push(this.isBlocked(users.join("|")).then(data => {
+			usernames.forEach((username, index) => {
+				result[index].userBlocked = Boolean(data[username]);
+			});
+		}));
+
+		// Batch user contribs and blocks
+		promises.push((async () => {
+			const allContribs = {};
+			const allBlocks = {};
+
+			for (const user of users) {
+				const [contribs, blocks] = await Promise.all([
+					this.contribs(user),
+					this.getBlocks(user)
+				]);
+				allContribs[user] = contribs;
+				allBlocks[user] = blocks;
+			}
+
+			usernames.forEach((username, index) => {
+				result[index].userContribs = allContribs[username];
+				result[index].userBlocks = allBlocks[username];
+			});
+		})());
 
 		await Promise.all(promises);
 
@@ -262,21 +376,27 @@ export class WikiShieldAPI {
 		}
 
 		try {
-			const response = await this.api.get({
-				"action": "query",
-				"prop": "revisions",
-				"titles": titles,
-				"rvprop": "content",
-				"rvslots": "*",
-				"format": "json",
-				"formatversion": 2
-			});
+			const titleArray = titles.split("|").map(t => t.trim()).filter(Boolean);
+			const chunks = this._chunkArray(titleArray);
+			const allPages = {};
 
-			const pages = response.query.pages.map(page => {
-				return [page.title, page.missing ? "" : page.revisions[0].slots.main.content];
-			});
+			for (const chunk of chunks) {
+				const response = await this.api.get({
+					"action": "query",
+					"prop": "revisions",
+					"titles": chunk.join("|"),
+					"rvprop": "content",
+					"rvslots": "*",
+					"format": "json",
+					"formatversion": 2
+				});
 
-			return pages.reduce((a, v) => ({ ...a, [v[0]]: v[1] }), {});
+				response.query.pages.forEach(page => {
+					allPages[page.title] = page.missing ? "" : page.revisions[0].slots.main.content;
+				});
+			}
+
+			return allPages;
 		} catch (err) {
 			console.log(`Could not fetch page ${titles}: ${err}`);
 		}
@@ -303,21 +423,27 @@ export class WikiShieldAPI {
 	*/
 	async pageExists(titles) {
 		try {
-			const response = await this.api.get({
-				"action": "query",
-				"prop": "revisions",
-				"titles": titles,
-				"rvprop": "content",
-				"rvslots": "*",
-				"format": "json",
-				"formatversion": 2
-			});
+			const titleArray = titles.split("|").map(t => t.trim()).filter(Boolean);
+			const chunks = this._chunkArray(titleArray);
+			const allPages = {};
 
-			const pages = response.query.pages.map(page => {
-				return [page.title, page.missing ? false : page.revisions[0].slots.main.content];
-			});
+			for (const chunk of chunks) {
+				const response = await this.api.get({
+					"action": "query",
+					"prop": "revisions",
+					"titles": chunk.join("|"),
+					"rvprop": "content",
+					"rvslots": "*",
+					"format": "json",
+					"formatversion": 2
+				});
 
-			return pages.reduce((a, v) => ({ ...a, [v[0]]: v[1] }), {});
+				response.query.pages.forEach(page => {
+					allPages[page.title] = page.missing ? false : page.revisions[0].slots.main.content;
+				});
+			}
+
+			return allPages;
 		} catch (err) {
 			console.log(`Could not check if page ${titles} exists: ${err}`);
 			return false;
@@ -524,18 +650,27 @@ export class WikiShieldAPI {
 				return CACHE.categories.get(titles);
 			}
 
-			const response = await this.api.get({
-				"action": "query",
-				"prop": "categories",
-				"titles": titles,
-				"cllimit": "max",
-				"format": "json",
-				"formatversion": 2
-			});
+			const titleArray = titles.split("|").map(t => t.trim()).filter(Boolean);
+			const chunks = this._chunkArray(titleArray);
+			const allCategories = {};
 
-			const categories = response.query.pages.reduce((acc, page) => ({ ...acc, [page.title]: page.categories ? page.categories.map(cat => cat.title) : [] }), {});
-			CACHE.categories.set(titles, categories);
-			return categories;
+			for (const chunk of chunks) {
+				const response = await this.api.get({
+					"action": "query",
+					"prop": "categories",
+					"titles": chunk.join("|"),
+					"cllimit": "max",
+					"format": "json",
+					"formatversion": 2
+				});
+
+				response.query.pages.forEach(page => {
+					allCategories[page.title] = page.categories ? page.categories.map(cat => cat.title) : [];
+				});
+			}
+
+			CACHE.categories.set(titles, allCategories);
+			return allCategories;
 		} catch (err) {
 			console.log(`Could not fetch categories for revision ${titles}: ${err}`);
 		}
@@ -565,7 +700,7 @@ export class WikiShieldAPI {
 				prop: "revisions",
 				titles: page,
 				rvprop: "ids|timestamp|user|size",
-				rvlimit: 10,
+				rvlimit: "max",
 				format: "json",
 				formatversion: 2,
 				...continueObj
@@ -603,7 +738,7 @@ export class WikiShieldAPI {
 
 			if (!foundEnd && response.continue) {
 				continueObj = response.continue;
-			} else if (!foundEnd) { // TODO remove "user created this page" icon
+			} else if (!foundEnd) {
 				priorRevision = 0; // Created
 				foundEnd = true;
 			}
@@ -655,16 +790,26 @@ export class WikiShieldAPI {
 	*/
 	async editCount(users) {
 		try {
-			const response = await this.api.get({
-				"action": "query",
-				"list": "users",
-				"ususers": users,
-				"usprop": "editcount",
-				"format": "json",
-				"formatversion": 2
-			});
+			const userArray = users.split("|").map(u => u.trim()).filter(Boolean);
+			const chunks = this._chunkArray(userArray);
+			const allEditCounts = {};
 
-			return response.query.users.reduce((acc, user) => ({ ...acc, [user.name]: user.editcount }), {});
+			for (const chunk of chunks) {
+				const response = await this.api.get({
+					"action": "query",
+					"list": "users",
+					"ususers": chunk.join("|"),
+					"usprop": "editcount",
+					"format": "json",
+					"formatversion": 2
+				});
+
+				response.query.users.forEach(user => {
+					allEditCounts[user.name] = user.editcount;
+				});
+			}
+
+			return allEditCounts;
 		} catch (err) {
 			console.log(`Could not fetch edit count for users ${users}: ${err}`);
 		}
@@ -765,45 +910,50 @@ export class WikiShieldAPI {
 	*/
 	async getPageProtection(titles) {
 		try {
-			const response = await this.api.get({
-				"action": "query",
-				"titles": titles,
-				"prop": "info",
-				"inprop": "protection",
-				"format": "json",
-				"formatversion": 2
-			});
+			const titleArray = titles.split("|").map(t => t.trim()).filter(Boolean);
+			const chunks = this._chunkArray(titleArray);
+			const allProtection = {};
 
-			return response.query.pages.reduce((acc, page) => {
-				if (page.protection && page.protection.length > 0) {
-					// Get the highest protection level
-					const protections = page.protection;
-					let highestLevel = null;
-					let types = [];
+			for (const chunk of chunks) {
+				const response = await this.api.get({
+					"action": "query",
+					"titles": chunk.join("|"),
+					"prop": "info",
+					"inprop": "protection",
+					"format": "json",
+					"formatversion": 2
+				});
 
-					for (const prot of protections) {
-						if (prot.type !== "edit") {
-							continue;
+				response.query.pages.forEach(page => {
+					if (page.protection && page.protection.length > 0) {
+						// Get the highest protection level
+						const protections = page.protection;
+						let highestLevel = null;
+
+						for (const prot of protections) {
+							if (prot.type !== "edit") {
+								continue;
+							}
+
+							if (prot.level === "sysop") {
+								highestLevel = "full";
+							} else if (prot.level === "autoconfirmed" && highestLevel !== "full") {
+								highestLevel = "semi";
+							} else if (prot.level === "extendedconfirmed" && highestLevel !== "full") {
+								highestLevel = "extended";
+							}
 						}
 
-						if (prot.level === "sysop") {
-							highestLevel = "full";
-						} else if (prot.level === "autoconfirmed" && highestLevel !== "full") {
-							highestLevel = "semi";
-						} else if (prot.level === "extendedconfirmed" && highestLevel !== "full") {
-							highestLevel = "extended";
-						}
+						allProtection[page.title] = { protected: true, level: highestLevel };
+					} else {
+						allProtection[page.title] = { protected: false };
 					}
+				});
+			}
 
-					acc[page.title] = { protected: true, level: highestLevel };
-				} else {
-					acc[page.title] = { protected: false };
-				}
-
-				return acc;
-			}, {});
+			return allProtection;
 		} catch (err) {
-			console.log(`Could not fetch protection info for ${page}:`, err);
+			console.log(`Could not fetch protection info for ${titles}:`, err);
 			return {};
 		}
 	}
@@ -985,7 +1135,7 @@ export class WikiShieldAPI {
 					"action": "query",
 					"list": "recentchanges",
 					"rcnamespace": namespaces,
-					"rclimit": 50,
+					"rclimit": "max",
 					"rcprop": "title|ids|sizes|flags|user|tags|comment|timestamp",
 					"rctype": "edit",
 					"rctoponly": true,
@@ -1005,12 +1155,24 @@ export class WikiShieldAPI {
 					"ordir": since ? "newer" : "older"
 				};
 			},
+			get users() {
+				return {
+					"action": "query",
+					"list": "logevents",
+					"letype": "newusers",
+					"lelimit": "max",
+					"lestart": since || "",
+					"ledir": since ? "newer" : "older",
+					"formatversion": 2,
+					"format": "json"
+				};
+			},
 			get watchlist() {
 				return {
 					"action": "query",
 					"list": "watchlist",
 					"wlnamespace": namespaces,
-					"wllimit": 25,
+					"wllimit": "max",
 					"wlprop": "title|ids|sizes|flags|user|tags|comment|timestamp",
 					"wltype": "edit",
 					"format": "json",
@@ -1018,7 +1180,7 @@ export class WikiShieldAPI {
 					"wldir": since ? "newer" : "older",
 					"wlexcludeuser": mw.config.get("wgUserName") || ""
 				};
-			}
+			},
 		};
 
 		if (listType === "flagged" && !__pendingChangesServer__.has(mw.config.get("wgServerName"))) {
@@ -1050,6 +1212,8 @@ export class WikiShieldAPI {
 							});
 							this.cache.set(`flaggedRev:${obj.revid}`, revision);
 						}
+
+						obj.stabilityDetails = await this.getStableDetails(obj.title);
 
 						const page = revision.query.pages[0];
 						return {
@@ -1095,6 +1259,9 @@ export class WikiShieldAPI {
 					}));
 
 					return cache;
+				} break;
+				case "users": {
+					return response.query.logevents;
 				} break;
 				case "watchlist": {
 					return response.query.watchlist;
@@ -1172,30 +1339,58 @@ export class WikiShieldAPI {
 		}
 
 		try {
-			const response = await this.api.get({
-				"action": "query",
-				"format": "json",
-				"formatversion": 2,
-				"prop": "revisions",
-				"revids": revids,
-				"rvprop": "oresscores|ids",
-				"rvslots": "*"
-			});
-
+			const revidArray = revids.split("|").map(id => id.trim()).filter(Boolean);
+			const chunks = this._chunkArray(revidArray);
 			const avg = (arr) => arr.reduce((a, b) => a + b, 0) / arr.length;
-			const scores = response.query.pages.map(page => {
-				const scores = [];
-				if ("damaging" in page.revisions[0].oresscores) {
-					scores.push(page.revisions[0].oresscores.damaging.true);
-				}
-				if ("goodfaith" in page.revisions[0].oresscores) {
-					scores.push(page.revisions[0].oresscores.goodfaith.false);
+			const allScores = {};
+
+			for (const chunk of chunks) {
+				const response = await this.api.get({
+					"action": "query",
+					"format": "json",
+					"formatversion": 2,
+					"prop": "revisions",
+					"revids": chunk.join("|"),
+					"rvprop": "oresscores|ids",
+					"rvslots": "*"
+				});
+
+				const revidsSet = new Set(chunk.map(id => parseInt(id, 10)));
+				const oresObjects = {};
+
+				for (const page of response.query.pages) {
+					for (const rev of page.revisions) {
+						if (revidsSet.has(rev.revid)) {
+							oresObjects[rev.revid] = rev.oresscores || {};
+						}
+					}
 				}
 
-				return [ page.revisions[0].revid, scores.length > 0 ? avg(scores) : NaN ];
-			});
+				revidsSet.forEach(revid => {
+					const oresData = oresObjects[revid];
 
-			return scores.reduce((a, v) => ({ ...a, [v[0]]: v[1] }), {});
+					const scoresArr = [];
+					if (oresData && "damaging" in oresData) {
+						scoresArr.push(oresData.damaging.true);
+					}
+					if (oresData && "goodfaith" in oresData) {
+						scoresArr.push(oresData.goodfaith.false);
+					}
+
+					let score = scoresArr.length > 0 ? avg(scoresArr) : NaN;
+					if (CACHE.ores.has(revid)) {
+						score = CACHE.ores.get(revid);
+					}
+
+					if (isNaN(score)) {
+						CACHE.ores.set(revid, score);
+					}
+
+					allScores[revid] = score;
+				});
+			}
+
+			return allScores;
 		} catch (err) {
 			console.log(`Could not fetch ORES scores for revision ${revids}: ${err}`);
 		}
@@ -1208,16 +1403,26 @@ export class WikiShieldAPI {
 	*/
 	async isBlocked(users) {
 		try {
-			const response = await this.api.get({
-				"action": "query",
-				"list": "blocks",
-				"bkusers": users,
-				"bkprop": "id|user|by|timestamp|expiry|reason",
-				"format": "json",
-				"formatversion": 2
-			});
+			const userArray = users.split("|").map(u => u.trim()).filter(Boolean);
+			const chunks = this._chunkArray(userArray);
+			const allBlocks = {};
 
-			return response.query.blocks.reduce((acc, block) => ({ ...acc, [block.user]: block }), {});
+			for (const chunk of chunks) {
+				const response = await this.api.get({
+					"action": "query",
+					"list": "blocks",
+					"bkusers": chunk.join("|"),
+					"bkprop": "id|user|by|timestamp|expiry|reason",
+					"format": "json",
+					"formatversion": 2
+				});
+
+				response.query.blocks.forEach(block => {
+					allBlocks[block.user] = block;
+				});
+			}
+
+			return allBlocks;
 		} catch (err) {
 			console.log(`Could not fetch blocks for users ${users}: ${err}`);
 		}
@@ -1380,6 +1585,21 @@ export class WikiShieldAPI {
 			return details;
 		} catch (err) {
 			console.log(err);
+		}
+	}
+
+	async getStableDetails(page) {
+		try {
+			const response = await this.api.get({
+				"action": "query",
+				"list": "logevents",
+				"letype": "stable",
+				"letitle": page,
+				"lelimit": 1
+			});
+			return response.query.logevents[0];
+		} catch (err) {
+			console.log(`Could not fetch stable details for page ${page}: ${err}`);
 		}
 	}
 

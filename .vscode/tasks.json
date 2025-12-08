@@ -1,0 +1,19 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "npm: build",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "build"],
+            "group": "build",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "silent",
+                "focus": false,
+                "panel": "shared",
+                "clear": false
+            }
+        }
+    ]
+}

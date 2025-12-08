@@ -42,7 +42,8 @@ export const warnings = {
 					"3": { exists: true, template: "subst:uw-vandalism3" },
 					"4": { exists: true, template: "subst:uw-vandalism4" },
 					"4im": { exists: true, template: "subst:uw-vandalism4im" }
-				}
+				},
+				queue: [ "edit" ]
 			},
 			{
 				title: "Subtle vandalism",
@@ -57,7 +58,8 @@ export const warnings = {
 					"3": { exists: true, template: "subst:uw-subtle3" },
 					"4": { exists: true, template: "subst:uw-subtle4" },
 					"4im": null
-				}
+				},
+				queue: [ "edit" ]
 			},
 			{
 				title: "Image vandalism",
@@ -72,7 +74,8 @@ export const warnings = {
 					"3": { exists: true, template: "subst:uw-image3" },
 					"4": { exists: true, template: "subst:uw-image4" },
 					"4im": { exists: true, template: "subst:uw-image4im" }
-				}
+				},
+				queue: [ "edit" ]
 			},
 			{
 				title: "Sandbox",
@@ -87,7 +90,8 @@ export const warnings = {
 					"3": { exists: true, template: "subst:uw-sandbox3" },
 					"4": { exists: true, template: "subst:uw-sandbox4" },
 					"4im": { exists: true, template: "subst:uw-sandbox4im" }
-				}
+				},
+				queue: [ "edit" ]
 			}
 		],
 		"Content Issues": [
@@ -105,7 +109,8 @@ export const warnings = {
 					"4": { exists: true, template: "subst:uw-unsourced4" },
 					"4im": null
 				},
-				show: edit => !edit?.isBLP
+				show: edit => !edit?.isBLP,
+				queue: [ "edit" ]
 			},
 			{
 				title: "Unsourced (BLP)",
@@ -121,7 +126,8 @@ export const warnings = {
 					"4": { exists: true, template: "subst:uw-biog4" },
 					"4im": { exists: true, template: "subst:uw-biog4im" }
 				},
-				show: edit => edit?.isBLP
+				show: edit => edit?.isBLP,
+				queue: [ "edit" ]
 			},
 			{
 				title: "Unsourced genre",
@@ -136,7 +142,8 @@ export const warnings = {
 					"3": { exists: true, template: "subst:uw-genre3" },
 					"4": { exists: true, template: "subst:uw-genre4" },
 					"4im": null
-				}
+				},
+				queue: [ "edit" ]
 			},
 			{
 				title: "POV",
@@ -151,7 +158,8 @@ export const warnings = {
 					"3": { exists: true, template: "subst:uw-npov3" },
 					"4": { exists: true, template: "subst:uw-npov4" },
 					"4im": null
-				}
+				},
+				queue: [ "edit" ]
 			},
 			{
 				title: "Commentary",
@@ -166,7 +174,8 @@ export const warnings = {
 					"3": { exists: true, template: "subst:uw-talkinarticle3" },
 					"4": { exists: false, template: "subst:uw-generic4", additional: "''Adding commentary to articles. ([[WP:WikiShield|WS]])''" },
 					"4im": null
-				}
+				},
+				queue: [ "edit" ]
 			},
 			{
 				title: "AI-generated",
@@ -182,7 +191,8 @@ export const warnings = {
 					"4": { exists: true, template: "subst:uw-ai4" },
 					"4im": null
 				},
-				show: edit => !edit?.isTalk
+				show: edit => !edit?.isTalk,
+				queue: [ "edit" ]
 			},
 			{
 				title: "AI-generated (talk)",
@@ -198,7 +208,8 @@ export const warnings = {
 					"4": { exists: true, template: "subst:uw-aitalk4" },
 					"4im": null
 				},
-				show: edit => edit?.isTalk
+				show: edit => edit?.isTalk,
+				queue: [ "edit" ]
 			},
 			{
 				title: "MOS violation",
@@ -213,7 +224,8 @@ export const warnings = {
 					"3": { exists: true, template: "subst:uw-mos3" },
 					"4": { exists: true, template: "subst:uw-mos4" },
 					"4im": null
-				}
+				},
+				queue: [ "edit" ]
 			},
 			{
 				title: "Censoring",
@@ -228,8 +240,25 @@ export const warnings = {
 					"3": { exists: true, template: "subst:uw-notcensored3" },
 					"4": { exists: true, template: "subst:uw-notcensored4" },
 					"4im": null
-				}
-			}
+				},
+				queue: [ "edit" ]
+			},
+			{
+				title: "Not English",
+				summary: "non-English",
+				description: "Content added in a language other than English.",
+				icon: "fas fa-globe",
+				auto: () => "0",
+				templates: {
+					"0": { exists: true, template: "subst:uw-lang-noteng", label: "Notice", level: "notice" },
+					"1": null,
+					"2": null,
+					"3": null,
+					"4": null,
+					"4im": null
+				},
+				queue: [ "edit" ]
+			},
 		],
 		"Disruptive Behavior": [
 			{
@@ -245,7 +274,8 @@ export const warnings = {
 					"3": { exists: true, template: "subst:uw-disruptive3" },
 					"4": { exists: false, template: "subst:uw-generic4", additional: "''Disruptive editing. ([[WP:WikiShield|WS]])''" },
 					"4im": null
-				}
+				},
+				queue: [ "edit" ]
 			},
 			{
 				title: "Deleting",
@@ -260,7 +290,8 @@ export const warnings = {
 					"3": { exists: true, template: "subst:uw-delete3" },
 					"4": { exists: true, template: "subst:uw-delete4" },
 					"4im": { exists: true, template: "subst:uw-delete4im" }
-				}
+				},
+				queue: [ "edit" ]
 			},
 			{
 				title: "Errors",
@@ -275,7 +306,8 @@ export const warnings = {
 					"3": { exists: true, template: "subst:uw-error3" },
 					"4": { exists: true, template: "subst:uw-error4" },
 					"4im": null
-				}
+				},
+				queue: [ "edit" ]
 			},
 			{
 				title: "Editing tests",
@@ -290,7 +322,8 @@ export const warnings = {
 					"3": { exists: true, template: "subst:uw-test3" },
 					"4": { exists: false, template: "subst:uw-generic4", additional: "''Test edits. ([[WP:WikiShield|WS]])''" },
 					"4im": null
-				}
+				},
+				queue: [ "edit" ]
 			},
 			{
 				title: "Chatting",
@@ -306,7 +339,8 @@ export const warnings = {
 					"4": { exists: true, template: "subst:uw-chat4" },
 					"4im": null
 				},
-				show: edit => edit?.isTalk
+				show: edit => edit?.isTalk,
+				queue: [ "edit" ]
 			},
 			{
 				title: "Jokes",
@@ -321,7 +355,8 @@ export const warnings = {
 					"3": { exists: true, template: "subst:uw-joke3" },
 					"4": { exists: true, template: "subst:uw-joke4" },
 					"4im": { exists: true, template: "subst:uw-joke4im" }
-				}
+				},
+				queue: [ "edit" ]
 			},
 			{
 				title: "Owning",
@@ -336,7 +371,8 @@ export const warnings = {
 					"3": { exists: true, template: "subst:uw-own3" },
 					"4": { exists: true, template: "subst:uw-own4" },
 					"4im": { exists: true, template: "subst:uw-own4im" }
-				}
+				},
+				queue: [ "edit" ]
 			},
 		],
 		"Spam & Promotion": [
@@ -353,7 +389,8 @@ export const warnings = {
 					"3": { exists: true, template: "subst:uw-advert3" },
 					"4": { exists: true, template: "subst:uw-advert4" },
 					"4im": { exists: true, template: "subst:uw-advert4im" }
-				}
+				},
+				queue: [ "edit" ]
 			},
 			{
 				title: "Spam links",
@@ -368,7 +405,8 @@ export const warnings = {
 					"3": { exists: true, template: "subst:uw-spam3" },
 					"4": { exists: true, template: "subst:uw-spam4" },
 					"4im": { exists: true, template: "subst:uw-spam4im" }
-				}
+				},
+				queue: [ "edit" ]
 			}
 		],
 		"Conduct": [
@@ -385,7 +423,8 @@ export const warnings = {
 					"3": { exists: true, template: "subst:uw-npa3" },
 					"4": { exists: true, template: "subst:uw-npa4" },
 					"4im": { exists: true, template: "subst:uw-npa4im" }
-				}
+				},
+				queue: [ "edit" ]
 			},
 			{
 				title: "TPO",
@@ -401,7 +440,8 @@ export const warnings = {
 					"4": { exists: true, template: "subst:uw-tpv4" },
 					"4im": { exists: true, template: "subst:uw-tpv4im" }
 				},
-				show: edit => edit?.isTalk
+				show: edit => edit?.isTalk,
+				queue: [ "edit" ]
 			},
 			{
 				title: "AfD removal",
@@ -416,7 +456,8 @@ export const warnings = {
 					"3": { exists: true, template: "subst:uw-afd3" },
 					"4": { exists: true, template: "subst:uw-afd4" },
 					"4im": null
-				}
+				},
+				queue: [ "edit" ]
 			}
 		]
 	},
@@ -439,6 +480,7 @@ export const warnings = {
 					"4im": null
 				},
 				onlyWarn: true,
+				queue: [ "edit" ]
 			},
 			{
 				title: "Inappropriate",
@@ -455,6 +497,7 @@ export const warnings = {
 					"4im": { exists: true, template: "subst:uw-bes4im" }
 				},
 				onlyWarn: true,
+				queue: [ "edit", "logevent" ]
 			},
 			{
 				title: "Minor edit",
@@ -471,6 +514,7 @@ export const warnings = {
 					"4im": null
 				},
 				onlyWarn: true,
+				queue: [ "edit" ]
 			}
 		],
 		"Behavior": [
@@ -489,6 +533,7 @@ export const warnings = {
 					"4im": null
 				},
 				onlyWarn: true,
+				queue: [ "edit", "logevent" ]
 			},
 			{
 				title: "Gaming the system",
@@ -505,6 +550,7 @@ export const warnings = {
 					"4im": { exists: true, template: "subst:uw-gaming4im" }
 				},
 				onlyWarn: true,
+				queue: [ "edit" ]
 			},
 			{
 				title: "Edit Warring",
@@ -521,23 +567,8 @@ export const warnings = {
 					"4im": null
 				},
 				onlyWarn: true,
-			},
-			{
-				title: "Not English",
-				summary: "non-English",
-				description: "Content added in a language other than English.",
-				icon: "fas fa-globe",
-				auto: () => "0",
-				templates: {
-					"0": { exists: true, template: "subst:uw-lang-noteng", label: "Notice", level: "notice" },
-					"1": null,
-					"2": null,
-					"3": null,
-					"4": null,
-					"4im": null
-				},
-				onlyWarn: true,
-			},
+				queue: [ "edit" ]
+			}
 		],
 	}
 };
