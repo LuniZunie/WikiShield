@@ -124,7 +124,7 @@ export class WikiShield {
 		if (this.storage.data.settings.AI.enabled) {
 			switch (this.storage.data.settings.AI.provider) {
 				case "Ollama": {
-					if (AI.providers && typeof AI.providers.Ollama === "function") {
+					if (typeof AI.providers?.Ollama === "function") {
 						this.AI = new AI.providers.Ollama(
 							this,
 							this.storage.data.settings.AI.Ollama
