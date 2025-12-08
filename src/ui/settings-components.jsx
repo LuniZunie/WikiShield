@@ -926,7 +926,7 @@ export class WhitelistSettings extends Component {
 /**
  * highlight Users Panel Component
  */
-export class highlightSettings extends Component {
+export class HighlightSettings extends Component {
 	constructor(props) {
 		super(props);
 		this.state = {

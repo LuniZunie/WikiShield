@@ -124,10 +124,15 @@ export class WikiShield {
 		if (this.storage.data.settings.AI.enabled) {
 			switch (this.storage.data.settings.AI.provider) {
 				case "Ollama": {
-					this.AI = new AI.providers.Ollama(
-						this,
-						this.storage.data.settings.AI.Ollama
-					);
+					if (AI.providers && typeof AI.providers.Ollama === "function") {
+						this.AI = new AI.providers.Ollama(
+							this,
+							this.storage.data.settings.AI.Ollama
+						);
+					} else {
+						console.error("AI.providers.Ollama is not available. Falling back to null.");
+						this.AI = null;
+					}
 				} break;
 				default: {
 					this.AI?.cancel.all();
