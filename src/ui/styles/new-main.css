@@ -3228,66 +3228,243 @@ body {
                         }
 
                         .changelog-content {
+                            & > .changelog-header {
+                                border-bottom: 2px solid;
+
+                                margin-bottom: 40px;
+                                padding-bottom: 20px;
+
+                                text-align: center;
+
+                                /* Theme dependent */
+                                border-color: rgba(102, 126, 234, .3);
+
+                                & > h1 {
+                                    margin: 0 0 10px 0;
+
+                                    font-size: 2.5em;
+                                    font-weight: 800;
+
+                                    /* Theme dependent */
+                                    background: linear-gradient(135deg, rgba(102, 126, 234, 1), rgba(118, 168, 255, 1));
+                                    -webkit-background-clip: text;
+                                            background-clip: text;
+                                    -webkit-text-fill-color: transparent;
+
+                                    & > i {
+                                        margin-right: 12px;
+
+                                        /* Theme dependent */
+                                        background: linear-gradient(135deg, rgba(102, 126, 234, 1), rgba(118, 168, 255, 1));
+                                        -webkit-background-clip: text;
+                                                background-clip: text;
+                                        -webkit-text-fill-color: transparent;
+                                    }
+                                }
+
+                                & > .changelog-subtitle {
+                                    margin: 0;
+                                    font-size: 1.1em;
+                                    color: rgba(200, 200, 200, .9);
+                                    font-weight: 400;
+                                }
+                            }
+
                             & > .changelog-grid {
                                 display: grid;
-                                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-                                gap: 20px;
+                                grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+                                gap: 24px;
 
                                 margin: 0 auto;
                                 padding: 0;
 
                                 & > .card {
+                                    position: relative;
+
                                     border: 1px solid;
 
-                                    border-radius: 8px;
-                                    padding: 14px;
+                                    border-radius: 12px;
+                                    padding: 20px;
 
-                                    transition: background .2s ease,
-                                                border-color .2s ease,
-                                                box-shadow .2s ease;
+                                    overflow: hidden;
+
+                                    transition: border-color .3s ease,
+                                                box-shadow .3s ease,
+                                                background .3s ease,
+                                                transform .3s ease;
 
                                     /* Theme dependent */
-                                    border-color: rgba(255, 255, 255, .1);
+                                    border-color: rgba(255, 255, 255, .08);
 
-                                    background: rgba(40, 43, 52, .7);
+                                    background: rgba(40, 43, 52, .6);
+                                    -webkit-backdrop-filter: blur(10px);
+                                            backdrop-filter: blur(10px);
+
+                                    &::before {
+                                        content: '';
+
+                                        height: 3px;
+
+                                        position: absolute;
+                                        top: 0;
+                                        left: 0;
+                                        right: 0;
+
+                                        opacity: 0;
+
+                                        transition: opacity .3s ease;
+
+                                        /* Theme dependent */
+                                        background: linear-gradient(90deg,
+                                            rgba(102, 126, 234, .8),
+                                            rgba(118, 168, 255, .8)
+                                        );
+                                    }
 
                                     &:hover {
-                                        /* Theme dependent */
-                                        border-color: rgba(102, 126, 234, .3);
-                                        box-shadow: 0 4px 20px rgba(0, 0, 0, .4);
+                                        transform: translateY(-4px);
 
-                                        background: rgba(40, 43, 52, .9);
+                                        /* Theme dependent */
+                                        border-color: rgba(102, 126, 234, .4);
+                                        box-shadow: 0 8px 32px rgba(0, 0, 0, .5),
+                                                    0 0 0 1px rgba(102, 126, 234, .2);
+
+                                        background: rgba(40, 43, 52, .85);
+
+                                        &::before {
+                                            opacity: 1;
+                                        }
+
+                                        & > .card-icon {
+                                            transform: scale(1.1) rotate(5deg);
+                                        }
+                                    }
+
+                                    &.featured {
+                                        /* Theme dependent */
+                                        border-color: rgba(102, 126, 234, .4);
+                                        background: linear-gradient(135deg,
+                                            rgba(40, 43, 52, .8),
+                                            rgba(50, 53, 62, .8)
+                                        );
+
+                                        &::before {
+                                            opacity: 1;
+                                        }
+
+                                        & > .card-icon {
+                                            /* Theme dependent */
+                                            background: linear-gradient(135deg,
+                                                rgba(102, 126, 234, .25),
+                                                rgba(118, 168, 255, .25)
+                                            );
+                                        }
+                                    }
+
+                                    & > .card-icon {
+                                        display: inline-flex;
+                                        align-items: center;
+                                        justify-content: center;
+                                        width: 48px;
+                                        height: 48px;
+
+                                        border-radius: 12px;
+                                        margin-bottom: 16px;
+
+                                        transition: transform .3s ease;
+
+                                        /* Theme dependent */
+                                        background: rgba(102, 126, 234, .15);
+
+                                        & > i {
+                                            font-size: 24px;
+
+                                            /* Theme dependent */
+                                            background: linear-gradient(135deg,
+                                                rgba(102, 126, 234, 1),
+                                                rgba(118, 168, 255, 1)
+                                            );
+                                            -webkit-background-clip: text;
+                                                    background-clip: text;
+                                            -webkit-text-fill-color: transparent;
+                                        }
                                     }
 
                                     & > h2 {
-                                        margin-bottom: 6px;
+                                        margin: 0 0 12px 0;
 
-                                        font-size: 1.2em;
+                                        font-size: 1.35em;
                                         font-weight: 700;
+                                        letter-spacing: -0.02em;
 
                                         /* Theme dependent */
-                                        color: rgba(255, 255, 255, 1);
+                                        color: rgba(255, 255, 255, .95);
                                     }
 
                                     & > p {
-                                        margin-bottom: 10px;
+                                        margin: 0 0 16px 0;
 
                                         font-size: .95em;
-                                        line-height: 1.4em;
+                                        line-height: 1.6em;
 
                                         /* Theme dependent */
-                                        color: rgba(118, 168, 255, 1);
+                                        color: rgba(118, 168, 255, .9);
                                     }
 
                                     & > ul {
                                         margin: 0;
-                                        padding-left: 20px;
+                                        padding-left: 24px;
 
                                         font-size: .9em;
-                                        line-height: 1.4em;
+                                        line-height: 1.7em;
 
                                         /* Theme dependent */
-                                        color: rgba(229, 229, 229, 1);
+                                        color: rgba(229, 229, 229, .9);
+
+                                        & > li {
+                                            margin-bottom: 8px;
+                                            padding-left: 4px;
+
+                                            &::marker {
+                                                /* Theme dependent */
+                                                color: rgba(102, 126, 234, .8);
+                                            }
+
+                                            &:last-child {
+                                                margin-bottom: 0;
+                                            }
+
+                                            & > strong {
+                                                font-weight: 600;
+
+                                                /* Theme dependent */
+                                                color: rgba(255, 255, 255, 1);
+                                            }
+
+                                            & > code {
+                                                border-radius: 4px;
+                                                padding: 2px 6px;
+
+                                                font-family: 'Courier New', monospace;
+                                                font-size: .9em;
+
+                                                /* Theme dependent */
+                                                background: rgba(102, 126, 234, .15);
+                                                color: rgba(118, 168, 255, 1);
+                                            }
+
+                                            & > ul {
+                                                margin-top: 6px;
+                                                padding-left: 20px;
+
+                                                & > li {
+                                                    font-size: .95em;
+
+                                                    /* Theme dependent */
+                                                    color: rgba(200, 200, 200, .85);
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -4861,6 +5038,16 @@ select, input:not([type=range]), textarea, button {
     -webkit-backdrop-filter: blur(20px);
             backdrop-filter: blur(20px);
 
+    a {
+        /* Theme dependent */
+        color: rgba(91, 154, 255, 1);
+
+        &:visited {
+            /* Theme dependent */
+            color: rgba(144, 180, 255, 1);
+        }
+    }
+
     &.show {
         display: flex;
 
@@ -5103,8 +5290,8 @@ select, input:not([type=range]), textarea, button {
     text-shadow: 0 1px 0 rgba(0, 0, 0, .35);
 
     background: linear-gradient(135deg,
-        rgba(var(--background), .5),
-        rgba(var(--background), .3)
+        rgba(var(--background), .7),
+        rgba(var(--background), .5)
     );
     -webkit-backdrop-filter: blur(6px) brightness(0%);
             backdrop-filter: blur(6px) brightness(0%);

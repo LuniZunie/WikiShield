@@ -169,7 +169,7 @@ button:focus-visible,
 a:focus-visible,
 input:focus-visible,
 select:focus-visible {
-	box-shadow: 0 0 20px var(--dark-primary) !important;
+	/* box-shadow: 0 0 20px var(--dark-primary) !important; */
 	outline: none !important;
 }
 

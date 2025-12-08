@@ -34,7 +34,7 @@ export const validEvents = {
             }
 
             const count = __FLAGGED__.count;
-            const countSection = `${count ? `${count} ` : ""} pending edit${count === 1 ? "" : "s"}`;
+            const countSection = `${count ? `${count} ` : ""} pending revision${count === 1 ? "" : "s"}`;
 
             const sentenceJoin = (array) => {
                 if (array.length === 1) {
@@ -103,7 +103,7 @@ export const validEvents = {
             }
 
             const count = __FLAGGED__.count;
-            const countSection = `${count ? `${count} ` : ""} pending edit${count === 1 ? "" : "s"}`;
+            const countSection = `${count ? `${count} ` : ""} pending revision${count === 1 ? "" : "s"}`;
 
             const sentenceJoin = (array) => {
                 if (array.length === 1) {

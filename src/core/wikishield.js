@@ -1224,6 +1224,9 @@ export class WikiShield {
 	}
 
 	async save(noSave = false) {
+		this.saveTime = performance.now();
+		this.storage.data.statistics.session_time += this.saveTime - this.loadTime;
+
 		const { string, logs } = this.storage.encode();
 
 		StorageManager.outputLogs(logs); // TEMP
@@ -1246,6 +1249,8 @@ export class WikiShield {
 	}
 
 	async load() {
+		this.loadTime = performance.now();
+
 		if (mw.storage.store.getItem("WikiShield:CloudStorage") === "false") {
 			return mw.storage.store.getItem("WikiShield:Storage") ?? "e30=";
 		} else {

@@ -1979,6 +1979,8 @@ ollama serve
 			return str.trim();
 		};
 
+		const sessionTime = this.wikishield.storage.data.statistics.session_time + (performance.now() - this.wikishield.loadTime);
+
 		this.clearContent();
 		this.contentContainer.innerHTML = `
 				<div class="settings-section">
@@ -2255,23 +2257,23 @@ ollama serve
 						<div class="stat-card">
 							<div class="inside shimmer shimmer-border">
 								<div class="front">
-									<div class="stat-value">${formatTime(stats.session_time)}</div>
+									<div class="stat-value">${formatTime(sessionTime)}</div>
 									<div class="stat-label">Session Time</div>
 								</div>
 								<div class="back">
 									<div class="stat-sublabel">
 										${
-											(stats.reports_filed.total / (stats.session_time / 8.64e+7 || 1) || 0).toFixed(2)
+											(stats.reports_filed.total / (sessionTime / 8.64e+7 || 1) || 0).toFixed(2)
 										} reports per day
 									</div>
 									<div class="stat-sublabel">
 										${
-											(stats.reverts_made.total / (stats.session_time / 3.6e+6 || 1) || 0).toFixed(2)
+											(stats.reverts_made.total / (sessionTime / 3.6e+6 || 1) || 0).toFixed(2)
 										} reverts per hour
 									</div>
 									<div class="stat-sublabel">
 										${
-											(stats.edits_reviewed.total / (stats.session_time / 6e+4 || 1) || 0).toFixed(2)
+											(stats.edits_reviewed.total / (sessionTime / 6e+4 || 1) || 0).toFixed(2)
 										} reviews per minute
 									</div>
 								</div>
@@ -2283,6 +2285,7 @@ ollama serve
 
 		this.contentContainer.querySelector("#reset-stats-button").addEventListener("click", () => {
 			if (confirm("Are you sure you want to reset all statistics? This cannot be undone.")) {
+				this.wikishield.loadTime = performance.now();
 				this.wikishield.storage.data.statistics = { };
 				this.wikishield.storage.load(this.wikishield.storage.data);
 
@@ -2556,7 +2559,7 @@ ollama serve
 			return;
 		}
 
-		if (this.keypressCallback && validControlKeys.includes(event.key.toLowerCase())) {
+		if (this.keypressCallback && validControlKeys.has(event.key.toLowerCase())) {
 			this.keypressCallback(event.key.toLowerCase());
 			event.preventDefault();
 		}

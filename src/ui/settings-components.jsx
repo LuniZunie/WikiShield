@@ -1437,7 +1437,7 @@ export class AboutSettings extends Component {
 	render() {
 		const { version, changelog, date } = this.props;
 
-		const day = date.getUTCDate().toString().padStart(2, '0');
+		const day = date.getUTCDate().toString();
 		const month = [ "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" ][date.getUTCMonth()];
 		const year = date.getUTCFullYear();
 		const hour = date.getUTCHours().toString().padStart(2, '0');

@@ -2044,7 +2044,7 @@ class Version1 extends Version {
 
             { // root.statistics.session_time
                 const value = root.statistics.session_time;
-                if (!isValidStatistic(value)) {
+                if (!(typeof value === "number" && value >= 0)) {
                     this.reset("statistics", "session_time");
                 }
             }

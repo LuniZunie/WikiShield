@@ -3,6 +3,8 @@
 * Handles rendering and managing the user interface
 */
 
+// TODO make queue colors be user defined
+
 import { WikiShieldEventManager } from '../core/event-manager.js';
 import { WikiShieldSettingsInterface } from './settings.js';
 import { wikishieldStyling } from './styles.js';
@@ -751,6 +753,7 @@ export class WikiShieldInterface {
 		});
 
 		if (__script__.changelog.version.endsWith("!") || this.wikishield.storage.data.changelog !== __script__.changelog.version) {
+			this.wikishield.storage.data.changelog = __script__.changelog.version.replace(/!$/g, "");
 			this.settings.openSettings("about", ".settings-section:has(.changelog-content)");
 		}
 

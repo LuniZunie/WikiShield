@@ -8,11 +8,11 @@ import { killswitch_status, checkKillswitch, startKillswitchPolling } from './co
 import { StorageManager } from './data/storage.js';
 
 export const __script__ = {
-	version: "1.0.0",
+	version: "1.1.0",
 
 	changelog: {
-		version: "2",
-		date: new Date(Date.UTC(2025, 11, 28, 20)),
+		version: "3",
+		date: new Date(Date.UTC(2025, 11, 9, 0)),
 		HTML: wikishieldHTML.changelog
 	},
 
