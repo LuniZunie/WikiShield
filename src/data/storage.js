@@ -2264,10 +2264,13 @@ export class StorageManager {
     }
 
     decode(string) {
-        const json = window.atob(string);
-        const data = JSON.parse(json);
-
-        return this.load(data);
+        const json = window.atob(string.trim() || "e30=");
+        try {
+            const data = JSON.parse(json);
+            return this.load(data);
+        } catch (err) {
+            return this.load({});
+        }
     }
 
     encode() {

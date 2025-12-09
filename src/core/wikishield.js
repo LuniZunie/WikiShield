@@ -1261,12 +1261,12 @@ export class WikiShield {
 		if (mw.storage.store.getItem("WikiShield:CloudStorage") === "false") {
 			return mw.storage.store.getItem("WikiShield:Storage") ?? "e30=";
 		} else {
-			return (await this.api.get({
+			return ((await this.api.get({
 				action: "query",
 				meta: "userinfo",
 				uiprop: "options",
 				format: "json"
-			})).query.userinfo.options["userjs-wikishield-storage"] ?? await this.api.getSinglePageContent(`User:${mw.config.values.wgUserName}/ws-save.js`) ?? "e30=";
+			}))?.query?.userinfo?.options?.["userjs-wikishield-storage"] || (await this.api.getSinglePageContent(`User:${mw.config.values.wgUserName}/ws-save2.js`))) ?? "e30=";
 		}
 	}
 }
