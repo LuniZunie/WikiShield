@@ -949,8 +949,7 @@ export class WikiShieldQueue {
 				const timestampMatch = content.match(/(\d{2}:\d{2}.*?\d{4} \(UTC\))/);
 				let timestamp = timestampMatch ? timestampMatch[1] : null;
 				if (timestamp) {
-					// Remove any HTML tags from the timestamp
-					timestamp = timestamp.replace(/<[^>]*>/g, '');
+					timestamp = this.wikishield.util.escapeHtml(timestamp);
 				}
 
 				{ // get proper timestamp
