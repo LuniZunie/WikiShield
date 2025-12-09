@@ -5260,12 +5260,12 @@ select, input:not([type=range]), textarea, button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 1.5em;
-    height: 1.5em;
+    width: 22px;
+    height: 22px;
 
     position: absolute;
-    right: -.25em;
-    top: -.25em;
+    right: -11px;
+    top: -11px;
     z-index: 3;
 
     border: 1px solid;
