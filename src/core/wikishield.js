@@ -378,16 +378,16 @@ export class WikiShield {
 	 */
 	async loadReportedUsers() {
 		try {
-			const content = await this.api.getText(`${__script__.pages.AVI}|${__script__.pages.UAA}`);
+			const content = await this.api.getText(`${__script__.pages.AIV}|${__script__.pages.UAA}`);
 
 			const regex = new RegExp(`{{(?:(?:ip)?vandal|user-uaa)\\|(?:1=)?(.+?)}}`, "gi");
 
-			// Check if AVI content exists before trying to match
-			if (content && content[__script__.pages.AVI]) {
-				this.aivReports = [...content[__script__.pages.AVI].matchAll(regex)]
+			// Check if AIV content exists before trying to match
+			if (content && content[__script__.pages.AIV]) {
+				this.aivReports = [...content[__script__.pages.AIV].matchAll(regex)]
 					.map(report => report[1]);
 			} else {
-				console.warn("AVI content not found, skipping AVI reports");
+				console.warn("AIV content not found, skipping AIV reports");
 				this.aivReports = [];
 			}
 
@@ -1066,7 +1066,7 @@ export class WikiShield {
 		const content = `* {{vandal|${user}}} &ndash; ${message} ~~~~`;
 
 		await this.api.appendText(
-			__script__.pages.AVI,
+			__script__.pages.AIV,
 			content,
 			this.api.buildMessage(`Reporting [[Special:Contributions/${user}|${user}]]`)
 		);
@@ -1074,7 +1074,7 @@ export class WikiShield {
 		this.audioManager.playSound([ "action", "report" ]);
 
 		this.storage.data.statistics.reports_filed.total++;
-		this.storage.data.statistics.reports_filed.AVI++;
+		this.storage.data.statistics.reports_filed.AIV++;
 
 		return true;
 	}
@@ -1244,14 +1244,13 @@ export class WikiShield {
 			mw.storage.store.setItem("WikiShield:Storage", string);
 			return true;
 		} else {
-			mw.storage.store.setItem("WikiShield:Storage", string);
-			return true; // TEMP
-
-			return await this.api.edit(
-				`User:${mw.config.values.wgUserName}/ws-save.js`,
-				string,
-				this.api.buildMessage("Updating WikiShield save"),
-				{ minor: true }
+			return this.api.api.postWithToken("csrf",
+				{
+					action: "options",
+					optionname: "userjs-wikishield-storage",
+					optionvalue: string,
+					format: "json"
+				}
 			);
 		}
 	}
@@ -1259,11 +1258,15 @@ export class WikiShield {
 	async load() {
 		this.loadTime = performance.now();
 
-		return mw.storage.store.getItem("WikiShield:Storage") ?? await this.api.getSinglePageContent(`User:${mw.config.values.wgUserName}/ws-save.js`) ?? "e30="; // TEMP
 		if (mw.storage.store.getItem("WikiShield:CloudStorage") === "false") {
 			return mw.storage.store.getItem("WikiShield:Storage") ?? "e30=";
 		} else {
-			return await this.api.getSinglePageContent(`User:${mw.config.values.wgUserName}/ws-save.js`) ?? "e30=";
+			return (await this.api.get({
+				action: "query",
+				meta: "userinfo",
+				uiprop: "options",
+				format: "json"
+			})).query.userinfo.options["userjs-wikishield-storage"] ?? await this.api.getSinglePageContent(`User:${mw.config.values.wgUserName}/ws-save.js`) ?? "e30=";
 		}
 	}
 }
