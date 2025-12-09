@@ -1244,6 +1244,9 @@ export class WikiShield {
 			mw.storage.store.setItem("WikiShield:Storage", string);
 			return true;
 		} else {
+			mw.storage.store.setItem("WikiShield:Storage", string);
+			return true; // TEMP
+
 			return await this.api.edit(
 				`User:${mw.config.values.wgUserName}/ws-save.js`,
 				string,
