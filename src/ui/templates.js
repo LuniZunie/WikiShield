@@ -9,7 +9,7 @@ export const wikishieldHTML = {
 		<div id="changelog-version-4" class="changelog-version">
 			<div class="changelog-version-header">
 				<h1>Version 1.1.1</h1>
-				<p class="changelog-version-subtitle">9 December 2025, 15:30 UTC</p>
+				<p class="changelog-version-subtitle">9 December 2025, 16:00 UTC</p>
 			</div>
 			<div class="changelog-grid">
 				<div class="card featured">
