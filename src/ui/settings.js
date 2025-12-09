@@ -75,6 +75,32 @@ export class WikiShieldSettingsInterface {
 		}
 	}
 
+	setPath(path) {
+		const $content = document.querySelector(".settings-container > .settings > .settings-right");
+
+		const $path = document.createElement("div");
+		$path.classList.add("settings-path");
+
+		let first = true;
+		for (const segment of path) {
+			const $segment = document.createElement("span");
+			$segment.classList.add("settings-path-segment");
+			$segment.textContent = segment;
+			$path.appendChild($segment);
+
+			if (first) {
+				first = false;
+			} else {
+				const $divider = document.createElement("span");
+				$divider.classList.add("settings-path-divider");
+				$divider.innerHTML = "&rsaquo;";
+				$path.appendChild($divider);
+			}
+		}
+
+		$content.prepend($path);
+	}
+
 	createCollapsibleSection(container, callback, collapsed = true) {
 		const content = container.querySelector(".collapsible-content");
 		const header = container.querySelector(".collapse-title");
