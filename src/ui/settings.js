@@ -2303,7 +2303,6 @@ ollama serve
 				wikishield: this.wikishield,
 				version: this.wikishield.__script__.version,
 				changelog: this.wikishield.__script__.changelog.HTML,
-				date: this.wikishield.__script__.changelog.date
 			})
 		);
 	}
@@ -2327,7 +2326,7 @@ ollama serve
 								<i class="fa fa-cloud"></i>
 							</div>
 							<div class="card-header-content">
-								<div class="card-title">Cloud Storage (<strong>currently disabled due to technical limitations</strong>)</div>
+								<div class="card-title">Cloud Storage</div>
 								<div class="card-desc">Store your settings in the cloud for access across multiple browsers and devices.</div>
 							</div>
 							<div class="card-toggle" id="enable-cloud-storage"></div>
@@ -2394,9 +2393,8 @@ ollama serve
 
 		this.createToggle(
 			this.contentContainer.querySelector("#enable-cloud-storage"),
-			/* this.wikishield.storage.data.settings.cloud_storage.enabled, */ false,
+			this.wikishield.storage.data.settings.cloud_storage.enabled,
 			(newValue) => {
-				return;
 				this.wikishield.storage.data.settings.cloud_storage.enabled = newValue;
 				mw.storage.store.setItem("WikiShield:CloudStorage", newValue);
 			}

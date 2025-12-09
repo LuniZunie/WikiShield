@@ -8,16 +8,15 @@ import { killswitch_status, checkKillswitch, startKillswitchPolling } from './co
 import { StorageManager } from './data/storage.js';
 
 export const __script__ = {
-	version: "1.1.0",
+	version: "1.1.1",
 
 	changelog: {
-		version: "3",
-		date: new Date(Date.UTC(2025, 11, 9, 0)),
+		version: "4",
 		HTML: wikishieldHTML.changelog
 	},
 
 	pages: {
-		AVI: "Wikipedia:Administrator intervention against vandalism",
+		AVI: "Wikipedia:Administra`tor intervention against vandalism",
 		UAA: "Wikipedia:Usernames for administrator attention",
 		RFPP: "Wikipedia:Requests for page protection/Increase"
 	},

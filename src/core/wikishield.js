@@ -1244,14 +1244,13 @@ export class WikiShield {
 			mw.storage.store.setItem("WikiShield:Storage", string);
 			return true;
 		} else {
-			mw.storage.store.setItem("WikiShield:Storage", string);
-			return true; // TEMP
-
-			return await this.api.edit(
-				`User:${mw.config.values.wgUserName}/ws-save.js`,
-				string,
-				this.api.buildMessage("Updating WikiShield save"),
-				{ minor: true }
+			return this.api.api.postWithToken("csrf",
+				{
+					action: "options",
+					optionname: "userjs-wikishield-storage",
+					optionvalue: string,
+					format: "json"
+				}
 			);
 		}
 	}
@@ -1259,11 +1258,15 @@ export class WikiShield {
 	async load() {
 		this.loadTime = performance.now();
 
-		return mw.storage.store.getItem("WikiShield:Storage") ?? await this.api.getSinglePageContent(`User:${mw.config.values.wgUserName}/ws-save.js`) ?? "e30="; // TEMP
 		if (mw.storage.store.getItem("WikiShield:CloudStorage") === "false") {
 			return mw.storage.store.getItem("WikiShield:Storage") ?? "e30=";
 		} else {
-			return await this.api.getSinglePageContent(`User:${mw.config.values.wgUserName}/ws-save.js`) ?? "e30=";
+			return (await this.api.get({
+				action: "query",
+				meta: "userinfo",
+				uiprop: "options",
+				format: "json"
+			})).query.userinfo.options["userjs-wikishield-storage"] ?? await this.api.getSinglePageContent(`User:${mw.config.values.wgUserName}/ws-save.js`) ?? "e30=";
 		}
 	}
 }

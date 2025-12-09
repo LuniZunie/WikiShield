@@ -6,120 +6,165 @@ export const wikishieldHTML = {
 			<h1><i class="fas fa-rocket"></i> What's New in WikiShield</h1>
 			<p class="changelog-subtitle">Discover the latest features and improvements</p>
 		</div>
-		<div class="changelog-grid">
-			<div class="card featured">
-				<div class="card-icon"><i class="fas fa-layer-group"></i></div>
-				<h2>New Queues!</h2>
-				<p>Introducing: pending changes, user creation, and watchlist queues.</p>
-				<ul>
-					<li>Queues can be toggled and rearranged in the new "Queue" appearance settings page</li>
-					<li>Badge icons indicate number of items in each queue</li>
-					<li><strong>Note:</strong> The pending changes tab requires the <code>review</code> user right</li>
-				</ul>
+		<div id="changelog-version-3" class="changelog-version">
+			<div class="changelog-version-header">
+				<h1>Version 1.1.1</h1>
+				<p class="changelog-version-subtitle">9 Decemeber 2025, 15:00 UTC</p>
 			</div>
-			<div class="card">
-				<div class="card-icon"><i class="fas fa-bell"></i></div>
-				<h2>Notices & Alerts</h2>
-				<p>Multiple improvements to notices and alerts</p>
-				<ul>
-					<li>All notifications have an updated style to align with Wikipedia</li>
-					<li>Notices and alerts have been separated into distinct panels</li>
-					<li>Notifications read on WikiShield are now read on Wikipedia</li>
-					<li>Added the ability to mark individual notifications as read or unread</li>
-					<li>Tab title now includes the number of unread notifications</li>
-				</ul>
+			<div class="changelog-grid">
+				<div class="card featured">
+					<div class="card-icon"><i class="fas fa-cloud"></i></div>
+					<h2>Storage Improvements</h2>
+					<p>Cloud storage no longer increases edit count.</p>
+					<ul>
+						<li>Storing user data will no longer increase the user's edit count when cloud storage is enabled</li>
+					</ul>
+				</div>
+				<div class="card">
+					<div class="card-icon"><i class="fas fa-ellipsis"></i></div>
+					<h2>Miscellaneous</h2>
+					<p>Other changes and improvements</p>
+					<ul>
+						<li>The changelog UI has been updated
+							<ul>
+								<li>All previous changelogs will now be available</li>
+							</ul>
+						</li>
+						<li>Minor data sanitation fixes</li>
+					</ul>
+				</div>
 			</div>
-			<div class="card">
-				<div class="card-icon"><i class="fas fa-music"></i></div>
-				<h2>New Audio</h2>
-				<p>Sounds have been updated and music (?!) has been added.</p>
-				<ul>
-					<li>Sound quality has been improved</li>
-					<li>Music has now been added to Zen Mode for some reason...</li>
-				</ul>
+		</div>
+		<div id="changelog-version-3" class="changelog-version">
+			<div class="changelog-version-header">
+				<h1>Version 1.1.0</h1>
+				<p class="changelog-version-subtitle">9 Decemeber 2025, 00:00 UTC</p>
 			</div>
-			<div class="card">
-				<div class="card-icon"><i class="fas fa-at"></i></div>
-				<h2>Username Mentions</h2>
-				<p>Improved handling of username mentions</p>
-				<ul>
-					<li>A new option has been added for fuzzy matching usernames
-						<ul>
-							<li>Available in the "Gadgets" settings page</li>
-							<li>When enabled, WikiShield will match usernames that are <i>similar</i> to your own</li>
-						</ul>
-					</li>
-					<li>Edit summaries now include username mentions</li>
-					<li>In the user creation tab, usernames similar to yours are highlighted</li>
-					<li>Added an indicator to tab icons when there are edits mentioning your username</li>
-				</ul>
-			</div>
-			<div class="card">
-				<div class="card-icon"><i class="fas fa-ban"></i></div>
-				<h2>User Blocks</h2>
-				<p>More functionality related to user blocks</p>
-				<ul>
-					<li>Users who are currently blocked now have their name struck through</li>
-					<li>Improved block detection, you can now see all the blocks by hovering over the block indicator</li>
-				</ul>
-			</div>
-			<div class="card">
-				<div class="card-icon"><i class="fas fa-robot"></i></div>
-				<h2>AI Analysis</h2>
-				<p>AI analysis has been improved and expanded</p>
-				<ul>
-					<li>Fine tuning has been done to improve accuracy</li>
-					<li>AI analysis is now available in the user creation, pending changes, and watchlist queues</li>
-				</ul>
-			</div>
-			<div class="card">
-				<div class="card-icon"><i class="fas fa-list-check"></i></div>
-				<h2>Queue Items</h2>
-				<p>Various improvements to queue items</p>
-				<ul>
-					<li>Added ORES score to user contributions and page history items</li>
-					<li>Timestamps have been added to queue items</li>
-					<li>Cutoff text can now be hovered to see the full text</li>
-					<li>Items in the queue should no longer be repeated</li>
-					<li>Fixed navigation bugs</li>
-				</ul>
-			</div>
-			<div class="card">
-				<div class="card-icon"><i class="fas fa-chart-line"></i></div>
-				<h2>Statistics</h2>
-				<p>Statistics have been completely revamped</p>
-				<ul>
-					<li>More detailed statistics have been added</li>
-					<li>Fixed various bugs with statistics calculations</li>
-					<li>(Yes, this does mean your stats have been reset)</li>
-				</ul>
-			</div>
-			<div class="card">
-				<div class="card-icon"><i class="fas fa-palette"></i></div>
-				<h2>UI Improvements</h2>
-				<p>Various improvements to the user interface</p>
-				<ul>
-					<li>New welcome screen design</li>
-					<li>Multiple new settings options have been added</li>
-					<li>Styling has been improved throughout the interface</li>
-					<li>Various bug fixes and performance improvements</li>
-				</ul>
-			</div>
-			<div class="card">
-				<div class="card-icon"><i class="fas fa-ellipsis"></i></div>
-				<h2>Miscellaneous</h2>
-				<p>Other changes and improvements</p>
-				<ul>
-					<li>RfPP now has "Generic" and "Disruptive Edits" subcategories</li>
-					<li>Not English warning has been moved to the "Revert" menu</li>
-					<li>Removed personal edit count from the bottom tool bar</li>
-					<li>"Time ago" now updates dynamically without needing to refresh</li>
-					<li>Buttons that cannot be used for the current queue item are now hidden</li>
-					<li>Fixed bug related to Zen Mode on startup</li>
-					<li>Fixed bug where ORES scores would not load properly</li>
-					<li>Changed multiple edit summaries to be more standardized</li>
-					<li>Numerous other small bug fixes and improvements</li>
-				</ul>
+			<div class="changelog-grid">
+				<div class="card featured">
+					<div class="card-icon"><i class="fas fa-layer-group"></i></div>
+					<h2>New Queues!</h2>
+					<p>Introducing: pending changes, user creation, and watchlist queues.</p>
+					<ul>
+						<li>Queues can be toggled and rearranged in the new "Queue" appearance settings page</li>
+						<li>Badge icons indicate number of items in each queue</li>
+						<li><strong>Note:</strong> The pending changes tab requires the <code>review</code> user right</li>
+					</ul>
+				</div>
+				<div class="card featured">
+					<div class="card-icon"><i class="fas fa-layer-group"></i></div>
+					<h2>Storage Improvements</h2>
+					<p></p>
+					<ul>
+						<li>Queues can be toggled and rearranged in the new "Queue" appearance settings page</li>
+						<li>Badge icons indicate number of items in each queue</li>
+						<li><strong>Note:</strong> The pending changes tab requires the <code>review</code> user right</li>
+					</ul>
+				</div>
+				<div class="card">
+					<div class="card-icon"><i class="fas fa-bell"></i></div>
+					<h2>Notices & Alerts</h2>
+					<p>Multiple improvements to notices and alerts</p>
+					<ul>
+						<li>All notifications have an updated style to align with Wikipedia</li>
+						<li>Notices and alerts have been separated into distinct panels</li>
+						<li>Notifications read on WikiShield are now read on Wikipedia</li>
+						<li>Added the ability to mark individual notifications as read or unread</li>
+						<li>Tab title now includes the number of unread notifications</li>
+					</ul>
+				</div>
+				<div class="card">
+					<div class="card-icon"><i class="fas fa-music"></i></div>
+					<h2>New Audio</h2>
+					<p>Sounds have been updated and music (?!) has been added.</p>
+					<ul>
+						<li>Sound quality has been improved</li>
+						<li>Music has now been added to Zen Mode for some reason...</li>
+					</ul>
+				</div>
+				<div class="card">
+					<div class="card-icon"><i class="fas fa-at"></i></div>
+					<h2>Username Mentions</h2>
+					<p>Improved handling of username mentions</p>
+					<ul>
+						<li>A new option has been added for fuzzy matching usernames
+							<ul>
+								<li>Available in the "Gadgets" settings page</li>
+								<li>When enabled, WikiShield will match usernames that are <i>similar</i> to your own</li>
+							</ul>
+						</li>
+						<li>Edit summaries now include username mentions</li>
+						<li>In the user creation tab, usernames similar to yours are highlighted</li>
+						<li>Added an indicator to tab icons when there are edits mentioning your username</li>
+					</ul>
+				</div>
+				<div class="card">
+					<div class="card-icon"><i class="fas fa-ban"></i></div>
+					<h2>User Blocks</h2>
+					<p>More functionality related to user blocks</p>
+					<ul>
+						<li>Users who are currently blocked now have their name struck through</li>
+						<li>Improved block detection, you can now see all the blocks by hovering over the block indicator</li>
+					</ul>
+				</div>
+				<div class="card">
+					<div class="card-icon"><i class="fas fa-robot"></i></div>
+					<h2>AI Analysis</h2>
+					<p>AI analysis has been improved and expanded</p>
+					<ul>
+						<li>Fine tuning has been done to improve accuracy</li>
+						<li>AI analysis is now available in the user creation, pending changes, and watchlist queues</li>
+					</ul>
+				</div>
+				<div class="card">
+					<div class="card-icon"><i class="fas fa-list-check"></i></div>
+					<h2>Queue Items</h2>
+					<p>Various improvements to queue items</p>
+					<ul>
+						<li>Added ORES score to user contributions and page history items</li>
+						<li>Timestamps have been added to queue items</li>
+						<li>Cutoff text can now be hovered to see the full text</li>
+						<li>Items in the queue should no longer be repeated</li>
+						<li>Fixed navigation bugs</li>
+					</ul>
+				</div>
+				<div class="card">
+					<div class="card-icon"><i class="fas fa-chart-line"></i></div>
+					<h2>Statistics</h2>
+					<p>Statistics have been completely revamped</p>
+					<ul>
+						<li>More detailed statistics have been added</li>
+						<li>Fixed various bugs with statistics calculations</li>
+						<li>(Yes, this does mean your stats have been reset)</li>
+					</ul>
+				</div>
+				<div class="card">
+					<div class="card-icon"><i class="fas fa-palette"></i></div>
+					<h2>UI Improvements</h2>
+					<p>Various improvements to the user interface</p>
+					<ul>
+						<li>New welcome screen design</li>
+						<li>Multiple new settings options have been added</li>
+						<li>Styling has been improved throughout the interface</li>
+						<li>Various bug fixes and performance improvements</li>
+					</ul>
+				</div>
+				<div class="card">
+					<div class="card-icon"><i class="fas fa-ellipsis"></i></div>
+					<h2>Miscellaneous</h2>
+					<p>Other changes and improvements</p>
+					<ul>
+						<li>RfPP now has "Generic" and "Disruptive Edits" subcategories</li>
+						<li>Not English warning has been moved to the "Revert" menu</li>
+						<li>Removed personal edit count from the bottom tool bar</li>
+						<li>"Time ago" now updates dynamically without needing to refresh</li>
+						<li>Buttons that cannot be used for the current queue item are now hidden</li>
+						<li>Fixed bug related to Zen Mode on startup</li>
+						<li>Fixed bug where ORES scores would not load properly</li>
+						<li>Changed multiple edit summaries to be more standardized</li>
+						<li>Numerous other small bug fixes and improvements</li>
+					</ul>
+				</div>
 			</div>
 		</div>
 	`,
