@@ -179,8 +179,9 @@ export const __script__ = {
 				}
 
 				// iOS – pagehide is required because visibilitychange is unreliable
+				// Only save if we're actually leaving WikiShield, not just navigating within history
 				if (isIOS) {
-					window.addEventListener("pagehide", () => {
+					window.addEventListener("pagehide", (e) => {
 						wikishield.save();
 					});
 				}

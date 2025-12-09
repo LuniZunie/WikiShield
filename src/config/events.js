@@ -59,7 +59,7 @@ export const validEvents = {
 
             let userText = "";
             const len = users.length;
-            if (len > numberOfUsersBeforeOverflow) {
+            if (len > numberOfUsersBeforeOverflow && numberOfUsersBeforeOverflow > 0) {
                 const topUsers = users.slice(0, numberOfUsersBeforeOverflow - 1).map(u => u[0]);
                 const remaining = len - topUsers.length;
                 userText = `${topUsers.join(", ")}, and ${remaining} other${remaining === 1 ? "" : "s"}`;
@@ -119,7 +119,7 @@ export const validEvents = {
             users.sort((a, b) => b[1] - a[1]); // sort by number of edits descending
             const numberOfUsersBeforeOverflow = Math.max(users.reduce((acc, u) => {
                 const usernameLen = u[0].length;
-                if (acc[0] + usernameLen <= 50) {
+                if (acc[0] + usernameLen <= 250) {
                     return [ acc[0] + usernameLen, acc[1] + 1 ];
                 }
 
@@ -128,7 +128,7 @@ export const validEvents = {
 
             let userText = "";
             const len = users.length;
-            if (len > numberOfUsersBeforeOverflow) {
+            if (len > numberOfUsersBeforeOverflow && numberOfUsersBeforeOverflow > 0) {
                 const topUsers = users.slice(0, numberOfUsersBeforeOverflow - 1).map(u => u[0]);
                 const remaining = len - topUsers.length;
                 userText = `${topUsers.join(", ")}, and ${remaining} other${remaining === 1 ? "" : "s"}`;
