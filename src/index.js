@@ -16,7 +16,7 @@ export const __script__ = {
 	},
 
 	pages: {
-		AVI: "Wikipedia:Administra`tor intervention against vandalism",
+		AIV: "Wikipedia:Administrator intervention against vandalism",
 		UAA: "Wikipedia:Usernames for administrator attention",
 		RFPP: "Wikipedia:Requests for page protection/Increase"
 	},

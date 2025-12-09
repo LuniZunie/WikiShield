@@ -6,10 +6,10 @@ export const wikishieldHTML = {
 			<h1><i class="fas fa-rocket"></i> What's New in WikiShield</h1>
 			<p class="changelog-subtitle">Discover the latest features and improvements</p>
 		</div>
-		<div id="changelog-version-3" class="changelog-version">
+		<div id="changelog-version-4" class="changelog-version">
 			<div class="changelog-version-header">
 				<h1>Version 1.1.1</h1>
-				<p class="changelog-version-subtitle">9 Decemeber 2025, 15:00 UTC</p>
+				<p class="changelog-version-subtitle">9 December 2025, 15:30 UTC</p>
 			</div>
 			<div class="changelog-grid">
 				<div class="card featured">
@@ -30,7 +30,7 @@ export const wikishieldHTML = {
 								<li>All previous changelogs will now be available</li>
 							</ul>
 						</li>
-						<li>Minor data sanitation fixes</li>
+						<li>Minor data sanitization fixes</li>
 					</ul>
 				</div>
 			</div>
@@ -38,23 +38,13 @@ export const wikishieldHTML = {
 		<div id="changelog-version-3" class="changelog-version">
 			<div class="changelog-version-header">
 				<h1>Version 1.1.0</h1>
-				<p class="changelog-version-subtitle">9 Decemeber 2025, 00:00 UTC</p>
+				<p class="changelog-version-subtitle">9 December 2025, 00:00 UTC</p>
 			</div>
 			<div class="changelog-grid">
 				<div class="card featured">
 					<div class="card-icon"><i class="fas fa-layer-group"></i></div>
 					<h2>New Queues!</h2>
 					<p>Introducing: pending changes, user creation, and watchlist queues.</p>
-					<ul>
-						<li>Queues can be toggled and rearranged in the new "Queue" appearance settings page</li>
-						<li>Badge icons indicate number of items in each queue</li>
-						<li><strong>Note:</strong> The pending changes tab requires the <code>review</code> user right</li>
-					</ul>
-				</div>
-				<div class="card featured">
-					<div class="card-icon"><i class="fas fa-layer-group"></i></div>
-					<h2>Storage Improvements</h2>
-					<p></p>
 					<ul>
 						<li>Queues can be toggled and rearranged in the new "Queue" appearance settings page</li>
 						<li>Badge icons indicate number of items in each queue</li>
