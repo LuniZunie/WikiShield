@@ -1975,10 +1975,10 @@ export class WikiShieldInterface {
 					let tooltipHtml = `<div class="tooltip-title">Block History</div>`;
 					for (const block of blocks) {
 						let blockerName = block.user || "Unknown";
-						blockerName = this.wikishield.util.escapeHTML(blockerName);
+						blockerName = this.wikishield.util.escapeHtml(blockerName);
 
 						let duration = block.params?.duration || "Unknown duration";
-						duration = this.wikishield.util.escapeHTML(duration);
+						duration = this.wikishield.util.escapeHtml(duration);
 
 						let reason = block.comment || "No reason specified";
 
