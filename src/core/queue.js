@@ -1245,8 +1245,6 @@ export class WikiShieldQueue {
 		await this.propagateEdit(edit);
 
 		const type = this.currentQueueTab;
-		this.currentEdit[type] = edit;
-
 		this.queue[type] = this.queue[type].filter(item => item.revid !== edit.revid);
 
 		if (this.areSameQueueTypes(type, "contribs")) {
@@ -1256,6 +1254,7 @@ export class WikiShieldQueue {
 			}
 		}
 
+		this.currentEdit[type] = edit;
 		this.wikishield.interface.renderQueue(this.queue[type], edit);
 	}
 
@@ -1267,8 +1266,6 @@ export class WikiShieldQueue {
 		await this.propagateEdit(edit);
 
 		const type = this.currentQueueTab;
-		this.currentEdit[type] = edit;
-
 		this.queue[type] = this.queue[type].filter(item => item.revid !== edit.revid);
 
 		if (this.areSameQueueTypes(type, "history")) {
@@ -1278,6 +1275,7 @@ export class WikiShieldQueue {
 			}
 		}
 
+		this.currentEdit[type] = edit;
 		this.wikishield.interface.renderQueue(this.queue[type], edit);
 	}
 
