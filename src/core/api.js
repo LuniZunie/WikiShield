@@ -90,6 +90,8 @@ export class WikiShieldAPI {
 			for (const chunk of userChunks) {
 				const joined = chunk.join("|");
 				const response = await this.api.get({
+					"assertuser": this.wikishield.username,
+
 					"action": "query",
 					"format": "json",
 					"formatversion": 2,
@@ -106,7 +108,7 @@ export class WikiShieldAPI {
 
 			requests.forEach((request, index) => {
 				result[index].userEditCount = allUsersData[request.edit.user]?.editcount || 0;
-				result[index].userBlocked = Boolean(allBlocksData[request.edit.user]);
+				result[index].userBlocked = !(allBlocksData[request.edit.user]?.partial ?? true);
 			});
 		})());
 
@@ -118,13 +120,15 @@ export class WikiShieldAPI {
 			for (const chunk of titleChunks) {
 				const joined = chunk.join("|");
 				const response = await this.api.get({
+					"assertuser": this.wikishield.username,
+
 					"action": "query",
 					"format": "json",
 					"formatversion": 2,
 					"titles": joined,
 					"prop": "categories|info",
 					"cllimit": "max",
-					"inprop": "protection",
+					"inprop": "protection|watched",
 				});
 
 				response.query.pages.forEach(page => {
@@ -152,7 +156,8 @@ export class WikiShieldAPI {
 
 					allPages[page.title] = {
 						protection,
-						categories: page.categories ? page.categories.map(cat => cat.title) : []
+						categories: page.categories ? page.categories.map(cat => cat.title) : [],
+						watched: page.watched === true
 					};
 				});
 			}
@@ -162,6 +167,7 @@ export class WikiShieldAPI {
 				if (page) {
 					result[index].pageCategories = page.categories;
 					result[index].pageProtection = page.protection;
+					result[index].pageWatched = page.watched;
 				}
 			});
 		})());
@@ -305,6 +311,8 @@ export class WikiShieldAPI {
 	async edit(title, content, summary, params = {}) {
 		try {
 			await this.api.postWithEditToken(Object.assign({}, {
+				"assertuser": this.wikishield.username,
+
 				"action": "edit",
 				"title": title,
 				"text": content,
@@ -315,6 +323,8 @@ export class WikiShieldAPI {
 
 			return true;
 		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
 			console.log(`Could not edit page ${title}: ${err}`);
 			return false;
 		}
@@ -330,6 +340,8 @@ export class WikiShieldAPI {
 	async appendText(title, content, summary) {
 		try {
 			await this.api.postWithEditToken({
+				"assertuser": this.wikishield.username,
+
 				"action": "edit",
 				"title": title,
 				"appendtext": "\n" + content,
@@ -340,6 +352,8 @@ export class WikiShieldAPI {
 
 			return true;
 		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
 			console.log(`Could not append text to page ${title}: ${err}`);
 			return false;
 		}
@@ -348,6 +362,8 @@ export class WikiShieldAPI {
 	async newSection(title, sectionTitle, content, summary) {
 		try {
 			await this.api.postWithEditToken({
+				"assertuser": this.wikishield.username,
+
 				"action": "edit",
 				"title": title,
 				"section": "new",
@@ -360,6 +376,8 @@ export class WikiShieldAPI {
 
 			return true;
 		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
 			console.log(`Could not create new section on page ${title}: ${err}`);
 			return false;
 		}
@@ -382,6 +400,8 @@ export class WikiShieldAPI {
 
 			for (const chunk of chunks) {
 				const response = await this.api.get({
+					"assertuser": this.wikishield.username,
+
 					"action": "query",
 					"prop": "revisions",
 					"titles": chunk.join("|"),
@@ -398,7 +418,30 @@ export class WikiShieldAPI {
 
 			return allPages;
 		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
 			console.log(`Could not fetch page ${titles}: ${err}`);
+		}
+	}
+
+	async pagesOnWatchlist(titles) {
+		try {
+			const response = await this.api.get({
+				"assertuser": this.wikishield.username,
+
+				"action": "query",
+				"prop": "info",
+				"inprop": "watched",
+				"titles": titles,
+				"format": "json",
+				"formatversion": 2
+			});
+
+			return response.query.pages.reduce((acc, page) => ({ ...acc, [page.title]: page.watched === true }), {});
+		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
+			console.log(`Could not check watchlist status for pages ${titles}: ${err}`);
 		}
 	}
 
@@ -412,6 +455,8 @@ export class WikiShieldAPI {
 			const data = await this.getText(title);
 			return data[title];
 		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
 			console.log("Could not fetch page", err);
 		}
 	}
@@ -429,6 +474,8 @@ export class WikiShieldAPI {
 
 			for (const chunk of chunks) {
 				const response = await this.api.get({
+					"assertuser": this.wikishield.username,
+
 					"action": "query",
 					"prop": "revisions",
 					"titles": chunk.join("|"),
@@ -445,6 +492,8 @@ export class WikiShieldAPI {
 
 			return allPages;
 		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
 			console.log(`Could not check if page ${titles} exists: ${err}`);
 			return false;
 		}
@@ -462,6 +511,8 @@ export class WikiShieldAPI {
 
 		try {
 			const response = await this.api.get({
+				"assertuser": this.wikishield.username,
+
 				"action": "query",
 				"prop": "revisions",
 				"revids": revid,
@@ -474,6 +525,8 @@ export class WikiShieldAPI {
 			const page = response.query.pages[0];
 			return page.missing ? "" : page.revisions[0].slots.main.content;
 		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
 			console.log(`Could not fetch page with revid ${revid}: ${err}`);
 		}
 	}
@@ -486,6 +539,8 @@ export class WikiShieldAPI {
 	async getRevisionData(revid) {
 		try {
 			const response = await this.api.get({
+				"assertuser": this.wikishield.username,
+
 				"action": "query",
 				"prop": "revisions",
 				"revids": revid,
@@ -512,6 +567,8 @@ export class WikiShieldAPI {
 				minor: rev.minor || false
 			};
 		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
 			console.log(`Could not fetch revision data for revid ${revid}: ${err}`);
 			return null;
 		}
@@ -524,6 +581,8 @@ export class WikiShieldAPI {
 			}
 
 			const response = await this.api.get({
+				"assertuser": this.wikishield.username,
+
 				"action": "query",
 				"prop": "revisions",
 				"revids": revid,
@@ -542,6 +601,8 @@ export class WikiShieldAPI {
 			CACHE.revSize.set(revid, size);
 			return size;
 		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
 			console.log(`Could not fetch revision size for revid ${revid}: ${err}`);
 			return 0;
 		}
@@ -554,6 +615,8 @@ export class WikiShieldAPI {
 			}
 
 			const response = await this.api.get({
+				"assertuser": this.wikishield.username,
+
 				"action": "query",
 				"prop": "revisions",
 				"revids": revid,
@@ -565,6 +628,8 @@ export class WikiShieldAPI {
 			CACHE.revidToTitle.set(revid, title);
 			return title;
 		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
 			console.log(`Could not fetch page title for revid ${revid}: ${err}`);
 		}
 	}
@@ -584,6 +649,8 @@ export class WikiShieldAPI {
 			}
 
 			const params = {
+				"assertuser": this.wikishield.username,
+
 				"action": "compare",
 				"torev": revid,
 				"prop": "diff",
@@ -604,6 +671,8 @@ export class WikiShieldAPI {
 			CACHE.diffs.set(cacheKey, rtn);
 			return rtn;
 		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
 			console.log(`Could not fetch diff for page ${title}: ${err}`);
 		}
 	}
@@ -616,6 +685,8 @@ export class WikiShieldAPI {
 	async countReverts(title, user) {
 		try {
 			const response = await this.api.get({
+				"assertuser": this.wikishield.username,
+
 				"action": "query",
 				"prop": "revisions",
 				"titles": title,
@@ -635,6 +706,8 @@ export class WikiShieldAPI {
 
 			return revisions.filter(revision => revision.tags.some(tag => tag === "mw-undo" || tag === "mw-rollback" || tag === "mw-manual-revert")).length;
 		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
 			console.log(`Could not fetch revert count for page ${title}: ${err}`);
 		}
 	}
@@ -656,6 +729,8 @@ export class WikiShieldAPI {
 
 			for (const chunk of chunks) {
 				const response = await this.api.get({
+					"assertuser": this.wikishield.username,
+
 					"action": "query",
 					"prop": "categories",
 					"titles": chunk.join("|"),
@@ -672,6 +747,8 @@ export class WikiShieldAPI {
 			CACHE.categories.set(titles, allCategories);
 			return allCategories;
 		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
 			console.log(`Could not fetch categories for revision ${titles}: ${err}`);
 		}
 	}
@@ -683,81 +760,89 @@ export class WikiShieldAPI {
 	* @returns {object} Result containing count, totalSizediff, oldestTimestamp, oldestRev, priorRev (or 'created').
 	*/
 	async consecutive(page, user) {
-		let consecutiveCount = 0;
-		let totalSizediff = 0;
-		let newestRevision = null;
-		let oldestTimestamp = null;
-		let oldestRevision = null;
-		let priorRevision = null;
-		let latestEditor = user;
-		let continueObj = {};
-		let foundEnd = false;
+		try {
+			let consecutiveCount = 0;
+			let totalSizediff = 0;
+			let newestRevision = null;
+			let oldestTimestamp = null;
+			let oldestRevision = null;
+			let priorRevision = null;
+			let latestEditor = user;
+			let continueObj = {};
+			let foundEnd = false;
 
-		while (!foundEnd) {
-			// Fetch 10 revisions at a time
-			const response = await this.api.get({
-				action: "query",
-				prop: "revisions",
-				titles: page,
-				rvprop: "ids|timestamp|user|size",
-				rvlimit: "max",
-				format: "json",
-				formatversion: 2,
-				...continueObj
-			});
-			const revisions = response.query.pages[0].revisions;
+			while (!foundEnd) {
+				// Fetch 10 revisions at a time
+				const response = await this.api.get({
+					"assertuser": this.wikishield.username,
 
-			for (let i = 0; i < revisions.length; i++) {
-				const rev = revisions[i];
-				if (rev.user === latestEditor) {
-					if (newestRevision === null) {
-						newestRevision = rev;
-					}
+					action: "query",
+					prop: "revisions",
+					titles: page,
+					rvprop: "ids|timestamp|user|size",
+					rvlimit: "max",
+					format: "json",
+					formatversion: 2,
+					...continueObj
+				});
+				const revisions = response.query.pages[0].revisions;
 
-					consecutiveCount++;
-					oldestTimestamp = rev.timestamp;
-					oldestRevision = rev;
+				for (let i = 0; i < revisions.length; i++) {
+					const rev = revisions[i];
+					if (rev.user === latestEditor) {
+						if (newestRevision === null) {
+							newestRevision = rev;
+						}
 
-					let sizediff;
-					if (i + 1 < revisions.length) {
-						sizediff = rev.size - revisions[i + 1].size;
-					} else if (!response.continue) {
-						sizediff = rev.size;
+						consecutiveCount++;
+						oldestTimestamp = rev.timestamp;
+						oldestRevision = rev;
+
+						let sizediff;
+						if (i + 1 < revisions.length) {
+							sizediff = rev.size - revisions[i + 1].size;
+						} else if (!response.continue) {
+							sizediff = rev.size;
+						} else {
+							sizediff = null;
+						}
+
+						if (sizediff !== null) totalSizediff += sizediff;
 					} else {
-						sizediff = null;
+						// Streak broke, set priorRevision
+						priorRevision = rev;
+						foundEnd = true;
+						break;
 					}
+				}
 
-					if (sizediff !== null) totalSizediff += sizediff;
-				} else {
-					// Streak broke, set priorRevision
-					priorRevision = rev;
+				if (!foundEnd && response.continue) {
+					continueObj = response.continue;
+				} else if (!foundEnd) {
+					priorRevision = 0; // Created
 					foundEnd = true;
-					break;
 				}
 			}
 
-			if (!foundEnd && response.continue) {
-				continueObj = response.continue;
-			} else if (!foundEnd) {
-				priorRevision = 0; // Created
-				foundEnd = true;
+			if (newestRevision === null) {
+				priorRevision = "outdated";
 			}
-		}
 
-		if (newestRevision === null) {
-			priorRevision = "outdated";
-		}
+			// Return results
+			return {
+				count: consecutiveCount,
+				totalSizediff: totalSizediff,
+				newestRevision: newestRevision,
+				oldestTimestamp: oldestTimestamp,
+				oldestRev: oldestRevision,
+				priorRev: priorRevision,
+				diff: typeof priorRevision === "string" ? null : await this.diff(page, priorRevision.revid, newestRevision.revid)
+			};
+		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
 
-		// Return results
-		return {
-			count: consecutiveCount,
-			totalSizediff: totalSizediff,
-			newestRevision: newestRevision,
-			oldestTimestamp: oldestTimestamp,
-			oldestRev: oldestRevision,
-			priorRev: priorRevision,
-			diff: typeof priorRevision === "string" ? null : await this.diff(page, priorRevision.revid, newestRevision.revid)
-		};
+			console.log(`Could not fetch consecutive edits for page ${page}: ${err}`);
+		}
 	}
 
 	/**
@@ -768,6 +853,8 @@ export class WikiShieldAPI {
 	async contribs(user) {
 		try {
 			const response = await this.api.get({
+				"assertuser": this.wikishield.username,
+
 				"action": "query",
 				"list": "usercontribs",
 				"ucuser": user,
@@ -779,6 +866,8 @@ export class WikiShieldAPI {
 
 			return response.query.usercontribs;
 		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
 			console.log(`Could not fetch contributions for user ${user}: ${err}`);
 		}
 	}
@@ -796,6 +885,8 @@ export class WikiShieldAPI {
 
 			for (const chunk of chunks) {
 				const response = await this.api.get({
+					"assertuser": this.wikishield.username,
+
 					"action": "query",
 					"list": "users",
 					"ususers": chunk.join("|"),
@@ -811,6 +902,8 @@ export class WikiShieldAPI {
 
 			return allEditCounts;
 		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
 			console.log(`Could not fetch edit count for users ${users}: ${err}`);
 		}
 	}
@@ -823,6 +916,8 @@ export class WikiShieldAPI {
 	async filterLog(user) {
 		try {
 			const response = await this.api.get({
+				"assertuser": this.wikishield.username,
+
 				"action": "query",
 				"list": "logevents",
 				"letype": "filter",
@@ -834,6 +929,8 @@ export class WikiShieldAPI {
 
 			return response.query.logevents;
 		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
 			console.log(`Could not fetch filter log for user ${user}: ${err}`);
 		}
 	}
@@ -846,6 +943,8 @@ export class WikiShieldAPI {
 	async getBlocks(user) {
 		try {
 			const response = await this.api.get({
+				"assertuser": this.wikishield.username,
+
 				"action": "query",
 				"list": "logevents",
 				"letype": "block",
@@ -859,6 +958,8 @@ export class WikiShieldAPI {
 
 			return response.query.logevents || [];
 		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
 			console.log(`Could not fetch block history for user ${user}:`, err);
 			return [];
 		}
@@ -872,6 +973,8 @@ export class WikiShieldAPI {
 	async history(page) {
 		try {
 			const response = await this.api.get({
+				"assertuser": this.wikishield.username,
+
 				"action": "query",
 				"prop": "revisions",
 				"titles": page,
@@ -899,6 +1002,8 @@ export class WikiShieldAPI {
 
 			return revisions.splice(0, this.historyCount);
 		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
 			console.log(`Could not fetch history for page ${page}: ${err}`);
 		}
 	}
@@ -916,6 +1021,8 @@ export class WikiShieldAPI {
 
 			for (const chunk of chunks) {
 				const response = await this.api.get({
+					"assertuser": this.wikishield.username,
+
 					"action": "query",
 					"titles": chunk.join("|"),
 					"prop": "info",
@@ -953,6 +1060,8 @@ export class WikiShieldAPI {
 
 			return allProtection;
 		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
 			console.log(`Could not fetch protection info for ${titles}:`, err);
 			return {};
 		}
@@ -980,6 +1089,8 @@ export class WikiShieldAPI {
 			// Fire all chunk requests in parallel and wait for completion
 			const promises = chunks.map(chunk => {
 				return this.api.get({
+					"assertuser": this.wikishield.username,
+
 					"action": "query",
 					"titles": chunk.join("|"),
 					"prop": "revisions",
@@ -1009,6 +1120,8 @@ export class WikiShieldAPI {
 
 			return result;
 		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
 			console.log(`Could not fetch latest revisions: ${err}`);
 			return {};
 		}
@@ -1023,6 +1136,8 @@ export class WikiShieldAPI {
 		try {
 			// Get the page content to check for templates
 			const contentResponse = await this.api.get({
+				"assertuser": this.wikishield.username,
+
 				"action": "parse",
 				"page": page,
 				"prop": "wikitext",
@@ -1101,6 +1216,8 @@ export class WikiShieldAPI {
 
 			return result;
 		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
 			console.log(`Could not fetch metadata for page ${page}: ${err}`);
 			return { dateFormat: "Unknown", englishVariant: "Unknown" };
 		}
@@ -1109,6 +1226,8 @@ export class WikiShieldAPI {
 	async parseWikitext(wikitext) {
 		try {
 			const response = await this.api.get({
+				"assertuser": this.wikishield.username,
+
 				"action": "parse",
 				"text": wikitext,
 				"prop": "text",
@@ -1117,6 +1236,8 @@ export class WikiShieldAPI {
 			});
 			return response.parse?.text || "";
 		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
 			console.log(`Could not parse wikitext: ${err}`);
 			return "";
 		}
@@ -1129,9 +1250,12 @@ export class WikiShieldAPI {
 	* @returns {Promise<Array>} The recent changes
 	*/
 	async queueList(listType, namespaces, since, full = false) {
+		const wikishield = this.wikishield;
 		const options = {
 			get recent() {
 				return {
+					"assertuser": wikishield.username,
+
 					"action": "query",
 					"list": "recentchanges",
 					"rcnamespace": namespaces,
@@ -1146,6 +1270,8 @@ export class WikiShieldAPI {
 			},
 			get flagged() {
 				return {
+					"assertuser": wikishield.username,
+
 					"action": "query",
 					"list": "oldreviewedpages",
 					"ornamespace": namespaces,
@@ -1157,6 +1283,8 @@ export class WikiShieldAPI {
 			},
 			get users() {
 				return {
+					"assertuser": wikishield.username,
+
 					"action": "query",
 					"list": "logevents",
 					"letype": "newusers",
@@ -1169,6 +1297,8 @@ export class WikiShieldAPI {
 			},
 			get watchlist() {
 				return {
+					"assertuser": wikishield.username,
+
 					"action": "query",
 					"list": "watchlist",
 					"wlnamespace": namespaces,
@@ -1201,6 +1331,8 @@ export class WikiShieldAPI {
 							revision = this.cache.get(`flaggedRev:${obj.revid}`);
 						} else {
 							revision = await this.api.get({
+								"assertuser": wikishield.username,
+
 								"action": "query",
 								"prop": "revisions",
 								"titles": obj.title,
@@ -1268,6 +1400,8 @@ export class WikiShieldAPI {
 				} break;
 			}
 		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
 			console.log(`Could not fetch recent changes: ${err}`);
 		}
 	}
@@ -1275,6 +1409,8 @@ export class WikiShieldAPI {
 	async acceptFlaggedEdit(edit, summary) {
 		try {
 			const res = await this.api.postWithToken("csrf", {
+				"assertuser": this.wikishield.username,
+
 				"action": "review",
 				"revid": edit.revid,
 				"comment": summary,
@@ -1283,6 +1419,8 @@ export class WikiShieldAPI {
 
 			return true;
 		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
 			console.error(err);
 			return false;
 		}
@@ -1292,6 +1430,8 @@ export class WikiShieldAPI {
 		try {
 			const stableText = await this.getTextByRevid(stableId);
 			const res = await this.api.postWithToken("csrf", {
+				"assertuser": this.wikishield.username,
+
 				"action": "edit",
 				"title": edit.page.title,
 				"text": stableText,
@@ -1302,6 +1442,8 @@ export class WikiShieldAPI {
 
 			return true;
 		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
 			console.error(err);
 			return false;
 		}
@@ -1310,6 +1452,8 @@ export class WikiShieldAPI {
 	async getRevisionsBetween(page, startRevid, endRevid) {
 		try {
 			const response = await this.api.get({
+				"assertuser": this.wikishield.username,
+
 				"action": "query",
 				"prop": "revisions",
 				"titles": page,
@@ -1323,6 +1467,8 @@ export class WikiShieldAPI {
 			const revisions = response.query.pages[0].revisions;
 			return revisions;
 		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
 			console.log(`Could not fetch revisions between ${startRevid} and ${endRevid} for page ${page}: ${err}`);
 			return [];
 		}
@@ -1346,6 +1492,8 @@ export class WikiShieldAPI {
 
 			for (const chunk of chunks) {
 				const response = await this.api.get({
+					"assertuser": this.wikishield.username,
+
 					"action": "query",
 					"format": "json",
 					"formatversion": 2,
@@ -1392,6 +1540,8 @@ export class WikiShieldAPI {
 
 			return allScores;
 		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
 			console.log(`Could not fetch ORES scores for revision ${revids}: ${err}`);
 		}
 	}
@@ -1409,6 +1559,8 @@ export class WikiShieldAPI {
 
 			for (const chunk of chunks) {
 				const response = await this.api.get({
+					"assertuser": this.wikishield.username,
+
 					"action": "query",
 					"list": "blocks",
 					"bkusers": chunk.join("|"),
@@ -1424,6 +1576,8 @@ export class WikiShieldAPI {
 
 			return allBlocks;
 		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
 			console.log(`Could not fetch blocks for users ${users}: ${err}`);
 		}
 	}
@@ -1438,6 +1592,8 @@ export class WikiShieldAPI {
 	async rollback(title, user, summary) {
 		try {
 			const res = await this.api.rollback(title, user, {
+				"assertuser": this.wikishield.username,
+
 				"summary": summary,
 				"tags": __TAGS__
 			});
@@ -1453,6 +1609,8 @@ export class WikiShieldAPI {
 
 			return true;
 		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
 			console.log(err);
 			return false;
 		}
@@ -1472,6 +1630,8 @@ export class WikiShieldAPI {
 
 			// Use the MediaWiki API to undo the edit
 			const res = await this.api.postWithToken("csrf", {
+				"assertuser": this.wikishield.username,
+
 				"action": "edit",
 				"title": title,
 				"undo": revid,
@@ -1490,6 +1650,8 @@ export class WikiShieldAPI {
 
 			return true;
 		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
 			console.log("Error undoing edit:", err);
 			return false;
 		}
@@ -1510,6 +1672,8 @@ export class WikiShieldAPI {
 		try {
 			await this.api.postWithToken("csrf", Object.assign(
 				{
+					"assertuser": this.wikishield.username,
+
 					"action": "block",
 					"user": user,
 					"expiry": duration,
@@ -1524,6 +1688,8 @@ export class WikiShieldAPI {
 
 			return true;
 		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
 			console.log(err);
 			return false;
 		}
@@ -1537,12 +1703,16 @@ export class WikiShieldAPI {
 	async thank(revid) {
 		try {
 			await this.api.postWithToken("csrf", {
+				"assertuser": this.wikishield.username,
+
 				"action": "thank",
 				"rev": revid
 			});
 
 			return true;
 		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
 			console.log(err);
 			return false;
 		}
@@ -1556,6 +1726,8 @@ export class WikiShieldAPI {
 	async getProtectionDetails(page) {
 		try {
 			const response = await this.api.get({
+				"assertuser": this.wikishield.username,
+
 				"action": "query",
 				"list": "logevents",
 				"letype": "protect",
@@ -1584,6 +1756,8 @@ export class WikiShieldAPI {
 
 			return details;
 		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
 			console.log(err);
 		}
 	}
@@ -1591,6 +1765,8 @@ export class WikiShieldAPI {
 	async getStableDetails(page) {
 		try {
 			const response = await this.api.get({
+				"assertuser": this.wikishield.username,
+
 				"action": "query",
 				"list": "logevents",
 				"letype": "stable",
@@ -1599,6 +1775,8 @@ export class WikiShieldAPI {
 			});
 			return response.query.logevents[0];
 		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
 			console.log(`Could not fetch stable details for page ${page}: ${err}`);
 		}
 	}
@@ -1613,6 +1791,8 @@ export class WikiShieldAPI {
 	async protect(page, summary, details) {
 		try {
 			await this.api.postWithToken("csrf", {
+				"assertuser": this.wikishield.username,
+
 				"action": "protect",
 				"title": page,
 				"reason": summary,
@@ -1623,8 +1803,42 @@ export class WikiShieldAPI {
 
 			return true;
 		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
 			console.log(err);
 			return false;
+		}
+	}
+
+	watchPage(title, expiry) {
+		try {
+			return this.api.postWithToken("watch", {
+				"assertuser": this.wikishield.username,
+
+				"action": "watch",
+				"title": title,
+				"expiry": expiry,
+				"tags": __TAGS__
+			});
+		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+			console.log(err);
+		}
+	}
+	unwatchPage(title) {
+		try {
+			return this.api.postWithToken("watch", {
+				"assertuser": this.wikishield.username,
+
+				"action": "watch",
+				"unwatch": true,
+				"title": title,
+				"tags": __TAGS__
+			});
+		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
+			console.log(err);
 		}
 	}
 
@@ -1634,7 +1848,14 @@ export class WikiShieldAPI {
 	* @returns {Promise<Object>} The API response
 	*/
 	async get(params) {
-		return await this.api.get(params);
+		try {
+			return await this.api.get(Object.assign({
+				"assertuser": this.wikishield.username
+			}, params));
+		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+			console.log(err);
+		}
 	}
 
 	/**
@@ -1644,6 +1865,24 @@ export class WikiShieldAPI {
 	* @returns {Promise<Object>} The API response
 	*/
 	async postWithToken(tokenType, params) {
-		return await this.api.postWithToken(tokenType, params);
+		try {
+			return await this.api.postWithToken(tokenType, Object.assign({
+				"assertuser": this.wikishield.username
+			}, params));
+		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+			console.log(err);
+		}
+	}
+
+	async postWithEditToken(params) {
+		try {
+			return await this.api.postWithToken("csrf", Object.assign({
+				"assertuser": this.wikishield.username
+			}, params));
+		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+			console.log(err);
+		}
 	}
 }

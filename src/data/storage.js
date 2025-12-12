@@ -734,6 +734,11 @@ class Version1 extends Version {
                     RFPP: 0,
                 },
 
+                watchlist: {
+                    watched: 0,
+                    unwatched: 0
+                },
+
                 items_whitelisted: {
                     total: 0,
 
@@ -1107,6 +1112,12 @@ class Version1 extends Version {
                     UAA: defaults.statistics.reports_filed.UAA,
                     RFPP: defaults.statistics.reports_filed.RFPP
                 },
+
+                watchlist: {
+                    watched: defaults.statistics.watchlist.watched,
+                    unwatched: defaults.statistics.watchlist.unwatched,
+                },
+
                 items_whitelisted: {
                     total: defaults.statistics.items_whitelisted.total,
 
@@ -1935,6 +1946,25 @@ class Version1 extends Version {
                     const value = root.statistics.reports_filed.RFPP;
                     if (!isValidStatistic(value)) {
                         this.reset("statistics", "reports_filed", "RFPP");
+                    }
+                }
+            }
+
+            { // root.statistics.watchlist
+                const scope = root.statistics.watchlist;
+                this.restrictObject(scope, "statistics", "watchlist");
+
+                { // root.statistics.watchlist.watched
+                    const value = root.statistics.watchlist.watched;
+                    if (!isValidStatistic(value)) {
+                        this.reset("statistics", "watchlist", "watched");
+                    }
+                }
+
+                { // root.statistics.watchlist.unwatched
+                    const value = root.statistics.watchlist.unwatched;
+                    if (!isValidStatistic(value)) {
+                        this.reset("statistics", "watchlist", "unwatched");
                     }
                 }
             }

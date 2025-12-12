@@ -75,7 +75,8 @@ export class WikiShieldSettingsInterface {
 		}
 	}
 
-	setPath(path) {
+	setPath(...path) { // TODO
+		return;
 		const $content = document.querySelector(".settings-container > .settings > .settings-right");
 
 		const $path = document.createElement("div");
@@ -83,11 +84,6 @@ export class WikiShieldSettingsInterface {
 
 		let first = true;
 		for (const segment of path) {
-			const $segment = document.createElement("span");
-			$segment.classList.add("settings-path-segment");
-			$segment.textContent = segment;
-			$path.appendChild($segment);
-
 			if (first) {
 				first = false;
 			} else {
@@ -96,6 +92,11 @@ export class WikiShieldSettingsInterface {
 				$divider.innerHTML = "&rsaquo;";
 				$path.appendChild($divider);
 			}
+
+			const $segment = document.createElement("span");
+			$segment.classList.add("settings-path-segment");
+			$segment.textContent = segment;
+			$path.appendChild($segment);
 		}
 
 		$content.prepend($path);
@@ -523,6 +524,8 @@ export class WikiShieldSettingsInterface {
 				},
 			})
 		);
+
+		this.setPath("#Core", "General");
 	}
 
 	openPerformance() {
@@ -537,6 +540,8 @@ export class WikiShieldSettingsInterface {
 				}
 			})
 		);
+
+		this.setPath("#Core", "Performance");
 	}
 
 	/**
@@ -817,6 +822,8 @@ export class WikiShieldSettingsInterface {
 		}
 
 		loopThrough(this.wikishield.audioManager.audio, [], this.contentContainer.querySelector("#sound-volumes-container"));
+
+		this.setPath("#Core", "Audio");
 	}
 
 	/**
@@ -862,6 +869,8 @@ export class WikiShieldSettingsInterface {
 				}
 			})
 		);
+
+		this.setPath("#Appearance", "Queue");
 	}
 
 	openZen() {
@@ -903,6 +912,8 @@ export class WikiShieldSettingsInterface {
 				},
 			})
 		);
+
+		this.setPath("#Appearance", "Zen Mode");
 	}
 
 	/**
@@ -940,6 +951,8 @@ export class WikiShieldSettingsInterface {
 			});
 			this.openControls();
 		});
+
+		this.setPath("#Core", "Controls");
 	}
 
 	/**
@@ -1610,6 +1623,8 @@ ollama serve
 
 			refreshBtn.disabled = false;
 		});
+
+		this.setPath("#Tools", "AI Analysis");
 	}
 
 	openAutoReporting() {
@@ -1632,6 +1647,8 @@ ollama serve
 				}
 			})
 		);
+
+		this.setPath("#Tools", "Auto Reporting");
 	}
 
 	/**
@@ -1695,6 +1712,8 @@ ollama serve
 				settings.username_highlighting.fuzzy = newValue;
 			}
 		);
+
+		this.setPath("#Core", "Gadgets");
 	}
 
 	openWhitelist(key) {
@@ -1781,6 +1800,8 @@ ollama serve
 		});
 
 		this.createWhitelistList(container, key);
+
+		this.setPath("#Tools", `Whitelisted ${key.charAt(0).toUpperCase() + key.slice(1)}`);
 	}
 
 	/**
@@ -1925,6 +1946,8 @@ ollama serve
 		});
 
 		this.createHighlightList(container, key);
+
+		this.setPath("#Tools", `Highlighted ${key.charAt(0).toUpperCase() + key.slice(1)}`);
 	}
 
 	/**
@@ -1992,8 +2015,8 @@ ollama serve
 			const seconds = Math.floor(ms / 1000);
 
 			const days = Math.floor(seconds / 86400);
-			const hours = Math.floor(seconds / 3600);
-			const mins = Math.floor(seconds / 60);
+			const hours = Math.floor((seconds % 86400) / 3600);
+			const mins = Math.floor((seconds % 3600) / 60);
 			const secs = seconds % 60;
 
 			let str = "";
@@ -2233,6 +2256,22 @@ ollama serve
 						<div class="stat-card">
 							<div class="inside shimmer shimmer-border">
 								<div class="front">
+									<div class="stat-value">${stats.watchlist.watched}</div>
+									<div class="stat-label">Pages Watched</div>
+								</div>
+								<div class="back">
+									<div class="stat-sublabel">
+										${stats.watchlist.unwatched} (${
+											((stats.watchlist.unwatched / stats.watchlist.watched * 100) || 0).toFixed(1)
+										}%) of those watched pages were annoying enough to unwatch
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<div class="stat-card">
+							<div class="inside shimmer shimmer-border">
+								<div class="front">
 									<div class="stat-value">${stats.items_whitelisted.total}</div>
 									<div class="stat-label">Items Whitelisted</div>
 								</div>
@@ -2318,6 +2357,8 @@ ollama serve
 				this.openStatistics();
 			}
 		});
+
+		this.setPath("#Statistics", "Overview");
 	}
 
 	/**
@@ -2331,6 +2372,8 @@ ollama serve
 				changelog: this.wikishield.__script__.changelog.HTML,
 			})
 		);
+
+		this.setPath("#About", "WikiShield");
 	}
 
 	/**
@@ -2557,6 +2600,8 @@ ollama serve
 				`;
 			}
 		});
+
+		this.setPath("#Misc", "Save");
 	}
 
 	/**

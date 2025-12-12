@@ -195,6 +195,10 @@ export const __script__ = {
 				startKillswitchPolling(wikishield.api);
 			});
 			window.addEventListener("keydown", wikishield.keyPressed.bind(wikishield));
+
+			window.addEventListener("error", (event) => {
+				console.error("WikiShield: Unhandled error:", event.error);
+			});
 		});
 	};
 

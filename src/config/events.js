@@ -50,7 +50,7 @@ export const validEvents = {
             users.sort((a, b) => b[1] - a[1]); // sort by number of edits descending
             const numberOfUsersBeforeOverflow = Math.max(users.reduce((acc, u) => {
                 const usernameLen = u[0].length;
-                if (acc[0] + usernameLen <= 50) {
+                if (acc[0] + usernameLen <= 250) {
                     return [ acc[0] + usernameLen, acc[1] + 1 ];
                 }
 
@@ -59,8 +59,8 @@ export const validEvents = {
 
             let userText = "";
             const len = users.length;
-            if (len > numberOfUsersBeforeOverflow && numberOfUsersBeforeOverflow > 0) {
-                const topUsers = users.slice(0, numberOfUsersBeforeOverflow - 1).map(u => u[0]);
+            if (len > numberOfUsersBeforeOverflow) {
+                const topUsers = users.slice(0, numberOfUsersBeforeOverflow).map(u => u[0]);
                 const remaining = len - topUsers.length;
                 userText = `${topUsers.join(", ")}, and ${remaining} other${remaining === 1 ? "" : "s"}`;
             } else {
@@ -128,8 +128,8 @@ export const validEvents = {
 
             let userText = "";
             const len = users.length;
-            if (len > numberOfUsersBeforeOverflow && numberOfUsersBeforeOverflow > 0) {
-                const topUsers = users.slice(0, numberOfUsersBeforeOverflow - 1).map(u => u[0]);
+            if (len > numberOfUsersBeforeOverflow) {
+                const topUsers = users.slice(0, numberOfUsersBeforeOverflow).map(u => u[0]);
                 const remaining = len - topUsers.length;
                 userText = `${topUsers.join(", ")}, and ${remaining} other${remaining === 1 ? "" : "s"}`;
             } else {
@@ -366,6 +366,80 @@ export const validEvents = {
         func: (wikishield) => {
             wikishield.queue.switchQueueTab("watchlist");
             return true;
+        }
+    },
+
+    watchPage: {
+        description: "Add page to watchlist",
+        icon: "fas fa-eye",
+        includeInProgress: true,
+        progressDesc: "Watching...",
+        parameters: [
+            {
+                title: "Duration",
+                id: "duration",
+                type: "choice",
+                options: [
+                    "1 hour",
+                    "1 day",
+                    "1 week",
+                    "1 month",
+                    "3 months",
+                    "6 months",
+                    "indefinite",
+                ]
+            }
+        ],
+        validateParameters: (params) => {
+            const validDurations = [
+                "1 hour",
+                "1 day",
+                "1 week",
+                "1 month",
+                "3 months",
+                "6 months",
+                "indefinite",
+            ];
+
+            if (!validDurations.includes(params.duration)) {
+                return { valid: false, error: "Invalid duration selected." };
+            }
+
+            return { valid: true };
+        },
+        func: async (wikishield, event, currentEdit) => {
+            const expiry = wikishield.util.expiryToMilliseconds(event.duration);
+			if (expiry > 0) {
+				const toExpire = new Date(Date.now() + expiry);
+                const pageTitle = currentEdit.page.title;
+
+                const result = await wikishield.api.watchPage(pageTitle, expiry === Infinity ? "infinity" : wikishield.util.utcString(toExpire));
+                if (result) {
+                    wikishield.storage.data.statistics.pages_watched++;
+
+                    wikishield.queue.watchlistOverride[pageTitle] = true;
+                }
+
+                return result;
+			}
+
+            return true;
+        }
+    },
+    unwatchPage: {
+        description: "Remove page from watchlist",
+        icon: "fas fa-eye-slash",
+        includeInProgress: true,
+        progressDesc: "Unwatching...",
+        func: async (wikishield, event, currentEdit) => {
+            const pageTitle = currentEdit.page.title;
+            const result = await wikishield.api.unwatchPage(pageTitle);
+            if (result) {
+                wikishield.storage.data.statistics.pages_unwatched++;
+
+                wikishield.queue.watchlistOverride[pageTitle] = false;
+            }
+            return result;
         }
     },
 
@@ -955,6 +1029,18 @@ export const validConditions = {
 		desc: "User is highlight",
 		check: (wikishield, edit) => wikishield.storage.data.highlight.users.has(edit.user.name)
 	},
+    "pageIsWatchlisted": {
+        desc: "Page is on watchlist",
+        check: (wikishield, edit) => {
+            return wikishield.queue.watchlistOverride[edit.page.title] ?? edit.page.watched;
+        }
+    },
+    "pageIsNotWatchlisted": {
+        desc: "Page is not on watchlist",
+        check: (wikishield, edit) => {
+            return !(wikishield.queue.watchlistOverride[edit.page.title] ?? edit.page.watched);
+        }
+    },
 	"pageIshighlight": {
 		desc: "Page is highlight",
 		check: (wikishield, edit) => wikishield.storage.data.highlight.pages.has(edit.page.title)
