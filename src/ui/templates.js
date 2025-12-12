@@ -17,7 +17,7 @@ export const wikishieldHTML = {
 					<h2>Watchlist Enhancements</h2>
 					<p>Pages can now be watched or unwatched directly from the queue.</p>
 					<ul>
-						<li>In the page menu, <code>Watch page</code> and <code>Unwatch page</code> options has been added</li>
+						<li>In the page menu, <code>Watch page</code> and <code>Unwatch page</code> options have been added</li>
 						<li>When a page is unwatched, all edits in the watchlist queue for that page are removed</li>
 						<li>Watchlist statistics are now tracked</li>
 					</ul>
