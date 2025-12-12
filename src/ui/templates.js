@@ -55,6 +55,7 @@ export const wikishieldHTML = {
 					<p>Other changes and improvements.</p>
 					<ul>
 						<li>Fixed a bug where usernames in accepted and rejected pending changes were occasionally not built correctly</li>
+						<li>Fixed an issue with the display for session time in statistics</li>
 					</ul>
 				</div>
 			</div>
