@@ -415,7 +415,7 @@ export const validEvents = {
 
                 const result = await wikishield.api.watchPage(pageTitle, expiry === Infinity ? "infinity" : wikishield.util.utcString(toExpire));
                 if (result) {
-                    wikishield.storage.data.statistics.pages_watched++;
+                    wikishield.storage.data.statistics.watchlist.watched++;
 
                     wikishield.queue.watchlistOverride[pageTitle] = true;
                 }
@@ -435,7 +435,7 @@ export const validEvents = {
             const pageTitle = currentEdit.page.title;
             const result = await wikishield.api.unwatchPage(pageTitle);
             if (result) {
-                wikishield.storage.data.statistics.pages_unwatched++;
+                wikishield.storage.data.statistics.watchlist.unwatched++;
 
                 wikishield.queue.watchlistOverride[pageTitle] = false;
             }

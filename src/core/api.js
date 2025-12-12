@@ -1810,9 +1810,9 @@ export class WikiShieldAPI {
 		}
 	}
 
-	watchPage(title, expiry) {
+	async watchPage(title, expiry) {
 		try {
-			return this.api.postWithToken("watch", {
+			await this.api.postWithToken("watch", {
 				"assertuser": this.wikishield.username,
 
 				"action": "watch",
@@ -1820,14 +1820,18 @@ export class WikiShieldAPI {
 				"expiry": expiry,
 				"tags": __TAGS__
 			});
+
+			return true;
 		} catch (err) {
 			if (err === "assertnameduserfailed") return window.location.reload();
-			console.log(err);
+
+			console.log(`Could not watch page ${title}: ${err}`);
+			return false;
 		}
 	}
-	unwatchPage(title) {
+	async unwatchPage(title) {
 		try {
-			return this.api.postWithToken("watch", {
+			await this.api.postWithToken("watch", {
 				"assertuser": this.wikishield.username,
 
 				"action": "watch",
@@ -1835,10 +1839,13 @@ export class WikiShieldAPI {
 				"title": title,
 				"tags": __TAGS__
 			});
+
+			return true;
 		} catch (err) {
 			if (err === "assertnameduserfailed") return window.location.reload();
 
-			console.log(err);
+			console.log(`Could not unwatch page ${title}: ${err}`);
+			return false;
 		}
 	}
 

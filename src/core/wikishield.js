@@ -363,7 +363,7 @@ export class WikiShield {
 					"titles": pageTitle,
 					"expiry": expiry === Infinity ? "infinity" : this.util?.utcString(toExpire)
 				})) {
-					this.storage.data.statistics.pages_watched++;
+					this.storage.data.statistics.watchlist.watched++;
 					this.queue.watchlistOverride[pageTitle] = true;
 				}
 			}

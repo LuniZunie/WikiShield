@@ -2261,14 +2261,11 @@ ollama serve
 								</div>
 								<div class="back">
 									<div class="stat-sublabel">
-										${stats.watchlist.unwatched} (${
-											((stats.watchlist.unwatched / stats.watchlist.watched * 100) || 0).toFixed(1)
-										}%) of those watched pages were annoying enough to unwatch
+										${stats.watchlist.unwatched} pages were annoying enough to unwatch
 									</div>
 								</div>
 							</div>
 						</div>
-
 						<div class="stat-card">
 							<div class="inside shimmer shimmer-border">
 								<div class="front">
