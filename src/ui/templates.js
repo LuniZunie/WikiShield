@@ -6,6 +6,59 @@ export const wikishieldHTML = {
 			<h1><i class="fas fa-rocket"></i> What's New in WikiShield</h1>
 			<p class="changelog-subtitle">Discover the latest features and improvements</p>
 		</div>
+		<div id="changelog-version-5" class="changelog-version">
+			<div class="changelog-version-header">
+				<h1>Version 1.1.2</h1>
+				<p class="changelog-version-subtitle">12 December 2025, 00:30 UTC</p>
+			</div>
+			<div class="changelog-grid">
+				<div class="card featured">
+					<div class="card-icon"><i class="fas fa-eye"></i></div>
+					<h2>Watchlist Enhancements</h2>
+					<p>Pages can now be watched or unwatched directly from the queue.</p>
+					<ul>
+						<li>In the page menu, <code>Watch page</code> and <code>Unwatch page</code> options has been added</li>
+						<li>When a page is unwatched, all edits in the watchlist queue for that page are removed</li>
+						<li>Watchlist statistics are now tracked</li>
+					</ul>
+				</div>
+				<div class="card">
+					<div class="card-icon"><i class="fas fa-user"></i></div>
+					<h2>User Creations</h2>
+					<p>User creation profanity filter improvements.</p>
+					<ul>
+						<li>A "note on file" has been added to certain filter hits</li>
+						<li>Slight improvements to filter accuracy</li>
+					</ul>
+				</div>
+				<div class="card">
+					<div class="card-icon"><i class="fas fa-list-check"></i></div>
+					<h2>Queue Navigation Improvements</h2>
+					<p>Multiple bugs have been fixed.</p>
+					<ul>
+						<li>Pending changes are no longer removed when navigating between edits</li>
+						<li>When clicking on user contributions or the page history, the current edit is replaced rather than removed</li>
+					</ul>
+				</div>
+				<div class="card">
+					<div class="card-icon"><i class="fas fa-shield-alt"></i></div>
+					<h2>Security Fixes</h2>
+					<p>Multiple security fixes.</p>
+					<ul>
+						<li>Fixed an issue where a user could log out while still maintaining access to WikiShield features</li>
+						<li>Fixed an issue where a user who lost rollback rights while running the script could still access WikiShield features</li>
+					</ul>
+				</div>
+				<div class="card">
+					<div class="card-icon"><i class="fas fa-ellipsis"></i></div>
+					<h2>Miscellaneous</h2>
+					<p>Other changes and improvements.</p>
+					<ul>
+						<li>Fixed a bug where usernames in accepted and rejected pending changes were occasionally not built correctly</li>
+					</ul>
+				</div>
+			</div>
+		</div>
 		<div id="changelog-version-4" class="changelog-version">
 			<div class="changelog-version-header">
 				<h1>Version 1.1.1</h1>
@@ -23,7 +76,7 @@ export const wikishieldHTML = {
 				<div class="card">
 					<div class="card-icon"><i class="fas fa-ellipsis"></i></div>
 					<h2>Miscellaneous</h2>
-					<p>Other changes and improvements</p>
+					<p>Other changes and improvements.</p>
 					<ul>
 						<li>The changelog UI has been updated
 							<ul>
@@ -434,6 +487,16 @@ export const wikishieldHTML = {
 				<i class="fas fa-arrow-up-right-from-square menu-option-icon"></i>
 			</div>
 			<div class="menu-divider"></div>
+			<div id="page-watch" class="menu-option submenu-trigger">
+				<i class="fas fa-eye"></i>
+				<span>Watch page</span>
+				<i class="fas fa-chevron-right menu-option-chevron"></i>
+				<div class="submenu"></div>
+			</div>
+			<div id="page-unwatch" class="menu-option">
+				<i class="fas fa-eye-slash"></i>
+				<span>Unwatch page</span>
+			</div>
 			<div id="page-whitelist" class="menu-option">
 				<i class="fas fa-check"></i>
 				<span>Whitelist page</span>

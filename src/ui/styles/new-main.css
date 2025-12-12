@@ -1479,6 +1479,10 @@ body {
             /* Theme dependent */
             color: rgba(224, 224, 224, 1);
 
+            &.hidden {
+                display: none;
+            }
+
             &:hover, &:focus-visible {
                 /* Theme dependent */
                 color: rgba(143, 163, 255, 1);
@@ -3266,7 +3270,7 @@ body {
 
                                     font-size: 1.1em;
                                     font-weight: 400;
-                                    
+
                                     /* Theme dependent */
                                     color: rgba(200, 200, 200, .9);
                                 }
@@ -5921,6 +5925,39 @@ select, input:not([type=range]), textarea, button {
                             color: rgba(100, 200, 255, 1);
                         }
                     }
+                }
+            }
+
+            & > .match-note {
+                display: flex;
+                align-items: flex-start;
+                gap: 10px;
+
+                margin-top: 6px;
+                padding: 10px 12px;
+                border-radius: 6px;
+
+                font-size: .85em;
+                line-height: 1.5;
+
+                /* Theme dependent */
+                background: rgba(30, 33, 43, .6);
+                border: 1px solid rgba(100, 150, 255, .2);
+
+                & > .fa {
+                    margin-top: 2px;
+                    font-size: 1.1em;
+
+                    /* Theme dependent */
+                    color: rgba(100, 150, 255, .8);
+                }
+
+                & > .note-text {
+                    flex: 1;
+                    font-style: italic;
+
+                    /* Theme dependent */
+                    color: rgba(180, 190, 210, 1);
                 }
             }
         }

@@ -352,6 +352,12 @@ export class WikiShieldInterface {
 						menu.innerHTML = "";
 						this.createWarnMenu(menu, this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab]);
 					} break;
+					case "page": {
+						const edit = this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab];
+						const watched = (this.wikishield.queue.watchlistOverride[edit?.page?.title] ?? edit?.page?.watched) === true;
+						this.elem("#page-watch").classList.toggle("hidden", watched);
+						this.elem("#page-unwatch").classList.toggle("hidden", !watched);
+					} break;
 				}
 
 				// Close all menus
@@ -563,6 +569,16 @@ export class WikiShieldInterface {
 		this.createSubmenu(
 			this.elem("#user-report-uaa .submenu"),
 			"reportToUAA"
+		);
+
+		this.createSubmenu(
+			this.elem("#page-watch .submenu"),
+			"watchPage"
+		);
+
+		this.eventManager.linkButton(
+			this.elem("#page-unwatch"),
+			"unwatchPage"
 		);
 
 		this.eventManager.linkButton(
@@ -799,6 +815,24 @@ export class WikiShieldInterface {
 	}
 
 	update() {
+		this.wikishield.api.get({
+			"action": "query",
+			"meta": "userinfo",
+			"uiprop": "rights",
+			"format": "json"
+		}).then(data => {
+			const obj = this.wikishield.rights;
+			const rights = data.query.userinfo.rights;
+			obj.rollback = rights.includes("rollback");
+			obj.block = rights.includes("block");
+			obj.protect = rights.includes("protect");
+			obj.review = rights.includes("review");
+
+			if (!this.wikishield.rights.rollback) {
+				return window.location.reload();
+			}
+		});
+
 		try {
 			{ // flagged
 				const allowed = this.wikishield.rights.review && __pendingChangesServer__.has(mw.config.get("wgServerName"));
@@ -1632,6 +1666,10 @@ export class WikiShieldInterface {
 
 		this.elem("#user-report-uaa").style.display = edit?.user?.name && (edit.user.ip || edit.user.temporary) ? "none" : "";
 
+		const watched = (this.wikishield.queue.watchlistOverride[edit?.page?.title] ?? edit?.page?.watched) === true;
+		this.elem("#page-watch").classList.toggle("hidden", watched);
+		this.elem("#page-unwatch").classList.toggle("hidden", !watched);
+
 		document.querySelectorAll("#right-top > .icons > :not(.hidden)").forEach(el => el.classList.add("hidden"));
 
 		this.hide3RRNotice();
@@ -2199,6 +2237,15 @@ export class WikiShieldInterface {
 					for (const match of evaluation.matches) {
 						const $match = document.createElement("div");
 						$match.className = "profanity-match";
+
+						// Build the note section if available
+						const noteHTML = match.note ? `
+							<div class="match-note">
+								<span class="fa fa-info-circle"></span>
+								<span class="note-text">${this.wikishield.util.escapeHtml(match.note)}</span>
+							</div>
+						` : '';
+
 						$match.innerHTML = `
 							<div class="match-header">
 								<span class="match-text">"${this.wikishield.util.escapeHtml(match.match)}"</span>
@@ -2208,19 +2255,23 @@ export class WikiShieldInterface {
 							<div class="match-details">
 								<div class="match-stat">
 									<span class="stat-label">Confidence</span>
-									<span class="stat-value">${Math.round(match.percentage * 100)}%</span>
+									<span class="stat-value" data-tooltip="How certain we are this is a match. Higher confidence means more accurate detection." data-tooltip-delay="500">${Math.round(match.percentage * 100)}%</span>
 								</div>
 								<div class="match-stat">
 									<span class="stat-label">Obfuscation</span>
-									<span class="stat-value">${Math.round(match.obfuscationScore * 100)}%</span>
+									<span class="stat-value" data-tooltip="How much the term was disguised using character substitutions (e.g., 'b!tch' instead of 'bitch'). Higher scores indicate intentional filter evasion." data-tooltip-delay="500">${Math.round(match.obfuscationScore * 100)}%</span>
 								</div>
 								<div class="match-stat">
 									<span class="stat-label">Severity</span>
-									<span class="stat-value severity-${match.severity}">${match.severity}</span>
+									<span class="stat-value severity-${match.severity}" data-tooltip="0.1=minimal, 0.3=low, 0.5=moderate, 0.7=high, 1.0=critical. This indicates how offensive or problematic the term is." data-tooltip-delay="500">${match.severity}</span>
 								</div>
 							</div>
+							${noteHTML}
 						`;
 						$matchesList.appendChild($match);
+
+						// Add tooltip listeners for the stats
+						$match.querySelectorAll("[data-tooltip]").forEach(elem => this.addTooltipListener(elem));
 					}
 
 					$container.appendChild($matchesList);
@@ -2526,7 +2577,7 @@ export class WikiShieldInterface {
 		}
 	}
 
-	showCannotReviewFlaggedRevisionNotice() {
+	showCannotReviewFlaggedRevisionNotice(notFlagged = false) {
 		// Remove any existing notice first
 		this.hideCannotReviewFlaggedRevisionNotice();
 
@@ -2547,17 +2598,25 @@ export class WikiShieldInterface {
 			flex-shrink: 0;
 		`;
 
-		noticeDiv.innerHTML = `
+		if (notFlagged) {
+			noticeDiv.innerHTML = `
+				<span class="fa fa-shield-alt"></span>
+				<span style="flex: 1;">This revision cannot be reviewed because it is not a pending revision</span>
+			`;
+		} else {
+			noticeDiv.innerHTML = `
 				<span class="fa fa-shield-alt"></span>
 				<span style="flex: 1;">This revision cannot be reviewed because it is outdated</span>
 			`;
+		}
 
 		const diffContainer = this.elem("#diff-container");
 		if (diffContainer?.parentElement) {
 			diffContainer.parentElement.insertBefore(noticeDiv, diffContainer);
 		}
 
-		document.querySelector("#pending-changes-container")?.classList.add("hidden");
+		const queue = this.wikishield.queue;
+		document.querySelector("#pending-changes-container").classList.toggle("hidden", !queue.flaggedRevisions.has(queue.currentEdit[queue.currentQueueTab]?.revid));
 	}
 
 	hideCannotReviewFlaggedRevisionNotice() {
@@ -2566,7 +2625,8 @@ export class WikiShieldInterface {
 			existingNotice.remove();
 		}
 
-		document.querySelector("#pending-changes-container")?.classList.remove("hidden");
+		const queue = this.wikishield.queue;
+		document.querySelector("#pending-changes-container").classList.toggle("hidden", !queue.flaggedRevisions.has(queue.currentEdit[queue.currentQueueTab]?.revid));
 	}
 
 	/**
@@ -2610,6 +2670,9 @@ export class WikiShieldInterface {
 				this.showCannotReviewFlaggedRevisionNotice();
 			}
 
+			return;
+		} else if (edit.__fromQueue__ === "flagged") {
+			this.showCannotReviewFlaggedRevisionNotice(true);
 			return;
 		}
 

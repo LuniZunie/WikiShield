@@ -357,11 +357,15 @@ export class WikiShield {
 			if (expiry > 0) {
 				const toExpire = new Date(Date.now() + expiry);
 
-				await this.api.postWithToken("watch", {
+				const pageTitle = `User talk:${user}`;
+				if (await this.api.postWithToken("watch", {
 					"action": "watch",
-					"titles": `User talk:${user}`,
+					"titles": pageTitle,
 					"expiry": expiry === Infinity ? "infinity" : this.util?.utcString(toExpire)
-				});
+				})) {
+					this.storage.data.statistics.pages_watched++;
+					this.queue.watchlistOverride[pageTitle] = true;
+				}
 			}
 		} catch (err) {
 			console.log(`Could not add User talk:${user} to watchlist:`, err);
@@ -471,7 +475,7 @@ export class WikiShield {
 	async loadAlerts() {
 		try {
 			const [ alertsResponse ] = await Promise.all([
-				this.api.api.get({
+				this.api.get({
 					action: "query",
 					meta: "notifications",
 					notlimit: 20,
@@ -661,7 +665,7 @@ export class WikiShield {
 	 */
 	markAlertItemRead(alert) {
 		alert.read = true;
-		this.api.api.postWithEditToken({
+		this.api.postWithEditToken({
 			action: "echomarkread",
 			sections: "alert",
 			list: alert.id
@@ -674,7 +678,7 @@ export class WikiShield {
 	 */
 	markAllAlertsRead() {
 		this.alerts.forEach(n => n.read = true);
-		this.api.api.postWithEditToken({
+		this.api.postWithEditToken({
 			action: "echomarkread",
 			sections: "alert",
 			all: true
@@ -683,7 +687,7 @@ export class WikiShield {
 	}
 
 	markAllAlertsSeen() {
-		this.api.api.postWithEditToken({
+		this.api.postWithEditToken({
 			action: "echomarkseen",
 			type: "alert",
 		});
@@ -695,7 +699,7 @@ export class WikiShield {
 	async loadNotices() {
 		try {
 			const [ noticesResponse ] = await Promise.all([
-				this.api.api.get({
+				this.api.get({
 					action: "query",
 					meta: "notifications",
 					notlimit: 20,
@@ -885,7 +889,7 @@ export class WikiShield {
 	 */
 	markNoticeItemRead(notice) {
 		notice.read = true;
-		this.api.api.postWithEditToken({
+		this.api.postWithEditToken({
 			action: "echomarkread",
 			sections: "message",
 			list: notice.id
@@ -898,7 +902,7 @@ export class WikiShield {
 	 */
 	markAllNoticesRead() {
 		this.notices.forEach(n => n.read = true);
-		this.api.api.postWithEditToken({
+		this.api.postWithEditToken({
 			action: "echomarkread",
 			sections: "message",
 			all: true
@@ -907,7 +911,7 @@ export class WikiShield {
 	}
 
 	markAllNoticesSeen() {
-		this.api.api.postWithEditToken({
+		this.api.postWithEditToken({
 			action: "echomarkseen",
 			type: "message",
 		});
@@ -1244,7 +1248,7 @@ export class WikiShield {
 			mw.storage.store.setItem("WikiShield:Storage", string);
 			return true;
 		} else {
-			return this.api.api.postWithToken("csrf",
+			return this.api.postWithEditToken(
 				{
 					action: "options",
 					optionname: "userjs-wikishield-storage",

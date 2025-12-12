@@ -68,6 +68,8 @@ export class WikiShieldQueue {
 			mention: new Memory({ timeout: 60 * 1000 }) // 1 minute
 		};
 
+		this.watchlistOverride = { }; // title: true/false
+
 		this.backoff = 2000;
 
 		this.flaggedRevisions = new Map();
@@ -142,26 +144,27 @@ export class WikiShieldQueue {
 			switch (type) {
 				default:
 				case "recent": {
+					const itemsToRemove = new Set();
+
 					for (const recentChange of recentChanges) {
-						const itemsToRemove = [];
 						for (const queueItem of this.queue[type]) {
-							// Skip the currently selected edit
+							if (itemsToRemove.has(queueItem)) continue;
+
 							if (this.currentEdit[type] && queueItem.revid === this.currentEdit[type].revid) {
 								continue;
 							}
-							// Remove if same page and older revision
+
 							if (queueItem.page.title === recentChange.title && queueItem.revid < recentChange.revid) {
-								itemsToRemove.push(queueItem);
+								itemsToRemove.add(queueItem);
 							}
 						}
+					}
 
-						// Remove the outdated items
-						for (const oldItem of itemsToRemove) {
-							const index = this.queue[type].indexOf(oldItem);
-							if (index > -1) {
-								this.queue[type].splice(index, 1);
-								this.wikishield.interface.removeQueueItem(type, oldItem.revid);
-							}
+					for (const oldItem of itemsToRemove) {
+						const index = this.queue[type].indexOf(oldItem);
+						if (index > -1) {
+							this.queue[type].splice(index, 1);
+							this.wikishield.interface.removeQueueItem(type, oldItem.revid);
 						}
 					}
 				} break;
@@ -181,26 +184,40 @@ export class WikiShieldQueue {
 					recentChanges = recentChanges.filter(log => !log.temp);
 				} break;
 				case "watchlist": {
+					const itemsToRemove = new Set();
 					for (const recentChange of recentChanges) {
-						const itemsToRemove = [];
 						for (const queueItem of this.queue[type]) {
-							// Skip the currently selected edit
+							if (itemsToRemove.has(queueItem)) continue;
+
 							if (this.currentEdit[type] && queueItem.revid === this.currentEdit[type].revid) {
 								continue;
 							}
-							// Remove if same page and older revision
+
 							if (queueItem.page.title === recentChange.title && queueItem.revid < recentChange.revid) {
-								itemsToRemove.push(queueItem);
+								itemsToRemove.add(queueItem);
+							}
+
+							const watched = this.watchlistOverride[queueItem.page.title] ?? queueItem.page.watched;
+							if (!watched) {
+								itemsToRemove.add(queueItem);
 							}
 						}
+					}
 
-						// Remove the outdated items
-						for (const oldItem of itemsToRemove) {
-							const index = this.queue[type].indexOf(oldItem);
-							if (index > -1) {
-								this.queue[type].splice(index, 1);
-								this.wikishield.interface.removeQueueItem(type, oldItem.revid);
+					if (recentChanges.length === 0) {
+						for (const queueItem of this.queue[type]) {
+							const watched = this.watchlistOverride[queueItem.page.title] ?? queueItem.page.watched;
+							if (!watched) {
+								itemsToRemove.add(queueItem);
 							}
+						}
+					}
+
+					for (const oldItem of itemsToRemove) {
+						const index = this.queue[type].indexOf(oldItem);
+						if (index > -1) {
+							this.queue[type].splice(index, 1);
+							this.wikishield.interface.removeQueueItem(type, oldItem.revid);
 						}
 					}
 				} break;
@@ -575,6 +592,8 @@ export class WikiShieldQueue {
 				mentions.diff = util.usernameMatch(username, $div.textContent || $div.innerText || "");
 			}
 
+			this.watchlistOverride[edit.title] = response.pageWatched;
+
 			const queueItem = {
 				display: {
 					get pageTitle() {
@@ -636,6 +655,8 @@ export class WikiShieldQueue {
 
 					categories: response.pageCategories,
 					metadata: response.pageMetadata,
+
+					watched: response.pageWatched,
 				},
 				user: {
 					ip: mw.util.isIPAddress(edit.user),
@@ -1001,7 +1022,7 @@ export class WikiShieldQueue {
 			return;
 		}
 
-		const currentIndex = this.queue[this.currentQueueTab].findIndex(e => e.revid === this.currentEdit[this.currentQueueTab].revid);
+		const currentIndex = this.queue[this.currentQueueTab].findIndex(e => e.revid === this.currentEdit[this.currentQueueTab]?.revid);
 		if (currentIndex === -1) {
 			this.currentEdit[this.currentQueueTab] = this.queue[this.currentQueueTab][0];
 			this.wikishield.interface.renderQueue(this.queue[this.currentQueueTab], this.currentEdit[this.currentQueueTab], this.currentQueueTab);
@@ -1009,12 +1030,18 @@ export class WikiShieldQueue {
 		}
 
 		const editWeAreLeaving = this.currentEdit[this.currentQueueTab];
-		if (editWeAreLeaving && this.wikishield.AI) {
-			this.wikishield.AI.cancel.edit(editWeAreLeaving.revid);
-		}
-
 		if (currentIndex === 0 && !editWeAreLeaving.reviewed) {
 			editWeAreLeaving.reviewed = true;
+		}
+
+		if (this.currentQueueTab === "flagged") {
+			this.currentEdit[this.currentQueueTab] = this.queue[this.currentQueueTab][Math.min(currentIndex + 1, this.queue[this.currentQueueTab].length - 1)];
+			this.wikishield.interface.renderQueue(this.queue[this.currentQueueTab], this.currentEdit[this.currentQueueTab], this.currentQueueTab);
+			return;
+		}
+
+		if (editWeAreLeaving && this.wikishield.AI) {
+			this.wikishield.AI.cancel.edit(editWeAreLeaving.revid);
 		}
 
 		// Remove the current item from the queue
@@ -1055,7 +1082,12 @@ export class WikiShieldQueue {
 			return;
 		}
 
-		const currentIndex = this.currentEdit[this.currentQueueTab] ? this.queue[this.currentQueueTab].findIndex(e => e.revid === this.currentEdit[this.currentQueueTab].revid) : -1;
+		const currentIndex = this.queue[this.currentQueueTab].findIndex(e => e.revid === this.currentEdit[this.currentQueueTab]?.revid);
+		if (this.currentQueueTab === "flagged") {
+			this.currentEdit[this.currentQueueTab] = this.queue[this.currentQueueTab][Math.max(0, currentIndex - 1)];
+			this.wikishield.interface.renderQueue(this.queue[this.currentQueueTab], this.currentEdit[this.currentQueueTab], this.currentQueueTab);
+			return;
+		}
 
 		const editWeAreLeaving = this.currentEdit[this.currentQueueTab];
 		if (currentIndex <= 0) {
@@ -1245,18 +1277,16 @@ export class WikiShieldQueue {
 		await this.propagateEdit(edit);
 
 		const type = this.currentQueueTab;
-		this.currentEdit[type] = edit;
-
-		this.queue[type] = this.queue[type].filter(item => item.revid !== edit.revid);
-
-		if (this.areSameQueueTypes(type, "contribs")) {
+		if (this.areSameQueueTypes(type, "contribs") && type !== "flagged") {
+			this.queue[type] = this.queue[type].filter(item => item.revid !== edit.revid);
 			const index = this.queue[type].findIndex(item => item.revid === this.currentEdit[type]?.revid);
 			if (index > -1) {
 				this.queue[type][index] = edit;
 			}
 		}
 
-		this.wikishield.interface.renderQueue(this.queue[type], edit);
+		this.currentEdit[type] = this.queue[type].find(item => item.revid === edit.revid) || edit;
+		this.wikishield.interface.renderQueue(this.queue[type], this.currentEdit[type]);
 	}
 
 	/**
@@ -1267,18 +1297,16 @@ export class WikiShieldQueue {
 		await this.propagateEdit(edit);
 
 		const type = this.currentQueueTab;
-		this.currentEdit[type] = edit;
-
-		this.queue[type] = this.queue[type].filter(item => item.revid !== edit.revid);
-
-		if (this.areSameQueueTypes(type, "history")) {
+		if (this.areSameQueueTypes(type, "history") && type !== "flagged") {
+			this.queue[type] = this.queue[type].filter(item => item.revid !== edit.revid);
 			const index = this.queue[type].findIndex(item => item.revid === this.currentEdit[type]?.revid);
 			if (index > -1) {
 				this.queue[type][index] = edit;
 			}
 		}
 
-		this.wikishield.interface.renderQueue(this.queue[type], edit);
+		this.currentEdit[type] = this.queue[type].find(item => item.revid === edit.revid) || edit;
+		this.wikishield.interface.renderQueue(this.queue[type], this.currentEdit[type]);
 	}
 
 	/**
