@@ -1780,8 +1780,8 @@ ollama serve
 				const now = Date.now();
 				this.wikishield.storage.data.whitelist[key].set(value, [ now, now + expiryMs ]);
 
-				this.wikishield.storage.data.items_whitelisted.total++;
-				this.wikishield.storage.data.items_whitelisted[key]++;
+				this.wikishield.storage.data.statistics.items_whitelisted.total++;
+				this.wikishield.storage.data.statistics.items_whitelisted[key]++;
 
 				input.value = "";
 				this.openWhitelist(key); // Refresh the list
@@ -1926,8 +1926,8 @@ ollama serve
 				const now = Date.now();
 				this.wikishield.storage.data.highlight[key].set(value, [ now, now + expiryMs ]);
 
-				this.wikishield.storage.data.items_highlighted.total++;
-				this.wikishield.storage.data.items_highlighted[key]++;
+				this.wikishield.storage.data.statistics.items_highlighted.total++;
+				this.wikishield.storage.data.statistics.items_highlighted[key]++;
 
 				input.value = "";
 				this.openHighlight(key); // Refresh the list
