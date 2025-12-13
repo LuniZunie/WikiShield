@@ -8,7 +8,7 @@ import { killswitch_status, checkKillswitch, startKillswitchPolling } from './co
 import { StorageManager } from './data/storage.js';
 
 export const __script__ = {
-	version: "1.1.1",
+	version: "1.1.2",
 
 	changelog: {
 		version: "4",
