@@ -142,6 +142,7 @@ export class WikiShieldQueue {
 				this.haltedFetchedChanges[type] = [ ];
 			}
 
+			let changed = false;
 			switch (type) {
 				default:
 				case "recent": {
@@ -168,14 +169,18 @@ export class WikiShieldQueue {
 							this.wikishield.interface.removeQueueItem(type, oldItem.revid);
 						}
 					}
+
+					changed = itemsToRemove.size > 0;
 				} break;
 				case "flagged": {
 					for (const queueItem of this.queue[type]) {
-						if (!(queueItem.fromHistory === true || this.currentEdit[type]?.revid === queueItem.revid || this.flaggedRevisions.has(queueItem.revid))) {
+						if (!(this.currentEdit[type]?.revid === queueItem.revid || this.flaggedRevisions.has(queueItem.revid))) {
 							const index = this.queue[type].indexOf(queueItem);
 							if (index > -1) {
 								this.wikishield.interface.removeQueueItem(type, queueItem.revid);
 								this.queue[type].splice(index, 1);
+
+								changed = true;
 							}
 						}
 					}
@@ -221,10 +226,16 @@ export class WikiShieldQueue {
 							this.wikishield.interface.removeQueueItem(type, oldItem.revid);
 						}
 					}
+
+					changed = itemsToRemove.size > 0;
 				} break;
 			}
 
 			if (recentChanges.length === 0) {
+				if (changed) {
+					this.wikishield.interface.renderQueue(this.queue[type], this.currentEdit[type], type);
+				}
+
 				window.setTimeout(this.fetchRecentChanges.bind(this, type), this.wikishield.__script__.config.refresh[type]);
 				return;
 			}
@@ -565,7 +576,7 @@ export class WikiShieldQueue {
 				}
 			}
 
-			this.wikishield.interface.renderQueue(type, this.queue[type], this.currentEdit[type], type);
+			this.wikishield.interface.renderQueue(this.queue[type], this.currentEdit[type], type);
 		}
 	}
 
