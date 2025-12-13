@@ -22,20 +22,6 @@ export class WikiShieldEventManager {
 		const wikishield = this.wikishield;
 
 		const handleClick = (e, forceNewTab = false) => {
-			// Check if this is an action that opens a page
-			const pageOpenEvents = ["openUserPage", "openUserTalk", "openUserContribs", "openFilterLog", "openPage", "openPageHistory", "openDiff"];
-			const shouldOpenInNewTab = forceNewTab || pageOpenEvents.includes(event);
-
-			if (shouldOpenInNewTab && this.events[event]?.func) {
-				// For page-opening actions, call the function directly which already handles new tabs
-				if (e.button === 1 || e.ctrlKey || e.metaKey || forceNewTab) {
-					// Middle click or Ctrl/Cmd+click - let the function handle it
-					this.events[event].func();
-					e.preventDefault();
-					return;
-				}
-			}
-
 			wikishield.interface.selectedMenu = null;
 			if (runWithoutEdit) {
 				this.events[event].func(wikishield);
@@ -52,10 +38,5 @@ export class WikiShieldEventManager {
 		};
 
 		elem.addEventListener("click", (e) => handleClick(e, false));
-		elem.addEventListener("auxclick", (e) => {
-			if (e.button === 1) { // Middle click
-				handleClick(e, true);
-			}
-		});
 	}
 }

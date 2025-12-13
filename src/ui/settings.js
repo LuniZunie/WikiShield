@@ -1632,7 +1632,7 @@ ollama serve
 			h(AutoReportingSettings, {
 				wikishield: this.wikishield,
 				enableAutoReporting: this.wikishield.storage.data.settings.auto_report.enabled,
-				autoReportReasons: Object.keys(warningsLookup).filter(title => !getWarningFromLookup(title).onlyWarn),
+				autoReportReasons: Object.keys(warningsLookup).filter(id => getWarningFromLookup(id).reportable),
 				selectedAutoReportReasons: this.wikishield.storage.data.settings.auto_report.for,
 
 				onEnableChange: (newValue) => {

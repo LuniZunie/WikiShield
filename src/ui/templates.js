@@ -341,10 +341,10 @@ export const wikishieldHTML = {
 						</div>
 						<div id="progress-bar-container"></div>
 						<div id="bottom-tools" data-queue-type="edit,logevent">
-							<div class="bottom-tool-item" data-menu="revert" data-queue-type="edit">
+							<div class="bottom-tool-item" data-menu="revert" data-queue-type="edit,logevent">
 								<div class="bottom-tool-trigger">
 									<i class="fas fa-undo"></i>
-									<span>Revert & Warn</span>
+									<span>Revert</span>
 									<i class="fas fa-chevron-up bottom-tool-chevron"></i>
 								</div>
 							</div>

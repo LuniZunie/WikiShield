@@ -18,579 +18,764 @@ const defaultAuto = {
 	"4im": null
 };
 
-/*
-templates: 0, 1, 2, 3, 4, 4im
-- null (do not add as option)
-- { exists: false, template: <string> } (do not add as option but use this template when clicking auto)
-- { exists: true, template: <string> } (add as option)
-*/
-
 export const warnings = {
-	// Warnings to go in "Revert & Warn" menu (will revert when used)
-	revert: {
-		"Vandalism": [
+	"Vandalism": {
+		title: "Vandalism",
+		icon: "fas fa-skull-crossbones",
+		description: "Warnings for different types of vandalism.",
+
+		warnings: [
 			{
+				reportable: true,
+
+				queueType: [ "edit" ],
+
 				title: "Vandalism",
-				summary: "vandalism",
-				description: "Warning for general vandalism.",
 				icon: "fas fa-skull-crossbones",
+				description: "Warning for general vandalism.",
+
+				summary: "vandalism",
+
 				auto: defaultAuto,
-				templates: {
-					"0": null,
-					"1": { exists: true, template: "subst:uw-vandalism1" },
-					"2": { exists: true, template: "subst:uw-vandalism2" },
-					"3": { exists: true, template: "subst:uw-vandalism3" },
-					"4": { exists: true, template: "subst:uw-vandalism4" },
-					"4im": { exists: true, template: "subst:uw-vandalism4im" }
-				},
-				queue: [ "edit" ]
+				templates: [
+					{ name: "1", template: "subst:uw-vandalism1" },
+					{ name: "2", template: "subst:uw-vandalism2" },
+					{ name: "3", template: "subst:uw-vandalism3" },
+					{ name: "4", template: "subst:uw-vandalism4" },
+					{ name: "4im", template: "subst:uw-vandalism4im" }
+				],
 			},
 			{
+				reportable: true,
+
+				queueType: [ "edit" ],
+
 				title: "Subtle vandalism",
-				summary: "subtle vandalism",
-				description: "Warning for subtle vandalism.",
 				icon: "fas fa-user-secret",
+				description: "Warning for subtle vandalism.",
+
+				summary: "subtle vandalism",
+
 				auto: defaultAuto,
-				templates: {
-					"0": null,
-					"1": { exists: true, template: "subst:uw-subtle1" },
-					"2": { exists: true, template: "subst:uw-subtle2" },
-					"3": { exists: true, template: "subst:uw-subtle3" },
-					"4": { exists: true, template: "subst:uw-subtle4" },
-					"4im": null
-				},
-				queue: [ "edit" ]
+				templates: [
+					{ name: "1", template: "subst:uw-subtle1" },
+					{ name: "2", template: "subst:uw-subtle2" },
+					{ name: "3", template: "subst:uw-subtle3" },
+					{ name: "4", template: "subst:uw-subtle4" }
+				],
 			},
 			{
+				reportable: true,
+
+				queueType: [ "edit" ],
+
 				title: "Image vandalism",
-				summary: "image vandalism",
-				description: "Warning for image vandalism.",
 				icon: "fas fa-image",
+				description: "Warning for image vandalism.",
+
+				summary: "image vandalism",
+
 				auto: defaultAuto,
-				templates: {
-					"0": null,
-					"1": { exists: true, template: "subst:uw-image1" },
-					"2": { exists: true, template: "subst:uw-image2" },
-					"3": { exists: true, template: "subst:uw-image3" },
-					"4": { exists: true, template: "subst:uw-image4" },
-					"4im": { exists: true, template: "subst:uw-image4im" }
-				},
-				queue: [ "edit" ]
+				templates: [
+					{ name: "1", template: "subst:uw-image1" },
+					{ name: "2", template: "subst:uw-image2" },
+					{ name: "3", template: "subst:uw-image3" },
+					{ name: "4", template: "subst:uw-image4" },
+					{ name: "4im", template: "subst:uw-image4im" }
+				],
 			},
 			{
+				reportable: true,
+
+				queueType: [ "edit" ],
+
 				title: "Sandbox",
-				summary: "[[WP:BADSAND|inappropriate]] sandbox use",
-				description: "Warning for vandalism, libelous, or defamatory content added to sandbox",
 				icon: "fas fa-vial",
+				description: "Warning for vandalism, libelous, or defamatory content added to sandbox",
+
+				summary: "[[WP:BADSAND|inappropriate]] sandbox use",
+
 				auto: defaultAuto,
-				templates: {
-					"0": null,
-					"1": { exists: true, template: "subst:uw-sandbox1" },
-					"2": { exists: true, template: "subst:uw-sandbox2" },
-					"3": { exists: true, template: "subst:uw-sandbox3" },
-					"4": { exists: true, template: "subst:uw-sandbox4" },
-					"4im": { exists: true, template: "subst:uw-sandbox4im" }
-				},
-				queue: [ "edit" ]
-			}
-		],
-		"Content Issues": [
-			{
-				title: "Unsourced",
-				summary: "unsourced changes",
-				description: "Warning for unsourced content.",
-				icon: "fas fa-question",
-				auto: defaultAuto,
-				templates: {
-					"0": null,
-					"1": { exists: true, template: "subst:uw-unsourced1" },
-					"2": { exists: true, template: "subst:uw-unsourced2" },
-					"3": { exists: true, template: "subst:uw-unsourced3" },
-					"4": { exists: true, template: "subst:uw-unsourced4" },
-					"4im": null
-				},
-				show: edit => !edit?.isBLP,
-				queue: [ "edit" ]
+				templates: [
+					{ name: "1", template: "subst:uw-sandbox1" },
+					{ name: "2", template: "subst:uw-sandbox2" },
+					{ name: "3", template: "subst:uw-sandbox3" },
+					{ name: "4", template: "subst:uw-sandbox4" },
+					{ name: "4im", template: "subst:uw-sandbox4im" }
+				],
 			},
 			{
-				title: "Unsourced (BLP)",
-				summary: "unsourced [[WP:BLP|biographies of living persons']] changes",
-				description: "Warning for unsourced BLP content.",
-				icon: "fas fa-person-circle-question",
-				auto: defaultAuto,
-				templates: {
-					"0": null,
-					"1": { exists: true, template: "subst:uw-biog1" },
-					"2": { exists: true, template: "subst:uw-biog2" },
-					"3": { exists: true, template: "subst:uw-biog3" },
-					"4": { exists: true, template: "subst:uw-biog4" },
-					"4im": { exists: true, template: "subst:uw-biog4im" }
-				},
-				show: edit => edit?.isBLP,
-				queue: [ "edit" ]
-			},
-			{
-				title: "Unsourced genre",
-				summary: "unsourced genre changes",
-				description: "Warning for unsourced genre changes.",
-				icon: "fas fa-music",
-				auto: defaultAuto,
-				templates: {
-					"0": null,
-					"1": { exists: true, template: "subst:uw-genre1" },
-					"2": { exists: true, template: "subst:uw-genre2" },
-					"3": { exists: true, template: "subst:uw-genre3" },
-					"4": { exists: true, template: "subst:uw-genre4" },
-					"4im": null
-				},
-				queue: [ "edit" ]
-			},
-			{
-				title: "POV",
-				summary: "[[WP:NPOV|non-neutral changes]]",
-				description: "Adding content which violates the neutral point of view policy.",
-				icon: "fas fa-balance-scale-left",
-				auto: defaultAuto,
-				templates: {
-					"0": null,
-					"1": { exists: true, template: "subst:uw-npov1" },
-					"2": { exists: true, template: "subst:uw-npov2" },
-					"3": { exists: true, template: "subst:uw-npov3" },
-					"4": { exists: true, template: "subst:uw-npov4" },
-					"4im": null
-				},
-				queue: [ "edit" ]
-			},
-			{
-				title: "Commentary",
-				summary: "[[WP:Commentary|commentary]]",
-				description: "Adding opinion or commentary to articles.",
-				icon: "fas fa-comment-alt",
-				auto: defaultAuto,
-				templates: {
-					"0": null,
-					"1": { exists: true, template: "subst:uw-talkinarticle1" },
-					"2": { exists: true, template: "subst:uw-talkinarticle2" },
-					"3": { exists: true, template: "subst:uw-talkinarticle3" },
-					"4": { exists: false, template: "subst:uw-generic4", additional: "''Adding commentary to articles. ([[WP:WikiShield|WS]])''" },
-					"4im": null
-				},
-				queue: [ "edit" ]
-			},
-			{
-				title: "AI-generated",
-				summary: "[[WP:LLM|AI-generated content]]",
-				description: "Adding AI-generated content.",
-				icon: "fas fa-robot",
-				auto: defaultAuto,
-				templates: {
-					"0": null,
-					"1": { exists: true, template: "subst:uw-ai1" },
-					"2": { exists: true, template: "subst:uw-ai2" },
-					"3": { exists: true, template: "subst:uw-ai3" },
-					"4": { exists: true, template: "subst:uw-ai4" },
-					"4im": null
-				},
-				show: edit => !edit?.isTalk,
-				queue: [ "edit" ]
-			},
-			{
-				title: "AI-generated (talk)",
-				summary: "[[WP:LLM|AI-generated content]] in a discussion",
-				description: "Writing an AI-generated comment.",
-				icon: "fas fa-robot",
-				auto: defaultAuto,
-				templates: {
-					"0": null,
-					"1": { exists: true, template: "subst:uw-aitalk1" },
-					"2": { exists: true, template: "subst:uw-aitalk2" },
-					"3": { exists: true, template: "subst:uw-aitalk3" },
-					"4": { exists: true, template: "subst:uw-aitalk4" },
-					"4im": null
-				},
-				show: edit => edit?.isTalk,
-				queue: [ "edit" ]
-			},
-			{
-				title: "MOS violation",
-				summary: "[[WP:MOS|manual of style]] violation",
-				description: "Not following the Manual of Style.",
-				icon: "fas fa-spell-check",
-				auto: defaultAuto,
-				templates: {
-					"0": null,
-					"1": { exists: true, template: "subst:uw-mos1" },
-					"2": { exists: true, template: "subst:uw-mos2" },
-					"3": { exists: true, template: "subst:uw-mos3" },
-					"4": { exists: true, template: "subst:uw-mos4" },
-					"4im": null
-				},
-				queue: [ "edit" ]
-			},
-			{
-				title: "Censoring",
-				summary: "[[WP:NOTCENSORED|censoring content]]",
-				description: "Censoring topically-relevant content.",
-				icon: "fas fa-ban",
-				auto: defaultAuto,
-				templates: {
-					"0": null,
-					"1": { exists: true, template: "subst:uw-notcensored1" },
-					"2": { exists: true, template: "subst:uw-notcensored2" },
-					"3": { exists: true, template: "subst:uw-notcensored3" },
-					"4": { exists: true, template: "subst:uw-notcensored4" },
-					"4im": null
-				},
-				queue: [ "edit" ]
-			},
-			{
-				title: "Not English",
-				summary: "non-English",
-				description: "Content added in a language other than English.",
-				icon: "fas fa-globe",
-				auto: () => "0",
-				templates: {
-					"0": { exists: true, template: "subst:uw-lang-noteng", label: "Notice", level: "notice" },
-					"1": null,
-					"2": null,
-					"3": null,
-					"4": null,
-					"4im": null
-				},
-				queue: [ "edit" ]
-			},
-		],
-		"Disruptive Behavior": [
-			{
-				title: "Disruption",
-				summary: "[[WP:DE|disruptive editing]]",
-				description: "Default warning for making disruptive edits (not always vandalism).",
-				icon: "fas fa-exclamation",
-				auto: defaultAuto,
-				templates: {
-					"0": null,
-					"1": { exists: true, template: "subst:uw-disruptive1" },
-					"2": { exists: true, template: "subst:uw-disruptive2" },
-					"3": { exists: true, template: "subst:uw-disruptive3" },
-					"4": { exists: false, template: "subst:uw-generic4", additional: "''Disruptive editing. ([[WP:WikiShield|WS]])''" },
-					"4im": null
-				},
-				queue: [ "edit" ]
-			},
-			{
-				title: "Deleting",
-				summary: "unexplained deletion",
-				description: "Used when a user does not explain deletion of part of an article.",
-				icon: "fas fa-trash",
-				auto: defaultAuto,
-				templates: {
-					"0": null,
-					"1": { exists: true, template: "subst:uw-delete1" },
-					"2": { exists: true, template: "subst:uw-delete2" },
-					"3": { exists: true, template: "subst:uw-delete3" },
-					"4": { exists: true, template: "subst:uw-delete4" },
-					"4im": { exists: true, template: "subst:uw-delete4im" }
-				},
-				queue: [ "edit" ]
-			},
-			{
-				title: "Errors",
-				summary: "deliberate errors",
-				description: "Adding deliberate errors to articles.",
+				reportable: true,
+
+				queueType: [ "edit" ],
+
+				title: "Deliberate errors",
 				icon: "fas fa-bug",
+				description: "Adding deliberate errors to articles.",
+
+				summary: "deliberate errors",
+
 				auto: defaultAuto,
-				templates: {
-					"0": null,
-					"1": { exists: true, template: "subst:uw-error1" },
-					"2": { exists: true, template: "subst:uw-error2" },
-					"3": { exists: true, template: "subst:uw-error3" },
-					"4": { exists: true, template: "subst:uw-error4" },
-					"4im": null
-				},
-				queue: [ "edit" ]
+				templates: [
+					{ name: "1", template: "subst:uw-error1" },
+					{ name: "2", template: "subst:uw-error2" },
+					{ name: "3", template: "subst:uw-error3" },
+					{ name: "4", template: "subst:uw-error4" }
+				],
+			},
+		]
+	},
+	"Disruption": {
+		title: "Disruption",
+		icon: "fas fa-exclamation",
+		description: "Warnings for different types of disruptive behavior.",
+
+		warnings: [
+			{
+				reportable: true,
+
+				queueType: [ "edit" ],
+
+				title: "Disruptive editing",
+				icon: "fas fa-exclamation",
+				description: "Default warning for making disruptive edits but may be good faith.",
+
+				summary: "[[WP:DE|disruptive editing]]",
+
+				auto: defaultAuto,
+				templates: [
+					{ name: "1", template: "subst:uw-disruptive1" },
+					{ name: "2", template: "subst:uw-disruptive2" },
+					{ name: "3", template: "subst:uw-disruptive3" },
+					{ name: "4", template: "subst:uw-generic4", generic: "''Disruptive editing. ([[WP:WikiShield|WS]])''" },
+				],
 			},
 			{
+				reportable: true,
+
+				queueType: [ "edit" ],
+
 				title: "Editing tests",
-				summary: "test edits",
-				description: "Making test edits on live articles.",
 				icon: "fas fa-flask",
+				description: "Making test edits on live articles.",
+
+				summary: "test edits",
+
 				auto: defaultAuto,
-				templates: {
-					"0": null,
-					"1": { exists: true, template: "subst:uw-test1" },
-					"2": { exists: true, template: "subst:uw-test2" },
-					"3": { exists: true, template: "subst:uw-test3" },
-					"4": { exists: false, template: "subst:uw-generic4", additional: "''Test edits. ([[WP:WikiShield|WS]])''" },
-					"4im": null
-				},
-				queue: [ "edit" ]
+				templates: [
+					{ name: "1", template: "subst:uw-test1" },
+					{ name: "2", template: "subst:uw-test2" },
+					{ name: "3", template: "subst:uw-test3" },
+					{ name: "4", template: "subst:uw-generic4", generic: "''Test edits. ([[WP:WikiShield|WS]])''" }
+				]
 			},
 			{
-				title: "Chatting",
-				summary: "inappropriate use of article talk pages",
-				description: "Using article talk pages for inappropriate discussion.",
-				icon: "fas fa-comments",
+				reportable: true,
+
+				queueType: [ "edit" ],
+
+				title: "Commentary",
+				icon: "fas fa-comment-alt",
+				description: "Adding opinion or commentary to articles.",
+
+				summary: "[[WP:Commentary|commentary]]",
+
 				auto: defaultAuto,
-				templates: {
-					"0": null,
-					"1": { exists: true, template: "subst:uw-chat1" },
-					"2": { exists: true, template: "subst:uw-chat2" },
-					"3": { exists: true, template: "subst:uw-chat3" },
-					"4": { exists: true, template: "subst:uw-chat4" },
-					"4im": null
-				},
-				show: edit => edit?.isTalk,
-				queue: [ "edit" ]
+				templates: [
+					{ name: "1", template: "subst:uw-talkinarticle1" },
+					{ name: "2", template: "subst:uw-talkinarticle2" },
+					{ name: "3", template: "subst:uw-talkinarticle3" },
+					{ name: "4", template: "subst:uw-generic4", generic: "''Adding commentary to articles. ([[WP:WikiShield|WS]])''" },
+				]
 			},
 			{
-				title: "Jokes",
-				summary: "inappropriate humor",
-				description: "Adding inappropriate humor to an article.",
+				reportable: true,
+
+				queueType: [ "edit" ],
+
+				title: "Inappropriate jokes",
 				icon: "fas fa-grin-squint",
+				description: "Adding inappropriate humor to an article.",
+
+				summary: "inappropriate humor",
+
 				auto: defaultAuto,
-				templates: {
-					"0": null,
-					"1": { exists: true, template: "subst:uw-joke1" },
-					"2": { exists: true, template: "subst:uw-joke2" },
-					"3": { exists: true, template: "subst:uw-joke3" },
-					"4": { exists: true, template: "subst:uw-joke4" },
-					"4im": { exists: true, template: "subst:uw-joke4im" }
-				},
-				queue: [ "edit" ]
+				templates: [
+					{ name: "1", template: "subst:uw-jokes1" },
+					{ name: "2", template: "subst:uw-jokes2" },
+					{ name: "3", template: "subst:uw-jokes3" },
+					{ name: "4", template: "subst:uw-jokes4" },
+					{ name: "4im", template: "subst:uw-jokes4im" }
+				]
 			},
 			{
-				title: "Owning",
-				summary: "assuming [[WP:OWN|ownership of articles]]",
-				description: "Assuming ownership of articles.",
-				icon: "fas fa-user-shield",
+				reportable: true,
+
+				queueType: [ "edit" ],
+
+				title: "Deleting",
+				icon: "fas fa-trash",
+				description: "Used when a user does not explain deletion of part of an article.",
+
+				summary: "unexplained deletion",
+
 				auto: defaultAuto,
-				templates: {
-					"0": null,
-					"1": { exists: true, template: "subst:uw-own1" },
-					"2": { exists: true, template: "subst:uw-own2" },
-					"3": { exists: true, template: "subst:uw-own3" },
-					"4": { exists: true, template: "subst:uw-own4" },
-					"4im": { exists: true, template: "subst:uw-own4im" }
-				},
-				queue: [ "edit" ]
+				templates: [
+					{ name: "1", template: "subst:uw-delete1" },
+					{ name: "2", template: "subst:uw-delete2" },
+					{ name: "3", template: "subst:uw-delete3" },
+					{ name: "4", template: "subst:uw-delete4" },
+					{ name: "4im", template: "subst:uw-delete4im" }
+				],
 			},
-		],
-		"Spam & Promotion": [
+		]
+	},
+	"Content Issues": {
+		title: "Content Issues",
+		icon: "fas fa-file-alt",
+		description: "Warnings for different types of content issues.",
+
+		warnings: [
 			{
-				title: "Advertising",
-				summary: "[[WP:PROMO|advertising or promotion]]",
-				description: "Adding promotional content to an article.",
-				icon: "fas fa-bullhorn",
+				reportable: true,
+
+				queueType: [ "edit" ],
+
+				title: "Unsourced",
+				icon: "fas fa-question",
+				description: "Warning for unsourced content.",
+
+				summary: "unsourced changes",
+
 				auto: defaultAuto,
-				templates: {
-					"0": null,
-					"1": { exists: true, template: "subst:uw-advert1" },
-					"2": { exists: true, template: "subst:uw-advert2" },
-					"3": { exists: true, template: "subst:uw-advert3" },
-					"4": { exists: true, template: "subst:uw-advert4" },
-					"4im": { exists: true, template: "subst:uw-advert4im" }
-				},
-				queue: [ "edit" ]
-			},
-			{
-				title: "Spam links",
-				summary: "adding [[WP:ELNO|inappropriate links]]",
-				description: "Adding external links that could be considered spam.",
-				icon: "fas fa-link",
-				auto: defaultAuto,
-				templates: {
-					"0": null,
-					"1": { exists: true, template: "subst:uw-spam1" },
-					"2": { exists: true, template: "subst:uw-spam2" },
-					"3": { exists: true, template: "subst:uw-spam3" },
-					"4": { exists: true, template: "subst:uw-spam4" },
-					"4im": { exists: true, template: "subst:uw-spam4im" }
-				},
-				queue: [ "edit" ]
-			}
-		],
-		"Conduct": [
-			{
-				title: "Personal attacks",
-				summary: "[[WP:NPA|personal attacks]]",
-				description: "Personal attacks towards another user.",
-				icon: "fas fa-bomb",
-				auto: defaultAuto,
-				templates: {
-					"0": null,
-					"1": { exists: true, template: "subst:uw-npa1" },
-					"2": { exists: true, template: "subst:uw-npa2" },
-					"3": { exists: true, template: "subst:uw-npa3" },
-					"4": { exists: true, template: "subst:uw-npa4" },
-					"4im": { exists: true, template: "subst:uw-npa4im" }
-				},
-				queue: [ "edit" ]
+				templates: [
+					{ name: "1", template: "subst:uw-unsourced1" },
+					{ name: "2", template: "subst:uw-unsourced2" },
+					{ name: "3", template: "subst:uw-unsourced3" },
+					{ name: "4", template: "subst:uw-unsourced4" }
+				],
+
+				show(edit) {
+					return !edit?.isBLP;
+				}
 			},
 			{
-				title: "TPO",
-				summary: "[[WP:TPO|removing or editing]] others' posts",
-				description: "Removing or editing others' posts.",
-				icon: "fas fa-hand-paper",
+				reportable: true,
+
+				queueType: [ "edit" ],
+
+				title: "Unsourced (BLP)",
+				icon: "fas fa-person-circle-question",
+				description: "Warning for unsourced BLP content.",
+
+				summary: "unsourced [[WP:BLP|biographies of living persons']] changes",
+
 				auto: defaultAuto,
-				templates: {
-					"0": null,
-					"1": { exists: true, template: "subst:uw-tpv1" },
-					"2": { exists: true, template: "subst:uw-tpv2" },
-					"3": { exists: true, template: "subst:uw-tpv3" },
-					"4": { exists: true, template: "subst:uw-tpv4" },
-					"4im": { exists: true, template: "subst:uw-tpv4im" }
-				},
-				show: edit => edit?.isTalk,
-				queue: [ "edit" ]
+				templates: [
+					{ name: "1", template: "subst:uw-biog1" },
+					{ name: "2", template: "subst:uw-biog2" },
+					{ name: "3", template: "subst:uw-biog3" },
+					{ name: "4", template: "subst:uw-biog4" },
+					{ name: "4im", template: "subst:uw-biog4im" }
+				],
+
+				show(edit) {
+					return edit?.isBLP;
+				}
 			},
 			{
-				title: "AfD removal",
-				summary: "removing AfD templates or comments",
-				description: "Removing AfD templates or other users' comments from AfD discussions.",
-				icon: "fas fa-gavel",
+				reportable: true,
+
+				queueType: [ "edit" ],
+
+				title: "Unsourced genre",
+				icon: "fas fa-music",
+				description: "Warning for unsourced genre changes.",
+
+				summary: "unsourced genre changes",
+
 				auto: defaultAuto,
-				templates: {
-					"0": null,
-					"1": { exists: true, template: "subst:uw-afd1" },
-					"2": { exists: true, template: "subst:uw-afd2" },
-					"3": { exists: true, template: "subst:uw-afd3" },
-					"4": { exists: true, template: "subst:uw-afd4" },
-					"4im": null
-				},
-				queue: [ "edit" ]
+				templates: [
+					{ name: "1", template: "subst:uw-genre1" },
+					{ name: "2", template: "subst:uw-genre2" },
+					{ name: "3", template: "subst:uw-genre3" },
+					{ name: "4", template: "subst:uw-genre4" }
+				],
+			},
+
+			{
+				reportable: true,
+
+				queueType: [ "edit" ],
+
+				title: "Original research",
+				icon: "fas fa-lightbulb",
+				description: "Adding original research or synthesis.",
+
+				summary: "[[WP:OR|original research]]",
+
+				auto: defaultAuto,
+				templates: [
+					{ name: "1", template: "subst:uw-nor1" },
+					{ name: "2", template: "subst:uw-nor2" },
+					{ name: "3", template: "subst:uw-nor3" },
+					{ name: "4", template: "subst:uw-nor4" }
+				]
+			},
+
+			{
+				reportable: true,
+
+				queueType: [ "edit" ],
+
+				title: "POV",
+				icon: "fas fa-balance-scale-left",
+				description: "Adding content which violates the neutral point of view policy.",
+
+				summary: "[[WP:NPOV|non-neutral changes]]",
+
+				auto: defaultAuto,
+				templates: [
+					{ name: "1", template: "subst:uw-npov1" },
+					{ name: "2", template: "subst:uw-npov2" },
+					{ name: "3", template: "subst:uw-npov3" },
+					{ name: "4", template: "subst:uw-npov4" }
+				]
+			},
+			{
+				reportable: true,
+
+				queueType: [ "edit" ],
+
+				title: "Censoring",
+				icon: "fas fa-ban",
+				description: "Censoring topically-relevant content.",
+
+				summary: "[[WP:NOTCENSORED|censoring content]]",
+
+				auto: defaultAuto,
+				templates: [
+					{ name: "1", template: "subst:uw-notcensored1" },
+					{ name: "2", template: "subst:uw-notcensored2" },
+					{ name: "3", template: "subst:uw-notcensored3" },
+					{ name: "4", template: "subst:uw-notcensored4" }
+				]
+			},
+
+			{
+				reportable: true,
+
+				queueType: [ "edit" ],
+
+				title: "AI-generated",
+				icon: "fas fa-robot",
+				description: "Adding AI-generated content.",
+
+				summary: "[[WP:LLM|AI-generated content]]",
+
+				auto: defaultAuto,
+				templates: [
+					{ name: "1", template: "subst:uw-ai1" },
+					{ name: "2", template: "subst:uw-ai2" },
+					{ name: "3", template: "subst:uw-ai3" },
+					{ name: "4", template: "subst:uw-ai4" }
+				],
+
+				show(edit) {
+					return !edit?.isTalk;
+				}
+			},
+			{
+				reportable: true,
+
+				queueType: [ "edit" ],
+
+				title: "AI-generated (talk)",
+				icon: "fas fa-robot",
+				description: "Writing an AI-generated comment.",
+
+				summary: "[[WP:LLM|AI-generated content]] in a discussion",
+
+				auto: defaultAuto,
+				templates: [
+					{ name: "1", template: "subst:uw-aitalk1" },
+					{ name: "2", template: "subst:uw-aitalk2" },
+					{ name: "3", template: "subst:uw-aitalk3" },
+					{ name: "4", template: "subst:uw-aitalk4" }
+				],
+
+				show(edit) {
+					return edit?.isTalk;
+				}
+			},
+
+			{
+				reportable: true,
+
+				queueType: [ "edit" ],
+
+				title: "MOS violation",
+				icon: "fas fa-spell-check",
+				description: "Not following the Manual of Style.",
+
+				summary: "[[WP:MOS|manual of style]] violation",
+
+				auto: defaultAuto,
+				templates: [
+					{ name: "1", template: "subst:uw-mos1" },
+					{ name: "2", template: "subst:uw-mos2" },
+					{ name: "3", template: "subst:uw-mos3" },
+					{ name: "4", template: "subst:uw-mos4" }
+				],
+			},
+			{
+				id: "content:noteng",
+				reportable: false,
+
+				queueType: [ "edit" ],
+
+				title: "Not English",
+				icon: "fas fa-globe",
+				description: "Content added in a language other than English.",
+
+				summary: "non-English",
+				auto: "notice",
+
+				templates: [
+					{ name: "notice", template: "subst:uw-lang-noteng" }
+				]
 			}
 		]
 	},
+	"Conduct": {
+		title: "Conduct",
+		icon: "fas fa-user-shield",
+		description: "Warnings for different types of conduct issues.",
 
-	// Warnings to go in "Warn" menu (will not revert when used)
-	warn: {
-		"Edit summary": [
+		warnings: [
 			{
-				title: "Misleading",
-				summary: "misleading [[WP:ES|edit summary]]",
-				description: "Misleading edit summaries.",
-				icon: "fas fa-eye-slash",
+				reportable: true,
+
+				queueType: [ "edit" ],
+
+				title: "Personal attacks",
+				icon: "fas fa-bomb",
+				description: "Personal attacks towards another user.",
+
+				summary: "[[WP:NPA|personal attacks]]",
+
 				auto: defaultAuto,
-				templates: {
-					"0": null,
-					"1": { exists: true, template: "subst:uw-mislead1" },
-					"2": { exists: true, template: "subst:uw-mislead2" },
-					"3": { exists: true, template: "subst:uw-mislead3" },
-					"4": { exists: false, template: "subst:uw-generic4", additional: "''Misleading edit summary. ([[WP:WikiShield|WS]])''" },
-					"4im": null
-				},
-				onlyWarn: true,
-				queue: [ "edit" ]
+				templates: [
+					{ name: "1", template: "subst:uw-npa1" },
+					{ name: "2", template: "subst:uw-npa2" },
+					{ name: "3", template: "subst:uw-npa3" },
+					{ name: "4", template: "subst:uw-npa4" },
+					{ name: "4im", template: "subst:uw-npa4im" }
+				]
 			},
 			{
-				title: "Inappropriate",
-				summary: "inappropriate [[WP:ES|edit summary]]",
-				description: "Edit summaries that appear to not be appropriate, civil, or otherwise constructive.",
-				icon: "fas fa-exclamation-circle",
+				reportable: true,
+
+				queueType: [ "edit" ],
+
+				title: "Harassment",
+				icon: "fas fa-shield-alt",
+				description: "Harassment of another user.",
+
+				summary: "[[WP:HARASS|harassment]] of another user",
+
 				auto: defaultAuto,
-				templates: {
-					"0": null,
-					"1": { exists: true, template: "subst:uw-bes1" },
-					"2": { exists: true, template: "subst:uw-bes2" },
-					"3": { exists: true, template: "subst:uw-bes3" },
-					"4": { exists: true, template: "subst:uw-bes4" },
-					"4im": { exists: true, template: "subst:uw-bes4im" }
-				},
-				onlyWarn: true,
-				queue: [ "edit", "logevent" ]
+				templates: [
+					{ name: "1", template: "subst:uw-harass1" },
+					{ name: "2", template: "subst:uw-harass2" },
+					{ name: "3", template: "subst:uw-harass3" },
+					{ name: "4", template: "subst:uw-harass4" },
+					{ name: "4im", template: "subst:uw-harass4im" }
+				]
 			},
+
 			{
-				title: "Minor edit",
-				summary: "improper use of [[WP:ME|minor edit]] checkbox",
-				description: "Non-minor edit marked as minor",
-				icon: "fas fa-pen",
-				auto: () => "0",
-				templates: {
-					"0": { exists: true, template: "subst:uw-minor", label: "Notice", level: "notice" },
-					"1": null,
-					"2": null,
-					"3": null,
-					"4": null,
-					"4im": null
-				},
-				onlyWarn: true,
-				queue: [ "edit" ]
-			}
-		],
-		"Behavior": [
-			{
-				title: "Conflict of interest",
-				summary: "[[WP:COI|conflict of interest]]",
-				description: "Edits or username suggest an external relationship with the article.",
-				icon: "fas fa-user-tie",
-				auto: () => "0",
-				templates: {
-					"0": { exists: true, template: "subst:uw-coi", label: "Notice", level: "notice" },
-					"1": { exists: true, template: "subst:uw-coi-username", label: "Username", summary: "[[WP:COI|conflict of interest]] username", level: "notice" },
-					"2": null,
-					"3": null,
-					"4": { exists: true, template: "subst:uw-coi-warn", label: "Warn", level: "warning" },
-					"4im": null
-				},
-				onlyWarn: true,
-				queue: [ "edit", "logevent" ]
-			},
-			{
-				title: "Gaming the system",
-				summary: "[[WP:GAME|gaming the system]]",
-				description: "Deliberately made edits to game Wikipedia's policies.",
-				icon: "fas fa-chess-knight",
+				reportable: true,
+
+				queueType: [ "edit" ],
+
+				title: "TPO",
+				icon: "fas fa-hand-paper",
+				description: "Removing or editing others' posts.",
+
+				summary: "[[WP:TPO|removing or editing]] others' posts",
+
 				auto: defaultAuto,
-				templates: {
-					"0": null,
-					"1": { exists: true, template: "subst:uw-gaming1" },
-					"2": { exists: true, template: "subst:uw-gaming2" },
-					"3": { exists: true, template: "subst:uw-gaming3" },
-					"4": { exists: true, template: "subst:uw-gaming4" },
-					"4im": { exists: true, template: "subst:uw-gaming4im" }
-				},
-				onlyWarn: true,
-				queue: [ "edit" ]
+				templates: [
+					{ name: "1", template: "subst:uw-tpo1" },
+					{ name: "2", template: "subst:uw-tpo2" },
+					{ name: "3", template: "subst:uw-tpo3" },
+					{ name: "4", template: "subst:uw-tpo4" },
+					{ name: "4im", template: "subst:uw-tpo4im" }
+				]
 			},
 			{
-				title: "Edit Warring",
+				reportable: true,
+
+				queueType: [ "edit" ],
+
+				title: "Chatting",
+				icon: "fas fa-comments",
+				description: "Using article talk pages for inappropriate discussion.",
+
+				summary: "inappropriate use of article talk pages",
+
+				auto: defaultAuto,
+				templates: [
+					{ name: "1", template: "subst:uw-chat1" },
+					{ name: "2", template: "subst:uw-chat2" },
+					{ name: "3", template: "subst:uw-chat3" },
+					{ name: "4", template: "subst:uw-chat4" }
+				],
+
+				show(edit) {
+					return edit?.isTalk;
+				}
+			},
+			{
+				reportable: true,
+
+				queueType: [ "edit" ],
+
+				title: "Owning",
+				icon: "fas fa-user-shield",
+				description: "Assuming ownership of articles.",
+
+				summary: "assuming [[WP:OWN|ownership of articles]]",
+
+				auto: defaultAuto,
+				templates: [
+					{ name: "1", template: "subst:uw-own1" },
+					{ name: "2", template: "subst:uw-own2" },
+					{ name: "3", template: "subst:uw-own3" },
+					{ name: "4", template: "subst:uw-own4" }
+				],
+			},
+			{
+				reportable: true,
+
+				queueType: [ "edit" ],
+
+				title: "AfD removal",
+				icon: "fas fa-gavel",
+				description: "Removing AfD templates or other users' comments from AfD discussions.",
+
+				summary: "removing AfD templates or comments",
+
+				auto: defaultAuto,
+				templates: [
+					{ name: "1", template: "subst:uw-afd1" },
+					{ name: "2", template: "subst:uw-afd2" },
+					{ name: "3", template: "subst:uw-afd3" },
+					{ name: "4", template: "subst:uw-afd4" }
+				]
+			},
+			{
+				reportable: false,
+
+				queueType: [ "edit" ],
+
+				title: "Edit warring",
+				icon: "fas fa-jet-fighter",
+				description: "Engaging in edit warring.",
+
 				summary: "[[WP:EW|edit warring]]",
-				description: "User is edit warring.",
-				icon: "fas fa-people-arrows",
-				auto: (edit) => edit?.user?.editCount < 500 ? "0" : "4",
-				templates: {
-					"0": { exists: true, template: "subst:uw-ewsoft", label: "Notice", level: "notice" },
-					"1": null,
-					"2": null,
-					"3": null,
-					"4": { exists: true, template: "subst:uw-ew", label: "Warning", level: "warning" },
-					"4im": null
+
+				auto(edit) {
+					return edit?.user?.editCount < 500 ? "notice" : "warning";
 				},
-				onlyWarn: true,
-				queue: [ "edit" ]
+				templates: [
+					{ name: "notice", template: "subst:uw-softew", color: "grey" },
+					{ name: "warning", template: "subst:uw-ew", color: "#ff4500" }
+				]
+			},
+			{
+				reportable: true,
+
+				queueType: [ "edit" ],
+
+				title: "Gaming the system",
+				icon: "fas fa-chess-knight",
+				description: "Attempting to game Wikipedia's policies or guidelines.",
+
+				summary: "[[WP:GAME|gaming the system]]",
+
+				auto: defaultAuto,
+				templates: [
+					{ name: "1", template: "subst:uw-gaming1" },
+					{ name: "2", template: "subst:uw-gaming2" },
+					{ name: "3", template: "subst:uw-gaming3" },
+					{ name: "4", template: "subst:uw-gaming4" },
+					{ name: "4im", template: "subst:uw-gaming4im" }
+				]
 			}
-		],
+		]
+	},
+	"Promotional": {
+		title: "Promotional",
+		icon: "fas fa-bullhorn",
+		description: "Warnings for promotional content.",
+
+		warnings: [
+			{
+				reportable: true,
+
+				queueType: [ "edit" ],
+
+				title: "Advertising",
+				icon: "fas fa-ad",
+				description: "Adding advertising or promotional content.",
+
+				summary: "[[WP:PROMO|advertising or promotion]]",
+
+				auto: defaultAuto,
+				templates: [
+					{ name: "1", template: "subst:uw-advert1" },
+					{ name: "2", template: "subst:uw-advert2" },
+					{ name: "3", template: "subst:uw-advert3" },
+					{ name: "4", template: "subst:uw-advert4" },
+					{ name: "4im", template: "subst:uw-advert4im" }
+				]
+			},
+			{
+				reportable: true,
+
+				queueType: [ "edit" ],
+
+				title: "Spam links",
+				icon: "fas fa-link",
+				description: "Adding spam or promotional links.",
+
+				summary: "adding [[WP:ELNO|inappropriate links]]",
+
+				auto: defaultAuto,
+				templates: [
+					{ name: "1", template: "subst:uw-spam1" },
+					{ name: "2", template: "subst:uw-spam2" },
+					{ name: "3", template: "subst:uw-spam3" },
+					{ name: "4", template: "subst:uw-spam4" },
+					{ name: "4im", template: "subst:uw-spam4im" }
+				]
+			},
+
+			{
+				reportable: false,
+
+				queueType: [ "edit" ],
+
+				title: "COI",
+				icon: "fas fa-user-tie",
+				description: "Editing with a conflict of interest.",
+
+				summary: "editing with a [[WP:COI|conflict of interest]]",
+
+				auto: "notice",
+				templates: [
+					{ name: "notice", template: "subst:uw-coi" },
+					{ name: "warning", template: "subst:uw-coi-warn" },
+					{ name: "username", template: "subst:uw-coi-username" },
+				]
+			},
+			{
+				reportable: false,
+
+				queueType: [ "logevent" ],
+
+				title: "COI",
+				icon: "fas fa-user-tie",
+				description: "Apparent conflict of interest.",
+
+				summary: "apparent [[WP:COI|conflict of interest]]",
+
+				auto: "username",
+				templates: [
+					{ name: "username", template: "subst:uw-coi-username" },
+				]
+			}
+		]
+	},
+	"Edit Summary": {
+		title: "Edit Summary",
+		icon: "fas fa-pen-alt",
+		description: "Warnings for inappropriate edit summaries.",
+
+		warnings: [
+			{
+				reportable: true,
+
+				queueType: [ "edit", "logevent" ],
+
+				title: "Inappropriate edit summary",
+				icon: "fas fa-pen-alt",
+				description: "Using an inappropriate edit summary.",
+
+				summary: "inappropriate [[WP:ES|edit summary]]",
+
+				auto: defaultAuto,
+				templates: [
+					{ name: "1", template: "subst:uw-bes1" },
+					{ name: "2", template: "subst:uw-bes2" },
+					{ name: "3", template: "subst:uw-bes3" },
+					{ name: "4", template: "subst:uw-bes4" },
+					{ name: "4im", template: "subst:uw-bes4im" }
+				],
+			},
+			{
+				reportable: true,
+
+				queueType: [ "edit", "logevent" ],
+
+				title: "Misleading edit summary",
+				icon: "fas fa-mask",
+				description: "Using a misleading edit summary.",
+
+				summary: "misleading [[WP:ES|edit summary]]",
+
+				auto: defaultAuto,
+				templates: [
+					{ name: "1", template: "subst:uw-mislead1" },
+					{ name: "2", template: "subst:uw-mislead2" },
+					{ name: "3", template: "subst:uw-mislead3" },
+					{ name: "4", template: "subst:uw-generic4", generic: "''Misleading edit summary. ([[WP:WikiShield|WS]])''" },
+				]
+			},
+
+			{
+				reportable: false,
+
+				queueType: [ "edit" ],
+
+				title: "Minor edit abuse",
+				icon: "fas fa-m",
+				description: "Non-minor edit marked as minor",
+
+				summary: "improper use of [[WP:ME|minor edit]] checkbox",
+
+				auto: "notice",
+				templates: [
+					{ name: "notice", template: "subst:uw-minor" }
+				]
+			}
+		]
 	}
 };
 
 const lookup = {};
-for (const [ type, categories ] of Object.entries(warnings)) {
-	for (const [ category, categoryWarnings ] of Object.entries(categories)) {
-		const length = categoryWarnings.length;
-		for (let i = 0; i < length; i++) {
-			const warning = categoryWarnings[i];
-			lookup[warning.title] = [ type, category, i ];
-		}
+for (const [ type, category ] of Object.entries(warnings)) {
+	const len = category.warnings.length;
+	for (let i = 0; i < len; i++) {
+		const warning = category.warnings[i];
+		lookup[warning.title] = warning;
 	}
 }
 
 export const warningsLookup = lookup;
 
 export function getWarningFromLookup(title) {
-	if (!(title in warningsLookup)) {
-		return undefined;
-	}
-
-	const path = warningsLookup[title];
-	return path.reduce((obj, key) => obj[key], warnings);
+	return warningsLookup[title];
 }

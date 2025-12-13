@@ -136,10 +136,10 @@ export class WikiShieldUtil {
 	* @param {Boolean} usePhpString Whether to use /w/index.php in the link
 	* @returns {String} The URL to the page
 	*/
-	pageLink(title, wiki = 'en', usePhpString = false) {
+	pageLink(title, wiki = 'en', usePhpString = false, encode = true) {
 		return usePhpString
 		? `https://${mw.config.get("wgServerName")}/w/index.php${title}`
-		: `https://${mw.config.get("wgServerName")}/wiki/${this.encodeuri(title)}`;
+		: `https://${mw.config.get("wgServerName")}/wiki/${encode ? this.encodeuri(title) : title}`;
 	}
 
 	/**
