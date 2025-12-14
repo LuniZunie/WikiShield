@@ -6,10 +6,10 @@ export const wikishieldHTML = {
 			<h1><i class="fas fa-rocket"></i> What's New in WikiShield</h1>
 			<p class="changelog-subtitle">Discover the latest features and improvements</p>
 		</div>
-		<div id="changelog-version-5" class="changelog-version">
+		<div id="changelog-version-6" class="changelog-version">
 			<div class="changelog-version-header">
 				<h1>Version 1.2.0</h1>
-				<p class="changelog-version-subtitle">13 December 2025, 00:30 UTC</p>
+				<p class="changelog-version-subtitle">14 December 2025, 22:30 UTC</p>
 			</div>
 			<div class="changelog-grid">
 				<div class="card featured">
@@ -20,7 +20,38 @@ export const wikishieldHTML = {
 						<li>All warning templates are now available for reverting or warning</li>
 						<li>Reverts can now optionally include a warning</li>
 						<li>Warning menu has been reworked for better organization and usability</li>
-						<li>Added <code>uw-harassment</code>, <code>uw-nor</code>
+						<li>Added <code>uw-harassment</code>, <code>uw-nor</code></li>
+					</ul>
+				</div>
+				<div class="card">
+					<div class="card-icon"><i class="fas fa-window-restore"></i></div>
+					<h2>Wikipedia Popups</h2>
+					<p>Added a new setting to control how Wikipedia links are opened.</p>
+					<ul>
+						<li>Links in the top bar now have a menu for what to do when clicked</li>
+						<li>When enabled, Wikipedia links will open in a new window.</li>
+						<li>When disabled, Wikipedia links will open in a new tab.</li>
+						<li>Note: This feature is not supported by Opera or Safari browsers.</li>
+					</ul>
+				</div>
+				<div class="card">
+					<div class="card-icon"><i class="fas fa-bug"></i></div>
+					<h2>Bug Fixes</h2>
+					<ul>
+						<li>Fixed issue where audio volumes would not work</li>
+						<li>Fixed bug where audio volumes would not save</li>
+						<li>Fixed an error when whitelisting or highlighting directly from the settings menu</li>
+						<li>Fixed a bug where some actions would execute when they weren't supposed to</li>
+						<li>Fixed an error when middle clicking some buttons in the UI</li>
+					</ul>
+				</div>
+				<div class="card">
+					<div class="card-icon"><i class="fas fa-ellipsis"></i></div>
+					<h2>Miscellaneous</h2>
+					<ul>
+						<li>Improved the profanity filter to catch more sockpuppets</li>
+						<li>Reduced strain on Wikimedia servers by optimizing API requests</li>
+						<li>Added external loading to reduce script size</li>
 					</ul>
 				</div>
 			</div>

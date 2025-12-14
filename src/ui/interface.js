@@ -1655,7 +1655,7 @@ export class WikiShieldInterface {
 		}
 
 		let allMade = 0;
-		for (const [ categoryKey, category ] of Object.entries(warnings)) {
+		for (const [ , category ] of Object.entries(warnings)) {
 			let categoryMade = 0;
 			const categoryWarnings = [];
 

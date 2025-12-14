@@ -11,7 +11,7 @@ export const __script__ = {
 	version: "1.2.0",
 
 	changelog: {
-		version: "6!",
+		version: "6",
 		get HTML() { return wikishieldHTML.changelog; }
 	},
 

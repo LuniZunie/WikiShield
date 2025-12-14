@@ -2204,7 +2204,7 @@ class Version1 extends Version {
         root.highlight.pages = [ ...root.highlight.pages ];
         root.highlight.tags = [ ...root.highlight.tags ];
 
-        root.whitelist.users = [ ...root.whitelist.users ];;
+        root.whitelist.users = [ ...root.whitelist.users ];
         root.whitelist.pages = [ ...root.whitelist.pages ];
         root.whitelist.tags = [ ...root.whitelist.tags ];
 
@@ -4041,7 +4041,7 @@ class Version2 extends Version {
         root.highlight.pages = [ ...root.highlight.pages ];
         root.highlight.tags = [ ...root.highlight.tags ];
 
-        root.whitelist.users = [ ...root.whitelist.users ];;
+        root.whitelist.users = [ ...root.whitelist.users ];
         root.whitelist.pages = [ ...root.whitelist.pages ];
         root.whitelist.tags = [ ...root.whitelist.tags ];
 
