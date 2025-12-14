@@ -182,6 +182,29 @@ class Profanity {
             multiWord: true,
             note: "Often used in usernames by sockpuppeteers."
         },
+        {
+            term: "timelash",
+            severity: 1,
+            note: "Well-known sockpuppeteer (\"Timelash\") on Wikipedia."
+        },
+        {
+            term: "my little",
+            severity: 0.8,
+            multiWord: true,
+            note: "If related to 'my little pony', indicates sockpuppeteer."
+        },
+        {
+            term: "my little pony",
+            severity: 1,
+            multiWord: true,
+            note: "Well-known sockpuppeteer on Wikipedia."
+        },
+        {
+            term: "friendship is magic",
+            severity: 1,
+            multiWord: true,
+            note: "Well-known sockpuppeteer on Wikipedia."
+        },
         { term: "ass", severity: 0.6, ignore: [ "456" ] },
         { term: "arse", severity: 0.6 },
         { term: "anal", severity: 0.7 },

@@ -183,15 +183,15 @@ export const validEvents = {
         }
     },
     openRevertMenu: {
-        description: "Toggle the revert & warn menu",
+        description: "Toggle the revert menu",
         icon: "fas fa-undo",
-        runWithoutEdit: true,
         func: (wikishield) => {
+            const currentEdit = wikishield.queue.currentEdit[wikishield.queue.currentQueueTab];
             const menuItem = document.querySelector('[data-menu="revert"]');
 
-            const revertMenu = wikishield.interface.elem("#revert-menu");
-            revertMenu.innerHTML = "";
-            wikishield.interface.createRevertMenu(revertMenu, wikishield.queue.currentEdit[wikishield.queue.currentQueueTab]);
+            const menu = wikishield.interface.elem("#revert-menu");
+            menu.innerHTML = "";
+            wikishield.interface.createRevertMenu("reverts", menu, currentEdit);
 
             if (menuItem) {
                 const trigger = menuItem.querySelector('.bottom-tool-trigger');
@@ -215,15 +215,14 @@ export const validEvents = {
         }
     },
     openWarnMenu: {
-        description: "Toggle the warn-only menu",
-        icon: "fas fa-triangle-exclamation",
-        runWithoutEdit: true,
-        func: (wikishield) => {
+        description: "Toggle the warn menu",
+        icon: "fas fa-undo",
+        func: (wikishield, event, currentEdit) => {
             const menuItem = document.querySelector('[data-menu="warn"]');
 
-            const warnMenu = wikishield.interface.elem("#warn-menu");
-            warnMenu.innerHTML = "";
-            wikishield.interface.createWarnMenu(warnMenu, wikishield.queue.currentEdit[wikishield.queue.currentQueueTab]);
+            const menu = wikishield.interface.elem("#warn-menu");
+            menu.innerHTML = "";
+            wikishield.interface.createRevertMenu("warnings", menu, currentEdit);
 
             if (menuItem) {
                 const trigger = menuItem.querySelector('.bottom-tool-trigger');
@@ -249,8 +248,7 @@ export const validEvents = {
     openReportMenu: {
         description: "Toggle the report menu",
         icon: "fas fa-flag",
-        runWithoutEdit: true,
-        func: (wikishield) => {
+        func: (wikishield, event, currentEdit) => {
             const menuItem = document.querySelector('[data-menu="report"]');
             if (menuItem) {
                 const trigger = menuItem.querySelector('.bottom-tool-trigger');
@@ -287,9 +285,7 @@ export const validEvents = {
         description: "Open user page in a new tab",
         icon: "fas fa-circle-user",
         func: (wikishield, event, currentEdit) => {
-            const username = currentEdit.user.name;
-            const url = wikishield.util.pageLink(`User:${username}`);
-            window.open(url, "_blank");
+            wikishield.interface.openWikipediaLink(wikishield.util.pageLink(`User:${currentEdit.user.name}`));
 
             return true;
         }
@@ -298,9 +294,7 @@ export const validEvents = {
         description: "Open user talk page in a new tab",
         icon: "fas fa-comment",
         func: (wikishield, event, currentEdit) => {
-            const username = currentEdit.user.name;
-            const url = wikishield.util.pageLink(`User talk:${username}`);
-            window.open(url, "_blank");
+            wikishield.interface.openWikipediaLink(wikishield.util.pageLink(`User talk:${currentEdit.user.name}`));
 
             return true;
         }
@@ -309,9 +303,7 @@ export const validEvents = {
         description: "Open user contributions page in a new tab",
         icon: "fas fa-list",
         func: (wikishield, event, currentEdit) => {
-            const username = currentEdit.user.name;
-            const url = wikishield.util.pageLink(`Special:Contributions/${username}`);
-            window.open(url, "_blank");
+            wikishield.interface.openWikipediaLink(wikishield.util.pageLink(`Special:Contributions/${currentEdit.user.name}`));
 
             return true;
         }
@@ -321,12 +313,61 @@ export const validEvents = {
         icon: "fas fa-filter",
         func: (wikishield, event, currentEdit) => {
             const encodedName = wikishield.util.encodeuri(currentEdit.user.name);
-            const url = wikishield.util.pageLink(
-                `?title=Special:AbuseLog&wpSearchUser=${encodedName}`,
-                true
-            );
-            const username = currentEdit.user.name;
-            window.open(url, "_blank");
+            wikishield.interface.openWikipediaLink(wikishield.util.pageLink(`?title=Special:AbuseLog&wpSearchUser=${encodedName}`, true));
+
+            return true;
+        }
+    },
+    openPage: {
+        description: "Open page being edited in new tab",
+        icon: "fas fa-file",
+        func: (wikishield, event, currentEdit) => {
+            wikishield.interface.openWikipediaLink(wikishield.util.pageLink(currentEdit.page.title));
+
+            return true;
+        }
+    },
+    openTalk: {
+        description: "Open talk page in new tab",
+        icon: "fas fa-comments",
+        func: (wikishield, event, currentEdit) => {
+            const pageTitle = currentEdit.page.title.split(":");
+            let talkNamespace = "Talk";
+            if (pageTitle.length > 1) {
+                talkNamespace = pageTitle[0].toLowerCase().includes("talk")
+                ? pageTitle[0]
+                : pageTitle[0] + " talk";
+            }
+
+            const talkTitle = `${talkNamespace}:${pageTitle.length === 1 ? pageTitle[0] : pageTitle[1]}`;
+            wikishield.interface.openWikipediaLink(wikishield.util.pageLink(talkTitle));
+
+            return true;
+        }
+    },
+    openHistory: {
+        description: "Open page history in new tab",
+        icon: "fas fa-clock-rotate-left",
+        func: (wikishield, event, currentEdit) => {
+            wikishield.interface.openWikipediaLink(wikishield.util.pageLink(`Special:PageHistory/${currentEdit.page.title}`));
+
+            return true;
+        }
+    },
+    openRevision: {
+        description: "Open revision in new tab",
+        icon: "fas fa-eye",
+        func: (wikishield, event, currentEdit) => {
+            wikishield.interface.openWikipediaLink(wikishield.util.pageLink(`Special:PermanentLink/${currentEdit.revid}`));
+
+            return true;
+        }
+    },
+    openDiff: {
+        description: "Open diff in new tab",
+        icon: "fas fa-code-compare",
+        func: (wikishield, event, currentEdit) => {
+            wikishield.interface.openWikipediaLink(wikishield.util.pageLink(`Special:Diff/${currentEdit.revid}`));
 
             return true;
         }
@@ -595,70 +636,6 @@ export const validEvents = {
         }
     },
 
-    openPage: {
-        description: "Open page being edited in new tab",
-        icon: "fas fa-file",
-        func: (wikishield, event, currentEdit) => {
-            const page = currentEdit.page;
-            const url = wikishield.util.pageLink(page.title);
-            window.open(url, "_blank");
-
-            return true;
-        }
-    },
-    openTalk: {
-        description: "Open talk page in new tab",
-        icon: "fas fa-comments",
-        func: (wikishield, event, currentEdit) => {
-            const pageTitle = currentEdit.page.title.split(":");
-            let talkNamespace = "Talk";
-            if (pageTitle.length > 1) {
-                talkNamespace = pageTitle[0].toLowerCase().includes("talk")
-                ? pageTitle[0]
-                : pageTitle[0] + " talk";
-            }
-            const talkTitle = `${talkNamespace}:${pageTitle.length === 1 ? pageTitle[0] : pageTitle[1]}`;
-            const url = wikishield.util.pageLink(talkTitle);
-            window.open(url, "_blank");
-
-            return true;
-        }
-    },
-    openHistory: {
-        description: "Open page history in new tab",
-        icon: "fas fa-clock-rotate-left",
-        func: (wikishield, event, currentEdit) => {
-
-            const page = currentEdit.page;
-            const url = wikishield.util.pageLink(`Special:PageHistory/${page.title}`);
-            window.open(url, "_blank");
-
-            return true;
-        }
-    },
-    openRevision: {
-        description: "Open revision in new tab",
-        icon: "fas fa-eye",
-        func: (wikishield, event, currentEdit) => {
-            const revid = currentEdit.revid;
-            const url = wikishield.util.pageLink(`Special:PermanentLink/${revid}`);
-            window.open(url, "_blank");
-
-            return true;
-        }
-    },
-    openDiff: {
-        description: "Open diff in new tab",
-        icon: "fas fa-code-compare",
-        func: (wikishield, event, currentEdit) => {
-            const revid = currentEdit.revid;
-            const url = wikishield.util.pageLink(`Special:Diff/${revid}`);
-            window.open(url, "_blank");
-
-            return true;
-        }
-    },
-
     thankUser: {
         description: "Thank user",
         icon: "fas fa-heart",
@@ -691,7 +668,7 @@ export const validEvents = {
         parameters: [
             {
                 title: "Warning type",
-                id: "warningType",
+                id: "warning",
                 type: "choice",
                 options: Object.keys(warningsLookup),
                 showOption: (wikishield, optionKey) => {
@@ -710,21 +687,23 @@ export const validEvents = {
         progressDesc: "Warning...",
         needsContinuity: true,
         validateParameters: (wikishield, params, currentEdit) => {
-            return params.level === "auto" || getWarningFromLookup(params.warningType)?.templates[params.level] !== null;
+            return params.level === "auto" || getWarningFromLookup(params.warning)?.templates[params.level] !== null;
         },
         func: async (wikishield, params, currentEdit) => {
-            const warning = getWarningFromLookup(params.warningType);
+            const warning = getWarningFromLookup(params.warning);
 
             const originalLevel = currentEdit.user.warningLevel;
             currentEdit.user.atFinalWarning = (warning?.auto?.[originalLevel.toString()] === "report");
 
-            return await wikishield.warnUser(
+            await wikishield.warnUser(
                 currentEdit.user.name,
                 warning,
                 params.level || "auto",
                 currentEdit.page.title,
                 currentEdit.revid
             );
+
+            return true;
         }
     },
     rollback: {
