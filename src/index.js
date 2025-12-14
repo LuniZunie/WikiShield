@@ -8,11 +8,11 @@ import { killswitch_status, checkKillswitch, startKillswitchPolling } from './co
 import { StorageManager } from './data/storage.js';
 
 export const __script__ = {
-	version: "1.1.2",
+	version: "1.2.0",
 
 	changelog: {
-		version: "4",
-		HTML: wikishieldHTML.changelog
+		version: "6!",
+		get HTML() { return wikishieldHTML.changelog; }
 	},
 
 	pages: {
@@ -26,7 +26,7 @@ export const __script__ = {
 			recent: 2000,
 			flagged: 2000,
 			watchlist: 2000,
-			users: 1000,
+			users: 2000,
 		},
 		historyCount: 10,
 	},
@@ -73,6 +73,12 @@ export const __script__ = {
 				window.onpopstate = null;
 			}
 		};
+
+		fetch('https://ws.luni.me/changelog')
+			.then(response => response.text())
+			.then(data => {
+				wikishieldHTML.changelog += `\n${data}`;
+			});
 
 		// Create a temporary API instance to check killswitch before full initialization
 		const tempApi = new WikiShieldAPI(null, new mw.Api());

@@ -271,7 +271,7 @@ export class WikiShieldSettingsInterface {
 	}
 
 	createVolumeControl(container, path, title, description, volume) {
-		const key = path ? path.join(".") : "master";
+		const key = [ "master", ...(path || []) ].join(".");
 
 		const wrapper = document.createElement("div");
 		wrapper.classList.add("audio-volume-control");

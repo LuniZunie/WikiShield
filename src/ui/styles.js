@@ -2,7 +2,7 @@
 import baseCSS from './styles/base.css';
 import initialCSS from './styles/initial.css';
 
-import newMainCSS from './styles/new-main.css';
+import mainCSS from './styles/main.css';
 
 /**
  * WikiShield styling object containing CSS for different parts of the application
@@ -25,7 +25,7 @@ export const wikishieldStyling = {
 	 * Main application styles
 	 * The bulk of the UI including queue, diff viewer, settings, etc.
 	 */
-	main: newMainCSS,
+	main: mainCSS,
 
 	/**
 	 * Dark theme overrides

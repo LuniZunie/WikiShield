@@ -2219,10 +2219,9 @@ class Version2 extends Version {
     static number = 2;
     static get default() {
         return {
-            first: true,
             version: 2,
 
-            changelog: "3",
+            changelog: "6",
 
             settings: {
                 performance: {
@@ -2264,7 +2263,7 @@ class Version2 extends Version {
                 },
 
                 auto_welcome: {
-                    enabled: true,
+                    enabled: false,
                 },
 
                 expiry: {
@@ -2431,16 +2430,10 @@ class Version2 extends Version {
                             condition: "atFinalWarning",
                             actions: [
                                 {
-                                    name: "if",
-                                    condition: "operatorNonAdmin",
-                                    actions: [
-                                        {
-                                            name: "reportToAIV",
-                                            params: {
-                                                reportMessage: "Vandalism past final warning"
-                                            }
-                                        }
-                                    ]
+                                    name: "reportToAIV",
+                                    params: {
+                                        reportMessage: "Vandalism past final warning"
+                                    }
                                 }
                             ]
                         },
@@ -2612,7 +2605,6 @@ class Version2 extends Version {
 
         const defaults = this.default;
         return {
-            first: defaults.first,
             changelog: this.sanitize([ "changelog" ], defaults.changelog),
 
             settings: {
@@ -2680,11 +2672,7 @@ class Version2 extends Version {
                             return undefined;
                         }
 
-                        let set = new Set();
-                        if (this.loadedData.first) {
-                            set = new Set([ "Harassment", "Inappropriate edit summary", "Original research" ]); // add some default reports for first-time upgrade users
-                        }
-
+                        const set = new Set([ "Harassment", "Inappropriate edit summary", "Original research" ]); // add some default reports
                         value.forEach(v => {
                             switch (v) {
                                 case "Errors": {
@@ -2960,10 +2948,6 @@ class Version2 extends Version {
         if (root.version !== this.number) {
             this.loadedLogger.error(`Stored data version ${root.version} does not match expected version ${this.number}.`);
             return false;
-        }
-
-        if (typeof root.first !== "boolean") {
-            this.reset("first");
         }
 
         if (typeof root.changelog !== "string") {

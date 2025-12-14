@@ -1557,16 +1557,10 @@ export class WikiShieldInterface {
 				condition: "atFinalWarning",
 				actions: [
 					{
-						name: "if",
-						condition: "operatorNonAdmin",
-						actions: [
-							{
-								name: "reportToAIV",
-								params: {
-									reportMessage: "Vandalism past final warning"
-								}
-							}
-						]
+						name: "reportToAIV",
+						params: {
+							reportMessage: "Vandalism past final warning"
+						}
 					}
 				]
 			};

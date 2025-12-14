@@ -14,8 +14,8 @@ const defaultAuto = {
 	"1": "2",
 	"2": "3",
 	"3": "4",
-	"4": null,
-	"4im": null
+	"4": "report",
+	"4im": "report"
 };
 
 export const warnings = {

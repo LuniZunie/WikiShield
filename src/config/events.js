@@ -695,13 +695,15 @@ export const validEvents = {
             const originalLevel = currentEdit.user.warningLevel;
             currentEdit.user.atFinalWarning = (warning?.auto?.[originalLevel.toString()] === "report");
 
-            return await wikishield.warnUser(
+            await wikishield.warnUser(
                 currentEdit.user.name,
                 warning,
                 params.level || "auto",
                 currentEdit.page.title,
                 currentEdit.revid
             );
+
+            return true;
         }
     },
     rollback: {
