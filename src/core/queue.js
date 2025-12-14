@@ -898,6 +898,7 @@ export class WikiShieldQueue {
 			};
 			queueItems.push(queueItem);
 
+			const storage = this.wikishield.storage.data;
 			if (this.wikishield.AI) {
 				if (!(queueItem.user.ip || queueItem.user.temporary) && !storage.whitelist.users.has(log.user) && storage.settings.AI.username_analysis.enabled) {
 					this.wikishield.AI.analyze.username(queueItem)
