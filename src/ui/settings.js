@@ -27,6 +27,7 @@ import {
 
 import { AI } from '../ai/class.js';
 import { validControlKeys } from '../config/control-keys.js';
+import { StorageManager } from '../data/storage.js';
 
 export class WikiShieldSettingsInterface {
 	constructor(wikishield) {
@@ -1668,6 +1669,12 @@ ollama serve
 							<div class="settings-section-desc">Automatically welcome new users with empty talk pages when moving past their constructive edits</div>
 						</div>
 					</div>
+					<div class="settings-section compact inline" id="wikipedia-popups-toggle">
+						<div class="settings-section-content">
+							<div class="settings-section-title">Wikipedia popups</div>
+							<div class="settings-section-desc">When enabled, Wikipedia links will be opened in a new window. Otherwise, they will be opened in a new tab. (Not supported by Opera or Safari browsers)</div>
+						</div>
+					</div>
 				</div>
 				<div class="settings-toggles-section">
 					<div class="settings-section-title">Username Highlighting</div>
@@ -1694,6 +1701,14 @@ ollama serve
 			settings.auto_welcome.enabled,
 			(newValue) => {
 				settings.auto_welcome.enabled = newValue;
+			}
+		);
+
+		this.createToggle(
+			this.contentContainer.querySelector("#wikipedia-popups-toggle"),
+			settings.wikipedia_popups.enabled,
+			(newValue) => {
+				settings.wikipedia_popups.enabled = newValue;
 			}
 		);
 
@@ -2537,6 +2552,7 @@ ollama serve
 
 				try {
 					const logs = await this.wikishield.init(base64, true); // Try to import settings
+					StorageManager.outputLogs(logs, "Import Settings");
 
 					const [ expected, unexpected ] = logs.reduce((acc, log) => {
 						if (log.expected) {

@@ -18,6 +18,7 @@ import { profanity } from "../data/profanity.js";
 import { generateRandomUUID } from '../utils/UUID.js';
 
 import React, { useEffect, useRef } from 'react';
+import { fullTrim } from '../utils/formatting.js';
 
 export class WikiShieldInterface {
 	constructor(wikishield) {
@@ -961,7 +962,7 @@ export class WikiShieldInterface {
 		const url = new URL(href, window.location.href);
 		if (
 			!(url.hostname.endsWith(".wikipedia.org") || url.hostname.endsWith(".wikimedia.org")) || // Not Wikipedia/Wikimedia
-			(event?.button === 1 || event?.ctrlKey || event?.metaKey) // Middle click or Ctrl/Cmd click
+			!(this.wikishield.storage.data.settings.wikipedia_popups.enabled) // Popups disabled
 		) {
 			// Open in new tab
 			window.open(href, '_blank');
@@ -2122,6 +2123,28 @@ export class WikiShieldInterface {
 			if (protIndicator) {
 				protIndicator.innerHTML = "";
 			}
+
+			if ([ ...document.querySelectorAll(`#queue-tabs > .queue-tab`) ].every(tab => getComputedStyle(tab).display === "none")) {
+				this.elem("#diff-container").innerHTML = `
+					<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: grey;">
+						<div style="font-size: 48px; margin-bottom: 16px;">
+							<i class="fas fa-shield-alt"></i>
+						</div>
+						<div style="font-size: 24px; margin-bottom: 8px; text-align: center;">
+							No queues are enabled
+						</div>
+						<div style="font-size: 14px; text-align: center; max-width: 100%; margin-top: 10px;">
+							I heard there was a WikiShield,<br>
+							Which entered an oversaturated field,<br>
+							But you don’t ever use Huggle, do you?<br>
+							Well it simplifies any AIV,<br>
+							But superintendence matters to me
+							<span style="display: block; margin-top: 8px;">– User:WikiMacaroons</span>
+						</div>
+					</div>
+				`;
+			}
+
 			return;
 		}
 

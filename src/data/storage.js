@@ -515,7 +515,7 @@ class Version1 extends Version {
                         "master.music.zen_mode": 1,
 
                         "master.ui": 1,
-                        "master.ui.click": 0.3,
+                        "master.ui.click": 0.05,
 
                         "master.queue": 1,
                         "master.queue.ores": 1,
@@ -2262,6 +2262,10 @@ class Version2 extends Version {
                     fuzzy: true,
                 },
 
+                wikipedia_popups: {
+                    enabled: true,
+                },
+
                 auto_welcome: {
                     enabled: false,
                 },
@@ -2332,7 +2336,7 @@ class Version2 extends Version {
                         "master.music.zen_mode": 1,
 
                         "master.ui": 1,
-                        "master.ui.click": 0.3,
+                        "master.ui.click": 0.05,
 
                         "master.queue": 1,
                         "master.queue.ores": 1,
@@ -2628,12 +2632,12 @@ class Version2 extends Version {
                         order: this.sanitize([ "settings", "queue", "flagged", "order" ], defaults.settings.queue.flagged.order),
                     },
                     users: {
-                        enabled: this.sanitize([ "settings", "queue", "users", "enabled" ], defaults.settings.queue.users.enabled), // did not exist in v0
-                        order: this.sanitize([ "settings", "queue", "users", "order" ], defaults.settings.queue.users.order), // did not exist in v0
+                        enabled: this.sanitize([ "settings", "queue", "users", "enabled" ], defaults.settings.queue.users.enabled),
+                        order: this.sanitize([ "settings", "queue", "users", "order" ], defaults.settings.queue.users.order),
                     },
                     watchlist: {
-                        enabled: this.sanitize([ "settings", "queue", "watchlist", "enabled" ], defaults.settings.queue.watchlist.enabled), // did not exist in v0
-                        order: this.sanitize([ "settings", "queue", "watchlist", "order" ], defaults.settings.queue.watchlist.order), // did not exist in v0
+                        enabled: this.sanitize([ "settings", "queue", "watchlist", "enabled" ], defaults.settings.queue.watchlist.enabled),
+                        order: this.sanitize([ "settings", "queue", "watchlist", "order" ], defaults.settings.queue.watchlist.order),
                     },
                 },
 
@@ -2643,7 +2647,11 @@ class Version2 extends Version {
 
                 username_highlighting: {
                     enabled: this.sanitize([ "settings", "username_highlighting", "enabled" ], defaults.settings.username_highlighting.enabled),
-                    fuzzy: this.sanitize([ "settings", "username_highlighting", "fuzzy" ], defaults.settings.username_highlighting.fuzzy), // did not exist in v0
+                    fuzzy: this.sanitize([ "settings", "username_highlighting", "fuzzy" ], defaults.settings.username_highlighting.fuzzy),
+                },
+
+                wikipedia_popups: {
+                    enabled: defaults.settings.wikipedia_popups.enabled, // did not exist in v1
                 },
 
                 auto_welcome: {
@@ -2735,9 +2743,9 @@ class Version2 extends Version {
                         "master.notification.notice": this.sanitize([ "settings", "audio", "volume", "master.notification.notice" ], defaults.settings.audio.volume["master.notification.notice"]),
                         "master.notification.toast": this.sanitize([ "settings", "audio", "volume", "master.notification.toast" ], defaults.settings.audio.volume["master.notification.toast"]),
 
-                        "master.action": this.sanitize([ "settings", "audio", "volume", "master.action" ], defaults.settings.audio.volume["master.action"]), // did not exist in v0
-                        "master.action.default": this.sanitize([ "settings", "audio", "volume", "master.action.default" ], defaults.settings.audio.volume["master.action.default"]), // did not exist in v0
-                        "master.action.failed": this.sanitize([ "settings", "audio", "volume", "master.action.failed" ], defaults.settings.audio.volume["master.action.failed"]), // did not exist in v0
+                        "master.action": this.sanitize([ "settings", "audio", "volume", "master.action" ], defaults.settings.audio.volume["master.action"]),
+                        "master.action.default": this.sanitize([ "settings", "audio", "volume", "master.action.default" ], defaults.settings.audio.volume["master.action.default"]),
+                        "master.action.failed": this.sanitize([ "settings", "audio", "volume", "master.action.failed" ], defaults.settings.audio.volume["master.action.failed"]),
                         "master.action.report": this.sanitize([ "settings", "audio", "volume", "master.action.report" ], defaults.settings.audio.volume["master.action.report"]),
                         "master.action.block": this.sanitize([ "settings", "audio", "volume", "master.action.block" ], defaults.settings.audio.volume["master.action.block"]),
                         "master.action.protect": this.sanitize([ "settings", "audio", "volume", "master.action.protect" ], defaults.settings.audio.volume["master.action.protect"]),
@@ -2751,7 +2759,7 @@ class Version2 extends Version {
                         enabled: this.sanitize([ "settings", "zen_mode", "sound", "enabled" ], defaults.settings.zen_mode.sound.enabled),
                     },
                     music: {
-                        enabled: this.sanitize([ "settings", "zen_mode", "music", "enabled" ], defaults.settings.zen_mode.music.enabled), // did not exist in v0
+                        enabled: this.sanitize([ "settings", "zen_mode", "music", "enabled" ], defaults.settings.zen_mode.music.enabled),
                     },
 
                     alerts: {
@@ -2765,7 +2773,7 @@ class Version2 extends Version {
                     },
 
                     badges: {
-                        enabled: this.sanitize([ "settings", "zen_mode", "badges", "enabled" ], defaults.settings.zen_mode.badges.enabled), // did not exist in v0
+                        enabled: this.sanitize([ "settings", "zen_mode", "badges", "enabled" ], defaults.settings.zen_mode.badges.enabled),
                     },
                 }
             },
@@ -3062,6 +3070,18 @@ class Version2 extends Version {
                     const value = root.settings.username_highlighting.fuzzy;
                     if (typeof value !== "boolean") {
                         this.reset("settings", "username_highlighting", "fuzzy");
+                    }
+                }
+            }
+
+            { // root.settings.wikipedia_popups
+                const scope = root.settings.wikipedia_popups;
+                this.restrictObject(scope, "settings", "wikipedia_popups");
+
+                { // root.settings.wikipedia_popups.enabled
+                    const value = root.settings.wikipedia_popups.enabled;
+                    if (typeof value !== "boolean") {
+                        this.reset("settings", "wikipedia_popups", "enabled");
                     }
                 }
             }
@@ -3994,8 +4014,6 @@ class Version2 extends Version {
             this.loadedLogger.error(`Stored data version ${root?.version} does not match expected version ${this.number}.`);
             return false;
         }
-
-        root.first = false;
 
         root.settings.auto_report.for = new Set(root.settings.auto_report.for);
 
