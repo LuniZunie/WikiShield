@@ -658,7 +658,7 @@ export class AudioManager {
 
         let volume = volumes.master;
         let current = { type: "category", properties: this.audio };
-        const pathParts = [];
+        const pathParts = [ "master" ];
         for (const segment of path) {
             pathParts.push(segment);
 
