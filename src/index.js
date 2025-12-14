@@ -78,6 +78,9 @@ export const __script__ = {
 			.then(response => response.text())
 			.then(data => {
 				wikishieldHTML.changelog += `\n${data}`;
+			})
+			.catch(error => {
+				console.error("WikiShield: Failed to load changelog:", error);
 			});
 
 		// Create a temporary API instance to check killswitch before full initialization
