@@ -448,7 +448,7 @@ class Version1 extends Version {
                 },
 
                 auto_welcome: {
-                    enabled: true,
+                    enabled: false,
                 },
 
                 expiry: {
@@ -515,7 +515,7 @@ class Version1 extends Version {
                         "master.music.zen_mode": 1,
 
                         "master.ui": 1,
-                        "master.ui.click": 0.3,
+                        "master.ui.click": 0.05,
 
                         "master.queue": 1,
                         "master.queue.ores": 1,
