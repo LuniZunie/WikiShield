@@ -381,7 +381,10 @@ export class WikiShieldInterface {
 
 		// Submenu triggers
 		[...document.querySelectorAll(".submenu-trigger")].forEach(trigger => {
+			let exited = generateRandomUUID();
 			trigger.addEventListener("mouseenter", () => {
+				exited = false;
+
 				// Close other submenus
 				const parentMenu = trigger.closest(".bottom-tool-menu");
 				if (parentMenu) {
@@ -394,6 +397,20 @@ export class WikiShieldInterface {
 					submenu.classList.add("show");
 					this.positionSubmenu(submenu, trigger);
 				}
+			});
+
+			trigger.addEventListener("mouseleave", () => {
+				const UUID = generateRandomUUID();
+				exited = UUID;
+
+				window.setTimeout(() => {
+					if (exited !== UUID) return;
+
+					const submenu = trigger.querySelector(".submenu");
+					if (submenu) {
+						submenu.classList.remove("show");
+					}
+				}, 150);
 			});
 		});
 
