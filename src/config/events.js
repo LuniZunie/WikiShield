@@ -827,7 +827,9 @@ export const validEvents = {
             const reason = params.comment ? `${params.reportMessage}: ${params.comment}` : params.reportMessage;
             await wikishield.reportToUAA(
                 currentEdit.user.name,
-                reason
+                reason,
+                params.reportMessage === "Offensive username" ?
+                    "Reporting offensive username" : false
             );
 
             return true;

@@ -1110,7 +1110,7 @@ export class WikiShield {
 	 * @param {String} name The username to report
 	 * @param {String} message The message to use in the report
 	 */
-	async reportToUAA(user, message) {
+	async reportToUAA(user, message, override = false) {
 		const blocked = await this.api.getBlocks(user);
 
 		if (blocked[user]) {
@@ -1128,7 +1128,7 @@ export class WikiShield {
 		await this.api.appendText(
 			__script__.pages.UAA,
 			content,
-			this.api.buildMessage(`Reporting [[Special:Contributions/${user}|${user}]]`)
+			this.api.buildMessage(override || `Reporting [[Special:Contributions/${user}|${user}]]`)
 		);
 
 		this.audioManager.playSound([ "action", "report" ]);
