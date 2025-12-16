@@ -284,8 +284,15 @@ export const validEvents = {
     openUserPage: {
         description: "Open user page in a new tab",
         icon: "fas fa-circle-user",
-        func: (wikishield, event, currentEdit) => {
-            wikishield.interface.openWikipediaLink(wikishield.util.pageLink(`User:${currentEdit.user.name}`));
+        parameters: [
+            {
+                title: "Event",
+                id: "event",
+                type: "object"
+            }
+        ],
+        func: (wikishield, params, currentEdit) => {
+            wikishield.interface.openWikipediaLink(wikishield.util.pageLink(`User:${currentEdit.user.name}`), params.event);
 
             return true;
         }
@@ -293,8 +300,15 @@ export const validEvents = {
     openUserTalk: {
         description: "Open user talk page in a new tab",
         icon: "fas fa-comment",
-        func: (wikishield, event, currentEdit) => {
-            wikishield.interface.openWikipediaLink(wikishield.util.pageLink(`User talk:${currentEdit.user.name}`));
+        parameters: [
+            {
+                title: "Event",
+                id: "event",
+                type: "object"
+            }
+        ],
+        func: (wikishield, params, currentEdit) => {
+            wikishield.interface.openWikipediaLink(wikishield.util.pageLink(`User talk:${currentEdit.user.name}`), params.event);
 
             return true;
         }
@@ -302,8 +316,15 @@ export const validEvents = {
     openUserContribs: {
         description: "Open user contributions page in a new tab",
         icon: "fas fa-list",
-        func: (wikishield, event, currentEdit) => {
-            wikishield.interface.openWikipediaLink(wikishield.util.pageLink(`Special:Contributions/${currentEdit.user.name}`));
+        parameters: [
+            {
+                title: "Event",
+                id: "event",
+                type: "object"
+            }
+        ],
+        func: (wikishield, params, currentEdit) => {
+            wikishield.interface.openWikipediaLink(wikishield.util.pageLink(`Special:Contributions/${currentEdit.user.name}`), params.event);
 
             return true;
         }
@@ -311,9 +332,16 @@ export const validEvents = {
     openFilterLog: {
         description: "Open user filter log in a new tab",
         icon: "fas fa-filter",
-        func: (wikishield, event, currentEdit) => {
+        parameters: [
+            {
+                title: "Event",
+                id: "event",
+                type: "object"
+            }
+        ],
+        func: (wikishield, params, currentEdit) => {
             const encodedName = wikishield.util.encodeuri(currentEdit.user.name);
-            wikishield.interface.openWikipediaLink(wikishield.util.pageLink(`?title=Special:AbuseLog&wpSearchUser=${encodedName}`, true));
+            wikishield.interface.openWikipediaLink(wikishield.util.pageLink(`?title=Special:AbuseLog&wpSearchUser=${encodedName}`, true), params.event);
 
             return true;
         }
@@ -321,8 +349,15 @@ export const validEvents = {
     openPage: {
         description: "Open page being edited in new tab",
         icon: "fas fa-file",
-        func: (wikishield, event, currentEdit) => {
-            wikishield.interface.openWikipediaLink(wikishield.util.pageLink(currentEdit.page.title));
+        parameters: [
+            {
+                title: "Event",
+                id: "event",
+                type: "object"
+            }
+        ],
+        func: (wikishield, params, currentEdit) => {
+            wikishield.interface.openWikipediaLink(wikishield.util.pageLink(currentEdit.page.title), params.event);
 
             return true;
         }
@@ -330,7 +365,14 @@ export const validEvents = {
     openTalk: {
         description: "Open talk page in new tab",
         icon: "fas fa-comments",
-        func: (wikishield, event, currentEdit) => {
+        parameters: [
+            {
+                title: "Event",
+                id: "event",
+                type: "object"
+            }
+        ],
+        func: (wikishield, params, currentEdit) => {
             const pageTitle = currentEdit.page.title.split(":");
             let talkNamespace = "Talk";
             if (pageTitle.length > 1) {
@@ -340,7 +382,7 @@ export const validEvents = {
             }
 
             const talkTitle = `${talkNamespace}:${pageTitle.length === 1 ? pageTitle[0] : pageTitle[1]}`;
-            wikishield.interface.openWikipediaLink(wikishield.util.pageLink(talkTitle));
+            wikishield.interface.openWikipediaLink(wikishield.util.pageLink(talkTitle), params.event);
 
             return true;
         }
@@ -348,8 +390,15 @@ export const validEvents = {
     openHistory: {
         description: "Open page history in new tab",
         icon: "fas fa-clock-rotate-left",
-        func: (wikishield, event, currentEdit) => {
-            wikishield.interface.openWikipediaLink(wikishield.util.pageLink(`Special:PageHistory/${currentEdit.page.title}`));
+        parameters: [
+            {
+                title: "Event",
+                id: "event",
+                type: "object"
+            }
+        ],
+        func: (wikishield, params, currentEdit) => {
+            wikishield.interface.openWikipediaLink(wikishield.util.pageLink(`Special:PageHistory/${currentEdit.page.title}`), params.event);
 
             return true;
         }
@@ -357,8 +406,15 @@ export const validEvents = {
     openRevision: {
         description: "Open revision in new tab",
         icon: "fas fa-eye",
-        func: (wikishield, event, currentEdit) => {
-            wikishield.interface.openWikipediaLink(wikishield.util.pageLink(`Special:PermanentLink/${currentEdit.revid}`));
+        parameters: [
+            {
+                title: "Event",
+                id: "event",
+                type: "object"
+            }
+        ],
+        func: (wikishield, params, currentEdit) => {
+            wikishield.interface.openWikipediaLink(wikishield.util.pageLink(`Special:PermanentLink/${currentEdit.revid}`), params.event);
 
             return true;
         }
@@ -366,8 +422,15 @@ export const validEvents = {
     openDiff: {
         description: "Open diff in new tab",
         icon: "fas fa-code-compare",
-        func: (wikishield, event, currentEdit) => {
-            wikishield.interface.openWikipediaLink(wikishield.util.pageLink(`Special:Diff/${currentEdit.revid}`));
+        parameters: [
+            {
+                title: "Event",
+                id: "event",
+                type: "object"
+            }
+        ],
+        func: (wikishield, params, currentEdit) => {
+            wikishield.interface.openWikipediaLink(wikishield.util.pageLink(`Special:Diff/${currentEdit.revid}`), params.event);
 
             return true;
         }

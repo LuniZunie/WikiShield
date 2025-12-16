@@ -1199,6 +1199,8 @@ export class WikiShieldSettingsInterface {
 				`;
 
 			for (const param of (event.parameters || [])) {
+				if (param.type === "object") continue;
+
 				this.createItemParameter(itemContainer, param, action.params[param.id] || "", (value) => {
 					action.params[param.id] = value;
 				});
@@ -1672,7 +1674,7 @@ ollama serve
 					<div class="settings-section compact inline" id="wikipedia-popups-toggle">
 						<div class="settings-section-content">
 							<div class="settings-section-title">Wikipedia popups</div>
-							<div class="settings-section-desc">When enabled, Wikipedia links will be opened in a new window. Otherwise, they will be opened in a new tab. (Not supported by Opera or Safari browsers)</div>
+							<div class="settings-section-desc">When enabled, Wikipedia links will be opened in a new window. Otherwise, they will be opened in a new tab. Holding <code>alt</code> while clicking will do the opposite of the current setting. (Not supported by Opera or Safari browsers)</div>
 						</div>
 					</div>
 				</div>

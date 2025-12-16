@@ -960,13 +960,16 @@ export class WikiShieldInterface {
 
 	openWikipediaLink(href, event) {
 		const url = new URL(href, window.location.href);
-		if (
-			!(url.hostname.endsWith(".wikipedia.org") || url.hostname.endsWith(".wikimedia.org")) || // Not Wikipedia/Wikimedia
-			!(this.wikishield.storage.data.settings.wikipedia_popups.enabled) // Popups disabled
-		) {
-			// Open in new tab
-			window.open(href, '_blank');
-		} else {
+		if (!(url.hostname.endsWith(".wikipedia.org") || url.hostname.endsWith(".wikimedia.org"))) {// Not Wikipedia/Wikimedia
+			return window.open(url.href, '_blank');
+		}
+
+		let popup = this.wikishield.storage.data.settings.wikipedia_popups.enabled;
+		if (event?.altKey || event?.button === 1) {
+			popup = !popup; // Invert popup setting if modifier key or middle click
+		}
+
+		if (popup) {
 			// Open in new window
 			event?.preventDefault();
 			event?.stopPropagation();
@@ -994,8 +997,9 @@ export class WikiShieldInterface {
 					this.popupCheck();
 				}
 			});
-
-			return popup;
+		} else {
+			// Open in same tab
+			window.open(url.href, '_blank');
 		}
 	}
 
@@ -1743,6 +1747,8 @@ export class WikiShieldInterface {
 			`;
 
 		for (const param of (event.parameters || [])) {
+			if (param.type === "object") continue;
+
 			container.innerHTML += `<div class="bottom-subcontent-input-title">${param.title}</div>`;
 
 			switch (param.type) {
@@ -1771,6 +1777,8 @@ export class WikiShieldInterface {
 		button.addEventListener("click", () => {
 			const params = {};
 			for (const param of (event.parameters || [])) {
+				if (param.type === "object") continue;
+
 				const input = container.querySelector(`[data-paramid="${param.id}"]`);
 				params[param.id] = input.value;
 			}
