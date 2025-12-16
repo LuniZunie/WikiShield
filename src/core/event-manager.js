@@ -21,22 +21,24 @@ export class WikiShieldEventManager {
 	linkButton(elem, event, runWithoutEdit) {
 		const wikishield = this.wikishield;
 
-		const handleClick = (e, forceNewTab = false) => {
+		const handleClick = (e) => {
 			wikishield.interface.selectedMenu = null;
 			if (runWithoutEdit) {
-				this.events[event].func(wikishield);
+				this.events[event].func(wikishield, { event: e });
 			} else {
 				wikishield.executeScript({
 					actions: [
 						{
 							name: event,
-							params: {}
+							params: {
+								event: e,
+							}
 						}
 					]
 				});
 			}
 		};
 
-		elem.addEventListener("click", (e) => handleClick(e, false));
+		elem.addEventListener("click", (e) => handleClick(e));
 	}
 }
