@@ -343,6 +343,19 @@ class PlaylistController {
             })
             .catch((e) => {
                 console.error('Failed to start playback:', e);
+                if (this.isActive && this.currentAudio === audio) {
+                    this.consecutiveErrors++;
+
+                    // Stop after 3 consecutive errors to prevent infinite loop
+                    if (this.consecutiveErrors >= 3) {
+                        console.error('Too many consecutive playback errors. Stopping playlist.');
+                        this.stop();
+                        return;
+                    }
+
+                    // Try next track
+                    this.next();
+                }
             });
 
         // Show toast
