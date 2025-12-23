@@ -1,7 +1,13 @@
 export const welcomes = {
     "Auto": {
         title: "Auto",
-        template: (user) => { }
+        template: (user) => {
+            if (!welcomes["Non-Latin"].hide && /[^\u0000-\u007F]/.test(user.name)) {
+                return "Non-Latin";
+            } else {
+                return "Default";
+            }
+        }
     },
     "Default": {
         title: "Default",
