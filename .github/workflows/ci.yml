@@ -43,7 +43,7 @@ jobs:
 
       - name: Upload build artifact
         if: matrix.node-version == '22.x'
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: wikishield-build
           path: dist/wikishield.js
@@ -51,7 +51,7 @@ jobs:
 
       - name: Upload build stats
         if: matrix.node-version == '22.x'
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: build-stats
           path: |

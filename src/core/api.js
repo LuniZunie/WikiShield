@@ -312,6 +312,7 @@ export class WikiShieldAPI {
 		try {
 			await this.api.postWithEditToken(Object.assign({}, {
 				"assertuser": this.wikishield.username,
+				"discussiontoolsautosubscribe": "no",
 
 				"action": "edit",
 				"title": title,
@@ -341,6 +342,7 @@ export class WikiShieldAPI {
 		try {
 			await this.api.postWithEditToken({
 				"assertuser": this.wikishield.username,
+				"discussiontoolsautosubscribe": "no",
 
 				"action": "edit",
 				"title": title,
@@ -363,6 +365,7 @@ export class WikiShieldAPI {
 		try {
 			await this.api.postWithEditToken({
 				"assertuser": this.wikishield.username,
+				"discussiontoolsautosubscribe": "no",
 
 				"action": "edit",
 				"title": title,
@@ -1243,6 +1246,26 @@ export class WikiShieldAPI {
 		}
 	}
 
+	async parsePage(pageTitle) {
+		try {
+			const response = await this.api.get({
+				"assertuser": this.wikishield.username,
+
+				"action": "parse",
+				"page": pageTitle,
+				"prop": "text",
+				"format": "json",
+				"formatversion": 2
+			});
+			return response.parse?.text || "";
+		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
+			console.log(`Could not parse wikitext: ${err}`);
+			return "";
+		}
+	}
+
 	/**
 	* Get recent edits to Wikipedia
 	* @param {String} namespaces The namespaces to get recent changes for, separated by "|"
@@ -1884,8 +1907,9 @@ export class WikiShieldAPI {
 
 	async postWithEditToken(params) {
 		try {
-			return await this.api.postWithToken("csrf", Object.assign({
-				"assertuser": this.wikishield.username
+			return await this.api.postWithEditToken(Object.assign({
+				"assertuser": this.wikishield.username,
+				"discussiontoolsautosubscribe": "no"
 			}, params));
 		} catch (err) {
 			if (err === "assertnameduserfailed") return window.location.reload();

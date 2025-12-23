@@ -340,13 +340,28 @@ class PlaylistController {
         audio.play()
             .then(() => {
                 this.consecutiveErrors = 0; // Reset when play succeeds
+
+                // Show toast only after successful play
+                if (this.isActive && this.currentAudio === audio) {
+                    this.toast = this.audioManager._createToast(track, audio, this);
+                }
             })
             .catch((e) => {
                 console.error('Failed to start playback:', e);
-            });
+                if (this.isActive && this.currentAudio === audio) {
+                    this.consecutiveErrors++;
 
-        // Show toast
-        this.toast = this.audioManager._createToast(track, audio, this);
+                    // Stop after 3 consecutive errors to prevent infinite loop
+                    if (this.consecutiveErrors >= 3) {
+                        console.error('Too many consecutive playback errors. Stopping playlist.');
+                        this.stop();
+                        return;
+                    }
+
+                    // Try next track
+                    this.next();
+                }
+            });
     }
 }
 
@@ -457,8 +472,21 @@ export class AudioManager {
 
         abortController?.signal?.addEventListener('abort', () => {
             audio.pause();
-            audio.onerror();
             audio.src = "";
+            audio.resolve();
+            this.soundEffects.delete(audio);
+
+            if (preview) {
+                this.previewing = false;
+
+                setTimeout(() => {
+                    if (this.muteId === muteId) {
+                        this._unmuteAll();
+                    }
+                }, 250);
+
+                this.previews.delete(audio);
+            }
         });
 
         audio.play();
@@ -523,6 +551,8 @@ export class AudioManager {
     stopPreviews() {
         for (const audio of this.previews.keys()) {
             audio.pause();
+            audio.onended = null;
+            audio.onerror = null;
             audio.src = "";
         }
         this.previews.clear();
@@ -593,7 +623,13 @@ export class AudioManager {
         document.body.appendChild(container);
 
         const toast = {
+            timeoutId: null,
             remove: () => {
+                if (toast.timeoutId) {
+                    clearTimeout(toast.timeoutId);
+                    toast.timeoutId = null;
+                }
+
                 const toastEl = container.querySelector(".music-toast");
                 if (toastEl) {
                     toastEl.classList.add("music-toast-leave");
@@ -611,8 +647,12 @@ export class AudioManager {
             }
         };
 
-        const onPrevious = () => controller.previous();
-        const onNext = () => controller.next();
+        const onPrevious = () => {
+            if (controller.isActive) controller.previous();
+        };
+        const onNext = () => {
+            if (controller.isActive) controller.next();
+        };
 
         render(
             <MusicToast
@@ -626,7 +666,11 @@ export class AudioManager {
             container
         );
 
-        setTimeout(toast.remove, 3000);
+        toast.timeoutId = setTimeout(() => {
+            if (controller.isActive) {
+                toast.remove();
+            }
+        }, 3000);
 
         return toast;
     }

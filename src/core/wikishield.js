@@ -33,7 +33,7 @@ export class WikiShield {
 			util: this.util,
 			historyCount: __script__.config.historyCount
 		});
-		this.checkWarningTemplates();
+		// this.checkWarningTemplates();
 		this.checkWelcomeTemplates();
 
 		// Initialize queue - will be set after wikishield global is assigned
@@ -66,7 +66,7 @@ export class WikiShield {
 		this.WikiShieldProgressBar = WikiShieldProgressBar;
 	}
 
-	checkWarningTemplates() {
+	checkWarningTemplates() { // TODO
 		for (const [ type, categories ] of Object.entries(warnings)) {
 			for (const [ category, categoryWarnings ] of Object.entries(categories)) {
 				const length = categoryWarnings.length;
@@ -304,14 +304,16 @@ export class WikiShield {
 			warningLevel = level;
 		} else {
 			const currentLevel = this.queue.getWarningLevel(talkPageContent).toString();
-			if (typeof warning.auto === "function") {
+			if (typeof warning.auto === "string") {
+				warningLevel = warning.auto;
+			} else if (typeof warning.auto === "function") {
 				warningLevel = warning.auto(this.queue.currentEdit, currentLevel);
 			} else {
 				warningLevel = warning.auto[currentLevel];
 			}
 		}
 
-		const templateToUse = warning.templates[warningLevel];
+		const templateToUse = warning.templates.find(t => t.name === warningLevel.toString());
 		if (!templateToUse) {
 			if (level !== "auto") {
 				this.interface.showToast(
@@ -325,25 +327,45 @@ export class WikiShield {
 			return;
 		}
 
-		// Find the month section and append the warning
+		let lastSection = null;
 		for (let i in sections) {
 			if (sections[i].match(new RegExp(`== ?${monthSection} ?==`))) {
-				sections[i] += `\n\n{{${templateToUse.template}|${articleName}|${templateToUse.additional || ""}}} ~~~~`;
-				break;
+				lastSection = i;
 			}
 		}
 
-		// Join sections and clean up excessive newlines
+		sections[lastSection] += `\n\n{{${templateToUse.template}|${articleName}|${templateToUse.generic || ""}}} ~~~~`;
+
 		const newContent = sections.join("").replace(/(\n){3,}/g, "\n\n");
 
-		const levelName = templateToUse.level ?? `level ${warningLevel}`;
+		let levelName;
+		switch (templateToUse.name) {
+			case "1": {
+				levelName = "level 1";
+			} break;
+			case "2": {
+				levelName = "level 2";
+			} break;
+			case "3": {
+				levelName = "level 3";
+			} break;
+			case "4": {
+				levelName = "level 4";
+			} break;
+			case "4im": {
+				levelName = "only warning";
+			} break;
+			default: {
+				levelName = templateToUse.name;
+			} break;
+		}
 
 		const message = `Message about ${articleName ? `[[Special:Diff/${revid}|your edit]] on [[${articleName}]]` : `[[Special:Contributions/${user}|your contributions]]`}`;
 		await this.api.edit(`User talk:${user}`, newContent, this.api.buildMessage(message, levelName));
 
 		// Increment warning statistic
 		this.storage.data.statistics.warnings_issued.total++;
-		if (!("level" in templateToUse)) {
+		if (warningLevel === "1" || warningLevel === "2" || warningLevel === "3" || warningLevel === "4" || warningLevel === "4im") {
 			const key = `level_${warningLevel}`;
 			if (key in this.storage.data.statistics.warnings_issued) {
 				this.storage.data.statistics.warnings_issued[key]++;
@@ -371,9 +393,9 @@ export class WikiShield {
 			console.log(`Could not add User talk:${user} to watchlist:`, err);
 		}
 
-		// Update the warning level in the current edit object (only if the template has a numbered level)
-		if (!("level" in templateToUse) && this.queue.currentEdit[this.queue.currentQueueTab]?.user?.name === user) {
-			this.queue.currentEdit[this.queue.currentQueueTab].user.warningLevel = levelName;
+		if (this.queue.currentEdit[this.queue.currentQueueTab]?.user?.name === user &&
+			(warningLevel === "1" || warningLevel === "2" || warningLevel === "3" || warningLevel === "4" || warningLevel === "4im")) {
+			this.queue.currentEdit[this.queue.currentQueueTab].user.warningLevel = warningLevel;
 		}
 	}
 
@@ -575,7 +597,7 @@ export class WikiShield {
 						$alert.classList.add(alert.read ? "read" : "unread");
 						$alert.addEventListener("click", () => {
 							this.markAlertItemRead(alert);
-							window.open(model.links.primary.url, "_blank");
+							this.interface.openWikipediaLink(model.links.primary.url);
 						});
 
 						{ // icon
@@ -799,7 +821,7 @@ export class WikiShield {
 						$notice.classList.add(notice.read ? "read" : "unread");
 						$notice.addEventListener("click", () => {
 							this.markNoticeItemRead(notice);
-							window.open(model.links.primary.url, "_blank");
+							this.interface.openWikipediaLink(model.links.primary.url);
 						});
 
 						{ // icon
@@ -1088,7 +1110,7 @@ export class WikiShield {
 	 * @param {String} name The username to report
 	 * @param {String} message The message to use in the report
 	 */
-	async reportToUAA(user, message) {
+	async reportToUAA(user, message, override = false) {
 		const blocked = await this.api.getBlocks(user);
 
 		if (blocked[user]) {
@@ -1106,7 +1128,7 @@ export class WikiShield {
 		await this.api.appendText(
 			__script__.pages.UAA,
 			content,
-			this.api.buildMessage(`Reporting [[Special:Contributions/${user}|${user}]]`)
+			this.api.buildMessage(override || `Reporting [[Special:Contributions/${user}|${user}]]`)
 		);
 
 		this.audioManager.playSound([ "action", "report" ]);
@@ -1162,10 +1184,16 @@ export class WikiShield {
 
 			while (allScripts.length > 0) {
 				const current = allScripts[0];
+
 				const willBeRun = (current.name && current.name === "if"
 					&& this.interface.eventManager.conditions[current.condition].check(this, this.queue.currentEdit[this.queue.currentQueueTab])) || !current.name;
 
 				if (willBeRun) {
+					if (!current.actions) {
+						allScripts.splice(0, 1);
+						continue;
+					}
+
 					allScripts.push(...current.actions);
 				}
 
@@ -1197,6 +1225,10 @@ export class WikiShield {
 
 		if (ifAndTrue || !script.name) {
 			for (const action of script.actions) {
+				if (!("name" in action)) {
+					continue;
+				}
+
 				if (action.name === "if") {
 					hasContinuity = await this.executeScript(action, hasContinuity, updateProgress, currentEdit);
 				} else {

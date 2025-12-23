@@ -10,12 +10,15 @@ import { WikiShieldSettingsInterface } from './settings.js';
 import { wikishieldStyling } from './styles.js';
 import { wikishieldHTML } from './templates.js';
 import { __script__ } from '../index.js';
-import { getWarningFromLookup, warnings, warningTemplateColors } from '../data/warnings.js';
+import { getWarningFromLookup, warnings, warningsLookup, warningTemplateColors } from '../data/warnings.js';
 import { colorPalettes } from '../config/defaults.js';
 import { __pendingChangesServer__ } from '../core/api.js';
 import { profanity } from "../data/profanity.js";
 
+import { generateRandomUUID } from '../utils/UUID.js';
+
 import React, { useEffect, useRef } from 'react';
+import { fullTrim } from '../utils/formatting.js';
 
 export class WikiShieldInterface {
 	constructor(wikishield) {
@@ -42,6 +45,8 @@ export class WikiShieldInterface {
 		this.dialogQueue = [];
 		this.activeDialog = null;
 		this.isProcessingDialog = false;
+
+		this.popups = [];
 	}
 
 	/**
@@ -346,11 +351,11 @@ export class WikiShieldInterface {
 				switch (item.dataset.menu) {
 					case "revert": {
 						menu.innerHTML = "";
-						this.createRevertMenu(menu, this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab]);
+						this.createRevertMenu("reverts", menu, this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab]);
 					} break;
 					case "warn": {
 						menu.innerHTML = "";
-						this.createWarnMenu(menu, this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab]);
+						this.createRevertMenu("warnings", menu, this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab]);
 					} break;
 					case "page": {
 						const edit = this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab];
@@ -376,7 +381,10 @@ export class WikiShieldInterface {
 
 		// Submenu triggers
 		[...document.querySelectorAll(".submenu-trigger")].forEach(trigger => {
+			let exited = generateRandomUUID();
 			trigger.addEventListener("mouseenter", () => {
+				exited = false;
+
 				// Close other submenus
 				const parentMenu = trigger.closest(".bottom-tool-menu");
 				if (parentMenu) {
@@ -389,6 +397,20 @@ export class WikiShieldInterface {
 					submenu.classList.add("show");
 					this.positionSubmenu(submenu, trigger);
 				}
+			});
+
+			trigger.addEventListener("mouseleave", () => {
+				const UUID = generateRandomUUID();
+				exited = UUID;
+
+				window.setTimeout(() => {
+					if (exited !== UUID) return;
+
+					const submenu = trigger.querySelector(".submenu");
+					if (submenu) {
+						submenu.classList.remove("show");
+					}
+				}, 150);
 			});
 		});
 
@@ -764,8 +786,147 @@ export class WikiShieldInterface {
 			}
 		});
 
-		window.addEventListener("click", () => {
+		window.addEventListener("focus", () => {
+			if (this.popups.length > 0) {
+				this.popups.forEach(popup => popup.close());
+				this.popups = [];
+
+				requestAnimationFrame(() => {
+					if (this.popups.length === 0) {
+						document.querySelector("#popup-blocker")?.remove();
+					}
+				});
+			}
+		});
+
+		window.addEventListener("click", event => {
 			[...document.querySelectorAll(".context-menu")].forEach(elem => elem.remove());
+			[...document.querySelectorAll(".tooltip.buttons")].forEach(elem => elem.remove());
+
+			const $href = event.target.closest("[href]");
+			if ($href) {
+				const url = new URL($href.href, window.location.href);
+				if (url.origin === window.location.origin && url.pathname === window.location.pathname) {
+					return;
+				}
+
+				if ($href.dataset.multipleHrefs) {
+					try {
+						const [ type, values ] = $href.dataset.multipleHrefs.split(";");
+						const items = Object.fromEntries(values.split("&").map(keyValue => {
+							const [ key, value ] = keyValue.split("=");
+							return [ key, decodeURIComponent(value) ];
+						}));
+
+						switch (type) {
+							case "page": {
+								const title = items.title;
+								const revid = +items.revid;
+
+								const $tooltip = this.createTooltip($href, "buttons", null, null, null, $tooltip => {
+									const $page = document.createElement("div");
+									$page.classList.add("button");
+									$page.innerText = "Page";
+									$page.addEventListener("click", event => {
+										this.openWikipediaLink(this.wikishield.util.pageLink(title), event);
+										$tooltip.remove();
+									});
+									$tooltip.appendChild($page);
+
+									const $preview = document.createElement("div");
+									$preview.classList.add("button");
+									$preview.innerText = "Revision";
+									$preview.addEventListener("click", event => {
+										this.openWikipediaLink(this.wikishield.util.pageLink(`Special:Permalink/${revid}`), event);
+										$tooltip.remove();
+									});
+									$tooltip.appendChild($preview);
+
+									const $history = document.createElement("div");
+									$history.classList.add("button");
+									$history.innerText = "Diff";
+									$history.addEventListener("click", event => {
+										this.openWikipediaLink(this.wikishield.util.pageLink(`Special:Diff/${revid}`), event);
+										$tooltip.remove();
+									});
+									$tooltip.appendChild($history);
+								});
+							} break;
+							case "log": {
+								const title = items.title;
+								const log = JSON.parse(items.log);
+
+								const $tooltip = this.createTooltip($href, "buttons", null, null, null, $tooltip => {
+									const $page = document.createElement("div");
+									$page.classList.add("button");
+									$page.innerText = "Page";
+									$page.addEventListener("click", event => {
+										this.openWikipediaLink(this.wikishield.util.pageLink(title), event);
+										$tooltip.remove();
+									});
+									$tooltip.appendChild($page);
+
+									const $preview = document.createElement("div");
+									$preview.classList.add("button");
+									$preview.innerText = "Log";
+									$preview.addEventListener("click", event => {
+										const en = encodeURIComponent;
+
+										const page = this.wikishield.util.pageLink(
+											`Special:Log/${en(log.user)}?page=${en(title)}&type=${log.type}&wptime=${log.timestamp}&limit=1`,
+										undefined, undefined, false);
+										const popup = this.openWikipediaLink(page, event);
+										$tooltip.remove();
+
+										popup.addEventListener("load", () => {
+											popup.scroll({ behavior: 'smooth', top: popup.document.body.scrollHeight });
+										}, { once: true });
+									});
+									$tooltip.appendChild($preview);
+								});
+							} break;
+							case "user": {
+								const username = items.username;
+
+								const $tooltip = this.createTooltip($href, "buttons", null, null, null, $tooltip => {
+									const $preview = document.createElement("div");
+									$preview.classList.add("button");
+									$preview.innerText = "User talk";
+									$preview.addEventListener("click", event => {
+										this.openWikipediaLink(this.wikishield.util.pageLink(`User talk:${username}`), event);
+										$tooltip.remove();
+									});
+									$tooltip.appendChild($preview);
+
+									const $history = document.createElement("div");
+									$history.classList.add("button");
+									$history.innerText = "User contribs";
+									$history.addEventListener("click", event => {
+										this.openWikipediaLink(this.wikishield.util.pageLink(`Special:Contribs/${username}`), event);
+										$tooltip.remove();
+									});
+									$tooltip.appendChild($history);
+
+									const $page = document.createElement("div");
+									$page.classList.add("button");
+									$page.innerText = "User page";
+									$page.addEventListener("click", event => {
+										this.openWikipediaLink(this.wikishield.util.pageLink(`User:${username}`), event);
+										$tooltip.remove();
+									});
+									$tooltip.appendChild($page);
+								});
+							} break;
+						}
+					} catch (error) {
+						this.openWikipediaLink($href.getAttribute("href"), event);
+					} finally {
+						event.preventDefault();
+					}
+				} else {
+					this.openWikipediaLink($href.getAttribute("href"), event);
+				}
+			}
 		});
 
 		if (__script__.changelog.version.endsWith("!") || this.wikishield.storage.data.changelog !== __script__.changelog.version) {
@@ -812,6 +973,66 @@ export class WikiShieldInterface {
 
 		this.update();
 		setInterval(() => this.update(), 1000);
+	}
+
+	openWikipediaLink(href, event) {
+		const url = new URL(href, window.location.href);
+		if (!(url.hostname.endsWith(".wikipedia.org") || url.hostname.endsWith(".wikimedia.org"))) {// Not Wikipedia/Wikimedia
+			return window.open(url.href, '_blank');
+		}
+
+		let popup = this.wikishield.storage.data.settings.wikipedia_popups.enabled;
+		if (event?.altKey || event?.button === 1) {
+			popup = !popup; // Invert popup setting if modifier key or middle click
+		}
+
+		if (popup) {
+			// Open in new window
+			event?.preventDefault();
+			event?.stopPropagation();
+
+			const width = window.screen.availWidth * 0.8;
+			const height = window.screen.availHeight * 0.8;
+			const left = window.screenX + (window.outerWidth - width) / 2;
+			const top = window.screenY + (window.outerHeight - height) / 2;
+
+			const popup = window.open(
+				url.href,
+				"myPopup",
+				`width=${width},height=${height},top=${top},left=${left},resizable=false,scrollbars=true,menubar=false,toolbar=false,location=false,status=false`
+			);
+			popup.focus();
+
+			requestAnimationFrame(() => {
+				this.popups.push(popup);
+				if (!document.getElementById("popup-blocker")) {
+					const $popupBlock = document.createElement("div");
+					$popupBlock.id = "popup-blocker";
+					$popupBlock.innerText = "Please close the popup or click anywhere on this page to continue using WikiShield.";
+					document.body.appendChild($popupBlock);
+
+					this.popupCheck();
+				}
+			});
+		} else {
+			// Open in same tab
+			window.open(url.href, '_blank');
+		}
+	}
+
+	popupCheck() {
+		this.popups = this.popups.filter(popup => !popup.closed);
+		if (this.popups.length === 0) {
+			requestAnimationFrame(() => {
+				if (this.popups.length === 0) {
+					document.querySelector("#popup-blocker")?.remove();
+				}
+			});
+
+			return;
+		}
+
+		requestAnimationFrame(() => this.popupCheck());
 	}
 
 	update() {
@@ -874,6 +1095,7 @@ export class WikiShieldInterface {
 		document.querySelectorAll(".bottom-tool-menu").forEach(menu => menu.classList.remove("show"));
 		document.querySelectorAll(".bottom-tool-trigger").forEach(trigger => trigger.classList.remove("active"));
 		document.querySelectorAll(".submenu").forEach(submenu => submenu.classList.remove("show"));
+		document.querySelectorAll(".levels-menu").forEach(menu => menu.classList.remove("show"));
 	}
 
 	/**
@@ -991,24 +1213,37 @@ export class WikiShieldInterface {
 			const vw = window.innerWidth;
 			const vh = window.innerHeight;
 
-			// Horizontal alignment
-			const fitsRight = btnRect.right + menuRect.width <= vw;
+			// Horizontal positioning - try right of button first
+			const spaceRight = vw - btnRect.right;
+			const spaceLeft = btnRect.left;
+			const fitsRight = spaceRight >= menuRect.width + 8;
+			const fitsLeft = spaceLeft >= menuRect.width + 8;
+
 			if (fitsRight) {
-				// Align menu's left with button's right
+				// Position to the right of button
 				menu.style.left = `${btnRect.right + 8}px`;
 				menu.style.right = 'auto';
-			} else {
-				// Align menu's right with button's left
-				menu.style.right = `${vw - btnRect.left - 8}px`;
+			} else if (fitsLeft) {
+				// Position to the left of button
+				menu.style.right = `${vw - btnRect.left + 8}px`;
 				menu.style.left = 'auto';
+			} else {
+				// Not enough space, use side with more room
+				if (spaceRight > spaceLeft) {
+					menu.style.left = `${btnRect.right + 8}px`;
+					menu.style.right = 'auto';
+				} else {
+					menu.style.right = `${vw - btnRect.left + 8}px`;
+					menu.style.left = 'auto';
+				}
 			}
 
-			// Vertical alignment - centered
+			// Vertical alignment - center on button, keep in viewport
 			let top = btnRect.top + (btnRect.height - menuRect.height) / 2;
-			// Prevent menu from going off the top
-			if (top < 0) top = 0;
-			// Prevent menu from going off the bottom
-			if (top + menuRect.height > vh) top = vh - menuRect.height;
+
+			// Keep menu in viewport
+			if (top < 8) top = 8;
+			if (top + menuRect.height > vh - 8) top = vh - menuRect.height - 8;
 
 			menu.style.top = `${top}px`;
 			menu.style.bottom = 'auto';
@@ -1020,36 +1255,334 @@ export class WikiShieldInterface {
 	}
 
 	/**
+	* Position warning submenu relative to trigger (for category-based menus)
+	* @param {HTMLElement} submenu The submenu element
+	* @param {HTMLElement} trigger The trigger element
+	*/
+	positionWarningSubmenu(submenu, trigger) {
+		// Reset previous positioning
+		submenu.style.left = '';
+		submenu.style.right = '';
+		submenu.style.top = '';
+		submenu.style.bottom = '';
+
+		const position = () => {
+			if (!submenu.classList.contains("show")) return;
+
+			const submenuRect = submenu.getBoundingClientRect();
+			const triggerRect = trigger.getBoundingClientRect();
+			const vw = window.innerWidth;
+			const vh = window.innerHeight;
+
+			// Horizontal positioning - try right first, then left
+			const spaceRight = vw - triggerRect.right;
+			const spaceLeft = triggerRect.left;
+			const fitsRight = spaceRight >= submenuRect.width + 8;
+			const fitsLeft = spaceLeft >= submenuRect.width + 8;
+
+			if (fitsRight) {
+				// Position to the right of trigger
+				submenu.style.left = `${triggerRect.right + 8}px`;
+				submenu.style.right = 'auto';
+			} else if (fitsLeft) {
+				// Position to the left of trigger
+				submenu.style.right = `${vw - triggerRect.left + 8}px`;
+				submenu.style.left = 'auto';
+			} else {
+				// Not enough space on either side, position on whichever side has more space
+				if (spaceRight > spaceLeft) {
+					submenu.style.left = `${triggerRect.right + 8}px`;
+					submenu.style.right = 'auto';
+				} else {
+					submenu.style.right = `${vw - triggerRect.left + 8}px`;
+					submenu.style.left = 'auto';
+				}
+			}
+
+			// Vertical positioning - align with trigger top, but keep in viewport
+			let top = triggerRect.top;
+
+			// If submenu would go off bottom, shift it up
+			if (top + submenuRect.height > vh) {
+				top = vh - submenuRect.height - 8;
+			}
+
+			// If submenu would go off top, shift it down
+			if (top < 8) {
+				top = 8;
+			}
+
+			submenu.style.top = `${top}px`;
+			submenu.style.bottom = 'auto';
+
+			requestAnimationFrame(() => position());
+		};
+
+		requestAnimationFrame(() => position());
+	}
+
+	/**
+	* Helper to create a warning item element
+	* @param {Object} warning Warning object
+	* @param {Object} currentEdit Current edit object
+	* @param {Function} executeWithWarn Callback for executing with warning
+	* @param {Function} executeNoWarn Callback for executing without warning
+	* @param {Boolean} isFavorite Whether this is in the favorites section
+	* @returns {HTMLElement} The warning item element
+	*/
+	createWarningItem(warning, currentEdit, executeWithWarn, executeNoWarn, favoritesKey, isFavorite = false) {
+		const favorites = this.wikishield.storage.data.favorite[favoritesKey];
+
+		const item = document.createElement("div");
+		item.className = `warning-menu-item ${isFavorite ? 'favorite-item' : 'submenu-option'}`;
+		if (isFavorite) {
+			item.draggable = true;
+		}
+
+		item.dataset.warning = warning.title;
+
+		const starButton = document.createElement("span");
+		starButton.className = `favorite-star ${favorites.includes(warning.title) ? 'favorited' : ''}`;
+		starButton.innerHTML = favorites.includes(warning.title) ? "<i class='fas fa-star'></i>" : "<i class='fa-regular fa-star'></i>";
+		item.appendChild(starButton);
+
+		starButton.addEventListener("click", (e) => {
+			e.stopPropagation();
+			const idx = favorites.indexOf(warning.title);
+			const menu = favoritesKey === "reverts" ?
+				document.querySelector("#revert-menu > .warning-menu") :
+				document.querySelector("#warn-menu > .warning-menu");
+
+			if (idx === -1) {
+				favorites.push(warning.title);
+				starButton.classList.add("favorited", "spin");
+				starButton.innerHTML = "<i class='fas fa-star'></i>";
+
+				let favoritesSection = menu.querySelector(".favorites-section");
+				if (!favoritesSection) {
+					favoritesSection = document.createElement("div");
+					favoritesSection.className = "favorites-section";
+
+					const favoritesHeader = document.createElement("div");
+					favoritesHeader.className = "favorites-header";
+					favoritesHeader.innerHTML = '<span class="icon fas fa-star"></span><span>Favorites</span>';
+					favoritesSection.appendChild(favoritesHeader);
+
+					const favoritesContainer = document.createElement("div");
+					favoritesContainer.className = "favorites-container";
+					favoritesSection.appendChild(favoritesContainer);
+
+					menu.insertBefore(favoritesSection, menu.firstChild);
+
+					const separator = document.createElement("div");
+					separator.className = "favorites-separator";
+					menu.insertBefore(separator, favoritesSection.nextSibling);
+				}
+
+				const executeCallbacks = menu.__executeCallbacks__;
+				if (executeCallbacks) {
+					const favoriteItem = this.createWarningItem(
+						warning,
+						executeCallbacks.currentEdit,
+						executeCallbacks.executeWithWarn,
+						executeCallbacks.executeNoWarn,
+						favoritesKey,
+						true
+					);
+					favoritesSection.querySelector(".favorites-container").appendChild(favoriteItem);
+				}
+			} else {
+				favorites.splice(idx, 1);
+				starButton.classList.remove("favorited");
+				starButton.classList.add("spin");
+				starButton.innerHTML = "<i class='fa-regular fa-star'></i>";
+
+				if (isFavorite) {
+					item.remove();
+
+					const favoritesSection = menu.querySelector(".favorites-section");
+					if (favoritesSection && favoritesSection.querySelector(".favorites-container").children.length === 0) {
+						favoritesSection.remove();
+						menu.querySelector(".favorites-separator")?.remove();
+					}
+
+					const submenuItem = document.body.querySelector(`.warning-menu-item:not(.favorite-item)[data-warning="${warning.title}"]`);
+					if (submenuItem) {
+						const $star = submenuItem.querySelector(".favorite-star");
+						$star.classList.remove("favorited");
+						$star.innerHTML = "<i class='fa-regular fa-star'></i>";
+						$star.classList.add("spin");
+
+						setTimeout(() => $star.classList.remove("spin"), 500);
+					}
+				} else {
+					const favoritesSection = menu.querySelector(".favorites-section");
+					if (favoritesSection) {
+						const favoriteItem = favoritesSection.querySelector(`[data-warning="${warning.title}"]`);
+						if (favoriteItem) {
+							favoriteItem.remove();
+
+							if (favoritesSection.querySelector(".favorites-container").children.length === 0) {
+								favoritesSection.remove();
+								menu.querySelector(".favorites-separator")?.remove();
+							}
+						}
+					}
+				}
+			}
+
+			setTimeout(() => starButton.classList.remove("spin"), 500);
+		});
+
+		const icon = document.createElement("span");
+		icon.className = `icon ${warning.icon}`;
+		item.appendChild(icon);
+
+		const label = document.createElement("span");
+		label.className = "warning-menu-title";
+		label.textContent = warning.title;
+		item.appendChild(label);
+
+		const helpIcon = document.createElement("span");
+		helpIcon.className = "fas fa-circle-question";
+		helpIcon.dataset.tooltip = warning.description;
+		item.appendChild(helpIcon);
+		this.addTooltipListener(helpIcon);
+
+		if (!isFavorite) {
+			const buttonContainer = document.createElement("div");
+			buttonContainer.className = "warning-menu-buttons";
+
+			if (favoritesKey === "reverts") {
+				const noWarnButton = document.createElement("span");
+				noWarnButton.className = "warning-menu-button warning-menu-no-warn-button";
+				noWarnButton.textContent = "no warn";
+				buttonContainer.appendChild(noWarnButton);
+
+				noWarnButton.addEventListener("click", async (e) => {
+					e.stopPropagation();
+					await executeNoWarn(warning.title);
+				});
+			}
+
+			const levelsButton = document.createElement("span");
+			levelsButton.className = "warning-menu-button warning-menu-levels-button";
+			levelsButton.textContent = "advanced";
+			buttonContainer.appendChild(levelsButton);
+
+			item.appendChild(buttonContainer);
+
+			const levelsMenu = document.createElement("div");
+			levelsMenu.className = "levels-menu";
+
+			for (const template of warning.templates) {
+				if (template.generic) {
+					continue;
+				}
+
+				const levelButton = document.createElement("span");
+				levelButton.className = `levels-menu-item colorize-level colorize-level-${template.name}`;
+				levelButton.textContent = template.name;
+				levelsMenu.appendChild(levelButton);
+
+				levelButton.addEventListener("click", async () => {
+					await executeWithWarn(warning.title, template.name);
+				});
+			}
+
+			document.body.appendChild(levelsMenu);
+
+			levelsButton.addEventListener("click", e => {
+				e.stopPropagation();
+
+				const wasShown = levelsMenu.classList.contains("show");
+				document.body.querySelectorAll(".levels-menu.show").forEach(menu => menu.classList.remove("show"));
+
+				if (!wasShown) {
+					levelsMenu.classList.add("show");
+					this.positionLevelsMenu(levelsButton, levelsMenu);
+				}
+			});
+		}
+
+		item.addEventListener("click", async e => {
+			if (e.target.closest(".warning-menu-button") || e.target.closest(".favorite-star")) {
+				return;
+			}
+
+			await executeWithWarn(warning.title, "auto");
+		});
+
+		if (isFavorite) {
+			item.addEventListener("dragstart", (e) => {
+				e.dataTransfer.effectAllowed = "move";
+				e.dataTransfer.setData("text/plain", warning.title);
+				item.classList.add("dragging");
+			});
+
+			item.addEventListener("dragend", () => {
+				item.classList.remove("dragging");
+			});
+
+			item.addEventListener("dragover", (e) => {
+				e.preventDefault();
+				e.dataTransfer.dropEffect = "move";
+
+				const draggingItem = document.querySelector(".dragging");
+				if (draggingItem && draggingItem !== item) {
+					const rect = item.getBoundingClientRect();
+					const midpoint = rect.top + rect.height / 2;
+					if (e.clientY < midpoint) {
+						item.parentNode.insertBefore(draggingItem, item);
+					} else {
+						item.parentNode.insertBefore(draggingItem, item.nextSibling);
+					}
+				}
+			});
+
+			item.addEventListener("drop", (e) => {
+				e.preventDefault();
+
+				const favoriteItems = Array.from(item.closest(".favorites-section").querySelectorAll(".favorite-item"));
+				this.wikishield.storage.data.favorite[favoritesKey] = favoriteItems.map(el => el.dataset.warning);
+			});
+		}
+
+		return item;
+	}
+
+	/**
 	* Create the menu for warning types
 	* @param {HTMLElement} container
 	*/
-	createRevertMenu(container, currentEdit) {
+	createRevertMenu(type, container, currentEdit) {
 		document.querySelectorAll(".levels-menu").forEach(menu => menu.remove());
+		document.querySelectorAll(".warning-submenu").forEach(menu => menu.remove());
 
 		const menu = document.createElement("div");
 		menu.className = "warning-menu";
 		container.appendChild(menu);
 
 		menu.addEventListener("click", (e) => {
-			document.body.querySelectorAll(".levels-menu.show").forEach(menu => menu.classList.remove("show"));
+			if (!e.target.closest(".warning-submenu")) {
+				document.body.querySelectorAll(".warning-submenu.show").forEach(submenu => submenu.classList.remove("show"));
+			}
+			if (!e.target.closest(".levels-menu")) {
+				document.body.querySelectorAll(".levels-menu.show").forEach(menu => menu.classList.remove("show"));
+			}
 		});
 
-		const execute = async (warningType, level) => {
+		const executeWithWarn = async (warningTitle, level) => {
+			const warning = getWarningFromLookup(warningTitle);
 			const reportObject = {
 				name: "if",
 				condition: "atFinalWarning",
 				actions: [
 					{
-						name: "if",
-						condition: "operatorNonAdmin",
-						actions: [
-							{
-								name: "reportToAIV",
-								params: {
-									reportMessage: "Vandalism past final warning"
-								}
-							}
-						]
+						name: "reportToAIV",
+						params: {
+							reportMessage: "Vandalism past final warning"
+						}
 					}
 				]
 			};
@@ -1061,16 +1594,16 @@ export class WikiShieldInterface {
 						name: "nextEdit",
 						params: {}
 					},
-					{
+					((type === "reverts") ? ({
 						name: "rollback",
 						params: {
-							summary: getWarningFromLookup(warningType).summary
+							summary: warning.summary
 						}
-					},
+					}) : ({ })),
 					{
 						name: "warn",
 						params: {
-							warningType,
+							warning: warningTitle,
 							level,
 						}
 					},
@@ -1078,145 +1611,26 @@ export class WikiShieldInterface {
 						name: "highlightUser",
 						params: {}
 					},
-				].concat(autoReporting.enabled && autoReporting.for.has(warningType) ? [ reportObject ] : [])
+				].concat(autoReporting.enabled && warning.reportable && autoReporting.for.has(warningTitle) ? [ reportObject ] : [])
 			});
 
 			this.selectedMenu = null;
 		};
 
-		const queue = this.wikishield.queue;
-		const queueType = queue.queueTypes[queue.currentEdit[queue.currentQueueTab]?.__fromQueue__ ?? queue.currentQueueTab];
-
-		let allMade = 0;
-		for (const [ title, category ] of Object.entries(warnings.revert)) {
-			const section = document.createElement("div");
-			section.className = "warning-menu-section";
-
-			const header = document.createElement("h2");
-			header.textContent = title;
-			section.appendChild(header);
-
-			const divider = document.createElement("div");
-			divider.className = "menu-divider";
-			section.appendChild(divider);
-
-			let made = 0;
-			for (const warning of category) {
-				if (warning.hide || (typeof warning.show === "function" && !warning.show(currentEdit)) ||
-					(warning.queue && !warning.queue.includes(queueType))) {
-					continue;
-				}
-
-				made++;
-				allMade++;
-
-				const item = document.createElement("div");
-				item.className = "warning-menu-item";
-
-				const icon = document.createElement("span");
-				icon.className = `icon ${warning.icon}` ?? "icon fas fa-mouse-pointer";
-				item.appendChild(icon);
-
-				const label = document.createElement("span");
-				label.className = "warning-menu-title";
-				label.textContent = warning.title;
-				item.appendChild(label);
-
-				const helpIcon = document.createElement("span");
-				helpIcon.className = "fas fa-circle-question";
-				helpIcon.dataset.tooltip = warning.description;
-				item.appendChild(helpIcon);
-				this.addTooltipListener(helpIcon);
-
-				const levelsButton = document.createElement("span");
-				levelsButton.className = "warning-menu-button warning-menu-levels-button";
-				levelsButton.textContent = "advanced";
-				item.appendChild(levelsButton);
-
-				const levelsMenu = document.createElement("div");
-				levelsMenu.className = "levels-menu bottom-tool-menu";
-
-				for (const [ templateLabel, template ] of Object.entries(warning.templates || { })) {
-					if (template === null || template.exists === false) continue;
-
-					const levelButton = document.createElement("span");
-					levelButton.className = `levels-menu-item colorize-level colorize-level-${templateLabel}`;
-					levelButton.textContent = template.label || templateLabel;
-					levelsMenu.appendChild(levelButton);
-
-					levelButton.addEventListener("click", async () => {
-						await execute(warning.title, templateLabel);
-					});
-				}
-
-				document.body.appendChild(levelsMenu);
-
-				levelsButton.addEventListener("click", e => {
-					e.stopPropagation();
-
-					levelsMenu.classList.toggle("show");
-					document.body.querySelectorAll(".levels-menu.show").forEach(menu => {
-						if (menu !== levelsMenu) {
-							menu.classList.remove("show");
-						}
-					});
-
-					this.positionLevelsMenu(levelsButton, levelsMenu);
-				});
-
-				item.addEventListener("click", async e => {
-					if (e.target.closest(".warning-menu-levels-button")) {
-						return;
-					}
-
-					await execute(warning.title, "auto");
-				});
-
-				section.appendChild(item);
-			}
-
-			if (made > 0) {
-				menu.appendChild(section);
-			}
-		}
-
-		if (allMade === 0) {
-			const noWarnings = document.createElement("div");
-			noWarnings.className = "warning-menu-no-items";
-			noWarnings.textContent = "No revert warnings available.";
-			menu.appendChild(noWarnings);
-		}
-	}
-
-	/**
-	* Create the warn menu (without rollback)
-	* @param {HTMLElement} container Container element for the menu
-	*/
-	createWarnMenu(container, currentEdit) {
-		document.querySelectorAll(".levels-menu").forEach(menu => menu.remove());
-
-		const menu = document.createElement("div");
-		menu.className = "warning-menu";
-		container.appendChild(menu);
-
-		menu.addEventListener("click", (e) => {
-			document.body.querySelectorAll(".levels-menu.show").forEach(menu => menu.classList.remove("show"));
-		});
-
-		const execute = async (warningType, level) => {
+		const executeNoWarn = async (warningTitle) => {
+			const warning = getWarningFromLookup(warningTitle);
 			await this.wikishield.executeScript({
 				actions: [
 					{
-						name: "warn",
-						params: {
-							warningType,
-							level,
-						}
+						name: "nextEdit",
+						params: {}
 					},
 					{
-						name: "highlightUser",
-						params: {}
-					}
+						name: "rollback",
+						params: {
+							summary: warning.summary
+						}
+					},
 				]
 			});
 
@@ -1226,103 +1640,112 @@ export class WikiShieldInterface {
 		const queue = this.wikishield.queue;
 		const queueType = queue.queueTypes[queue.currentEdit[queue.currentQueueTab]?.__fromQueue__ ?? queue.currentQueueTab];
 
+		menu.__executeCallbacks__ = {
+			executeWithWarn,
+			executeNoWarn,
+			currentEdit
+		};
+
+		if (this.wikishield.storage.data.favorite.reverts.length > 0) {
+			const favoritesSection = document.createElement("div");
+			favoritesSection.className = "favorites-section";
+
+			const favoritesHeader = document.createElement("div");
+			favoritesHeader.className = "favorites-header";
+			favoritesHeader.innerHTML = '<span class="icon fas fa-star"></span><span>Favorites</span>';
+			favoritesSection.appendChild(favoritesHeader);
+
+			const favoritesContainer = document.createElement("div");
+			favoritesContainer.className = "favorites-container";
+			favoritesSection.appendChild(favoritesContainer);
+
+			const allWarnings = Object.values(warningsLookup).filter(w => w.queueType.includes(queueType) && (typeof w.show !== "function" || w.show(currentEdit)));
+			for (const favoriteId of this.wikishield.storage.data.favorite[type]) {
+				const warning = allWarnings.find(w => w.title === favoriteId);
+				if (warning) {
+					const item = this.createWarningItem(warning, currentEdit, executeWithWarn, executeNoWarn, type, true);
+					favoritesContainer.appendChild(item);
+				}
+			}
+
+			menu.appendChild(favoritesSection);
+
+			const separator = document.createElement("div");
+			separator.className = "favorites-separator";
+			menu.appendChild(separator);
+		}
+
 		let allMade = 0;
-		for (const [ title, category ] of Object.entries(warnings.warn)) {
-			const section = document.createElement("div");
-			section.className = "warning-menu-section";
+		for (const [ , category ] of Object.entries(warnings)) {
+			let categoryMade = 0;
+			const categoryWarnings = [];
 
-			const header = document.createElement("h2");
-			header.textContent = title;
-			section.appendChild(header);
-
-			const divider = document.createElement("div");
-			divider.className = "menu-divider";
-			section.appendChild(divider);
-
-			let made = 0;
-			for (const warning of category) {
-				if (warning.hide || (typeof warning.show === "function" && !warning.show(currentEdit)) ||
-					(warning.queue && !warning.queue.includes(queueType))) {
+			for (const warning of category.warnings) {
+				if (typeof warning.show === "function" && !warning.show(currentEdit)) {
+					continue;
+				}
+				if (!warning.queueType.includes(queueType)) {
 					continue;
 				}
 
-				made++;
+				categoryWarnings.push(warning);
+				categoryMade++;
 				allMade++;
+			}
 
-				const item = document.createElement("div");
-				item.className = "warning-menu-item";
+			if (categoryMade === 0) continue;
 
-				const icon = document.createElement("span");
-				icon.className = `icon ${warning.icon}` ?? "icon fas fa-mouse-pointer";
-				item.appendChild(icon);
+			const categoryOption = document.createElement("div");
+			categoryOption.className = "menu-option submenu-trigger";
 
-				const label = document.createElement("span");
-				label.className = "warning-menu-title";
-				label.textContent = warning.title;
-				item.appendChild(label);
+			const categoryIcon = document.createElement("span");
+			categoryIcon.className = `icon ${category.icon}`;
+			categoryOption.appendChild(categoryIcon);
 
-				const helpIcon = document.createElement("span");
-				helpIcon.className = "fas fa-circle-question";
-				helpIcon.setAttribute("data-tooltip", warning.description);
-				item.appendChild(helpIcon);
-				this.addTooltipListener(helpIcon);
+			const categoryLabel = document.createElement("span");
+			categoryLabel.textContent = category.title;
+			categoryOption.appendChild(categoryLabel);
 
-				const levelsButton = document.createElement("span");
-				levelsButton.className = "warning-menu-button warning-menu-levels-button";
-				levelsButton.textContent = "advanced";
-				item.appendChild(levelsButton);
+			const arrowIcon = document.createElement("span");
+			arrowIcon.className = "submenu-arrow fas fa-chevron-right";
+			categoryOption.appendChild(arrowIcon);
 
-				const levelsMenu = document.createElement("div");
-				levelsMenu.className = "levels-menu bottom-tool-menu";
+			menu.appendChild(categoryOption);
 
-				for (const [ templateLabel, template ] of Object.entries(warning.templates || { })) {
-					if (template === null || template.exists === false) continue;
+			const submenu = document.createElement("div");
+			submenu.className = "warning-submenu submenu";
+			document.body.appendChild(submenu);
 
-					const levelButton = document.createElement("span");
-					levelButton.className = `levels-menu-item colorize-level colorize-level-${templateLabel}`;
-					levelButton.textContent = template.label || templateLabel;
-					levelsMenu.appendChild(levelButton);
+			for (const warning of categoryWarnings) {
+				const item = this.createWarningItem(warning, currentEdit, executeWithWarn, executeNoWarn, type, false);
+				submenu.appendChild(item);
+			}
 
-					levelButton.addEventListener("click", async () => {
-						await execute(warning.title, templateLabel);
-					});
-				}
+			categoryOption.addEventListener("click", (e) => {
+				e.stopPropagation();
 
-				document.body.appendChild(levelsMenu);
-
-				levelsButton.addEventListener("click", e => {
-					e.stopPropagation();
-
-					levelsMenu.classList.toggle("show");
-					document.body.querySelectorAll(".levels-menu.show").forEach(menu => {
-						if (menu !== levelsMenu) {
-							menu.classList.remove("show");
-						}
-					});
-
-					this.positionLevelsMenu(levelsButton, levelsMenu);
-				});
-
-				item.addEventListener("click", async e => {
-					if (e.target.closest(".warning-menu-levels-button")) {
-						return;
+				const wasShown = submenu.classList.contains("show");
+				document.body.querySelectorAll(".warning-submenu.show").forEach(menu => {
+					if (menu !== submenu) {
+						menu.classList.remove("show");
+						document.body.querySelectorAll(".levels-menu.show").forEach(menu => menu.classList.remove("show"));
 					}
-
-					await execute(warning.title, "auto");
 				});
 
-				section.appendChild(item);
-			}
-
-			if (made > 0) {
-				menu.appendChild(section);
-			}
+				if (!wasShown) {
+					submenu.classList.add("show");
+					this.positionWarningSubmenu(submenu, categoryOption);
+				} else {
+					submenu.classList.remove("show");
+					document.body.querySelectorAll(".levels-menu.show").forEach(menu => menu.classList.remove("show"));
+				}
+			});
 		}
 
 		if (allMade === 0) {
 			const noWarnings = document.createElement("div");
 			noWarnings.className = "warning-menu-no-items";
-			noWarnings.textContent = "No warnings available.";
+			noWarnings.textContent = "No warnings available for this edit.";
 			menu.appendChild(noWarnings);
 		}
 	}
@@ -1341,6 +1764,8 @@ export class WikiShieldInterface {
 			`;
 
 		for (const param of (event.parameters || [])) {
+			if (param.type === "object") continue;
+
 			container.innerHTML += `<div class="bottom-subcontent-input-title">${param.title}</div>`;
 
 			switch (param.type) {
@@ -1369,6 +1794,8 @@ export class WikiShieldInterface {
 		button.addEventListener("click", () => {
 			const params = {};
 			for (const param of (event.parameters || [])) {
+				if (param.type === "object") continue;
+
 				const input = container.querySelector(`[data-paramid="${param.id}"]`);
 				params[param.id] = input.value;
 			}
@@ -1721,6 +2148,28 @@ export class WikiShieldInterface {
 			if (protIndicator) {
 				protIndicator.innerHTML = "";
 			}
+
+			if ([ ...document.querySelectorAll(`#queue-tabs > .queue-tab`) ].every(tab => getComputedStyle(tab).display === "none")) {
+				this.elem("#diff-container").innerHTML = `
+					<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: grey;">
+						<div style="font-size: 48px; margin-bottom: 16px;">
+							<i class="fas fa-shield-alt"></i>
+						</div>
+						<div style="font-size: 24px; margin-bottom: 8px; text-align: center;">
+							No queues are enabled
+						</div>
+						<div style="font-size: 14px; text-align: center; max-width: 100%; margin-top: 10px;">
+							I heard there was a WikiShield,<br>
+							Which entered an oversaturated field,<br>
+							But you don’t ever use Huggle, do you?<br>
+							Well it simplifies any AIV,<br>
+							But superintendence matters to me
+							<span style="display: block; margin-top: 8px;">– User:WikiMacaroons</span>
+						</div>
+					</div>
+				`;
+			}
+
 			return;
 		}
 
@@ -2704,74 +3153,94 @@ export class WikiShieldInterface {
 	* @param {HTMLElement} elem
 	*/
 	addTooltipListener(elem) {
+		let tooltip;
 		elem.addEventListener("mouseenter", () => {
-			this.removeTooltips();
-
 			if (!elem.dataset.tooltip) {
 				return;
+			} else if (tooltip) {
+				tooltip.remove();
 			}
 
-			const tooltip = document.createElement("div");
-			tooltip.classList.add("tooltip");
-
-			// Check if tooltip content is HTML or plain text
-			if (elem.dataset.tooltipHtml === "true") {
-				tooltip.innerHTML = elem.dataset.tooltip;
-			} else {
-				tooltip.innerText = elem.dataset.tooltip;
-			}
-
-			document.body.appendChild(tooltip);
-
-			// Force a reflow to ensure dimensions are calculated
-			tooltip.offsetHeight;
-
-			const tooltipWidth = tooltip.getBoundingClientRect().width,
-			tooltipHeight = tooltip.getBoundingClientRect().height;
-			const elemBox = elem.getBoundingClientRect();
-
-			// Calculate center position for the tooltip
-			const centerLeft = (elemBox.left + elemBox.right - tooltipWidth) / 2;
-
-			const canFitRight = elemBox.right < window.innerWidth - tooltipWidth - 30;
-			const canFitLeft = elemBox.left > tooltipWidth + 30;
-			// Check if tooltip can fit centered AND if centered position is actually on screen
-			const canFitMiddle = centerLeft > 10 && centerLeft + tooltipWidth < window.innerWidth - 10;
-			const canFitTop = canFitMiddle && elemBox.top > tooltipHeight + 30;
-			const canFitBottom = canFitMiddle && elemBox.bottom < window.innerHeight - tooltipHeight - 30;
-
-			// Position the tooltip
-			if (canFitTop) {
-				tooltip.style.left = (elemBox.left + elemBox.right - tooltipWidth) / 2 + "px";
-				tooltip.style.top = (elemBox.top - tooltipHeight - 10) + "px";
-			} else if (canFitBottom) {
-				tooltip.style.left = (elemBox.left + elemBox.right - tooltipWidth) / 2 + "px";
-				tooltip.style.top = (elemBox.bottom + 10) + "px";
-			} else if (canFitRight) {
-				tooltip.style.left = (elemBox.right + 10) + "px";
-				tooltip.style.top = (elemBox.top - 4) + "px";
-			} else if (canFitLeft) {
-				tooltip.style.left = (elemBox.left - 10 - tooltipWidth) + "px";
-				tooltip.style.top = (elemBox.top - 4) + "px";
-			} else {
-				// Fallback: center on element, clip if necessary
-				tooltip.style.left = Math.max(10, (elemBox.left + elemBox.right - tooltipWidth) / 2) + "px";
-				tooltip.style.top = Math.max(10, elemBox.bottom + 10) + "px";
-			}
-
-			elem.addEventListener("mousewheel", e => {
-				tooltip.scrollBy(0, e.deltaY);
-			});
-
-			tooltip.style.opacity = 0;
-			setTimeout(() => {
-				tooltip.style.opacity = 1;
-			}, +elem.dataset.tooltipDelay || 10);
+			tooltip = this.createTooltip(
+				elem,
+				"",
+				elem.dataset.tooltip,
+				elem.dataset.tooltipHtml === "true",
+				parseInt(elem.dataset.tooltipDelay) || 10
+			);
 		});
 
 		elem.addEventListener("mouseleave", () => {
-			this.removeTooltips();
+			if (tooltip) {
+				tooltip.remove();
+				tooltip = null;
+			}
 		});
+	}
+
+	createTooltip($parent, className = "", content = "", isHtml = false, delay = 10, callback = null) {
+		const tooltip = document.createElement("div");
+		tooltip.className = `tooltip ${className}`;
+
+		// Check if tooltip content is HTML or plain text
+		if (isHtml) {
+			tooltip.innerHTML = content;
+		} else {
+			tooltip.innerText = content;
+		}
+
+		document.body.appendChild(tooltip);
+
+		if (typeof callback === "function") {
+			callback(tooltip);
+		}
+
+		// Force a reflow to ensure dimensions are calculated
+		tooltip.offsetHeight;
+
+		const tooltipWidth = tooltip.getBoundingClientRect().width,
+		tooltipHeight = tooltip.getBoundingClientRect().height;
+		const parentBox = $parent.getBoundingClientRect();
+
+		// Calculate center position for the tooltip
+		const centerLeft = (parentBox.left + parentBox.right - tooltipWidth) / 2;
+
+		const canFitRight = parentBox.right < window.innerWidth - tooltipWidth - 30;
+		const canFitLeft = parentBox.left > tooltipWidth + 30;
+		// Check if tooltip can fit centered AND if centered position is actually on screen
+		const canFitMiddle = centerLeft > 10 && centerLeft + tooltipWidth < window.innerWidth - 10;
+		const canFitTop = canFitMiddle && parentBox.top > tooltipHeight + 30;
+		const canFitBottom = canFitMiddle && parentBox.bottom < window.innerHeight - tooltipHeight - 30;
+
+		// Position the tooltip
+		if (canFitTop) {
+			tooltip.style.left = (parentBox.left + parentBox.right - tooltipWidth) / 2 + "px";
+			tooltip.style.top = (parentBox.top - tooltipHeight - 10) + "px";
+		} else if (canFitBottom) {
+			tooltip.style.left = (parentBox.left + parentBox.right - tooltipWidth) / 2 + "px";
+			tooltip.style.top = (parentBox.bottom + 10) + "px";
+		} else if (canFitRight) {
+			tooltip.style.left = (parentBox.right + 10) + "px";
+			tooltip.style.top = (parentBox.top - 4) + "px";
+		} else if (canFitLeft) {
+			tooltip.style.left = (parentBox.left - 10 - tooltipWidth) + "px";
+			tooltip.style.top = (parentBox.top - 4) + "px";
+		} else {
+			// Fallback: center on element, clip if necessary
+			tooltip.style.left = Math.max(10, (parentBox.left + parentBox.right - tooltipWidth) / 2) + "px";
+			tooltip.style.top = Math.max(10, parentBox.bottom + 10) + "px";
+		}
+
+		$parent.addEventListener("mousewheel", e => {
+			tooltip.scrollBy(0, e.deltaY);
+		});
+
+		tooltip.style.opacity = 0;
+		setTimeout(() => {
+			tooltip.style.opacity = 1;
+		}, delay || 10);
+
+		return tooltip;
 	}
 
 	/**
@@ -3307,26 +3776,6 @@ export class WikiShieldInterface {
 
 			// Focus the Yes button by default
 			setTimeout(() => yesBtn.focus(), 50);
-		});
-	}
-
-	addMouseTiltEffect(elem, multX = 10, multY = 10) {
-		elem.addEventListener("mousemove", (e) => {
-			const rect = elem.getBoundingClientRect();
-			const cx = rect.left + rect.width / 2;
-			const cy = rect.top + rect.height / 2;
-
-			const dx = e.clientX - cx;
-			const dy = e.clientY - cy;
-
-			const rotateX =  (dy / rect.height) * -2 * multY;
-			const rotateY = (dx / rect.width)  *  2 * multX;
-
-			elem.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-		});
-
-		elem.addEventListener("mouseleave", (e) => {
-			elem.style.transform = `rotateX(0deg) rotateY(0deg)`;
 		});
 	}
 }

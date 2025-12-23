@@ -13,6 +13,7 @@ export class WikiShieldQueue {
 			"watchlist": "edit",
 			"contribs": "edit",
 			"history": "edit",
+			"loaded": "edit",
 
 			"users": "logevent"
 		};
@@ -300,6 +301,16 @@ export class WikiShieldQueue {
 					await this.addQueueItems(type, filtered);
 				} break;
 				case "logevent": {
+					const set = new Set();
+					recentChanges = recentChanges.filter(log => {
+						if (set.has(log.logid)) {
+							return false;
+						}
+
+						set.add(log.logid);
+						return true;
+					});
+
 					this.lastRevid[type] = Math.max(...recentChanges.map(log => log.logid));
 
 					await this.addQueueLogs(type, recentChanges.map(log => ({ type, log })));
@@ -608,14 +619,12 @@ export class WikiShieldQueue {
 			const queueItem = {
 				display: {
 					get pageTitle() {
-						return `<div
-							class="page-title ${wikishield.storage.data.highlight.pages.has(edit.title) ? 'queue-highlight' : ''}"
-						>
+						return `<div class="page-title ${wikishield.storage.data.highlight.pages.has(edit.title) ? 'queue-highlight' : ''}">
 							<span class="fa fa-file-alt queue-edit-icon"></span>
 							<a
 								href="${util.pageLink(edit.title)}"
-								target="_blank"
 								data-tooltip="${util.escapeHtml(edit.title)}"
+								data-multiple-hrefs="page;title=${encodeURIComponent(edit.title)}&revid=${edit.revid}"
 							>
 								${util.escapeHtml(util.maxStringLength(edit.title, 40))}
 							</a>
@@ -623,20 +632,18 @@ export class WikiShieldQueue {
 					},
 
 					get username() {
-						return `<div
-							class="username ${wikishield.storage.data.highlight.users.has(edit.user) ? 'queue-highlight' : (
-								response.userTalk === false ? 'queue-user-empty-talk' : ''
-							)}"
-						>
+						const classes = wikishield.storage.data.highlight.users.has(edit.user) ?
+							'queue-highlight' : (response.userTalk === false ? 'queue-user-empty-talk' : '');
+
+						return `<div class="username ${classes}" >
 							<span class="fa fa-user queue-edit-icon"></span>
-							<a
-								class="${response.userBlocked ? "user-blocked" : ""}"
-								href="${util.pageLink(`Special:Contributions/${edit.user}`)}"
-								target="_blank"
-								data-tooltip="${util.escapeHtml(edit.user)}"
-							>
-								${util.escapeHtml(util.maxStringLength(edit.user, 30))}
-							</a>
+							<span class="${response.userBlocked ? "user-blocked" : ""}">
+								<a
+									href="${util.pageLink(`User:${edit.user}`)}"
+									data-tooltip="${util.escapeHtml(edit.user)}"
+									data-multiple-hrefs="user;username=${encodeURIComponent(edit.user)}"
+								>${util.escapeHtml(util.maxStringLength(edit.user, 30))}</a>
+							</span>
 						</div>`;
 					},
 					get tags() {
@@ -787,51 +794,45 @@ export class WikiShieldQueue {
 			const queueItem = {
 				display: {
 					get pageTitle() {
-						return `<div
-							class="page-title ${wikishield.storage.data.highlight.pages.has(log.title) ? 'queue-highlight' : ''}"
-						>
+						return `<div class="page-title ${wikishield.storage.data.highlight.pages.has(log.title) ? 'queue-highlight' : ''}">
 							<span class="fa fa-file-alt queue-edit-icon"></span>
 							<a
 								href="${util.pageLink(log.title)}"
-								target="_blank"
 								data-tooltip="${util.escapeHtml(log.title)}"
+								data-multiple-hrefs="log;title=${encodeURIComponent(log.title)}&log=${util.escapeHtml(JSON.stringify(log))}"
 							>
 								${util.escapeHtml(util.maxStringLength(log.title, 40))}
 							</a>
 						</div>`;
 					},
 					get username() {
-						return `<div
-							class="username ${wikishield.storage.data.highlight.users.has(user) ? 'queue-highlight' : (
-								response.userTalk === false ? 'queue-user-empty-talk' : ''
-							)}"
-						>
+						const classes = wikishield.storage.data.highlight.users.has(user) ?
+							'queue-highlight' : (response.userTalk === false ? 'queue-user-empty-talk' : '');
+
+						return `<div class="username ${classes}">
 							<span class="fa fa-user queue-edit-icon"></span>
-							<a
-								class="${response.userBlocked ? "user-blocked" : ""}"
-								href="${util.pageLink(`Special:Contributions/${user}`)}"
-								target="_blank"
-								data-tooltip="${util.escapeHtml(user)}"
-							>
-								${util.escapeHtml(util.maxStringLength(user, 30))}
-							</a>
+							<span class="${response.userBlocked ? "user-blocked" : ""}">
+								<a
+									href="${util.pageLink(`User:${user}`)}"
+									data-tooltip="${util.escapeHtml(user)}"
+									data-multiple-hrefs="user;username=${encodeURIComponent(user)}"
+								>${util.escapeHtml(util.maxStringLength(user, 30))}</a>
+							</span>
 						</div>`;
 					},
 					get performer() {
-						return `<div
-							class="username ${wikishield.storage.data.highlight.users.has(log.user) ? 'queue-highlight' : (
-								performerResponse.userTalk === false ? 'queue-user-empty-talk' : ''
-							)}"
-						>
+						const classes = wikishield.storage.data.highlight.users.has(log.user) ?
+							'queue-highlight' : (performerResponse.userTalk === false ? 'queue-user-empty-talk' : '');
+
+						return `<div class="username ${classes}">
 							<span class="fa fa-user queue-edit-icon"></span>
-							<a
-								class="${performerResponse.userBlocked ? "user-blocked" : ""}"
-								href="${util.pageLink(`Special:Contributions/${log.user}`)}"
-								target="_blank"
-								data-tooltip="${util.escapeHtml(log.user)}"
-							>
-								${util.escapeHtml(util.maxStringLength(log.user, 30))}
-							</a>
+							<span class="${performerResponse.userBlocked ? "user-blocked" : ""}">
+								<a
+									href="${util.pageLink(`User:${log.user}`)}"
+									data-tooltip="${util.escapeHtml(log.user)}"
+									data-multiple-hrefs="user;username=${encodeURIComponent(log.user)}"
+								>${util.escapeHtml(util.maxStringLength(log.user, 30))}</a>
+							</span>
 						</div>`;
 					},
 				},
@@ -897,6 +898,7 @@ export class WikiShieldQueue {
 			};
 			queueItems.push(queueItem);
 
+			const storage = this.wikishield.storage.data;
 			if (this.wikishield.AI) {
 				if (!(queueItem.user.ip || queueItem.user.temporary) && !storage.whitelist.users.has(log.user) && storage.settings.AI.username_analysis.enabled) {
 					this.wikishield.AI.analyze.username(queueItem)
@@ -926,23 +928,26 @@ export class WikiShieldQueue {
 	getWarningLevel(text) {
 		const monthSections = text.split(/(?=== ?[\w\d ]+ ?==)/g);
 
+		const levels = [ "0", "1", "2", "3", "4", "4im" ];
+
+		let highestLevel = "0";
 		for (let section of monthSections) {
 			if (new RegExp(`== ?${this.wikishield.util.monthSectionName()} ?==`).test(section)) {
-				// Only match templates with numbered warning levels (e.g., uw-vandalism1, uw-test4im)
-				// Excludes templates without numbers like uw-minor
 				const templates = section.match(/<\!-- Template:[\w-]+?(\d(?:i?m)?) -->/g);
 				if (templates === null) {
-					return "0";
+					break;
 				}
-				const filteredTemplates = templates.map(t => {
+
+				const filteredTemplates = [ ...templates.map(t => {
 					const match = t.match(/<\!-- Template:[\w-]+?(\d(?:i?m)?) -->/);
-					return match ? match[1] : "0";
-				});
-				return filteredTemplates.sort()[filteredTemplates.length - 1].toString();
+					return match ? match[1].toString() : "0";
+				}), highestLevel ].map(level => [ level, levels.indexOf(level) ]);
+
+				highestLevel = filteredTemplates.sort((a, b) => b[1] - a[1])[0][0];
 			}
 		}
 
-		return "0";
+		return highestLevel;
 	}
 
 	/**
@@ -1356,17 +1361,16 @@ export class WikiShieldQueue {
 
 			const item = (await this.generateQueueItems([{ type, edit }]))[0];
 
-			this.queue[type] = this.queue[type].filter(item => item.revid !== revid);
-
-			if (this.areSameQueueTypes(type, "loaded")) {
+			if (this.areSameQueueTypes(type, "loaded") && type !== "flagged") {
+				this.queue[type] = this.queue[type].filter(item => item.revid !== revid);
 				const index = this.queue[type].findIndex(item => item.revid === this.currentEdit[type]?.revid);
 				if (index > -1) {
 					this.queue[type][index] = item;
 				}
 			}
 
-			this.currentEdit[type] = item;
-			this.wikishield.interface.renderQueue(this.queue[type], item);
+			this.currentEdit[type] = this.queue[type].find(item => item.revid === revid) || item;
+			this.wikishield.interface.renderQueue(this.queue[type], this.currentEdit[type]);
 		} catch (err) {
 			console.error("Failed to load specific revision:", err);
 			this.wikishield.interface.elem("#diff-container").innerHTML = `<div class="error">Failed to load revision</div>`;

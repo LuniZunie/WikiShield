@@ -27,6 +27,7 @@ import {
 
 import { AI } from '../ai/class.js';
 import { validControlKeys } from '../config/control-keys.js';
+import { StorageManager } from '../data/storage.js';
 
 export class WikiShieldSettingsInterface {
 	constructor(wikishield) {
@@ -1198,6 +1199,8 @@ export class WikiShieldSettingsInterface {
 				`;
 
 			for (const param of (event.parameters || [])) {
+				if (param.type === "object") continue;
+
 				this.createItemParameter(itemContainer, param, action.params[param.id] || "", (value) => {
 					action.params[param.id] = value;
 				});
@@ -1632,7 +1635,7 @@ ollama serve
 			h(AutoReportingSettings, {
 				wikishield: this.wikishield,
 				enableAutoReporting: this.wikishield.storage.data.settings.auto_report.enabled,
-				autoReportReasons: Object.keys(warningsLookup).filter(title => !getWarningFromLookup(title).onlyWarn),
+				autoReportReasons: Object.keys(warningsLookup).filter(id => getWarningFromLookup(id).reportable),
 				selectedAutoReportReasons: this.wikishield.storage.data.settings.auto_report.for,
 
 				onEnableChange: (newValue) => {
@@ -1668,6 +1671,12 @@ ollama serve
 							<div class="settings-section-desc">Automatically welcome new users with empty talk pages when moving past their constructive edits</div>
 						</div>
 					</div>
+					<div class="settings-section compact inline" id="wikipedia-popups-toggle">
+						<div class="settings-section-content">
+							<div class="settings-section-title">Wikipedia popups</div>
+							<div class="settings-section-desc">When enabled, Wikipedia links will be opened in a new window. Otherwise, they will be opened in a new tab. Holding <code>alt</code> while clicking will do the opposite of the current setting. (Not supported by Opera or Safari browsers)</div>
+						</div>
+					</div>
 				</div>
 				<div class="settings-toggles-section">
 					<div class="settings-section-title">Username Highlighting</div>
@@ -1694,6 +1703,14 @@ ollama serve
 			settings.auto_welcome.enabled,
 			(newValue) => {
 				settings.auto_welcome.enabled = newValue;
+			}
+		);
+
+		this.createToggle(
+			this.contentContainer.querySelector("#wikipedia-popups-toggle"),
+			settings.wikipedia_popups.enabled,
+			(newValue) => {
+				settings.wikipedia_popups.enabled = newValue;
 			}
 		);
 
@@ -2537,6 +2554,7 @@ ollama serve
 
 				try {
 					const logs = await this.wikishield.init(base64, true); // Try to import settings
+					StorageManager.outputLogs(logs, "Import Settings");
 
 					const [ expected, unexpected ] = logs.reduce((acc, log) => {
 						if (log.expected) {
