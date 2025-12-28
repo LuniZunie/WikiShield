@@ -590,7 +590,7 @@ export const warnings = {
 					return edit?.user?.editCount < 500 ? "notice" : "warning";
 				},
 				templates: [
-					{ name: "notice", template: "subst:uw-softew", color: "grey" },
+					{ name: "notice", template: "subst:uw-ew-soft", color: "grey" },
 					{ name: "warning", template: "subst:uw-ew", color: "#ff4500" }
 				]
 			},

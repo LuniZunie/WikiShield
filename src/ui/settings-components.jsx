@@ -510,7 +510,7 @@ export class GeneralSettings extends Component {
 	}
 }
 
-export class PerformanceSettings extends Component { // ts don't do shit
+export class PerformanceSettings extends Component {
 	render() {
 		return (
 			<div>

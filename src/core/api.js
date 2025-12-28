@@ -835,10 +835,7 @@ export class WikiShieldAPI {
 			return {
 				count: consecutiveCount,
 				totalSizediff: totalSizediff,
-				newestRevision: newestRevision,
 				oldestTimestamp: oldestTimestamp,
-				oldestRev: oldestRevision,
-				priorRev: priorRevision,
 				diff: typeof priorRevision === "string" ? null : await this.diff(page, priorRevision.revid, newestRevision.revid)
 			};
 		} catch (err) {
