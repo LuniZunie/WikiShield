@@ -1069,8 +1069,8 @@ export const validConditions = {
 		desc: "You are an admin",
 		check: (wikishield) => wikishield.rights.block
 	},
-	"userIshighlight": {
-		desc: "User is highlight",
+	"userIsHighlighted": {
+		desc: "User is highlighted",
 		check: (wikishield, edit) => wikishield.storage.data.highlight.users.has(edit.user.name)
 	},
     "pageIsWatchlisted": {
@@ -1085,8 +1085,8 @@ export const validConditions = {
             return !(wikishield.queue.watchlistOverride[edit.page.title] ?? edit.page.watched);
         }
     },
-	"pageIshighlight": {
-		desc: "Page is highlight",
+	"pageIsHighlighted": {
+		desc: "Page is highlighted",
 		check: (wikishield, edit) => wikishield.storage.data.highlight.pages.has(edit.page.title)
 	},
 	"userIsWhitelisted": {

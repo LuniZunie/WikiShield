@@ -2,11 +2,7 @@ export const welcomes = {
     "Auto": {
         title: "Auto",
         template: (user) => {
-            if (!welcomes["Non-Latin"].hide && /[^\u0000-\u007F]/.test(user.name)) {
-                return "Non-Latin";
-            } else {
-                return "Default";
-            }
+
         }
     },
     "Default": {
@@ -19,6 +15,11 @@ export const welcomes = {
         title: "Basic",
         template: "subst:W-basic",
         sign: false
+    },
+    "Unregistered": {
+        title: "Unregistered",
+        template: "subst:Welcome-unregistered",
+        sign: true
     },
     "Non-Latin": {
         title: "Non-Latin",
@@ -72,7 +73,9 @@ export const welcomes = {
 };
 
 welcomes["Auto"].template = user => {
-    if (!welcomes["Non-Latin"].hide && /[^\u0000-\u007F]/.test(user.name)) {
+    if (mw.util.isIPAddress(user.name) || mw.util.isTemporaryUser(user.name)) {
+        return "Unregistered";
+    } else if (!welcomes["Non-Latin"].hide && /[^\u0000-\u007F]/.test(user.name)) {
         return "Non-Latin";
     }
 
