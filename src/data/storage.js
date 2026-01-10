@@ -4061,12 +4061,15 @@ export class StorageManager {
     ]);
 
     constructor() {
-        this.reset();
+        this.reset(new Logger());
     }
 
     reset(logger) {
         logger?.log(`Resetting storage to default.`);
         this.data = StorageManager.version.default;
+        StorageManager.version.init(logger, this.data);
+        StorageManager.version.validate();
+        StorageManager.version.construct();
         return this.data;
     }
 
