@@ -1297,12 +1297,18 @@ export class WikiShield {
 		if (mw.storage.store.getItem("WikiShield:CloudStorage") === "false") {
 			return mw.storage.store.getItem("WikiShield:Storage") ?? "e30=";
 		} else {
-			return ((await this.api.get({
+			const info = await this.api.get({
 				action: "query",
 				meta: "userinfo",
 				uiprop: "options",
 				format: "json"
-			}))?.query?.userinfo?.options?.["userjs-wikishield-storage"] || (await this.api.getSinglePageContent(`User:${mw.config.values.wgUserName}/ws-save2.js`))) ?? "e30=";
+			});
+			if (!info.query) {
+				alert("Could not load WikiShield data from cloud storage");
+				window.location.reload();
+				return "e30=";
+			} else
+				return info?.query?.userinfo?.options?.["userjs-wikishield-storage"] ?? "e30=";
 		}
 	}
 }
