@@ -1218,7 +1218,7 @@ export class WikiShield {
 				updateProgress = (_) => { };
 			}
 
-			currentEdit ??= this.queue.currentEdit[this.queue.currentQueueTab] || 1;
+			currentEdit ??= structuredClone(this.queue.currentEdit[this.queue.currentQueueTab]) || 1;
 		}
 
 		const ifAndTrue = script.name && script.name === "if" && this.interface.eventManager.conditions[script.condition].check(this, currentEdit);
