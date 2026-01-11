@@ -1218,7 +1218,13 @@ export class WikiShield {
 				updateProgress = (_) => { };
 			}
 
-			currentEdit ??= structuredClone(this.queue.currentEdit[this.queue.currentQueueTab]) || 1;
+			if (currentEdit === null) {
+				currentEdit ??= this.queue.currentEdit[this.queue.currentQueueTab] || 1;
+				// clone currentEdit.user.warningLevel to detach from original
+				if (this.queue.currentEdit[this.queue.currentQueueTab]) {
+					currentEdit.user = { ...this.queue.currentEdit[this.queue.currentQueueTab].user };
+				}
+			}
 		}
 
 		const ifAndTrue = script.name && script.name === "if" && this.interface.eventManager.conditions[script.condition].check(this, currentEdit);
