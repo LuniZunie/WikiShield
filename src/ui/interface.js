@@ -2442,7 +2442,7 @@ export class WikiShieldInterface {
 					protIndicator.innerHTML = `
 						<span
 							style="cursor: help;"
-							data-tooltip="Pending changes: ${edit.__FLAGGED__.stabilityDetails.comment ?? "<em>No comment</em>"}"
+							data-tooltip="Pending changes: ${edit.__FLAGGED__.stabilityDetails?.comment ?? "<em>No comment</em>"}"
 						>
 							PC
 						</span>
