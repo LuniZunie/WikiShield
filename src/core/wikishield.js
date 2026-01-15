@@ -1184,6 +1184,14 @@ export class WikiShield {
 		const base = updateProgress === null;
 
 		if (base) {
+			if (currentEdit === null) {
+				currentEdit ??= this.queue.currentEdit[this.queue.currentQueueTab] || 1;
+				// clone currentEdit.user.warningLevel to detach from original
+				if (this.queue.currentEdit[this.queue.currentQueueTab]) {
+					currentEdit.user = { ...this.queue.currentEdit[this.queue.currentQueueTab].user };
+				}
+			}
+
 			const allScripts = [script];
 			let totalActions = 0;
 
@@ -1191,7 +1199,7 @@ export class WikiShield {
 				const current = allScripts[0];
 
 				const willBeRun = (current.name && current.name === "if"
-					&& this.interface.eventManager.conditions[current.condition].check(this, this.queue.currentEdit[this.queue.currentQueueTab])) || !current.name;
+					&& this.interface.eventManager.conditions[current.condition].check(this, currentEdit)) || !current.name;
 
 				if (willBeRun) {
 					if (!current.actions) {
@@ -1221,14 +1229,6 @@ export class WikiShield {
 				};
 			} else {
 				updateProgress = (_) => { };
-			}
-
-			if (currentEdit === null) {
-				currentEdit ??= this.queue.currentEdit[this.queue.currentQueueTab] || 1;
-				// clone currentEdit.user.warningLevel to detach from original
-				if (this.queue.currentEdit[this.queue.currentQueueTab]) {
-					currentEdit.user = { ...this.queue.currentEdit[this.queue.currentQueueTab].user };
-				}
 			}
 		}
 
