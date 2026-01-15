@@ -328,13 +328,18 @@ export class WikiShield {
 		}
 
 		let lastSection = null;
+		let realLastSection = null;
 		for (let i in sections) {
+			realLastSection = i;
 			if (sections[i].match(new RegExp(`== ?${monthSection} ?==`))) {
 				lastSection = i;
 			}
 		}
 
 		sections[lastSection] += `\n\n{{${templateToUse.template}|${articleName}|${templateToUse.generic || ""}}} ~~~~`;
+		if (realLastSection !== lastSection) {
+			sections[realLastSection] = `\n${sections[realLastSection]}`;
+		}
 
 		const newContent = sections.join("").replace(/(\n){3,}/g, "\n\n");
 
