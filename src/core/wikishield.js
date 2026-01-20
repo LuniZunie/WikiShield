@@ -1157,7 +1157,7 @@ export class WikiShield {
 			return;
 		}
 
-		if (document.activeElement.tagName.toLowerCase() === "input") {
+		if (event.target.tagName.toLowerCase() === "input") {
 			return;
 		}
 
