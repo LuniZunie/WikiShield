@@ -114,32 +114,25 @@ export const __script__ = {
 			wikishield.queue = new WikiShieldQueue(wikishield);
 
 			wikishield.init().then(() => {
-				const isIOS = /iP(ad|hone|od)/.test(navigator.userAgent);
-				const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-				const isDesktop = !isIOS && !/android/i.test(navigator.userAgent);
+				// Setup save handlers for all devices and browsers
+				// Use multiple event listeners for maximum compatibility
 
-				// SAFARI (non-iOS) – visibilitychange works
-				if (isSafari && !isIOS) {
-					document.addEventListener("visibilitychange", () => {
-						if (document.visibilityState === "hidden") {
-							wikishield.save();
-						}
-					});
-				}
-
-				// iOS – pagehide is required because visibilitychange is unreliable
-				if (isIOS) {
-					window.addEventListener("pagehide", () => {
+				// visibilitychange – works in all modern browsers
+				document.addEventListener("visibilitychange", () => {
+					if (document.visibilityState === "hidden") {
 						wikishield.save();
-					});
-				}
+					}
+				});
 
-				// Desktop – beforeunload is the only consistent option
-				if (isDesktop) {
-					window.addEventListener("beforeunload", () => {
-						wikishield.save();
-					});
-				}
+				// pagehide – better for mobile and some edge cases
+				window.addEventListener("pagehide", () => {
+					wikishield.save();
+				});
+
+				// beforeunload – fallback for older browsers and desktop
+				window.addEventListener("beforeunload", () => {
+					wikishield.save();
+				});
 
 				for (const alert of killswitch_status.alerts) {
 					wikishield.alerts.unshift(alert);
@@ -173,33 +166,25 @@ export const __script__ = {
 			wikishield.queue = new WikiShieldQueue(wikishield);
 
 			wikishield.init().then(() => {
-				const isIOS = /iP(ad|hone|od)/.test(navigator.userAgent);
-				const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-				const isDesktop = !isIOS && !/android/i.test(navigator.userAgent);
+				// Setup save handlers for all devices and browsers
+				// Use multiple event listeners for maximum compatibility
 
-				// SAFARI (non-iOS) – visibilitychange works
-				if (isSafari && !isIOS) {
-					document.addEventListener("visibilitychange", () => {
-						if (document.visibilityState === "hidden") {
-							wikishield.save();
-						}
-					});
-				}
-
-				// iOS – pagehide is required because visibilitychange is unreliable
-				// Only save if we're actually leaving WikiShield, not just navigating within history
-				if (isIOS) {
-					window.addEventListener("pagehide", (e) => {
+				// visibilitychange – works in all modern browsers
+				document.addEventListener("visibilitychange", () => {
+					if (document.visibilityState === "hidden") {
 						wikishield.save();
-					});
-				}
+					}
+				});
 
-				// Desktop – beforeunload is the only consistent option
-				if (isDesktop) {
-					window.addEventListener("beforeunload", () => {
-						wikishield.save();
-					});
-				}
+				// pagehide – better for mobile and some edge cases
+				window.addEventListener("pagehide", () => {
+					wikishield.save();
+				});
+
+				// beforeunload – fallback for older browsers and desktop
+				window.addEventListener("beforeunload", () => {
+					wikishield.save();
+				});
 
 				startKillswitchPolling(wikishield.api);
 			});
