@@ -1272,12 +1272,28 @@ export class WikiShield {
 			updateProgress("Done");
 		}
 
+		this.localSave();
+
 		return hasContinuity;
+	}
+
+	localSave() {
+		this.saveTime = performance.now();
+		this.storage.data.statistics.session_time += this.saveTime - this.loadTime;
+		this.loadTime = this.saveTime;
+
+		const { string, logs } = this.storage.encode();
+
+		StorageManager.outputLogs(logs); // TEMP
+
+		localStorage.setItem("WikiShield:BackupStorage", `${Date.now()};${string}`);
+		return true;
 	}
 
 	async save(noSave = false) {
 		this.saveTime = performance.now();
 		this.storage.data.statistics.session_time += this.saveTime - this.loadTime;
+		this.loadTime = this.saveTime;
 
 		const { string, logs } = this.storage.encode();
 
@@ -1287,15 +1303,16 @@ export class WikiShield {
 			return string;
 		}
 
-		if (mw.storage.store.getItem("WikiShield:CloudStorage") === "false") {
-			mw.storage.store.setItem("WikiShield:Storage", string);
+		let saveString = `${Date.now()};${string}`;
+		if (localStorage.getItem("WikiShield:CloudStorage") === "false") {
+			localStorage.setItem("WikiShield:Storage", saveString);
 			return true;
 		} else {
 			return this.api.postWithEditToken(
 				{
 					action: "options",
 					optionname: "userjs-wikishield-storage",
-					optionvalue: string,
+					optionvalue: saveString,
 					format: "json"
 				}
 			);
@@ -1305,21 +1322,41 @@ export class WikiShield {
 	async load() {
 		this.loadTime = performance.now();
 
-		if (mw.storage.store.getItem("WikiShield:CloudStorage") === "false") {
-			return mw.storage.store.getItem("WikiShield:Storage") ?? "e30=";
-		} else {
-			const info = await this.api.get({
-				action: "query",
-				meta: "userinfo",
-				uiprop: "options",
-				format: "json"
-			});
-			if (!info.query) {
-				alert("Could not load WikiShield data from cloud storage");
-				window.location.reload();
-				return "e30=";
-			} else
-				return info?.query?.userinfo?.options?.["userjs-wikishield-storage"] ?? "e30=";
+		let storageStringA = await (async () => {
+			if (localStorage.getItem("WikiShield:CloudStorage") === "false") {
+				return localStorage.getItem("WikiShield:Storage") ?? "e30=";
+			} else {
+				const info = await this.api.get({
+					action: "query",
+					meta: "userinfo",
+					uiprop: "options",
+					format: "json"
+				});
+				if (!info.query) {
+					alert("Could not load WikiShield data from cloud storage");
+					window.location.reload();
+					return "e30=";
+				} else
+					return info?.query?.userinfo?.options?.["userjs-wikishield-storage"] ?? "e30=";
+			}
+		})();
+
+		let timestampA = 0, stringA = storageStringA;
+		if (storageStringA.includes(";")) {
+			[ timestampA, stringA ] = storageStringA.split(";", 2);
+			timestampA = parseInt(timestampA);
 		}
+
+		let storageStringB = localStorage.getItem("WikiShield:BackupStorage") ?? "e30=";
+		let timestampB = 0, stringB = storageStringB;
+		if (storageStringB.includes(";")) {
+			[ timestampB, stringB ] = storageStringB.split(";", 2);
+			timestampB = parseInt(timestampB);
+		}
+
+		if (timestampA >= timestampB)
+			return stringA;
+		else
+			return stringB;
 	}
 }

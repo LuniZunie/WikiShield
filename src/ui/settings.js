@@ -259,6 +259,7 @@ export class WikiShieldSettingsInterface {
 
 			const currentVolume = this.wikishield.storage.data.settings.audio.volume[key];
 			this.wikishield.storage.data.settings.audio.volume[key] = val;
+			this.wikishield.localSave();
 
 			if (currentVolume !== val) {
 				this.wikishield.audioManager.onvolumechanged();
@@ -315,6 +316,8 @@ export class WikiShieldSettingsInterface {
 			if (currentVolume !== val) {
 				this.wikishield.audioManager.onvolumechanged();
 			}
+
+			this.wikishield.localSave();
 		};
 
 		slider.addEventListener("input", () => updateVolume(slider.value));
@@ -495,21 +498,25 @@ export class WikiShieldSettingsInterface {
 				maxEditCount: settings.queue.max_edits,
 				onMaxEditCountChange: (value) => {
 					settings.queue.max_edits = value;
+					this.wikishield.localSave();
 				},
 
 				maxQueueSize: settings.queue.max_size,
 				onMaxQueueSizeChange: (value) => {
 					settings.queue.max_size = value;
+					this.wikishield.localSave();
 				},
 
 				minOresScore: settings.queue.min_ores,
 				onMinOresScoreChange: (value) => {
 					settings.queue.min_ores = value;
+					this.wikishield.localSave();
 				},
 
 				watchlistExpiry: settings.expiry.watchlist,
 				onWatchlistExpiryChange: (value) => {
 					settings.expiry.watchlist = value;
+					this.wikishield.localSave();
 				},
 
 				namespaces,
@@ -522,6 +529,8 @@ export class WikiShieldSettingsInterface {
 					} else {
 						settings.namespaces = settings.namespaces.filter(n => n !== nsid);
 					}
+
+					this.wikishield.localSave();
 				},
 			})
 		);
@@ -538,6 +547,7 @@ export class WikiShieldSettingsInterface {
 				startup: settings.performance.startup,
 				onStartupChange: (value) => {
 					settings.performance.startup = value;
+					this.wikishield.localSave();
 				}
 			})
 		);
@@ -620,6 +630,8 @@ export class WikiShieldSettingsInterface {
 			if (currentVolume !== val) {
 				this.wikishield.audioManager.onvolumechanged();
 			}
+
+			this.wikishield.localSave();
 		};
 
 		masterSlider.addEventListener("input", () => updateMasterVolume(masterSlider.value));
@@ -631,6 +643,7 @@ export class WikiShieldSettingsInterface {
 			this.wikishield.storage.data.settings.audio.ores_alert.enabled,
 			(newValue) => {
 				this.wikishield.storage.data.settings.audio.ores_alert.enabled = newValue;
+				this.wikishield.localSave();
 			}
 		);
 
@@ -640,6 +653,7 @@ export class WikiShieldSettingsInterface {
 			this.wikishield.storage.data.settings.audio.ores_alert.threshold, 0, 1, .05,
 			(newValue) => {
 				this.wikishield.storage.data.settings.audio.ores_alert.threshold = newValue;
+				this.wikishield.localSave();
 			}
 		);
 
@@ -843,6 +857,7 @@ export class WikiShieldSettingsInterface {
 				onQueueToggle: (queueKey, enabled) => {
 					this.wikishield.storage.data.settings.queue[queueKey].enabled = enabled;
 					this.wikishield.interface.updateQueueTabs();
+					this.wikishield.localSave();
 				},
 				onQueueReorder: (newOrder) => {
 					newOrder.forEach(([ queueKey ], index) => {
@@ -850,6 +865,7 @@ export class WikiShieldSettingsInterface {
 					});
 
 					this.wikishield.interface.updateQueueTabs();
+					this.wikishield.localSave();
 				},
 
 				selectedPalette: this.wikishield.storage.data.UI.theme.palette,
@@ -867,6 +883,8 @@ export class WikiShieldSettingsInterface {
 							this.wikishield.queue.currentEdit[this.wikishield.queue.currentQueueTab]
 						);
 					}
+
+					this.wikishield.localSave();
 				}
 			})
 		);
@@ -883,33 +901,40 @@ export class WikiShieldSettingsInterface {
 				onEnableChange: value => {
 					this.wikishield.storage.data.settings.zen_mode.enabled = value;
 					this.wikishield.interface.updateZenModeDisplay(true);
+					this.wikishield.localSave();
 				},
 
 				onSoundChange: value => {
 					this.wikishield.storage.data.settings.zen_mode.sound.enabled = value;
 					this.wikishield.interface.updateZenModeDisplay();
+					this.wikishield.localSave();
 				},
 				onMusicChange: value => {
 					this.wikishield.storage.data.settings.zen_mode.music.enabled = value;
 					this.wikishield.interface.updateZenModeDisplay(true);
+					this.wikishield.localSave();
 				},
 
 				onAlertsChange: value => {
 					this.wikishield.storage.data.settings.zen_mode.alerts.enabled = value;
 					this.wikishield.interface.updateZenModeDisplay();
+					this.wikishield.localSave();
 				},
 				onNoticesChange: value => {
 					this.wikishield.storage.data.settings.zen_mode.notices.enabled = value;
 					this.wikishield.interface.updateZenModeDisplay();
+					this.wikishield.localSave();
 				},
 				onToastsChange: value => {
 					this.wikishield.storage.data.settings.zen_mode.toasts.enabled = value;
 					this.wikishield.interface.updateZenModeDisplay();
+					this.wikishield.localSave();
 				},
 
 				onBadgesChange: value => {
 					this.wikishield.storage.data.settings.zen_mode.badges.enabled = value;
 					this.wikishield.interface.updateZenModeDisplay();
+					this.wikishield.localSave();
 				},
 			})
 		);
@@ -951,6 +976,7 @@ export class WikiShieldSettingsInterface {
 				actions: []
 			});
 			this.openControls();
+			this.wikishield.localSave();
 		});
 
 		this.setPath("#Core", "Controls");
@@ -1022,6 +1048,7 @@ export class WikiShieldSettingsInterface {
 				control.keys = [...set];
 				this.createControlInterface(container, control);
 				this.updateDuplicateControls();
+				this.wikishield.localSave();
 			});
 		}
 
@@ -1046,6 +1073,7 @@ export class WikiShieldSettingsInterface {
 				this.createControlInterface(container, control);
 				this.updateDuplicateControls();
 				this.keypressCallback = null;
+				this.wikishield.localSave();
 			};
 		});
 
@@ -1074,6 +1102,7 @@ export class WikiShieldSettingsInterface {
 			this.wikishield.audioManager.playSound([ "ui", "click" ]);
 			this.wikishield.storage.data.control_scripts.splice(this.wikishield.storage.data.control_scripts.indexOf(control), 1);
 			this.openControls();
+			this.wikishield.localSave();
 		});
 
 		const addContainer = bottomContainer.querySelector(".add-action-container");
@@ -1115,6 +1144,7 @@ export class WikiShieldSettingsInterface {
 					}
 
 					control.actions.push(action);
+					this.wikishield.localSave();
 					this.createControlInterface(container, control);
 				});
 			});
@@ -1181,6 +1211,7 @@ export class WikiShieldSettingsInterface {
 			select.addEventListener("change", () => {
 				action.condition = select.value;
 				onChange();
+				this.wikishield.localSave();
 			});
 
 			for (const subaction of action.actions) {
@@ -1203,6 +1234,7 @@ export class WikiShieldSettingsInterface {
 
 				this.createItemParameter(itemContainer, param, action.params[param.id] || "", (value) => {
 					action.params[param.id] = value;
+					this.wikishield.localSave();
 				});
 			}
 		}
@@ -1237,6 +1269,7 @@ export class WikiShieldSettingsInterface {
 			}
 
 			onChange();
+			this.wikishield.localSave();
 		});
 
 		itemContainer.querySelector(".move-action-up").addEventListener("click", () => {
@@ -1263,12 +1296,14 @@ export class WikiShieldSettingsInterface {
 			}
 
 			onChange();
+			this.wikishield.localSave();
 		});
 
 		itemContainer.querySelector(".delete-action").addEventListener("click", () => {
 			const parent = this.findParentOfAction(action, control);
 			parent.actions.splice(parent.actions.indexOf(action), 1);
 			onChange();
+			this.wikishield.localSave();
 		});
 	}
 
@@ -1307,7 +1342,10 @@ export class WikiShieldSettingsInterface {
 				onChange(select.value);
 			}
 
-			select.addEventListener("change", () => onChange(select.value));
+			select.addEventListener("change", () => {
+				onChange(select.value);
+				this.wikishield.localSave();
+			});
 		} else if (parameter.type === "text") {
 			parameterElem.innerHTML += `<input type="text" autoComplete="off">`;
 			const input = parameterElem.querySelector("input");
@@ -1316,10 +1354,14 @@ export class WikiShieldSettingsInterface {
 			input.addEventListener("keydown", (event) => {
 				if (event.key.toLowerCase() === "enter") {
 					onChange(input.value);
+					this.wikishield.localSave();
 					input.blur();
 				}
 			});
-			input.addEventListener("blur", () => onChange(input.value));
+			input.addEventListener("blur", () => {
+				onChange(input.value);
+				this.wikishield.localSave();
+			});
 		}
 	}
 
@@ -1423,6 +1465,7 @@ ollama serve
 			settings.edit_analysis.enabled,
 			(newValue) => {
 				settings.edit_analysis.enabled = newValue;
+				this.wikishield.localSave();
 			}
 		);
 		this.createToggle(
@@ -1430,6 +1473,7 @@ ollama serve
 			settings.username_analysis.enabled,
 			(newValue) => {
 				settings.username_analysis.enabled = newValue;
+				this.wikishield.localSave();
 			}
 		);
 
@@ -1457,6 +1501,8 @@ ollama serve
 					this.wikishield.AI?.cancel.all(true);
 					this.wikishield.AI = null;
 				}
+
+				this.wikishield.localSave();
 			}
 		);
 
@@ -1467,6 +1513,8 @@ ollama serve
 			if (settings.provider === "Ollama" && this.wikishield.AI) {
 				this.wikishield.AI.cancel.all(true);
 			}
+
+			this.wikishield.localSave();
 		});
 
 		// Test connection button
@@ -1614,6 +1662,8 @@ ollama serve
 							const $indicator = $model.querySelector(".indicator");
 							$indicator.classList.remove("fa-circle");
 							$indicator.classList.add("fa-check-circle");
+
+							this.wikishield.localSave();
 						});
 					});
 				}
@@ -1640,6 +1690,7 @@ ollama serve
 
 				onEnableChange: (newValue) => {
 					this.wikishield.storage.data.settings.auto_report.enabled = newValue;
+					this.wikishield.localSave();
 				},
 				onWarningToggle: (key, isEnabled) => {
 					if (isEnabled) {
@@ -1647,6 +1698,8 @@ ollama serve
 					} else {
 						this.wikishield.storage.data.settings.auto_report.for.delete(key);
 					}
+
+					this.wikishield.localSave();
 				}
 			})
 		);
@@ -1703,6 +1756,7 @@ ollama serve
 			settings.auto_welcome.enabled,
 			(newValue) => {
 				settings.auto_welcome.enabled = newValue;
+				this.wikishield.localSave();
 			}
 		);
 
@@ -1711,6 +1765,7 @@ ollama serve
 			settings.wikipedia_popups.enabled,
 			(newValue) => {
 				settings.wikipedia_popups.enabled = newValue;
+				this.wikishield.localSave();
 			}
 		);
 
@@ -1720,6 +1775,7 @@ ollama serve
 			(newValue) => {
 				settings.username_highlighting.enabled = newValue;
 				this.wikishield.interface.renderQueue();
+				this.wikishield.localSave();
 			}
 		);
 		this.createToggle(
@@ -1727,6 +1783,7 @@ ollama serve
 			settings.username_highlighting.fuzzy,
 			(newValue) => {
 				settings.username_highlighting.fuzzy = newValue;
+				this.wikishield.localSave();
 			}
 		);
 
@@ -1800,6 +1857,8 @@ ollama serve
 				this.wikishield.storage.data.statistics.items_whitelisted.total++;
 				this.wikishield.storage.data.statistics.items_whitelisted[key]++;
 
+				this.wikishield.localSave();
+
 				input.value = "";
 				this.openWhitelist(key); // Refresh the list
 			}
@@ -1814,6 +1873,7 @@ ollama serve
 		whitelistExpiry.value = this.wikishield.storage.data.settings.expiry.whitelist[key];
 		whitelistExpiry.addEventListener("change", () => {
 			this.wikishield.storage.data.settings.expiry.whitelist[key] = whitelistExpiry.value;
+			this.wikishield.localSave();
 		});
 
 		this.createWhitelistList(container, key);
@@ -1868,6 +1928,7 @@ ollama serve
 				item.remove();
 
 				this.createWhitelistList(container, key); // Refresh the list
+				this.wikishield.localSave();
 			});
 		}
 
@@ -1946,6 +2007,8 @@ ollama serve
 				this.wikishield.storage.data.statistics.items_highlighted.total++;
 				this.wikishield.storage.data.statistics.items_highlighted[key]++;
 
+				this.wikishield.localSave();
+
 				input.value = "";
 				this.openHighlight(key); // Refresh the list
 			}
@@ -1960,6 +2023,7 @@ ollama serve
 		highlightExpiry.value = this.wikishield.storage.data.settings.expiry.highlight[key];
 		highlightExpiry.addEventListener("change", () => {
 			this.wikishield.storage.data.settings.expiry.highlight[key] = highlightExpiry.value;
+			this.wikishield.localSave();
 		});
 
 		this.createHighlightList(container, key);
@@ -2014,6 +2078,7 @@ ollama serve
 				item.remove();
 
 				this.createHighlightList(container, key); // Refresh the list
+				this.wikishield.localSave();
 			});
 		}
 
@@ -2367,6 +2432,7 @@ ollama serve
 				this.wikishield.loadTime = performance.now();
 				this.wikishield.storage.data.statistics = { };
 				this.wikishield.storage.load(this.wikishield.storage.data);
+				this.wikishield.localSave();
 
 				this.openStatistics();
 			}
@@ -2480,6 +2546,7 @@ ollama serve
 			(newValue) => {
 				this.wikishield.storage.data.settings.cloud_storage.enabled = newValue;
 				mw.storage.store.setItem("WikiShield:CloudStorage", newValue);
+				this.wikishield.localSave();
 			}
 		);
 
@@ -2554,6 +2621,7 @@ ollama serve
 
 				try {
 					const logs = await this.wikishield.init(base64, true); // Try to import settings
+					this.wikishield.localSave();
 					StorageManager.outputLogs(logs, "Import Settings");
 
 					const [ expected, unexpected ] = logs.reduce((acc, log) => {
