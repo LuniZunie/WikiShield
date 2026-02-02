@@ -15,15 +15,15 @@
     "test": "test"
   },
   "dependencies": {
-    "@babel/core": "^7.28.5",
-    "@babel/preset-env": "^7.28.5",
+    "@babel/core": "^7.29.0",
+    "@babel/preset-env": "^7.29.0",
     "@babel/preset-react": "^7.28.5",
     "babel-loader": "^10.0.0",
-    "preact": "^10.28.2",
+    "preact": "^10.28.3",
     "preact-render-to-string": "^6.6.5",
     "webpack": "^5.104.1",
     "webpack-cli": "^6.0.1",
-    "webpack-dev-server": "^5.2.2"
+    "webpack-dev-server": "^5.2.3"
   },
   "devDependencies": {
     "@types/jquery": "^3.5.33",
