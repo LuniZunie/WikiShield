@@ -429,13 +429,28 @@ export const warnings = {
 				],
 			},
 			{
-				id: "content:noteng",
+				reportable: false,
+
+				queueType: [ "edit" ],
+
+				title: "English variant",
+				icon: "fas fa-globe",
+				description: "Content added in a different English variant than the rest of the article.",
+
+				summary: "different English variant",
+				auto: "notice",
+
+				templates: [
+					{ name: "notice", template: "subst:uw-engvar" }
+				]
+			},
+			{
 				reportable: false,
 
 				queueType: [ "edit" ],
 
 				title: "Not English",
-				icon: "fas fa-globe",
+				icon: "fas fa-language",
 				description: "Content added in a language other than English.",
 
 				summary: "non-English",
@@ -668,7 +683,7 @@ export const warnings = {
 
 				queueType: [ "edit" ],
 
-				title: "COI",
+				title: "COI edits",
 				icon: "fas fa-user-tie",
 				description: "Editing with a conflict of interest.",
 
@@ -686,7 +701,7 @@ export const warnings = {
 
 				queueType: [ "logevent" ],
 
-				title: "COI",
+				title: "COI user",
 				icon: "fas fa-user-tie",
 				description: "Apparent conflict of interest.",
 
@@ -705,6 +720,25 @@ export const warnings = {
 		description: "Warnings for inappropriate edit summaries.",
 
 		warnings: [
+			{
+				reportable: false,
+
+				queueType: [ "edit" ],
+
+				title: "No edit summary",
+				icon: "fas fa-pen-nib",
+				description: "Making an edit without providing an edit summary.",
+
+				summary: "no [[WP:ES|edit summary]] provided",
+
+				auto(edit) {
+					return edit?.user?.editCount < 500 ? "newcomer" : "experienced";
+				},
+				templates: [
+					{ name: "newcomer", template: "subst:uw-es" },
+					{ name: "experienced", template: "subst:uw-es2" }
+				],
+			},
 			{
 				reportable: true,
 

@@ -155,8 +155,6 @@ export const __script__ = {
 					data.alerts = [ ];
 				});
 			});
-
-			window.addEventListener("keydown", wikishield.keyPressed.bind(wikishield));
 		}).catch((err) => {
 			console.error("WikiShield: Failed to check killswitch:", err);
 			mw.notify("WikiShield: Failed to check killswitch. Loading anyway...", { type: 'warn' });
@@ -188,11 +186,12 @@ export const __script__ = {
 
 				startKillswitchPolling(wikishield.api);
 			});
-			window.addEventListener("keydown", wikishield.keyPressed.bind(wikishield));
 
 			window.addEventListener("error", (event) => {
 				console.error("WikiShield: Unhandled error:", event.error);
 			});
+		}).finally(() => {
+			window.addEventListener("keydown", wikishield.keyPressed.bind(wikishield));
 		});
 	};
 
