@@ -398,10 +398,11 @@ export class WikiShield {
 			console.log(`Could not add User talk:${user} to watchlist:`, err);
 		}
 
-		if (this.queue.currentEdit[this.queue.currentQueueTab]?.user?.name === user &&
+		// TEMP disable, we don't really need this tbh
+		/* if (this.queue.currentEdit[this.queue.currentQueueTab]?.user?.name === user &&
 			(warningLevel === "1" || warningLevel === "2" || warningLevel === "3" || warningLevel === "4" || warningLevel === "4im")) {
 			this.queue.currentEdit[this.queue.currentQueueTab].user.warningLevel = warningLevel;
-		}
+		} */
 	}
 
 	/**
