@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="utf-8">
+    <title>audio/manager.js - WikiShield Documentation</title>
+    
+    <meta name="description" content="API documentation for WikiShield - Wikipedia anti-vandalism tool" />
+    
+        <meta name="keywords" content="wikishield, wikipedia, documentation, api, anti-vandalism" />
+        <meta name="keyword" content="wikishield, wikipedia, documentation, api, anti-vandalism" />
+    
+    
+    
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc.css">
+    <script src="scripts/nav.js" defer></script>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav >
+    
+    <input type="text" id="nav-search" placeholder="Search" />
+    
+    
+    <h2><a href="index.html">Home</a></h2><h2><a href="https://github.com/LuniZunie/WikiShield" target="_blank" class="menu-item" id="github-link" >GitHub</a></h2><h2><a href="https://en.wikipedia.org/wiki/Wikipedia:WikiShield" target="_blank" class="menu-item" id="wikipedia-link" >Wikipedia</a></h2><h3>Modules</h3><ul><li><a href="module-core_killswitch.html">core/killswitch</a><ul class='members'><li data-type='member'><a href="module-core_killswitch.html#.killswitch_config">killswitch_config</a></li><li data-type='member'><a href="module-core_killswitch.html#.killswitch_status">killswitch_status</a></li></ul><ul class='methods'><li data-type='method'><a href="module-core_killswitch.html#.checkKillswitch">checkKillswitch</a></li><li data-type='method'><a href="module-core_killswitch.html#.startKillswitchPolling">startKillswitchPolling</a></li></ul></li></ul><h3>Classes</h3><ul><li><a href="AISettings.html">AISettings</a></li><li><a href="AboutSettings.html">AboutSettings</a></li><li><a href="AudioManager.html">AudioManager</a></li><li><a href="AudioSettings.html">AudioSettings</a></li><li><a href="GeneralSettings.html">GeneralSettings</a></li><li><a href="HighlightSettings.html">HighlightSettings</a></li><li><a href="NumericInput.html">NumericInput</a></li><li><a href="PlaylistController.html">PlaylistController</a></li><li><a href="ProgressBarComponent.html">ProgressBarComponent</a><ul class='methods'><li data-type='method'><a href="ProgressBarComponent.html#scheduleRemoval">scheduleRemoval</a></li><li data-type='method'><a href="ProgressBarComponent.html#updateProgress">updateProgress</a></li></ul></li><li><a href="QueueSettings.html">QueueSettings</a></li><li><a href="SaveSettings.html">SaveSettings</a></li><li><a href="SettingsCompactGrid.html">SettingsCompactGrid</a></li><li><a href="SettingsSection.html">SettingsSection</a></li><li><a href="StatisticsSettings.html">StatisticsSettings</a></li><li><a href="Toggle.html">Toggle</a></li><li><a href="UserList.html">UserList</a></li><li><a href="VolumeControl.html">VolumeControl</a></li><li><a href="WhitelistSettings.html">WhitelistSettings</a></li><li><a href="WikiShieldLog.html">WikiShieldLog</a><ul class='methods'><li data-type='method'><a href="WikiShieldLog.html#log">log</a></li></ul></li><li><a href="WikiShieldProgressBar.html">WikiShieldProgressBar</a><ul class='methods'><li data-type='method'><a href="WikiShieldProgressBar.html#cleanup">cleanup</a></li><li data-type='method'><a href="WikiShieldProgressBar.html#processQueue">processQueue</a></li><li data-type='method'><a href="WikiShieldProgressBar.html#remove">remove</a></li><li data-type='method'><a href="WikiShieldProgressBar.html#set">set</a></li></ul></li><li><a href="ZenSettings.html">ZenSettings</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ProgressBar">ProgressBar</a></li><li><a href="global.html#fullTrim">fullTrim</a></li><li><a href="global.html#hasApproxSubstring">hasApproxSubstring</a></li><li><a href="global.html#injectNamedStyles">injectNamedStyles</a></li><li><a href="global.html#injectStyles">injectStyles</a></li><li><a href="global.html#loadStyles">loadStyles</a></li><li><a href="global.html#useProgressBar">useProgressBar</a></li><li><a href="global.html#wikishieldStyling">wikishieldStyling</a></li></ul>
+    
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">audio/manager.js</h1>
+    
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import { h, render } from 'preact';
+import { MusicToast } from "./toast.jsx";
+
+import { generateRandomUUID } from '../utils/UUID.js';
+
+const audio = {
+    startup: {
+        type: "sound",
+        title: "Startup Sound",
+        description: "Sound played when WikiShield starts up.",
+        volume: 1,
+        data: "https://media.luni.me/audio/sound/startup",
+    },
+    music: {
+        type: "category",
+        title: "Music",
+        description: "Background music tracks.",
+        volume: 1,
+        properties: {
+            zen_mode: {
+                type: "playlist",
+                title: "Zen Mode",
+                description: "Music played in Zen mode.",
+                volume: 1,
+                tracks: [
+                    {
+                        type: "music",
+                        title: "Whispers of Memories",
+                        artist: "Restum-Anoush",
+                        thumbnail: "https://upload.wikimedia.org/wikipedia/commons/3/3c/No-album-art.png",
+                        length: 126,
+                        data: "https://media.luni.me/audio/music/whispers-of-memories",
+                    },
+                    {
+                        type: "music",
+                        title: "Perfect Beauty",
+                        artist: "Grand Project",
+                        thumbnail: "https://media.luni.me/image/cover/perfect-beauty",
+                        length: 440,
+                        data: "https://media.luni.me/audio/music/perfect-beauty",
+                    },
+                    {
+                        type: "music",
+                        title: "Morning in the Forest",
+                        artist: "Good B Music",
+                        thumbnail: "https://media.luni.me/image/cover/morning-in-the-forest",
+                        length: 655,
+                        data: "https://media.luni.me/audio/music/morning-in-the-forest",
+                    },
+                ]
+            }
+        }
+    },
+    ui: {
+        type: "category",
+        title: "User Interface Sounds",
+        description: "Sounds used for user interface interactions.",
+        volume: 1,
+        properties: {
+            click: {
+                type: "sound",
+                title: "Click Sound",
+                description: "Sound played when clicking on interface elements.",
+                volume: 1,
+                data: "https://media.luni.me/audio/sound/click"
+            },
+        }
+    },
+    queue: {
+        type: "category",
+        title: "Queue Sounds",
+        description: "Sounds played for queue events.",
+        volume: 1,
+        properties: {
+            ores: {
+                type: "sound",
+                title: "ORES Alert",
+                description: "Sound played due to a high ORES score.",
+                volume: 1,
+                data: "https://media.luni.me/audio/sound/ores"
+            },
+            mention: {
+                type: "sound",
+                title: "Mention Alert",
+                description: "Sound played when your username is mentioned in an edit.",
+                volume: 1,
+                data: "https://media.luni.me/audio/sound/mention"
+            },
+        }
+    },
+    notification: {
+        type: "category",
+        title: "Notification Sounds",
+        description: "Sounds played for various notifications.",
+        volume: 1,
+        properties: {
+            alert: {
+                type: "sound",
+                title: "Alert Sound",
+                description: "Sound played for alerts.",
+                volume: 1,
+                data: "https://media.luni.me/audio/sound/alert"
+            },
+            notice: {
+                type: "sound",
+                title: "Notice Sound",
+                description: "Sound played for notices.",
+                volume: 1,
+                data: "https://media.luni.me/audio/sound/notice"
+            },
+            toast: {
+                type: "sound",
+                title: "Toast Sound",
+                description: "Sound played for toast notifications.",
+                volume: 1,
+                data: "https://media.luni.me/audio/sound/toast"
+            },
+        },
+    },
+    action: {
+        type: "category",
+        title: "Action Sounds",
+        description: "Sounds played for various user actions.",
+        volume: 1,
+        properties: {
+            default: {
+                type: "sound",
+                title: "Default Action Sound",
+                description: "Sound played for default actions.",
+                volume: 1,
+                data: "https://media.luni.me/audio/sound/action"
+            },
+            failed: {
+                type: "sound",
+                title: "Failed Action Sound",
+                description: "Sound played when an action fails.",
+                volume: 1,
+                data: "https://media.luni.me/audio/sound/failed"
+            },
+            report: {
+                type: "sound",
+                title: "Report Action Sound",
+                description: "Sound played for report actions.",
+                volume: 1,
+                data: "https://media.luni.me/audio/sound/report"
+            },
+            block: {
+                type: "sound",
+                title: "Block Action Sound",
+                description: "Sound played for block actions.",
+                volume: 1,
+                data: null
+            },
+            protect: {
+                type: "sound",
+                title: "Protect Action Sound",
+                description: "Sound played for protect actions.",
+                volume: 1,
+                data: null
+            }
+        }
+    },
+};
+
+/**
+ * Playlist controller class that manages a single playlist's state and playback
+ */
+class PlaylistController {
+    constructor(playlist, playlistKey, tracks, audioManager) {
+        this.playlist = playlist;
+        this.playlistKey = playlistKey;
+        this.tracks = tracks;
+        this.audioManager = audioManager;
+
+        this.history = [];
+        this.future = [];
+        this.currentTrackIndex = null;
+        this.currentAudio = null;
+        this.isActive = false;
+        this.toast = null;
+        this.consecutiveErrors = 0;
+    }
+
+    start() {
+        this.isActive = true;
+        const index = this._pickRandomIndex();
+        this._playTrack(index);
+    }
+
+    stop() {
+        this.isActive = false;
+
+        if (this.currentAudio) {
+            this.currentAudio.pause();
+            this.currentAudio.src = "";
+            this.currentAudio = null;
+        }
+
+        if (this.toast) {
+            this.toast.remove();
+            this.toast = null;
+        }
+
+        this.currentTrackIndex = null;
+        this.history = [];
+        this.future = [];
+    }
+
+    next() {
+        if (!this.isActive) return;
+
+        let nextIndex;
+        if (this.future.length > 0) {
+            nextIndex = this.future.pop();
+        } else {
+            nextIndex = this._pickRandomIndex();
+        }
+
+        this._playTrack(nextIndex);
+    }
+
+    previous() {
+        if (!this.isActive) return;
+
+        if (this.history.length &lt;= 1) {
+            // Restart current track
+            if (this.currentAudio) {
+                this.currentAudio.currentTime = 0;
+                this.currentAudio.play();
+            }
+            return;
+        }
+
+        const current = this.history.pop();
+        this.future.push(current);
+        const prevIndex = this.history[this.history.length - 1];
+
+        this._playTrack(prevIndex, true);
+    }
+
+    _pickRandomIndex() {
+        const length = this.tracks.length;
+        if (length &lt;= 1) return 0;
+
+        const avoidWindow = Math.max(1, Math.floor(length / 2));
+        const recentIndices = new Set(this.history.slice(-avoidWindow));
+
+        for (let i = 0; i &lt; 8; i++) {
+            const idx = Math.floor(Math.random() * length);
+            if (!recentIndices.has(idx)) return idx;
+        }
+
+        return Math.floor(Math.random() * length);
+    }
+
+    _playTrack(index, skipHistory = false) {
+        if (!this.isActive) return;
+
+        // Stop current audio
+        if (this.currentAudio) {
+            this.currentAudio.pause();
+            this.currentAudio.src = "";
+        }
+
+        // Remove old toast
+        if (this.toast) {
+            this.toast.remove();
+            this.toast = null;
+        }
+
+        // Update state
+        this.currentTrackIndex = index;
+        if (!skipHistory) {
+            if (this.history[this.history.length - 1] !== index) {
+                this.history.push(index);
+                this.future = [];
+            }
+        }
+
+        // Get track data
+        const track = this.tracks[index];
+        const volume = this.audioManager.getVolume([...this.playlistKey.split('.'), String(index)]);
+
+        // Create audio element
+        const audio = new Audio(track.data);
+        audio.volume = volume;
+        this.currentAudio = audio;
+
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.metadata = new MediaMetadata({
+                title: track.title,
+                artist: track.artist,
+                album: `${this.playlist.title} – ${track.title}`,
+                artwork: [
+                    { src: track.thumbnail, sizes: "512x512", type: "image/png" }
+                ]
+            });
+
+            navigator.mediaSession.setActionHandler('play', () => {
+                return;
+            });
+
+            navigator.mediaSession.setActionHandler('pause', () => {
+                return;
+            });
+
+            navigator.mediaSession.setActionHandler('previoustrack', () => {
+                this.previous();
+            });
+
+            navigator.mediaSession.setActionHandler('nexttrack', () => {
+                this.next();
+            });
+        }
+
+        // Setup event handlers
+        audio.onended = () => {
+            if (this.isActive &amp;&amp; this.currentAudio === audio) {
+                this.consecutiveErrors = 0; // Reset on success
+                this.next();
+            }
+        };
+
+        audio.onerror = (e) => {
+            if (this.isActive &amp;&amp; this.currentAudio === audio) {
+                this.consecutiveErrors++;
+
+                // Stop after 3 consecutive errors to prevent infinite loop
+                if (this.consecutiveErrors >= 3) {
+                    console.error('Too many consecutive audio errors. Stopping playlist.');
+                    this.stop();
+                    return;
+                }
+
+                this.next();
+            }
+        };
+
+        // Play audio and reset error counter on successful play
+        audio.play()
+            .then(() => {
+                this.consecutiveErrors = 0; // Reset when play succeeds
+
+                // Show toast only after successful play
+                if (this.isActive &amp;&amp; this.currentAudio === audio) {
+                    this.toast = this.audioManager._createToast(track, audio, this);
+                }
+            })
+            .catch((e) => {
+                console.error('Failed to start playback:', e);
+                if (this.isActive &amp;&amp; this.currentAudio === audio) {
+                    this.consecutiveErrors++;
+
+                    // Stop after 3 consecutive errors to prevent infinite loop
+                    if (this.consecutiveErrors >= 3) {
+                        console.error('Too many consecutive playback errors. Stopping playlist.');
+                        this.stop();
+                        return;
+                    }
+
+                    // Try next track
+                    this.next();
+                }
+            });
+    }
+}
+
+/**
+ * Main audio manager class
+ */
+export class AudioManager {
+    constructor(wikishield) {
+        this.wikishield = wikishield;
+        this.audio = audio;
+
+        // Simple tracking maps
+        this.activePlaylists = new Map();
+        this.soundEffects = new Map();
+        this.previews = new Map();
+
+        this.previewing = false;
+    }
+
+    // ========================================
+    // PUBLIC API
+    // ========================================
+
+    async playSound(soundPath, abortController, preview = false) {
+        if (!preview) {
+            const zenMode = this.wikishield.storage.data.settings.zen_mode;
+            if (zenMode.enabled &amp;&amp; !zenMode.sound.enabled) {
+                return;
+            }
+        }
+
+        const sound = this.getSound(soundPath);
+        if (!sound || !sound.data) return;
+
+        const volume = this.getVolume(soundPath);
+        const audio = new Audio(sound.data);
+        audio.volume = !preview &amp;&amp; this.previewing ? 0 : volume;
+
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.setActionHandler('play', () => {
+                return;
+            });
+
+            navigator.mediaSession.setActionHandler('pause', () => {
+                return;
+            });
+
+            navigator.mediaSession.setActionHandler('previoustrack', () => {
+                return;
+            });
+
+            navigator.mediaSession.setActionHandler('nexttrack', () => {
+                return;
+            });
+        }
+
+        const muteId = generateRandomUUID();
+        if (preview) {
+            this.muteId = muteId;
+            this.previewing = true;
+
+            this.stopPreviews();
+            this._muteAll();
+
+            this.previews.set(audio, soundPath);
+        }
+
+        this.soundEffects.set(audio, soundPath);
+
+        const promise = new Promise((resolve, reject) => {
+            audio.resolve = resolve;
+            audio.reject = reject;
+        });
+
+        audio.onended = () => {
+            audio.resolve();
+            this.soundEffects.delete(audio);
+
+            if (preview) {
+                this.previewing = false;
+
+                setTimeout(() => {
+                    if (this.muteId === muteId) {
+                        this._unmuteAll();
+                    }
+                }, 250);
+
+                this.previews.delete(audio);
+            }
+        };
+
+        audio.onerror = () => {
+            audio.resolve();
+            this.soundEffects.delete(audio);
+
+            if (preview) {
+                this.previewing = false;
+
+                setTimeout(() => {
+                    if (this.muteId === muteId) {
+                        this._unmuteAll();
+                    }
+                }, 250);
+
+                this.previews.delete(audio);
+            }
+        };
+
+        abortController?.signal?.addEventListener('abort', () => {
+            audio.pause();
+            audio.src = "";
+            audio.resolve();
+            this.soundEffects.delete(audio);
+
+            if (preview) {
+                this.previewing = false;
+
+                setTimeout(() => {
+                    if (this.muteId === muteId) {
+                        this._unmuteAll();
+                    }
+                }, 250);
+
+                this.previews.delete(audio);
+            }
+        });
+
+        audio.play();
+
+        return promise;
+    }
+
+    async playPlaylist(soundPath) {
+        const sound = this.getSound(soundPath);
+        if (!sound || sound.type !== 'playlist') return;
+
+        const playlistKey = soundPath.join('.');
+
+        // Stop existing playlist if running
+        if (this.activePlaylists.has(playlistKey)) {
+            this.stopPlaylist(soundPath);
+        }
+
+        // Stop all other music
+        this._stopAllMusic();
+
+        // Create and start new playlist controller
+        const controller = new PlaylistController(sound, playlistKey, sound.tracks, this);
+        this.activePlaylists.set(playlistKey, controller);
+        controller.start();
+    }
+
+    stopPlaylist(soundPath) {
+        const playlistKey = soundPath.join('.');
+        const controller = this.activePlaylists.get(playlistKey);
+
+        if (controller) {
+            controller.stop();
+            this.activePlaylists.delete(playlistKey);
+        }
+    }
+
+    async previewSound(soundPath) {
+        const sound = this.getSound(soundPath);
+        if (!sound || !sound.data) return;
+
+        // Mute all active sounds
+        this._muteAll();
+
+        const audio = new Audio(sound.data);
+        audio.volume = this.getVolume(soundPath);
+        this.previews.set(audio, soundPath);
+
+        const cleanup = () => {
+            this.previews.delete(audio);
+            if (this.previews.size === 0) {
+                this._unmuteAll();
+            }
+        };
+
+        audio.onended = cleanup;
+        audio.onerror = cleanup;
+
+        await audio.play();
+    }
+
+    stopPreviews() {
+        for (const audio of this.previews.keys()) {
+            audio.pause();
+            audio.onended = null;
+            audio.onerror = null;
+            audio.src = "";
+        }
+        this.previews.clear();
+        this._unmuteAll();
+    }
+
+    onvolumechanged() {
+        // Update all active playlist volumes (unless previewing)
+        if (this.previewing) {
+            for (const [audio, soundPath] of this.previews.entries()) {
+                const newVolume = this.getVolume(soundPath);
+                audio.volume = newVolume;
+            }
+        } else {
+            for (const controller of this.activePlaylists.values()) {
+                if (controller.currentAudio) {
+                    const newVolume = this.getVolume(controller.playlistKey.split('.'));
+                    controller.currentAudio.volume = newVolume;
+                }
+            }
+
+            for (const [audio, soundPath] of this.soundEffects.entries()) {
+                const newVolume = this.getVolume(soundPath);
+                audio.volume = newVolume;
+            }
+        }
+    }
+
+    // ========================================
+    // INTERNAL METHODS
+    // ========================================
+
+    _stopAllMusic() {
+        for (const [key, controller] of this.activePlaylists.entries()) {
+            controller.stop();
+            this.activePlaylists.delete(key);
+        }
+    }
+
+    _muteAll() {
+        for (const controller of this.activePlaylists.values()) {
+            if (controller.currentAudio) {
+                controller.currentAudio.volume = 0;
+            }
+        }
+
+        for (const audio of this.soundEffects.keys()) {
+            audio.volume = 0;
+        }
+    }
+
+    _unmuteAll() {
+        for (const controller of this.activePlaylists.values()) {
+            if (controller.currentAudio) {
+                const soundPath = [...controller.playlistKey.split('.'), String(controller.currentTrackIndex)];
+                controller.currentAudio.volume = this.getVolume(soundPath);
+            }
+        }
+
+        // Restore sound effect volumes
+        for (const [audio, soundPath] of this.soundEffects.entries()) {
+            audio.volume = this.getVolume(soundPath);
+        }
+    }
+
+    _createToast(track, audio, controller) {
+        const container = document.createElement("div");
+        document.body.appendChild(container);
+
+        const toast = {
+            timeoutId: null,
+            remove: () => {
+                if (toast.timeoutId) {
+                    clearTimeout(toast.timeoutId);
+                    toast.timeoutId = null;
+                }
+
+                const toastEl = container.querySelector(".music-toast");
+                if (toastEl) {
+                    toastEl.classList.add("music-toast-leave");
+                }
+
+                container.onanimationend = () => {
+                    try {
+                        render(null, container);
+                    } catch {}
+
+                    if (container.parentNode) {
+                        container.parentNode.removeChild(container);
+                    }
+                };
+            }
+        };
+
+        const onPrevious = () => {
+            if (controller.isActive) controller.previous();
+        };
+        const onNext = () => {
+            if (controller.isActive) controller.next();
+        };
+
+        render(
+            &lt;MusicToast
+                title={track.title}
+                artist={track.artist}
+                thumbnail={track.thumbnail}
+                audio={audio}
+                onPrevious={onPrevious}
+                onNext={onNext}
+            />,
+            container
+        );
+
+        toast.timeoutId = setTimeout(() => {
+            if (controller.isActive) {
+                toast.remove();
+            }
+        }, 3000);
+
+        return toast;
+    }
+
+    // ========================================
+    // UTILITY METHODS
+    // ========================================
+
+    getSound(path) {
+        let current = { type: "category", properties: this.audio };
+
+        for (const segment of path) {
+            if (current.type === "category") {
+                current = current.properties[segment];
+            } else if (current.type === "playlist") {
+                current = current.tracks[parseInt(segment)];
+            } else {
+                return null;
+            }
+
+            if (!current) return null;
+        }
+
+        return current;
+    }
+
+    getVolume(path) {
+        const volumes = this.wikishield.storage.data.settings.audio.volume;
+
+        let volume = volumes.master;
+        let current = { type: "category", properties: this.audio };
+        const pathParts = [ "master" ];
+        for (const segment of path) {
+            pathParts.push(segment);
+
+            if (current.type === "category") {
+                current = current.properties[segment];
+            } else if (current.type === "playlist") {
+                return volume;
+            } else {
+                return volume;
+            }
+
+            if (!current) break;
+
+            const specificVolume = volumes[pathParts.join(".")];
+            if (specificVolume !== undefined) {
+                volume *= specificVolume;
+            }
+        }
+
+        return volume;
+    }
+}</code></pre>
+        </article>
+    </section>
+
+
+
+
+    
+    
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.5</a> on Wed Feb 25 2026 01:37:34 GMT+0000 (Coordinated Universal Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/polyfill.js"></script>
+<script src="scripts/linenumber.js"></script>
+
+<script src="scripts/search.js" defer></script>
+
+
+
+</body>
+</html>

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="utf-8">
+    <title>core/killswitch.js - WikiShield Documentation</title>
+    
+    <meta name="description" content="API documentation for WikiShield - Wikipedia anti-vandalism tool" />
+    
+        <meta name="keywords" content="wikishield, wikipedia, documentation, api, anti-vandalism" />
+        <meta name="keyword" content="wikishield, wikipedia, documentation, api, anti-vandalism" />
+    
+    
+    
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc.css">
+    <script src="scripts/nav.js" defer></script>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav >
+    
+    <input type="text" id="nav-search" placeholder="Search" />
+    
+    
+    <h2><a href="index.html">Home</a></h2><h2><a href="https://github.com/LuniZunie/WikiShield" target="_blank" class="menu-item" id="github-link" >GitHub</a></h2><h2><a href="https://en.wikipedia.org/wiki/Wikipedia:WikiShield" target="_blank" class="menu-item" id="wikipedia-link" >Wikipedia</a></h2><h3>Modules</h3><ul><li><a href="module-core_killswitch.html">core/killswitch</a><ul class='members'><li data-type='member'><a href="module-core_killswitch.html#.killswitch_config">killswitch_config</a></li><li data-type='member'><a href="module-core_killswitch.html#.killswitch_status">killswitch_status</a></li></ul><ul class='methods'><li data-type='method'><a href="module-core_killswitch.html#.checkKillswitch">checkKillswitch</a></li><li data-type='method'><a href="module-core_killswitch.html#.startKillswitchPolling">startKillswitchPolling</a></li></ul></li></ul><h3>Classes</h3><ul><li><a href="AISettings.html">AISettings</a></li><li><a href="AboutSettings.html">AboutSettings</a></li><li><a href="AudioManager.html">AudioManager</a></li><li><a href="AudioSettings.html">AudioSettings</a></li><li><a href="GeneralSettings.html">GeneralSettings</a></li><li><a href="HighlightSettings.html">HighlightSettings</a></li><li><a href="NumericInput.html">NumericInput</a></li><li><a href="PlaylistController.html">PlaylistController</a></li><li><a href="ProgressBarComponent.html">ProgressBarComponent</a><ul class='methods'><li data-type='method'><a href="ProgressBarComponent.html#scheduleRemoval">scheduleRemoval</a></li><li data-type='method'><a href="ProgressBarComponent.html#updateProgress">updateProgress</a></li></ul></li><li><a href="QueueSettings.html">QueueSettings</a></li><li><a href="SaveSettings.html">SaveSettings</a></li><li><a href="SettingsCompactGrid.html">SettingsCompactGrid</a></li><li><a href="SettingsSection.html">SettingsSection</a></li><li><a href="StatisticsSettings.html">StatisticsSettings</a></li><li><a href="Toggle.html">Toggle</a></li><li><a href="UserList.html">UserList</a></li><li><a href="VolumeControl.html">VolumeControl</a></li><li><a href="WhitelistSettings.html">WhitelistSettings</a></li><li><a href="WikiShieldLog.html">WikiShieldLog</a><ul class='methods'><li data-type='method'><a href="WikiShieldLog.html#log">log</a></li></ul></li><li><a href="WikiShieldProgressBar.html">WikiShieldProgressBar</a><ul class='methods'><li data-type='method'><a href="WikiShieldProgressBar.html#cleanup">cleanup</a></li><li data-type='method'><a href="WikiShieldProgressBar.html#processQueue">processQueue</a></li><li data-type='method'><a href="WikiShieldProgressBar.html#remove">remove</a></li><li data-type='method'><a href="WikiShieldProgressBar.html#set">set</a></li></ul></li><li><a href="ZenSettings.html">ZenSettings</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ProgressBar">ProgressBar</a></li><li><a href="global.html#fullTrim">fullTrim</a></li><li><a href="global.html#hasApproxSubstring">hasApproxSubstring</a></li><li><a href="global.html#injectNamedStyles">injectNamedStyles</a></li><li><a href="global.html#injectStyles">injectStyles</a></li><li><a href="global.html#loadStyles">loadStyles</a></li><li><a href="global.html#useProgressBar">useProgressBar</a></li><li><a href="global.html#wikishieldStyling">wikishieldStyling</a></li></ul>
+    
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">core/killswitch.js</h1>
+    
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @module core/killswitch
+ * @description Global killswitch system for WikiShield.
+ *
+ * This module provides a simple polling mechanism to check a remote Wikipedia page
+ * for killswitch commands that can either disable WikiShield entirely or force a reload.
+ *
+ * @example
+ * import { killswitch_status, startKillswitchPolling } from './core/killswitch.js';
+ *
+ * // Check if WikiShield is disabled
+ * if (killswitch_status.disabled) {
+ *   console.log("WikiShield is disabled by killswitch");
+ *   return;
+ * }
+ *
+ * // Start monitoring the killswitch
+ * startKillswitchPolling(api);
+ */
+
+/**
+ * Configuration for the killswitch polling system.
+ *
+ * @type {Object}
+ * @property {string} killswitch_page - Wikipedia page containing killswitch configuration JSON
+ * @property {number} polling_interval - How often to check the killswitch page (milliseconds)
+ *
+ * @example
+ * // To set up the killswitch, create a page at the configured location with this content:
+ * // Page: User:LuniZunie/killswitch.js
+ * // Content:
+ * {
+ *   "disabled": false,
+ *   "forceReload": false
+ * }
+ *
+ * // To disable WikiShield:
+ * {
+ *   "disabled": true,
+ *   "forceReload": false
+ * }
+ *
+ * // To force all users to reload:
+ * {
+ *   "disabled": false,
+ *   "forceReload": true
+ * }
+ */
+export const killswitch_config = {
+    killswitch_page: "User:LuniZunie/killswitch.js",
+    polling_interval: 10000 // Check every 10 seconds
+};
+
+/**
+ * @typedef {ReloadObject}
+ * @property {number} soft - soft reload version
+ * @property {number} hard - hard reload version
+ */
+
+/**
+ * Killswitch status object with two simple options.
+ *
+ * @type {Object}
+ * @property {boolean} disabled - If true, WikiShield should not load or operate
+ * @property {ReloadObject} reload - Reload options
+ *
+ * @example
+ * // Check if WikiShield is disabled
+ * if (killswitch_status.disabled) {
+ *   console.log("WikiShield is disabled");
+ *   return;
+ * }
+ */
+
+export const killswitch_status = {
+    disabled: false,
+    reload: {
+        soft: false,
+        hard: false,
+    },
+
+    alerts: [ ]
+};
+
+/**
+ * Check the remote killswitch page and update the global killswitch status.
+ *
+ * This function fetches the killswitch configuration page from Wikipedia,
+ * parses the JSON content, and updates the killswitch_status object.
+ * If forceReload is detected, it will reload the page immediately.
+ *
+ * @async
+ * @param {WikiShieldAPI} api - The WikiShield API instance for fetching page content
+ * @returns {Promise&lt;Object>} The updated killswitch_status object
+ *
+ * @example
+ * const status = await checkKillswitch(wikishield.api);
+ * if (status.disabled) {
+ *   console.log("WikiShield has been disabled!");
+ * }
+ */
+export async function checkKillswitch(api, startup = true) {
+    try {
+        const domain = mw.config.get("wgServerName") === "test.wikipedia.org" ? "test.wikipedia.org" : "en.wikipedia.org";
+
+        const content = await fetch(`https://${mw.config.get("wgServer")}/w/api.php?action=query&amp;prop=revisions&amp;rvprop=content&amp;format=json&amp;origin=*&amp;titles=${encodeURIComponent(killswitch_config.killswitch_page)}`)
+            .then(response => response.json())
+            .then(data => {
+                const pages = data.query.pages;
+                const pageId = Object.keys(pages)[0];
+                return pages[pageId].revisions[0]['*'];
+            });
+
+        // Check if content was successfully fetched
+        if (!content) {
+            console.warn("WikiShield: Killswitch page not found or could not be fetched");
+            return killswitch_status;
+        }
+
+        const data = JSON.parse(content)?.WikiShield;
+
+        // Update status
+        if (typeof data.disabled === 'boolean') {
+            killswitch_status.disabled = data.disabled;
+        }
+
+        const soft = data.reload?.soft;
+        const hard = data.reload?.hard;
+
+        if (startup) {
+            if (typeof soft === "number") {
+                window.sessionStorage.setItem("WikiShield:SoftReload", soft);
+            }
+            if (typeof hard === "number") {
+                window.sessionStorage.setItem("WikiShield:HardReload", hard);
+            }
+        } else {
+            if (typeof soft === "number") {
+                const current = +window.sessionStorage.getItem("WikiShield:SoftReload");
+                if (soft > current) {
+                    window.sessionStorage.setItem("WikiShield:SoftReload", soft);
+
+                    console.log("WikiShield: Soft reload triggered by killswitch");
+                    killswitch_status.alerts.push({
+                        id: `app-${performance.now()}`,
+                        type: "app",
+                        subtype: "soft-reload",
+                        timestamp: Date.now(),
+                        title: "A newer version of WikiShield has been released!",
+                        agent: "WikiShield Development",
+                        category: "WikiShield",
+                        read: false
+                    });
+                }
+            }
+            if (typeof hard === "number") {
+                const current = +window.sessionStorage.getItem("WikiShield:HardReload");
+                if (hard > current) {
+                    window.sessionStorage.setItem("WikiShield:HardReload", hard);
+                    window.sessionStorage.setItem("WikiShield:SendHardReloadAlert", true);
+
+                    console.log("WikiShield: Hard reload triggered by killswitch");
+                    history.replaceState({ page: "WikiShield-reload" }, "", window.location.href);
+                    location.reload();
+                }
+            }
+        }
+
+        return killswitch_status;
+    } catch (err) {
+        console.error("WikiShield: Failed to check killswitch:", err);
+        // Return current state on error (don't disable WikiShield on network failures)
+        return killswitch_status;
+    }
+}
+
+/**
+ * Start polling the killswitch page at regular intervals.
+ *
+ * This function begins a polling loop that checks the killswitch configuration
+ * at the interval specified in killswitch_config.
+ *
+ * @param {WikiShieldAPI} api - The WikiShield API instance for fetching page content
+ *
+ * @example
+ * startKillswitchPolling(wikishield.api);
+ */
+export function startKillswitchPolling(api, callback) {
+    const poll = async () => {
+        await checkKillswitch(api, false);
+
+        if (typeof callback === "function") {
+            callback(killswitch_status);
+        }
+
+        // Schedule next check (only if not force reloaded)
+        setTimeout(poll, killswitch_config.polling_interval);
+    };
+
+    // Start polling
+    poll();
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+    
+    
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.5</a> on Wed Feb 25 2026 01:37:34 GMT+0000 (Coordinated Universal Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/polyfill.js"></script>
+<script src="scripts/linenumber.js"></script>
+
+<script src="scripts/search.js" defer></script>
+
+
+
+</body>
+</html>

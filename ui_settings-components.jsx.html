@@ -1,0 +1,1556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="utf-8">
+    <title>ui/settings-components.jsx - WikiShield Documentation</title>
+    
+    <meta name="description" content="API documentation for WikiShield - Wikipedia anti-vandalism tool" />
+    
+        <meta name="keywords" content="wikishield, wikipedia, documentation, api, anti-vandalism" />
+        <meta name="keyword" content="wikishield, wikipedia, documentation, api, anti-vandalism" />
+    
+    
+    
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc.css">
+    <script src="scripts/nav.js" defer></script>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav >
+    
+    <input type="text" id="nav-search" placeholder="Search" />
+    
+    
+    <h2><a href="index.html">Home</a></h2><h2><a href="https://github.com/LuniZunie/WikiShield" target="_blank" class="menu-item" id="github-link" >GitHub</a></h2><h2><a href="https://en.wikipedia.org/wiki/Wikipedia:WikiShield" target="_blank" class="menu-item" id="wikipedia-link" >Wikipedia</a></h2><h3>Modules</h3><ul><li><a href="module-core_killswitch.html">core/killswitch</a><ul class='members'><li data-type='member'><a href="module-core_killswitch.html#.killswitch_config">killswitch_config</a></li><li data-type='member'><a href="module-core_killswitch.html#.killswitch_status">killswitch_status</a></li></ul><ul class='methods'><li data-type='method'><a href="module-core_killswitch.html#.checkKillswitch">checkKillswitch</a></li><li data-type='method'><a href="module-core_killswitch.html#.startKillswitchPolling">startKillswitchPolling</a></li></ul></li></ul><h3>Classes</h3><ul><li><a href="AISettings.html">AISettings</a></li><li><a href="AboutSettings.html">AboutSettings</a></li><li><a href="AudioManager.html">AudioManager</a></li><li><a href="AudioSettings.html">AudioSettings</a></li><li><a href="GeneralSettings.html">GeneralSettings</a></li><li><a href="HighlightSettings.html">HighlightSettings</a></li><li><a href="NumericInput.html">NumericInput</a></li><li><a href="PlaylistController.html">PlaylistController</a></li><li><a href="ProgressBarComponent.html">ProgressBarComponent</a><ul class='methods'><li data-type='method'><a href="ProgressBarComponent.html#scheduleRemoval">scheduleRemoval</a></li><li data-type='method'><a href="ProgressBarComponent.html#updateProgress">updateProgress</a></li></ul></li><li><a href="QueueSettings.html">QueueSettings</a></li><li><a href="SaveSettings.html">SaveSettings</a></li><li><a href="SettingsCompactGrid.html">SettingsCompactGrid</a></li><li><a href="SettingsSection.html">SettingsSection</a></li><li><a href="StatisticsSettings.html">StatisticsSettings</a></li><li><a href="Toggle.html">Toggle</a></li><li><a href="UserList.html">UserList</a></li><li><a href="VolumeControl.html">VolumeControl</a></li><li><a href="WhitelistSettings.html">WhitelistSettings</a></li><li><a href="WikiShieldLog.html">WikiShieldLog</a><ul class='methods'><li data-type='method'><a href="WikiShieldLog.html#log">log</a></li></ul></li><li><a href="WikiShieldProgressBar.html">WikiShieldProgressBar</a><ul class='methods'><li data-type='method'><a href="WikiShieldProgressBar.html#cleanup">cleanup</a></li><li data-type='method'><a href="WikiShieldProgressBar.html#processQueue">processQueue</a></li><li data-type='method'><a href="WikiShieldProgressBar.html#remove">remove</a></li><li data-type='method'><a href="WikiShieldProgressBar.html#set">set</a></li></ul></li><li><a href="ZenSettings.html">ZenSettings</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ProgressBar">ProgressBar</a></li><li><a href="global.html#fullTrim">fullTrim</a></li><li><a href="global.html#hasApproxSubstring">hasApproxSubstring</a></li><li><a href="global.html#injectNamedStyles">injectNamedStyles</a></li><li><a href="global.html#injectStyles">injectStyles</a></li><li><a href="global.html#loadStyles">loadStyles</a></li><li><a href="global.html#useProgressBar">useProgressBar</a></li><li><a href="global.html#wikishieldStyling">wikishieldStyling</a></li></ul>
+    
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">ui/settings-components.jsx</h1>
+    
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * React/Preact components for WikiShield settings interface
+ */
+
+import { h, Component } from 'preact';
+
+/**
+ * Toggle Switch Component
+ */
+export class Toggle extends Component {
+	render() {
+		const { value, onChange, label, description, id } = this.props;
+
+		let currentValue = value;
+		return (
+			&lt;div
+				id={id || ''}
+				class={`settings-toggle ${value ? 'active' : ''}`}
+				onClick={e => {
+					currentValue = !currentValue;
+					e.target.closest('.settings-toggle').classList.toggle('active', currentValue);
+					onChange(currentValue);
+				}}
+			>
+				&lt;div class="toggle-switch">
+					&lt;div class="toggle-slider">&lt;/div>
+				&lt;/div>
+			&lt;/div>
+		);
+	}
+}
+
+export class Radio extends Component {
+	render() {
+		const { value, options = [], onChange, name, id } = this.props;
+
+		return (
+			&lt;div
+				id={id || ''}
+				class="settings-radio-group"
+			>
+				{options.map((option) => (
+					&lt;div
+						data-key={option.value}
+						class={`settings-radio-option ${value === option.value ? 'selected' : ''}`}
+						onClick={e => {
+							e.target.closest('.settings-radio-group').querySelectorAll('.settings-radio-option.selected').forEach(el => el.classList.remove('selected'));
+							e.target.classList.add('selected');
+							onChange(option.value);
+						}}
+					>
+						{option.label}
+					&lt;/div>
+				))}
+			&lt;/div>
+		);
+	}
+}
+
+/**
+ * Numeric Input Component
+ */
+export class NumericInput extends Component {
+	constructor(props) {
+		super(props);
+		this.state = {
+			inputValue: props.value
+		};
+	}
+
+	componentDidUpdate(prevProps) {
+		if (prevProps.value !== this.props.value) {
+			this.setState({ inputValue: this.props.value });
+		}
+	}
+
+	handleMinus = () => {
+		const { min, step, onChange } = this.props;
+		const currentValue = Number(this.state.inputValue);
+		const newValue = Math.round(Math.max(currentValue - step, min) * 100) / 100;
+		this.setState({ inputValue: newValue });
+		onChange(newValue);
+	}
+
+	handlePlus = () => {
+		const { max, step, onChange } = this.props;
+		const currentValue = Number(this.state.inputValue);
+		const newValue = Math.round(Math.min(currentValue + step, max) * 100) / 100;
+		this.setState({ inputValue: newValue });
+		onChange(newValue);
+	}
+
+	handleInputChange = () => {
+		const { min, max, step, onChange } = this.props;
+		const { inputValue } = this.state;
+
+		if (isNaN(Number(inputValue))) {
+			this.setState({ inputValue: this.props.value });
+			return;
+		}
+
+		let newValue = Math.round(Math.min(Math.max(Number(inputValue), min), max) * 100) / 100;
+		newValue = step >= 1 ? Math.round(newValue) : newValue;
+
+		this.setState({ inputValue: newValue });
+		onChange(newValue);
+	}
+
+	handleKeyUp = (e) => {
+		if (e.key.toLowerCase() === "enter") {
+			this.handleInputChange();
+			e.target.blur();
+		}
+	}
+
+	render() {
+		const { inputValue } = this.state;
+
+		return (
+			&lt;div class="numeric-input-container">
+				&lt;span
+					class="fa fa-minus numeric-input-button"
+					onClick={this.handleMinus}
+				>&lt;/span>
+				&lt;input
+					type="name"
+					class="numeric-input"
+					value={inputValue}
+					onInput={(e) => this.setState({ inputValue: e.target.value })}
+					onBlur={this.handleInputChange}
+					onKeyUp={this.handleKeyUp}
+					autoComplete="off"
+				/>
+				&lt;span
+					class="fa fa-plus numeric-input-button"
+					onClick={this.handlePlus}
+				>&lt;/span>
+			&lt;/div>
+		);
+	}
+}
+
+/**
+ * Volume Control Component
+ */
+export class VolumeControl extends Component {
+	constructor(props) {
+		super(props);
+		this.state = {
+			currentSound: props.currentSound || props.triggerKey
+		};
+	}
+
+	playSound = () => {
+		const { playFunction } = this.props;
+		if (playFunction) playFunction();
+	}
+
+	render() {
+		const { title, description, value, soundOptions, onVolumeChange, onSoundChange, sounds } = this.props;
+		const { currentSound } = this.state;
+
+		return (
+			&lt;div class="audio-volume-control">
+				&lt;div class="volume-control-header">
+					&lt;div class="volume-control-info">
+						&lt;div class="volume-control-title">{title}&lt;/div>
+						&lt;div class="volume-control-desc">{description}&lt;/div>
+					&lt;/div>
+					&lt;button
+						class="volume-control-preview"
+						onClick={this.playSound}
+						title="Preview sound"
+					>
+						&lt;span class="fa fa-play">&lt;/span>
+					&lt;/button>
+				&lt;/div>
+
+				&lt;div class="volume-control-main">
+					&lt;select
+						class="volume-control-sound-select"
+						value={currentSound}
+						onChange={(e) => {
+							this.setState({ currentSound: e.target.value });
+							onSoundChange(e.target.value);
+						}}
+					>
+						{soundOptions}
+					&lt;/select>
+
+					&lt;div class="volume-control-slider-container">
+						&lt;span class="fa fa-volume-down">&lt;/span>
+						&lt;input
+							type="range"
+							class="volume-control-slider"
+							min="0"
+							max="1"
+							step="0.01"
+							value={value}
+							onInput={(e) => onVolumeChange(parseFloat(e.target.value))}
+							autoComplete="off"
+						/>
+						&lt;span class="fa fa-volume-up">&lt;/span>
+						&lt;span class="volume-control-value">{Math.round(value * 100)}%&lt;/span>
+					&lt;/div>
+				&lt;/div>
+			&lt;/div>
+		);
+	}
+}
+
+/**
+ * Settings Section Component
+ */
+export class SettingsSection extends Component {
+	render() {
+		const { title, description, compact, inline, children, id } = this.props;
+
+		return (
+			&lt;div class={`settings-section ${compact ? 'compact' : ''} ${inline ? 'inline' : ''}`} id={id || ''}>
+				{title &amp;&amp; &lt;div class="settings-section-title">{title}&lt;/div>}
+				{description &amp;&amp; &lt;div class="settings-section-desc">{description}&lt;/div>}
+				{children}
+			&lt;/div>
+		);
+	}
+}
+
+export class SettingsSectionContent extends Component {
+	render() {
+		const { title, description, children, id } = this.props;
+
+		return (
+			&lt;div class={`settings-section-content`} id={id || ''}>
+				{title &amp;&amp; &lt;div class="settings-section-title">{title}&lt;/div>}
+				{description &amp;&amp; &lt;div class="settings-section-desc">{description}&lt;/div>}
+				{children}
+			&lt;/div>
+		);
+	}
+}
+
+export class SettingsTogglesSection extends Component {
+	render() {
+		const { title, description, children } = this.props;
+		return (
+			&lt;div class="settings-toggles-section">
+				{title &amp;&amp; &lt;div class="settings-section-title">{title}&lt;/div>}
+				{description &amp;&amp; &lt;div class="settings-section-desc">{description}&lt;/div>}
+				{children}
+			&lt;/div>
+		);
+	}
+}
+
+/**
+ * Settings Compact Grid Component
+ */
+export class SettingsCompactGrid extends Component {
+	render() {
+		return (
+			&lt;div class="settings-compact-grid">
+				{this.props.children}
+			&lt;/div>
+		);
+	}
+}
+
+export class DraggableOrderList extends Component {
+	constructor(props) {
+		super(props);
+		this.state = {
+			items: [],
+			draggedIndex: null,
+			placeholderIndex: null
+		};
+		this.listRef = null;
+	}
+
+	componentDidMount() {
+		this.syncItemsFromChildren();
+	}
+
+	componentDidUpdate(prevProps) {
+		if (prevProps.children !== this.props.children &amp;&amp; this.state.draggedIndex === null) {
+			this.syncItemsFromChildren();
+		}
+	}
+
+	syncItemsFromChildren = () => {
+		const { children } = this.props;
+		if (Array.isArray(children)) {
+			this.setState({ items: children.map((child, i) => ({ child, key: child.key || i })) });
+		}
+	}
+
+	handleDragStart = (index, e) => {
+		this.setState({ draggedIndex: index, placeholderIndex: index });
+		e.dataTransfer.effectAllowed = 'move';
+		e.dataTransfer.setData('text/plain', index);
+
+		// Add a slight delay to allow the drag image to be captured
+		requestAnimationFrame(() => {
+			this.setState(state => ({ ...state }));
+		});
+	}
+
+	handleDragOver = (index, e) => {
+		e.preventDefault();
+		const { draggedIndex, placeholderIndex } = this.state;
+
+		if (draggedIndex === null || index === placeholderIndex) return;
+
+		// Reorder items in real-time
+		this.setState(state => {
+			const newItems = [...state.items];
+			const draggedItem = newItems[state.draggedIndex];
+
+			// Remove from old position
+			newItems.splice(state.draggedIndex, 1);
+			// Insert at new position
+			newItems.splice(index, 0, draggedItem);
+
+			return {
+				items: newItems,
+				draggedIndex: index,
+				placeholderIndex: index
+			};
+		});
+	}
+
+	handleDragEnd = () => {
+		const { onReorder } = this.props;
+		const { items } = this.state;
+
+		// Notify parent of the final order
+		if (onReorder) {
+			onReorder(items.map(item => item.key));
+		}
+
+		this.setState({ draggedIndex: null, placeholderIndex: null });
+	}
+
+	render() {
+		const { items, draggedIndex } = this.state;
+		const isDragging = draggedIndex !== null;
+
+		return (
+			&lt;div class={`draggable-order-list ${isDragging ? 'is-dragging' : ''}`} ref={el => this.listRef = el}>
+				{items.map((item, index) => {
+					const isThisDragging = draggedIndex === index;
+
+					return (
+						&lt;div
+							key={item.key}
+							class={`draggable-order-item-wrapper ${isThisDragging ? 'dragging' : ''}`}
+							draggable
+							onDragStart={(e) => this.handleDragStart(index, e)}
+							onDragOver={(e) => this.handleDragOver(index, e)}
+							onDragEnd={this.handleDragEnd}
+						>
+							{item.child}
+						&lt;/div>
+					);
+				})}
+			&lt;/div>
+		);
+	}
+}
+
+export class DraggableOrderItem extends Component {
+	handleToggle = (e) => {
+		e.stopPropagation();
+		const { onToggle, enabled } = this.props;
+		if (onToggle) {
+			onToggle(!enabled);
+		}
+	}
+
+	render() {
+		const { name, enabled = true } = this.props;
+
+		return (
+			&lt;div class={`draggable-order-item ${enabled ? '' : 'disabled'}`}>
+				&lt;span class="draggable-order-item-name">{name}&lt;/span>
+				&lt;div
+					class="draggable-order-item-toggle"
+					onClick={this.handleToggle}
+					title={enabled ? 'Click to disable' : 'Click to enable'}
+				/>
+			&lt;/div>
+		);
+	}
+}
+
+/**
+ * General Settings Panel Component
+ */
+export class GeneralSettings extends Component {
+	render() {
+		const {
+			maxEditCount,
+			maxQueueSize,
+			minOresScore,
+			watchlistExpiry,
+			namespaces,
+			selectedNamespaces,
+			onMaxEditCountChange,
+			onMaxQueueSizeChange,
+			onMinOresScoreChange,
+			onWatchlistExpiryChange,
+			onNamespaceToggle,
+		} = this.props;
+
+		return (
+			&lt;div>
+				&lt;SettingsCompactGrid>
+					&lt;SettingsSection
+						compact
+						id="maximum-edit-count"
+						title="Maximum edit count"
+						description="Edits from users with more than this edit count will not be shown"
+					>
+						&lt;NumericInput
+							value={maxEditCount}
+							min={0}
+							max={1000000}
+							step={50}
+							onChange={onMaxEditCountChange}
+						/>
+					&lt;/SettingsSection>
+
+					&lt;SettingsSection
+						compact
+						id="maximum-queue-size"
+						title="Maximum queue size"
+						description="The queue will not load additional edits after reaching this size"
+					>
+						&lt;NumericInput
+							value={maxQueueSize}
+							min={1}
+							max={500}
+							step={1}
+							onChange={onMaxQueueSizeChange}
+						/>
+					&lt;/SettingsSection>
+
+					&lt;SettingsSection
+						compact
+						id="minimum-ores-score"
+						title="Minimum ORES score"
+						description="The minimum ORES score required to show an edit in the recent changes queue"
+					>
+						&lt;NumericInput
+							value={minOresScore}
+							min={0}
+							max={1}
+							step={0.05}
+							onChange={onMinOresScoreChange}
+						/>
+					&lt;/SettingsSection>
+
+					&lt;SettingsSection
+							compact
+							id="watchlist-expiry"
+							title="Watchlist expiry for warned users"
+							description="How long to watch user talk pages after issuing warnings"
+						>
+							&lt;select
+								value={watchlistExpiry}
+								onChange={(e) => onWatchlistExpiryChange(e.target.value)}
+							>
+								&lt;option value="none">None&lt;/option>
+								&lt;option value="1 hour">1 hour&lt;/option>
+								&lt;option value="1 day">1 day&lt;/option>
+								&lt;option value="1 week">1 week&lt;/option>
+								&lt;option value="1 month">1 month&lt;/option>
+								&lt;option value="3 months">3 months&lt;/option>
+								&lt;option value="6 months">6 months&lt;/option>
+								&lt;option value="indefinite">Indefinite&lt;/option>
+							&lt;/select>
+					&lt;/SettingsSection>
+				&lt;/SettingsCompactGrid>
+
+				&lt;SettingsSection
+					title="Namespaces to show"
+					description="Only edits from the selected namespaces will be shown in your queue."
+				>
+					&lt;div class="checkbox-container">
+						{Object.entries(namespaces).map(([key, namespace]) => (
+							&lt;div class="namespace-item" key={key}>
+								&lt;label class="checkbox-box">
+									&lt;input
+										type="checkbox"
+										checked={selectedNamespaces.includes(namespace.id)}
+										onChange={(e) => {
+											onNamespaceToggle(namespace.id, e.target.checked);
+										}}
+										autoComplete="off"
+									/>
+									&lt;div class="checkmark">&lt;/div>
+								&lt;/label>
+								&lt;span>{namespace.name}&lt;/span>
+							&lt;/div>
+						))}
+					&lt;/div>
+				&lt;/SettingsSection>
+			&lt;/div>
+		);
+	}
+}
+
+export class PerformanceSettings extends Component {
+	render() {
+		return (
+			&lt;div>
+				&lt;SettingsSection
+					title="Startup Animation"
+					description="Enable or disable the startup animation when launching WikiShield"
+				>
+					&lt;Radio
+						id="performance-mode"
+						name="performance-mode"
+						value={this.props.startup}
+						options={[
+							{ value: 'always_off', label: 'Always Off' },
+							{ value: 'adaptive', label: 'Adaptive' },
+							{ value: 'always_on', label: 'Always On' }
+						]}
+						onChange={this.props.onStartupChange}
+					/>
+				&lt;/SettingsSection>
+			&lt;/div>
+		);
+	}
+}
+
+/**
+ * Audio Settings Panel Component
+ */
+export class AudioSettings extends Component {
+	render() {
+		const {
+			volumes,
+			soundMappings,
+			sounds,
+			onVolumeChange,
+			onSoundChange,
+			playSound
+		} = this.props;
+
+		// Build sound selector options grouped by category
+		const soundsByCategory = {};
+		Object.entries(sounds).forEach(([key, sound]) => {
+			const category = sound.category || 'other';
+			if (!soundsByCategory[category]) soundsByCategory[category] = [];
+			soundsByCategory[category].push({ key, sound });
+		});
+
+		const categoryOrder = ['ui', 'alert', 'warning', 'action', 'alert', 'positive', 'negative', 'other'];
+		const categoryNames = {
+			ui: 'UI Sounds',
+			alert: 'Alerts',
+			warning: 'Warnings',
+			action: 'Actions',
+			alert: 'Alerts',
+			positive: 'Positive',
+			negative: 'Negative',
+			other: 'Other'
+		};
+
+		const buildSoundOptions = () => {
+			const options = [];
+			options.push(&lt;option value="none">🔇 Disabled&lt;/option>);
+
+			categoryOrder.forEach(category => {
+				if (soundsByCategory[category]) {
+					const categoryItems = soundsByCategory[category].map(({ key, sound }) => (
+						&lt;option value={key} key={key}>
+							{sound.icon || '🔊'} {sound.name || key}
+						&lt;/option>
+					));
+					options.push(
+						&lt;optgroup label={categoryNames[category] || category} key={category}>
+							{categoryItems}
+						&lt;/optgroup>
+					);
+				}
+			});
+
+			return options;
+		};
+
+		const soundOptions = buildSoundOptions();
+
+		const audioControls = [
+			{ key: 'click', title: 'Button Click Sound', description: 'Played when clicking buttons' },
+			{ key: 'alert', title: 'Alert Sound', description: 'Played for important alerts' },
+			{ key: 'sparkle', title: 'Sparkle Sound', description: 'Played for positive actions' },
+			{ key: 'error', title: 'Error Sound', description: 'Played when an error occurs' },
+			{ key: 'alert', title: 'Alert Sound', description: 'Played for new alerts' },
+			{ key: 'warning', title: 'Warning Sound', description: 'Played when issuing warnings' },
+			{ key: 'rollback', title: 'Rollback Sound', description: 'Played when rolling back edits' },
+			{ key: 'queue', title: 'Queue Update Sound', description: 'Played when the queue updates' }
+		];
+
+		return (
+			&lt;div>
+				&lt;SettingsSection
+					title="Audio Controls"
+					description="Configure volume and sounds for different actions"
+				>
+					{audioControls.map(({ key, title, description }) => (
+						&lt;VolumeControl
+							key={key}
+							triggerKey={key}
+							title={title}
+							description={description}
+							value={volumes[key] ?? 0.5}
+							currentSound={soundMappings[key] || key}
+							soundOptions={soundOptions}
+							sounds={sounds}
+							onVolumeChange={(value) => onVolumeChange(key, value)}
+							onSoundChange={(soundKey) => onSoundChange(key, soundKey)}
+							playFunction={() => playSound(key)}
+						/>
+					))}
+				&lt;/SettingsSection>
+			&lt;/div>
+		);
+	}
+}
+
+/**
+ * Appearance Settings Panel Component
+ */
+export class QueueSettings extends Component {
+	constructor(props) {
+		super(props);
+		this.state = {
+			selectedPalette: props.selectedPalette,
+			queues: [...props.queues]
+		};
+	}
+
+	handlePaletteChange = (index) => {
+		this.setState({ selectedPalette: index });
+		this.props.onPaletteChange(index);
+	}
+
+	handleReorder = (orderedKeys) => {
+		const { queues } = this.state;
+		const { onQueueReorder } = this.props;
+
+		const queueMap = new Map(queues);
+		const newQueues = orderedKeys.map(key => [ key, queueMap.get(key) ]);
+
+		this.setState({ queues: newQueues });
+		if (onQueueReorder) {
+			onQueueReorder(newQueues);
+		}
+	}
+
+	handleToggle = (id, enabled) => {
+		const { queues } = this.state;
+		const { onQueueToggle } = this.props;
+
+		const newQueues = queues.map(([ queueId, data ]) =>
+			queueId === id ? [ queueId, { ...data, enabled } ] : [ queueId, data ]
+		);
+
+		this.setState({ queues: newQueues });
+		if (onQueueToggle) {
+			onQueueToggle(id, enabled);
+		}
+	}
+
+	render() {
+		const { colorPalettes } = this.props;
+		const { selectedPalette, queues } = this.state;
+
+		return (
+			&lt;div>
+				&lt;SettingsSection
+					title="Queues"
+					description="Enable or disable different edit queues, and customize their order"
+				>
+					&lt;DraggableOrderList onReorder={this.handleReorder}>
+						{queues.map(([ id, queue ]) => (
+							&lt;DraggableOrderItem
+								key={queue.key}
+								name={queue.name}
+								enabled={queue.enabled}
+								onToggle={(enabled) => this.handleToggle(queue.key, enabled)}
+							/>
+						))}
+					&lt;/DraggableOrderList>
+				&lt;/SettingsSection>
+				&lt;SettingsSection
+					title="Color Palette"
+					description="Choose how ORES scores are displayed visually"
+				>
+					&lt;div class="palette-selector">
+						{colorPalettes.map((colors, index) => (
+							&lt;div
+								key={index}
+								class={`palette-option ${selectedPalette === index ? 'selected' : ''}`}
+								onClick={() => this.handlePaletteChange(index)}
+							>
+								&lt;div class="palette-name">Palette {index + 1}&lt;/div>
+								&lt;div class="palette-preview">
+									{colors.map((color, i) => (
+										&lt;div
+											key={i}
+											class="palette-color"
+											style={{ backgroundColor: color }}
+										/>
+									))}
+								&lt;/div>
+							&lt;/div>
+						))}
+					&lt;/div>
+				&lt;/SettingsSection>
+			&lt;/div>
+		);
+	}
+}
+
+/**
+ * Zen Settings Panel Component
+ */
+export class ZenSettings extends Component {
+	render() {
+		const {
+			enabled,
+
+			sound,
+			music,
+
+			notices,
+			alerts,
+
+			badges,
+			toasts,
+		} = this.props;
+
+		return (
+			&lt;div>
+				&lt;SettingsTogglesSection
+					title="Zen Mode"
+					description="Customize your distraction-free reviewing experience"
+				>
+					&lt;SettingsSection compact inline>
+						&lt;SettingsSectionContent
+							title="Enable Zen Mode"
+							description="Reduce on-screen distractions while reviewing edits"
+						/>
+						&lt;Toggle
+							id="zen-mode-enable"
+							value={enabled}
+							onChange={this.props.onEnableChange}
+						/>
+					&lt;/SettingsSection>
+				&lt;/SettingsTogglesSection>
+				&lt;SettingsCompactGrid>
+					&lt;SettingsSection
+							compact
+							title="Enable Sounds"
+							description="Play sounds in Zen mode"
+					>
+						&lt;Toggle
+							value={sound.enabled}
+							onChange={this.props.onSoundChange}
+						/>
+					&lt;/SettingsSection>
+					&lt;SettingsSection
+							compact
+							title="Enable Music"
+							description="Play background music in Zen mode"
+					>
+						&lt;Toggle
+							value={music.enabled}
+							onChange={this.props.onMusicChange}
+						/>
+					&lt;/SettingsSection>
+
+					&lt;SettingsSection
+						compact
+						title="Alerts"
+						description="Show alerts in Zen mode"
+					>
+						&lt;Toggle
+							value={alerts.enabled}
+							onChange={this.props.onAlertsChange}
+						/>
+					&lt;/SettingsSection>
+					&lt;SettingsSection
+						compact
+						title="Notices"
+						description="Show notices in Zen mode"
+					>
+						&lt;Toggle
+							value={notices.enabled}
+							onChange={this.props.onNoticesChange}
+						/>
+					&lt;/SettingsSection>
+					&lt;SettingsSection
+						compact
+						title="Toasts"
+						description="Show toast messages in Zen mode"
+					>
+						&lt;Toggle
+							value={toasts.enabled}
+							onChange={this.props.onToastsChange}
+						/>
+					&lt;/SettingsSection>
+
+					&lt;SettingsSection
+						compact
+						title="Notification Badges"
+						description="Show all notification badges in Zen mode."
+					>
+						&lt;Toggle
+							value={badges.enabled}
+							onChange={this.props.onBadgesChange}
+						/>
+					&lt;/SettingsSection>
+				&lt;/SettingsCompactGrid>
+			&lt;/div>
+		);
+	}
+}
+
+/**
+ * User List Component (for whitelist/highlight users)
+ */
+export class UserList extends Component {
+	render() {
+		const { users, onRemove, showDates } = this.props;
+
+		if (users.length === 0) {
+			return &lt;div class="user-list-empty">No users in this list&lt;/div>;
+		}
+
+		return (
+			&lt;div class="user-list">
+				{users.map((user) => (
+					&lt;div class="user-list-item" key={user.name}>
+						&lt;span class="user-list-name">{user.name}&lt;/span>
+						{showDates &amp;&amp; user.date &amp;&amp; (
+							&lt;span class="user-list-date">{new Date(user.date).toLocaleDateString()}&lt;/span>
+						)}
+						&lt;button
+							class="user-list-remove"
+							onClick={() => onRemove(user.name)}
+							title="Remove user"
+						>
+							&lt;span class="fa fa-times">&lt;/span>
+						&lt;/button>
+					&lt;/div>
+				))}
+			&lt;/div>
+		);
+	}
+}
+
+/**
+ * Whitelist Panel Component
+ */
+export class WhitelistSettings extends Component {
+	constructor(props) {
+		super(props);
+		this.state = {
+			newUsername: ''
+		};
+	}
+
+	handleAdd = () => {
+		const { newUsername } = this.state;
+		if (newUsername.trim()) {
+			this.props.onAdd(newUsername.trim());
+			this.setState({ newUsername: '' });
+		}
+	}
+
+	render() {
+		const { users, onRemove } = this.props;
+		const { newUsername } = this.state;
+
+		return (
+			&lt;div>
+				&lt;SettingsSection
+					title="Whitelist"
+					description="Users on the whitelist will not appear in your queue"
+				>
+					&lt;div class="user-list-controls">
+						&lt;input
+							type="text"
+							class="user-list-input"
+							placeholder="Enter username..."
+							value={newUsername}
+							onInput={(e) => this.setState({ newUsername: e.target.value })}
+							onKeyDown={(e) => {
+								if (e.key === 'Enter') this.handleAdd();
+							}}
+							autoComplete="off"
+						/>
+						&lt;button
+							class="user-list-add-button"
+							onClick={this.handleAdd}
+						>
+							&lt;span class="fa fa-plus">&lt;/span> Add User
+						&lt;/button>
+					&lt;/div>
+					&lt;UserList
+						users={users}
+						onRemove={onRemove}
+						showDates={true}
+					/>
+				&lt;/SettingsSection>
+			&lt;/div>
+		);
+	}
+}
+
+/**
+ * Highlight Users Panel Component
+ */
+export class HighlightSettings extends Component {
+	constructor(props) {
+		super(props);
+		this.state = {
+			newUsername: ''
+		};
+	}
+
+	handleAdd = () => {
+		const { newUsername } = this.state;
+		if (newUsername.trim()) {
+			this.props.onAdd(newUsername.trim());
+			this.setState({ newUsername: '' });
+		}
+	}
+
+	render() {
+		const { users, onRemove } = this.props;
+		const { newUsername } = this.state;
+
+		return (
+			&lt;div>
+				&lt;SettingsSection
+					title="highlight Users"
+					description="Edits from highlight users will be shown with a yellow indicator"
+				>
+					&lt;div class="user-list-controls">
+						&lt;input
+							type="text"
+							class="user-list-input"
+							placeholder="Enter username..."
+							value={newUsername}
+							onInput={(e) => this.setState({ newUsername: e.target.value })}
+							onKeyDown={(e) => {
+								if (e.key === 'Enter') this.handleAdd();
+							}}
+							autoComplete="off"
+						/>
+						&lt;button
+							class="user-list-add-button"
+							onClick={this.handleAdd}
+						>
+							&lt;span class="fa fa-plus">&lt;/span> Add User
+						&lt;/button>
+					&lt;/div>
+					&lt;UserList
+						users={users}
+						onRemove={onRemove}
+						showDates={true}
+					/>
+				&lt;/SettingsSection>
+			&lt;/div>
+		);
+	}
+}
+
+/**
+ * Statistics Panel Component
+ */
+export class StatisticsSettings extends Component {
+	render() {
+		const { stats } = this.props;
+
+		return (
+			&lt;div>
+				&lt;SettingsSection
+					title="Your Statistics"
+					description="Your WikiShield usage statistics"
+				>
+					&lt;div class="stats-grid">
+						&lt;div class="stat-item">
+							&lt;div class="stat-value">{stats.editsReviewed || 0}&lt;/div>
+							&lt;div class="stat-label">Edits Reviewed&lt;/div>
+						&lt;/div>
+						&lt;div class="stat-item">
+							&lt;div class="stat-value">{stats.editsReverted || 0}&lt;/div>
+							&lt;div class="stat-label">Edits Reverted&lt;/div>
+						&lt;/div>
+						&lt;div class="stat-item">
+							&lt;div class="stat-value">{stats.warningsIssued || 0}&lt;/div>
+							&lt;div class="stat-label">Warnings Issued&lt;/div>
+						&lt;/div>
+						&lt;div class="stat-item">
+							&lt;div class="stat-value">{stats.usersReported || 0}&lt;/div>
+							&lt;div class="stat-label">Users Reported&lt;/div>
+						&lt;/div>
+						&lt;div class="stat-item">
+							&lt;div class="stat-value">{stats.pagesProtected || 0}&lt;/div>
+							&lt;div class="stat-label">Pages Protected&lt;/div>
+						&lt;/div>
+						&lt;div class="stat-item">
+							&lt;div class="stat-value">{stats.thanksGiven || 0}&lt;/div>
+							&lt;div class="stat-label">Thanks Given&lt;/div>
+						&lt;/div>
+					&lt;/div>
+				&lt;/SettingsSection>
+			&lt;/div>
+		);
+	}
+}
+
+/**
+ * AI Settings Panel Component
+ */
+export class AISettings extends Component {
+	constructor(props) {
+		super(props);
+		this.state = {
+			connectionStatus: '',
+			modelsStatus: '',
+			availableModels: [],
+			testingConnection: false,
+			loadingModels: false
+		};
+	}
+
+	testConnection = async () => {
+		const { ollamaServerUrl, onTestConnection } = this.props;
+		this.setState({ testingConnection: true, connectionStatus: 'Testing...' });
+
+		const result = await onTestConnection();
+
+		this.setState({
+			testingConnection: false,
+			connectionStatus: result ? 'Connected!' : 'Failed to connect'
+		});
+	}
+
+	refreshModels = async () => {
+		const { onRefreshModels } = this.props;
+		this.setState({ loadingModels: true, modelsStatus: 'Loading...' });
+
+		const models = await onRefreshModels();
+
+		this.setState({
+			loadingModels: false,
+			availableModels: models || [],
+			modelsStatus: models ? `Found ${models.length} models` : 'Failed to load models'
+		});
+	}
+
+	render() {
+		const {
+			enableOllamaAI,
+			ollamaServerUrl,
+			selectedModel,
+			onEnableChange,
+			onServerUrlChange,
+			onModelSelect
+		} = this.props;
+
+		const { connectionStatus, modelsStatus, availableModels, testingConnection, loadingModels } = this.state;
+
+		return (
+			&lt;div>
+				&lt;SettingsSection
+					id="enable-ollama-ai"
+					title="Enable Ollama AI Analysis"
+					description="Use local AI models with complete privacy. Free &amp; fast."
+				>
+					&lt;Toggle
+						value={enableOllamaAI}
+						onChange={onEnableChange}
+					/>
+				&lt;/SettingsSection>
+
+				&lt;SettingsSection
+					id="ollama-server-url"
+					title="Server URL"
+				>
+					&lt;div class="ollama-url-controls">
+						&lt;input
+							type="text"
+							id="ollama-url-input"
+							value={ollamaServerUrl}
+							onInput={(e) => onServerUrlChange(e.target.value)}
+							placeholder="http://localhost:11434"
+							style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; margin-bottom: 8px;"
+							autoComplete="off"
+						/>
+						&lt;button
+							id="test-connection-btn"
+							onClick={this.testConnection}
+							disabled={testingConnection}
+							style="padding: 6px 12px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em;"
+						>
+							Test Connection
+						&lt;/button>
+						&lt;span id="connection-status" style="margin-left: 8px; font-size: 0.9em;">
+							{connectionStatus}
+						&lt;/span>
+					&lt;/div>
+				&lt;/SettingsSection>
+
+				&lt;SettingsSection
+					id="ollama-model-select"
+					title="Model Selection"
+				>
+					&lt;div class="ollama-model-controls">
+						&lt;button
+							id="refresh-models-btn"
+							onClick={this.refreshModels}
+							disabled={loadingModels}
+							style="padding: 6px 12px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em;"
+						>
+							&lt;span class="fa fa-sync">&lt;/span> Refresh Models
+						&lt;/button>
+						&lt;span id="models-status" style="margin-left: 8px; font-size: 0.9em;">
+							{modelsStatus}
+						&lt;/span>
+						&lt;div style="margin-top: 12px;" id="models-container">
+							{availableModels.length === 0 ? (
+								&lt;div style="color: #666; font-style: italic; font-size: 0.9em;">
+									Click "Refresh Models" to load available models
+								&lt;/div>
+							) : (
+								&lt;div class="models-list">
+									{availableModels.map((model) => (
+										&lt;div
+											key={model.name}
+											class={`model-item ${selectedModel === model.name ? 'selected' : ''}`}
+											onClick={() => onModelSelect(model.name)}
+										>
+											&lt;div class="model-name">{model.name}&lt;/div>
+											&lt;div class="model-size">{model.size}&lt;/div>
+										&lt;/div>
+									))}
+								&lt;/div>
+							)}
+						&lt;/div>
+					&lt;/div>
+				&lt;/SettingsSection>
+
+				&lt;SettingsSection>
+					&lt;div class="settings-section-title" style="color: #dc3545;">CORS Setup Required&lt;/div>
+					&lt;div class="settings-section-desc" style="background: rgba(255, 243, 205, 0.2); padding: 10px; border-radius: 6px; border-left: 4px solid #ffc107; font-size: 0.9em;">
+						&lt;strong>Set environment variable:&lt;/strong> &lt;code style="background: #f0f0f0; padding: 2px 6px; border-radius: 3px; color: #333;">OLLAMA_ORIGINS&lt;/code>
+						&lt;br />&lt;strong>Value:&lt;/strong> &lt;code style="background: #f0f0f0; padding: 2px 6px; border-radius: 3px; color: #333;">https://en.wikipedia.org,https://*.wikipedia.org&lt;/code>
+						&lt;br />&lt;br />
+						&lt;details style="cursor: pointer;">
+							&lt;summary style="font-weight: 600; margin-bottom: 6px;">Windows (Permanent)&lt;/summary>
+							&lt;ol style="margin: 6px 0; padding-left: 20px; font-size: 0.85em;">
+								&lt;li>System Properties → Environment Variables&lt;/li>
+								&lt;li>New Variable: &lt;code style="color: #333;">OLLAMA_ORIGINS&lt;/code>&lt;/li>
+								&lt;li>Value: &lt;code style="color: #333;">https://en.wikipedia.org,https://*.wikipedia.org&lt;/code>&lt;/li>
+								&lt;li>Restart Ollama&lt;/li>
+							&lt;/ol>
+						&lt;/details>
+						&lt;details style="cursor: pointer;">
+							&lt;summary style="font-weight: 600; margin-bottom: 6px;">Windows (Temporary)&lt;/summary>
+							&lt;pre style="background: #2d2d2d; color: #f8f8f2; padding: 8px; border-radius: 4px; font-size: 0.8em; margin: 6px 0;">{`$env:OLLAMA_ORIGINS="https://en.wikipedia.org,https://*.wikipedia.org"
+ollama serve`}&lt;/pre>
+						&lt;/details>
+						&lt;details style="cursor: pointer;">
+							&lt;summary style="font-weight: 600; margin-bottom: 6px;">macOS/Linux&lt;/summary>
+							Add to &lt;code>~/.bashrc&lt;/code> or &lt;code>~/.zshrc&lt;/code>:
+							&lt;pre style="background: #2d2d2d; color: #f8f8f2; padding: 8px; border-radius: 4px; font-size: 0.8em; margin: 6px 0;">{`export OLLAMA_ORIGINS="https://en.wikipedia.org,https://*.wikipedia.org"`}&lt;/pre>
+							Then: &lt;code>source ~/.bashrc &amp;&amp; ollama serve&lt;/code>
+						&lt;/details>
+					&lt;/div>
+				&lt;/SettingsSection>
+
+				&lt;SettingsSection title="Quick Info">
+					&lt;div class="settings-section-desc" style="font-size: 0.9em;">
+						&lt;strong>Get Ollama:&lt;/strong> &lt;a href="https://ollama.com" target="_blank" style="color: #667eea; font-weight: bold;">ollama.com&lt;/a>
+						&lt;br />&lt;strong>Popular models:&lt;/strong> llama3.2, mistral, gemma2, qwen2.5
+						&lt;br />&lt;strong>Detects:&lt;/strong> Vandalism, spam, POV, attacks, copyright issues, policy violations
+					&lt;/div>
+				&lt;/SettingsSection>
+			&lt;/div>
+		);
+	}
+}
+
+export class AutoReportingSettings extends Component {
+	render() {
+		const {
+			enableAutoReporting,
+			autoReportReasons,
+			selectedAutoReportReasons,
+		} = this.props;
+
+		return (
+			&lt;div>
+				&lt;SettingsSection
+					id="enable-auto-reporting"
+					title="Enable Auto-Reporting"
+					description="Automatically report edits that receive certain warnings"
+				>
+					&lt;Toggle
+						value={enableAutoReporting}
+						onChange={this.props.onEnableChange}
+					/>
+				&lt;/SettingsSection>
+				&lt;SettingsSection
+					title="Auto-Reportable Warnings"
+					description="Select which warnings should trigger automatic reporting"
+				>
+					&lt;div class="checkbox-container">
+						{autoReportReasons.map((warning) => (
+							&lt;div class="auto-reportable-warning-item" key={warning}>
+								&lt;label class="checkbox-box">
+									&lt;input
+										type="checkbox"
+										checked={selectedAutoReportReasons.has(warning)}
+										onChange={(e) => {
+											this.props.onWarningToggle(warning, e.target.checked);
+										}}
+										autoComplete="off"
+									/>
+									&lt;div class="checkmark">&lt;/div>
+								&lt;/label>
+								&lt;span>{warning}&lt;/span>
+							&lt;/div>
+						))}
+					&lt;/div>
+				&lt;/SettingsSection>
+			&lt;/div>
+		);
+	}
+}
+
+/**
+ * Import/Export Settings Panel Component
+ */
+export class SaveSettings extends Component {
+	constructor(props) {
+		super(props);
+		this.state = {
+			showImportInput: false,
+			importValue: '',
+			statusMessage: null
+		};
+	}
+
+	handleExport = () => {
+		try {
+			const result = this.props.onExport();
+			this.setState({
+				statusMessage: {
+					type: 'success',
+					title: 'Settings exported successfully!',
+					message: 'The base64 string has been copied to your clipboard.'
+				}
+			});
+			setTimeout(() => this.setState({ statusMessage: null }), 5000);
+		} catch (error) {
+			this.setState({
+				statusMessage: {
+					type: 'error',
+					title: 'Export failed!',
+					message: error.message
+				}
+			});
+		}
+	}
+
+	handleImportToggle = () => {
+		if (!this.state.showImportInput) {
+			this.setState({ showImportInput: true, statusMessage: null });
+		} else {
+			this.handleImportApply();
+		}
+	}
+
+	handleImportApply = () => {
+		const { importValue } = this.state;
+
+		if (!importValue.trim()) {
+			this.setState({
+				statusMessage: {
+					type: 'error',
+					title: 'No input!',
+					message: 'Please paste a base64 settings string.'
+				}
+			});
+			return;
+		}
+
+		try {
+			const result = this.props.onImport(importValue);
+
+			let warningsHtml = '';
+			if (result.warnings &amp;&amp; result.warnings.length > 0) {
+				warningsHtml = '&lt;br/>&lt;br/>&lt;strong>Warnings:&lt;/strong>&lt;ul>';
+				result.warnings.forEach(warning => {
+					warningsHtml += `&lt;li>${warning}&lt;/li>`;
+				});
+				warningsHtml += '&lt;/ul>';
+			}
+
+			this.setState({
+				statusMessage: {
+					type: 'success',
+					title: 'Settings imported successfully!',
+					message: 'Please reload the page for all changes to take effect.',
+					extra: warningsHtml
+				},
+				showImportInput: false,
+				importValue: ''
+			});
+		} catch (error) {
+			this.setState({
+				statusMessage: {
+					type: 'error',
+					title: 'Import failed!',
+					message: error.message
+				}
+			});
+		}
+	}
+
+	handleReset = async () => {
+		if (await this.props.onReset()) {
+			this.setState({
+				statusMessage: {
+					type: 'success',
+					title: 'Settings reset successfully!',
+					message: 'All settings have been restored to default values.'
+				}
+			});
+		}
+	}
+
+	render() {
+		const {
+			showImportInput, importValue, statusMessage,
+			enableCloudStorage,
+			onCloudStorageToggle
+		} = this.state;
+
+		return (
+			&lt;div>
+				&lt;SettingsSection
+					id="enable-cloud-storage"
+					title="Enable Cloud Storage"
+					description="Store your settings in the cloud for access across multiple browsers and devices"
+				>
+					&lt;Toggle
+						value={enableCloudStorage}
+						onChange={onCloudStorageToggle}
+					/>
+				&lt;/SettingsSection>
+				&lt;SettingsSection
+					title="Import / Export / Reset Settings"
+					description="Import, export, or reset your WikiShield settings. Settings are encoded as a base64 string for easy sharing."
+				>
+					&lt;div class="buttons">
+						&lt;button
+							id="export-settings-btn"
+							onClick={this.handleExport}
+						>
+							&lt;span class="fa fa-download">&lt;/span> Export Settings
+						&lt;/button>
+						&lt;button
+							id="import-settings-btn"
+							onClick={this.handleImportToggle}
+							style={`${showImportInput ? '--background: 40, 167, 69, 1;' : ''}`}
+						>
+							&lt;span class={`fa ${showImportInput ? 'fa-check' : 'fa-upload'}`}>&lt;/span>
+							{showImportInput ? ' Apply Import' : ' Import Settings'}
+						&lt;/button>
+						&lt;button
+							id="reset-settings-btn"
+							onClick={this.handleReset}
+							style="--background: 211, 51, 51;"
+						>
+							&lt;span class="fa fa-undo">&lt;/span> Reset to Default
+						&lt;/button>
+					&lt;/div>
+
+					{statusMessage &amp;&amp; (
+						&lt;div
+							id="import-export-status"
+							class={statusMessage.type === 'success' ? 'status-success' : 'status-error'}
+						>
+							&lt;div>
+								&lt;span class={`fa ${statusMessage.type === 'success' ? 'fa-check-circle' : 'fa-times-circle'}`}>&lt;/span>
+								&lt;div>
+									&lt;strong>{statusMessage.title}&lt;/strong>
+									&lt;div>{statusMessage.message}&lt;/div>
+									{statusMessage.extra &amp;&amp; (
+										&lt;div dangerouslySetInnerHTML={{ __html: statusMessage.extra }} />
+									)}
+								&lt;/div>
+							&lt;/div>
+						&lt;/div>
+					)}
+
+					{showImportInput &amp;&amp; (
+						&lt;textarea
+							id="import-settings-input"
+							placeholder="Paste base64 settings string here..."
+							value={importValue}
+							onInput={(e) => this.setState({ importValue: e.target.value })}
+							resize="vertical"
+						/>
+					)}
+				&lt;/SettingsSection>
+			&lt;/div>
+		);
+	}
+}
+
+/**
+ * About Panel Component
+ */
+export class AboutSettings extends Component {
+	render() {
+		const { version, changelog } = this.props;
+
+		return (
+			&lt;div>
+				&lt;SettingsSection title="About WikiShield">
+					&lt;div class="about-content">
+						&lt;div class="about-version">
+							&lt;span class="fa fa-shield-alt">&lt;/span>
+							&lt;span>WikiShield v{version}&lt;/span>
+						&lt;/div>
+						&lt;div class="about-description">
+							&lt;p>WikiShield is a powerful tool for patrolling Wikipedia edits in real-time.&lt;/p>
+							&lt;p>Developed with ❤️ for the Wikipedia community.&lt;/p>
+						&lt;/div>
+						&lt;div class="about-links">
+							&lt;a href="https://en.wikipedia.org/wiki/Wikipedia:WikiShield" target="_blank">
+								&lt;span class="fa fa-book">&lt;/span> Documentation
+							&lt;/a>
+							&lt;a href="https://github.com/LuniZunie/WikiShield" target="_blank">
+								&lt;span class="fa fa-code-branch">&lt;/span> Source Code
+							&lt;/a>
+							&lt;a href="https://en.wikipedia.org/wiki/Wikipedia_talk:WikiShield" target="_blank">
+								&lt;span class="fa fa-comments">&lt;/span> Feedback
+							&lt;/a>
+						&lt;/div>
+					&lt;/div>
+				&lt;/SettingsSection>
+
+				{changelog &amp;&amp; (
+					&lt;SettingsSection>
+						&lt;div class="changelog-content" dangerouslySetInnerHTML={{ __html: changelog }} />
+					&lt;/SettingsSection>
+				)}
+			&lt;/div>
+		);
+	}
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+    
+    
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.5</a> on Wed Feb 25 2026 01:37:34 GMT+0000 (Coordinated Universal Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/polyfill.js"></script>
+<script src="scripts/linenumber.js"></script>
+
+<script src="scripts/search.js" defer></script>
+
+
+
+</body>
+</html>
