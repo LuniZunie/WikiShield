@@ -178,7 +178,7 @@ export const warnings = {
 				icon: "fas fa-comment-alt",
 				description: "Adding opinion or commentary to articles.",
 
-				summary: "[[WP:Commentary|commentary]]",
+				summary: "Commentary / talking in article",
 
 				auto: defaultAuto,
 				templates: [
