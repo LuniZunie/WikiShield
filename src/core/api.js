@@ -303,14 +303,15 @@ export class WikiShieldAPI {
 	/**
 	* Edit the given page with the given content and summary
 	* @param {String} title The title of the page to edit
+	* @param {number|string|null} revid The base revision ID (optional)
 	* @param {String} content The content to edit the page with
 	* @param {String} summary The edit summary
 	* @param {Object} params Any additional parameters to pass to the API
 	* @returns {Promise<Boolean>}
 	*/
-	async edit(title, content, summary, params = {}) {
+	async edit(title, revid, content, summary, params = {}) {
 		try {
-			await this.api.postWithEditToken(Object.assign({}, {
+			const params = {
 				"assertuser": this.wikishield.username,
 				"discussiontoolsautosubscribe": "no",
 
@@ -320,8 +321,13 @@ export class WikiShieldAPI {
 				"summary": summary,
 				"format": "json",
 				"tags": __TAGS__
-			}, params));
+			}
 
+			if (revid !== null) {
+				params.baserevid = revid;
+			}
+
+			await this.api.postWithEditToken(params);
 			return true;
 		} catch (err) {
 			if (err === "assertnameduserfailed") return window.location.reload();
