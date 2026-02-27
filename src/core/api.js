@@ -393,6 +393,37 @@ export class WikiShieldAPI {
 	}
 
 	/**
+	 * Get content and revid of a page
+	 * @param {string} title The title of the page to get
+	 * @returns {Promise<{content:string, revid: number|null}|null>} The page content and revid, or null revid if the page doesn't exist
+	 */
+	async getPage(title) {
+		try {
+			const response = await this.api.get({
+				"assertuser": this.wikishield.username,
+				"action": "query",
+				"prop": "revisions",
+				"titles": title,
+				"rvprop": "content|ids",
+				"rvslots": "*",
+				"format": "json",
+				"formatversion": 2
+			});
+
+			const page = response.query.pages[0];
+
+			const content = page.missing ? "" : page.revisions[0].slots.main.content;
+			const revid = page.missing ? null : page.revisions[0].revid;
+
+			return { content: content, revid: revid };
+		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
+			console.log(`Could not fetch page ${titles}: ${err}`);
+		}
+	}
+
+	/**
 	* Get the content of the given pages
 	* @param {String} titles The titles of the pages to get, separated by "|"
 	* @returns {Promise<Object>} The content of the pages
