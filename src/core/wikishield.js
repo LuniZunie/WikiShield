@@ -288,7 +288,7 @@ export class WikiShield {
 
 	async warnUser(user, warning, level, articleName, revid) {
 		// Get current talk page
-		let talkPage = await this.getPage(`User talk:${user}`);
+		let talkPage = await this.api.getPage(`User talk:${user}`);
 		let talkPageContent = talkPage.content;
 
 		// Ensure month section exists

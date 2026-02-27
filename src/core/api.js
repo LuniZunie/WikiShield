@@ -309,7 +309,7 @@ export class WikiShieldAPI {
 	* @param {Object} params Any additional parameters to pass to the API
 	* @returns {Promise<Boolean>}
 	*/
-	async edit(title, revid, content, summary, params = {}) {
+	async edit(title, revid, content, summary) {
 		try {
 			const params = {
 				"assertuser": this.wikishield.username,
@@ -419,7 +419,7 @@ export class WikiShieldAPI {
 		} catch (err) {
 			if (err === "assertnameduserfailed") return window.location.reload();
 
-			console.log(`Could not fetch page ${titles}: ${err}`);
+			console.log(`Could not fetch page ${title}: ${err}`);
 		}
 	}
 
