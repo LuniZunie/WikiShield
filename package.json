@@ -26,7 +26,7 @@
     "webpack-dev-server": "^5.2.3"
   },
   "devDependencies": {
-    "@types/jquery": "^3.5.33",
+    "@types/jquery": "^4.0.0",
     "cross-env": "^10.1.0",
     "docdash": "^2.0.2",
     "jsdoc": "^4.0.5",
