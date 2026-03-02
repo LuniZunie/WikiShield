@@ -303,14 +303,15 @@ export class WikiShieldAPI {
 	/**
 	* Edit the given page with the given content and summary
 	* @param {String} title The title of the page to edit
+	* @param {number|string|null} revid The base revision ID (optional)
 	* @param {String} content The content to edit the page with
 	* @param {String} summary The edit summary
 	* @param {Object} params Any additional parameters to pass to the API
 	* @returns {Promise<Boolean>}
 	*/
-	async edit(title, content, summary, params = {}) {
+	async edit(title, revid, content, summary) {
 		try {
-			await this.api.postWithEditToken(Object.assign({}, {
+			const params = {
 				"assertuser": this.wikishield.username,
 				"discussiontoolsautosubscribe": "no",
 
@@ -320,8 +321,13 @@ export class WikiShieldAPI {
 				"summary": summary,
 				"format": "json",
 				"tags": __TAGS__
-			}, params));
+			}
 
+			if (revid !== null) {
+				params.baserevid = revid;
+			}
+
+			await this.api.postWithEditToken(params);
 			return true;
 		} catch (err) {
 			if (err === "assertnameduserfailed") return window.location.reload();
@@ -383,6 +389,37 @@ export class WikiShieldAPI {
 
 			console.log(`Could not create new section on page ${title}: ${err}`);
 			return false;
+		}
+	}
+
+	/**
+	 * Get content and revid of a page
+	 * @param {string} title The title of the page to get
+	 * @returns {Promise<{content:string, revid: number|null}|null>} The page content and revid, or null revid if the page doesn't exist
+	 */
+	async getPage(title) {
+		try {
+			const response = await this.api.get({
+				"assertuser": this.wikishield.username,
+				"action": "query",
+				"prop": "revisions",
+				"titles": title,
+				"rvprop": "content|ids",
+				"rvslots": "*",
+				"format": "json",
+				"formatversion": 2
+			});
+
+			const page = response.query.pages[0];
+
+			const content = page.missing ? "" : page.revisions[0].slots.main.content;
+			const revid = page.missing ? null : page.revisions[0].revid;
+
+			return { content: content, revid: revid };
+		} catch (err) {
+			if (err === "assertnameduserfailed") return window.location.reload();
+
+			console.log(`Could not fetch page ${title}: ${err}`);
 		}
 	}
 
