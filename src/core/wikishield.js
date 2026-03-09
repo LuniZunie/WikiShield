@@ -1070,7 +1070,7 @@ export class WikiShield {
 		await this.api.appendText(__script__.pages.RFPP, `
 			=== [[${title}]] ===
 			* {{pagelinks|${title}}}
-			'''${level}'''${reason ? `: ${reason}` : "."} ~~~~
+			'''${level}${reason ? `:''' ${reason}` : "'''."} ~~~~
 		`.replaceAll("\t", ""), this.api.buildMessage(`Requesting protection for [[${title}]]`));
 
 		this.storage.data.statistics.reports_filed.total++;
