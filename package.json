@@ -18,10 +18,10 @@
     "@babel/core": "^7.29.0",
     "@babel/preset-env": "^7.29.0",
     "@babel/preset-react": "^7.28.5",
-    "babel-loader": "^10.0.0",
+    "babel-loader": "^10.1.0",
     "preact": "^10.28.4",
     "preact-render-to-string": "^6.6.6",
-    "webpack": "^5.105.3",
+    "webpack": "^5.105.4",
     "webpack-cli": "^6.0.1",
     "webpack-dev-server": "^5.2.3"
   },
