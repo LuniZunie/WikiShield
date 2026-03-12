@@ -1175,7 +1175,8 @@ class Profanity {
         {
             term: "igga",
             severity: 0.7,
-            note: "Potential variant of racial slur."
+            note: "Potential variant of racial slur.",
+            ignore: [ "1994", "ig94" ]
         },
         {
             term: "igger",
