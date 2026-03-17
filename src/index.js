@@ -195,15 +195,6 @@ export const __script__ = {
 		});
 	};
 
-	const onClick = (e) => {
-		e.preventDefault();
-		history.pushState({ page: "WikiShield" }, "", window.location.href);
-
-		load();
-	};
-	link1?.addEventListener('click', onClick);
-	link2?.addEventListener('click', onClick);
-
 	window.addEventListener("popstate", (event) => {
 		if (event.state?.page === "WikiShield") {
 			load();
