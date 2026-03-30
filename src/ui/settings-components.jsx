@@ -399,6 +399,7 @@ export class DraggableOrderItem extends Component {
 export class GeneralSettings extends Component {
 	render() {
 		const {
+			openExternally,
 			maxEditCount,
 			maxQueueSize,
 			minOresScore,
@@ -408,13 +409,27 @@ export class GeneralSettings extends Component {
 			onMaxEditCountChange,
 			onMaxQueueSizeChange,
 			onMinOresScoreChange,
-			onWatchlistExpiryChange,
 			onNamespaceToggle,
 		} = this.props;
 
 		return (
 			<div>
 				<SettingsCompactGrid>
+					<SettingsSection
+						compact
+						id="open-externally"
+						title="Open Wikishield in new tab"
+						description="When enabled, WikiShield will open in a new browser tab instead of the current one."
+					>
+						<Toggle
+							value={openExternally}
+							onChange={(value) => {
+								localStorage.setItem("WikiShield:OpenExternally", value);
+								this.props.onOpenExternallyChange(value);
+							}}
+						/>
+					</SettingsSection>
+
 					<SettingsSection
 						compact
 						id="maximum-edit-count"

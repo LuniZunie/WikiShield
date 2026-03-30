@@ -9,7 +9,7 @@ const audio = {
         title: "Startup Sound",
         description: "Sound played when WikiShield starts up.",
         volume: 1,
-        data: "https://media.luni.me/audio/sound/startup",
+        data: "https://raw.githubusercontent.com/LuniZunie/WikiShield-App/refs/heads/main/data/audio/startup.wav",
     },
     music: {
         type: "category",
@@ -62,7 +62,7 @@ const audio = {
                 title: "Click Sound",
                 description: "Sound played when clicking on interface elements.",
                 volume: 1,
-                data: "https://media.luni.me/audio/sound/click"
+                data: "https://raw.githubusercontent.com/LuniZunie/WikiShield-App/refs/heads/main/data/audio/click.wav"
             },
         }
     },
@@ -77,14 +77,14 @@ const audio = {
                 title: "ORES Alert",
                 description: "Sound played due to a high ORES score.",
                 volume: 1,
-                data: "https://media.luni.me/audio/sound/ores"
+                data: "https://raw.githubusercontent.com/LuniZunie/WikiShield-App/refs/heads/main/data/audio/ores.wav"
             },
             mention: {
                 type: "sound",
                 title: "Mention Alert",
                 description: "Sound played when your username is mentioned in an edit.",
                 volume: 1,
-                data: "https://media.luni.me/audio/sound/mention"
+                data: "https://raw.githubusercontent.com/LuniZunie/WikiShield-App/refs/heads/main/data/audio/mention.wav"
             },
         }
     },
@@ -99,21 +99,21 @@ const audio = {
                 title: "Alert Sound",
                 description: "Sound played for alerts.",
                 volume: 1,
-                data: "https://media.luni.me/audio/sound/alert"
+                data: "https://raw.githubusercontent.com/LuniZunie/WikiShield-App/refs/heads/main/data/audio/alert.wav"
             },
             notice: {
                 type: "sound",
                 title: "Notice Sound",
                 description: "Sound played for notices.",
                 volume: 1,
-                data: "https://media.luni.me/audio/sound/notice"
+                data: "https://raw.githubusercontent.com/LuniZunie/WikiShield-App/refs/heads/main/data/audio/mention.wav"
             },
             toast: {
                 type: "sound",
                 title: "Toast Sound",
                 description: "Sound played for toast notifications.",
                 volume: 1,
-                data: "https://media.luni.me/audio/sound/toast"
+                data: "https://raw.githubusercontent.com/LuniZunie/WikiShield-App/refs/heads/main/data/audio/toast.wav"
             },
         },
     },
@@ -128,21 +128,21 @@ const audio = {
                 title: "Default Action Sound",
                 description: "Sound played for default actions.",
                 volume: 1,
-                data: "https://media.luni.me/audio/sound/action"
+                data: "https://raw.githubusercontent.com/LuniZunie/WikiShield-App/refs/heads/main/data/audio/action.wav"
             },
             failed: {
                 type: "sound",
                 title: "Failed Action Sound",
                 description: "Sound played when an action fails.",
                 volume: 1,
-                data: "https://media.luni.me/audio/sound/failed"
+                data: "https://raw.githubusercontent.com/LuniZunie/WikiShield-App/refs/heads/main/data/audio/failed.wav"
             },
             report: {
                 type: "sound",
                 title: "Report Action Sound",
                 description: "Sound played for report actions.",
                 volume: 1,
-                data: "https://media.luni.me/audio/sound/report"
+                data: "https://raw.githubusercontent.com/LuniZunie/WikiShield-App/refs/heads/main/data/audio/report.wav"
             },
             block: {
                 type: "sound",

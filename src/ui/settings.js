@@ -495,6 +495,8 @@ export class WikiShieldSettingsInterface {
 			h(GeneralSettings, {
 				wikishield: this.wikishield,
 
+				openExternally: localStorage.getItem("WikiShield:OpenExternally") === "true",
+
 				maxEditCount: settings.queue.max_edits,
 				onMaxEditCountChange: (value) => {
 					settings.queue.max_edits = value;
