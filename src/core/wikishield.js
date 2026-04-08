@@ -1170,6 +1170,10 @@ export class WikiShield {
 			event.preventDefault();
 		}
 
+		if (!this.storage.data.settings.repeat_control_scripts && event.repeat) {
+			return;
+		}
+
 		for (const script of this.storage.data.control_scripts) {
 			if (script.keys.includes(event.key.toLowerCase())) {
 				this.executeScript(script);

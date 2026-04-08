@@ -950,6 +950,17 @@ export class WikiShieldSettingsInterface {
 	openControls() {
 		this.clearContent();
 		this.contentContainer.innerHTML = `
+				<div class="settings-toggles-section">
+					<div class="settings-section-header">
+						Control script options
+					</div>
+					<div class="settings-section compact inline" id="repeat-control-scripts-toggle">
+						<div class="settings-section-content">
+							<div class="settings-section-title">Repeat control scripts</div>
+							<div class="settings-section-desc">Allow control scripts to be triggered repeatedly when holding down keys</div>
+						</div>
+					</div>
+				</div>
 				<div class="settings-section">
 					<div class="settings-section-title">Control scripts</div>
 					<div class="settings-section-desc">Below you can change what actions are completed when a key is pressed.</div>
@@ -959,6 +970,16 @@ export class WikiShieldSettingsInterface {
 					</button>
 				</div>
 			`;
+
+		const repeatToggle = this.contentContainer.querySelector("#repeat-control-scripts-toggle");
+		this.createToggle(
+			repeatToggle,
+			this.wikishield.storage.data.settings.repeat_control_scripts,
+			(newValue) => {
+				this.wikishield.storage.data.settings.repeat_control_scripts = newValue;
+				this.wikishield.localSave();
+			}
+		);
 
 		for (const control of this.wikishield.storage.data.control_scripts) {
 			const container = document.createElement("div");
