@@ -287,8 +287,9 @@ export class WikiShield {
 	}
 
 	async warnUser(user, warning, level, articleName, revid) {
-		// Get current talk page content
-		let talkPageContent = await this.api.getSinglePageContent(`User talk:${user}`);
+		// Get current talk page
+		let talkPage = await this.api.getPage(`User talk:${user}`);
+		let talkPageContent = talkPage.content;
 
 		// Ensure month section exists
 		const monthSection = this.util.monthSectionName();
@@ -366,7 +367,7 @@ export class WikiShield {
 		}
 
 		const message = `Message about ${articleName ? `[[Special:Diff/${revid}|your edit]] on [[${articleName}]]` : `[[Special:Contributions/${user}|your contributions]]`}`;
-		await this.api.edit(`User talk:${user}`, newContent, this.api.buildMessage(message, levelName));
+		await this.api.edit(`User talk:${user}`, talkPage.revid, newContent, this.api.buildMessage(message, levelName));
 
 		// Increment warning statistic
 		this.storage.data.statistics.warnings_issued.total++;
@@ -981,8 +982,10 @@ export class WikiShield {
 	async welcomeUser(user, templateName) {
 		try {
 			const talkPageName = `User talk:${user.name}`;
-			if ((await this.api.pageExists(talkPageName))[talkPageName]) {
-				return false;
+			const talkPage = await this.api.getPage(talkPageName);
+
+			if (talkPage.revid != null) {
+				return false; // Page exists
 			}
 
 			let template = welcomes[templateName];
@@ -1014,6 +1017,7 @@ export class WikiShield {
 
 			await this.api.edit(
 				talkPageName,
+				talkPage.revid, // this will be null
 				content,
 				this.api.buildMessage("Welcoming to Wikipedia")
 			);
