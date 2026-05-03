@@ -763,7 +763,8 @@ export const validEvents = {
                 warning,
                 params.level || "auto",
                 currentEdit.page.title,
-                currentEdit.revid
+                currentEdit.revid,
+                currentEdit
             );
 
             return true;

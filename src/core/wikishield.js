@@ -286,7 +286,7 @@ export class WikiShield {
 		return true;
 	}
 
-	async warnUser(user, warning, level, articleName, revid) {
+	async warnUser(user, warning, level, articleName, revid, currentEdit) {
 		// Get current talk page content
 		let talkPageContent = await this.api.getSinglePageContent(`User talk:${user}`);
 
@@ -307,7 +307,7 @@ export class WikiShield {
 			if (typeof warning.auto === "string") {
 				warningLevel = warning.auto;
 			} else if (typeof warning.auto === "function") {
-				warningLevel = warning.auto(this.queue.currentEdit, currentLevel);
+				warningLevel = warning.auto(currentEdit, currentLevel);
 			} else {
 				warningLevel = warning.auto[currentLevel];
 			}

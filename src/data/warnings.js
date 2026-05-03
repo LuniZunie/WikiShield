@@ -602,7 +602,7 @@ export const warnings = {
 				summary: "[[WP:EW|edit warring]]",
 
 				auto(edit) {
-					return edit?.user?.editCount < 500 ? "notice" : "warning";
+					return +edit?.user?.editCount < 500 ? "notice" : "warning";
 				},
 				templates: [
 					{ name: "notice", template: "subst:uw-ew-soft", color: "grey" },
@@ -732,7 +732,7 @@ export const warnings = {
 				summary: "no [[WP:ES|edit summary]] provided",
 
 				auto(edit) {
-					return edit?.user?.editCount < 500 ? "newcomer" : "experienced";
+					return +edit?.user?.editCount < 500 ? "newcomer" : "experienced";
 				},
 				templates: [
 					{ name: "newcomer", template: "subst:uw-es" },
